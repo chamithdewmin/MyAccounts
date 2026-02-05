@@ -31,6 +31,8 @@ export const resetDemoData = () => {
   removeStorageData('finance_clients');
   removeStorageData('finance_invoices');
   removeStorageData('finance_settings');
+  removeStorageData('finance_assets');
+  removeStorageData('finance_loans');
 
   return {};
 };

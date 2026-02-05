@@ -1,9 +1,11 @@
-import React from 'react';
+import React, { useEffect, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { useFinance } from '@/contexts/FinanceContext';
 import defaultLogo from '@/assets/logo.png';
+import html2pdf from 'html2pdf.js';
 
-const InvoiceTemplate = ({ invoice, currency = 'LKR' }) => {
+const InvoiceTemplate = ({ invoice, currency = 'LKR', autoAction = null, onAutoActionDone }) => {
+  const printAreaRef = useRef(null);
   const formatDate = (dateString) => {
     return new Date(dateString).toLocaleDateString('en-US', {
       year: 'numeric',
@@ -18,14 +20,57 @@ const InvoiceTemplate = ({ invoice, currency = 'LKR' }) => {
     window.print();
   };
 
-  const handleDownloadPdf = () => {
-    // Use browser's print-to-PDF for a reliable full-layout export
-    const originalTitle = document.title;
-    const fileSafeNumber = invoice.invoiceNumber || invoice.id || 'invoice';
-    document.title = `Invoice-${fileSafeNumber}`;
-    window.print();
-    document.title = originalTitle;
+  const handleDownloadPdf = async () => {
+    const element = printAreaRef.current;
+    if (!element) return;
+    const filename = `Invoice-${invoice.invoiceNumber || invoice.id || 'invoice'}.pdf`;
+    const opt = {
+      margin: 10,
+      filename,
+      image: { type: 'jpeg', quality: 0.98 },
+      html2canvas: { scale: 2 },
+      jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
+    };
+    try {
+      await html2pdf().set(opt).from(element).save();
+    } catch (err) {
+      console.error('PDF download failed:', err);
+      const orig = document.title;
+      document.title = filename.replace('.pdf', '');
+      window.print();
+      document.title = orig;
+    }
   };
+
+  useEffect(() => {
+    if (!autoAction || !invoice) return;
+    const run = async () => {
+      if (autoAction === 'download') {
+        const element = printAreaRef.current;
+        if (element) {
+          const filename = `Invoice-${invoice.invoiceNumber || invoice.id || 'invoice'}.pdf`;
+          const opt = {
+            margin: 10,
+            filename,
+            image: { type: 'jpeg', quality: 0.98 },
+            html2canvas: { scale: 2 },
+            jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
+          };
+          try {
+            await html2pdf().set(opt).from(element).save();
+          } catch (err) {
+            document.title = filename.replace('.pdf', '');
+            window.print();
+          }
+        }
+      } else if (autoAction === 'print') {
+        window.print();
+      }
+      onAutoActionDone?.();
+    };
+    const t = setTimeout(run, 300);
+    return () => clearTimeout(t);
+  }, [autoAction, invoice?.id, invoice?.invoiceNumber, onAutoActionDone]);
 
   const totalItems = invoice.items || [];
   const { settings } = useFinance();
@@ -40,7 +85,7 @@ const InvoiceTemplate = ({ invoice, currency = 'LKR' }) => {
           Print
         </Button>
       </div>
-      <div className="print-area bg-white text-black px-8 py-8 space-y-6">
+      <div ref={printAreaRef} className="print-area bg-white text-black px-8 py-8 space-y-6">
         {/* Header */}
         <div className="border-b-2 border-black pb-4 flex items-center justify-between">
           <div>

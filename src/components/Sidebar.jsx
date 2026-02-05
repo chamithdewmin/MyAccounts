@@ -1,5 +1,5 @@
-import React from 'react';
-import { NavLink } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { NavLink, useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   LayoutDashboard,
@@ -11,8 +11,17 @@ import {
   TrendingUp,
   Settings,
   X,
+  ChevronDown,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+
+const reportItems = [
+  { to: '/reports/overview', label: 'Overview Reports' },
+  { to: '/reports/profit-loss', label: 'Profit & Loss' },
+  { to: '/reports/cash-flow', label: 'Cash Flow' },
+  { to: '/reports/tax', label: 'Tax Reports' },
+  { to: '/reports/balance-sheet', label: 'Balance Sheet' },
+];
 
 const navItems = [
   { to: '/dashboard', icon: LayoutDashboard, label: 'Dashboard' },
@@ -20,12 +29,19 @@ const navItems = [
   { to: '/expenses', icon: Receipt, label: 'Expenses' },
   { to: '/invoices', icon: FileText, label: 'Invoices' },
   { to: '/clients', icon: Users, label: 'Clients' },
-  { to: '/reports', icon: BarChart3, label: 'Reports & Analytics' },
   { to: '/cash-flow', icon: TrendingUp, label: 'Cash Flow' },
   { to: '/settings', icon: Settings, label: 'Settings' },
 ];
 
 const Sidebar = ({ isOpen, onClose }) => {
+  const location = useLocation();
+  const isReportsActive = location.pathname.startsWith('/reports');
+  const [reportsExpanded, setReportsExpanded] = useState(isReportsActive);
+
+  useEffect(() => {
+    if (isReportsActive) setReportsExpanded(true);
+  }, [isReportsActive]);
+
   return (
     <>
       {/* Mobile overlay */}
@@ -67,7 +83,80 @@ const Sidebar = ({ isOpen, onClose }) => {
 
           {/* Navigation */}
           <nav className="flex-1 p-4 space-y-1 overflow-y-auto">
-            {navItems.map((item) => (
+            {navItems.slice(0, 5).map((item) => (
+              <NavLink
+                key={item.to}
+                to={item.to}
+                onClick={() => onClose()}
+                className={({ isActive }) =>
+                  cn(
+                    "flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200",
+                    isActive
+                      ? "bg-primary text-white shadow-lg hover:bg-primary"
+                      : "text-secondary-foreground hover:bg-secondary hover:translate-x-1"
+                  )
+                }
+              >
+                <item.icon className="w-5 h-5" />
+                <span className="font-medium">{item.label}</span>
+              </NavLink>
+            ))}
+
+            {/* Reports expandable section */}
+            <div className="space-y-0.5">
+              <button
+                type="button"
+                onClick={() => setReportsExpanded((p) => !p)}
+                className={cn(
+                  "w-full flex items-center justify-between gap-3 px-4 py-3 rounded-lg transition-all duration-200",
+                  isReportsActive
+                    ? "bg-primary text-white shadow-lg hover:bg-primary"
+                    : "text-secondary-foreground hover:bg-secondary hover:translate-x-1"
+                )}
+              >
+                <div className="flex items-center gap-3">
+                  <BarChart3 className="w-5 h-5" />
+                  <span className="font-medium">Reports</span>
+                </div>
+                <ChevronDown
+                  className={cn("w-4 h-4 transition-transform", reportsExpanded && "rotate-180")}
+                />
+              </button>
+              <AnimatePresence>
+                {reportsExpanded && (
+                  <motion.div
+                    initial={{ height: 0, opacity: 0 }}
+                    animate={{ height: 'auto', opacity: 1 }}
+                    exit={{ height: 0, opacity: 0 }}
+                    transition={{ duration: 0.2 }}
+                    className="overflow-hidden"
+                  >
+                    <div className="pl-4 ml-4 border-l border-secondary space-y-0.5">
+                      {reportItems.map((item) => (
+                        <NavLink
+                          key={item.to}
+                          to={item.to}
+                          onClick={() => onClose()}
+                          className={({ isActive }) =>
+                            cn(
+                              "flex items-center gap-3 px-3 py-2 rounded-lg transition-all duration-200 text-sm",
+                              isActive
+                                ? "bg-primary text-white"
+                                : "text-muted-foreground hover:bg-secondary hover:text-foreground"
+                            )
+                          }
+                        >
+                          <FileText className="w-4 h-4 flex-shrink-0" />
+                          <span>{item.label}</span>
+                        </NavLink>
+                      ))}
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
+
+            {navItems.slice(5).map((item) => (
               <NavLink
                 key={item.to}
                 to={item.to}

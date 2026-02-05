@@ -1,14 +1,17 @@
 import React from 'react';
 import { Helmet } from 'react-helmet';
 import { motion } from 'framer-motion';
+import { Save } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
+import { useToast } from '@/components/ui/use-toast';
 import { useFinance } from '@/contexts/FinanceContext';
 import { cn } from '@/lib/utils';
 
 const Settings = () => {
   const { settings, updateSettings } = useFinance();
+  const { toast } = useToast();
 
   return (
     <>
@@ -28,39 +31,7 @@ const Settings = () => {
           animate={{ opacity: 1, y: 0 }}
           className="bg-card rounded-lg p-6 border border-secondary space-y-6"
         >
-          {/* Appearance */}
-          <div className="space-y-4">
-            <h2 className="text-xl font-bold">Appearance</h2>
-            <div className="rounded-lg border border-secondary bg-card px-4 py-4 flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium">Theme</p>
-                <p className="text-xs text-muted-foreground">
-                  Switch between light and dark mode.
-                </p>
-              </div>
-              <button
-                type="button"
-                onClick={() =>
-                  updateSettings({ theme: settings.theme === 'dark' ? 'light' : 'dark' })
-                }
-                className={cn(
-                  'relative inline-flex h-7 w-14 items-center rounded-full border transition-colors',
-                  settings.theme === 'dark'
-                    ? 'bg-primary border-primary'
-                    : 'bg-muted border-secondary',
-                )}
-                aria-pressed={settings.theme === 'dark'}
-              >
-                <span
-                  className={cn(
-                    'inline-block h-5 w-5 transform rounded-full bg-background shadow transition-transform',
-                    settings.theme === 'dark' ? 'translate-x-7' : 'translate-x-1',
-                  )}
-                />
-              </button>
-            </div>
-          </div>
-
+          {/* Business Information */}
           <div>
             <h2 className="text-xl font-bold mb-4">Business Information</h2>
             <div className="space-y-4">
@@ -142,37 +113,130 @@ const Settings = () => {
                   )}
                 </div>
               </div>
+            </div>
+          </div>
+
+          {/* Opening Balances (for Balance Sheet) */}
+          <div>
+            <h2 className="text-xl font-bold mb-4">Opening Balances</h2>
+            <p className="text-xs text-muted-foreground mb-4">
+              Used for Balance Sheet calculations. Set your starting figures when you first use the system.
+            </p>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div className="space-y-2">
-                <Label>Tax Estimation</Label>
-                <label className="inline-flex items-center gap-2 text-sm">
-                  <input
-                    type="checkbox"
-                    checked={settings.taxEnabled}
-                    onChange={(e) => updateSettings({ taxEnabled: e.target.checked })}
-                    className="rounded border-secondary bg-secondary text-primary focus:ring-primary"
-                  />
-                  <span>Enable simple tax estimation based on profit</span>
-                </label>
-              </div>
-              <div className="space-y-2">
-                <Label>Expense Categories</Label>
-                <p className="text-xs text-muted-foreground mb-1">
-                  Predefined categories used when logging expenses.
-                </p>
-                <textarea
-                  className="w-full px-3 py-2 bg-secondary border border-secondary rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary min-h-[80px]"
-                  value={settings.expenseCategories.join('\n')}
+                <Label htmlFor="opening-cash">Opening Cash</Label>
+                <Input
+                  id="opening-cash"
+                  type="number"
+                  value={settings.openingCash ?? 0}
                   onChange={(e) =>
-                    updateSettings({
-                      expenseCategories: e.target.value
-                        .split('\n')
-                        .map((s) => s.trim())
-                        .filter(Boolean),
-                    })
+                    updateSettings({ openingCash: Number(e.target.value || 0) })
                   }
                 />
+                <p className="text-xs text-muted-foreground">Cash at business start</p>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="owner-capital">Owner Capital</Label>
+                <Input
+                  id="owner-capital"
+                  type="number"
+                  value={settings.ownerCapital ?? 0}
+                  onChange={(e) =>
+                    updateSettings({ ownerCapital: Number(e.target.value || 0) })
+                  }
+                />
+                <p className="text-xs text-muted-foreground">Owner deposits / investment</p>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="payables">Payables</Label>
+                <Input
+                  id="payables"
+                  type="number"
+                  value={settings.payables ?? 0}
+                  onChange={(e) =>
+                    updateSettings({ payables: Number(e.target.value || 0) })
+                  }
+                />
+                <p className="text-xs text-muted-foreground">Unpaid bills at start</p>
               </div>
             </div>
+          </div>
+
+          {/* Preferences / Toggles */}
+          <div className="space-y-4">
+            <h2 className="text-xl font-bold">Preferences</h2>
+            <div className="space-y-4">
+              <div className="rounded-lg border border-secondary bg-card px-4 py-4 flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium">Theme</p>
+                  <p className="text-xs text-muted-foreground">
+                    Switch between light and dark mode.
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() =>
+                    updateSettings({ theme: settings.theme === 'dark' ? 'light' : 'dark' })
+                  }
+                  className={cn(
+                    'relative inline-flex h-7 w-14 items-center rounded-full border transition-colors',
+                    settings.theme === 'dark'
+                      ? 'bg-primary border-primary'
+                      : 'bg-muted border-secondary',
+                  )}
+                  aria-pressed={settings.theme === 'dark'}
+                >
+                  <span
+                    className={cn(
+                      'inline-block h-5 w-5 transform rounded-full bg-white shadow transition-transform',
+                      settings.theme === 'dark' ? 'translate-x-7' : 'translate-x-1',
+                    )}
+                  />
+                </button>
+              </div>
+              <div className="rounded-lg border border-secondary bg-card px-4 py-4 flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium">Tax Estimation</p>
+                  <p className="text-xs text-muted-foreground">
+                    Enable simple tax estimation based on profit
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  role="switch"
+                  aria-checked={settings.taxEnabled}
+                  onClick={() => updateSettings({ taxEnabled: !settings.taxEnabled })}
+                  className={cn(
+                    'relative inline-flex h-7 w-14 items-center rounded-full border transition-colors',
+                    settings.taxEnabled
+                      ? 'bg-primary border-primary'
+                      : 'bg-muted border-secondary',
+                  )}
+                >
+                  <span
+                    className={cn(
+                      'inline-block h-5 w-5 transform rounded-full bg-white shadow transition-transform',
+                      settings.taxEnabled ? 'translate-x-7' : 'translate-x-1',
+                    )}
+                  />
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <div className="pt-4 flex justify-end">
+            <Button
+              onClick={() =>
+                toast({
+                  title: 'Changes saved',
+                  description: 'Your settings have been updated successfully.',
+                })
+              }
+              className="gap-2"
+            >
+              <Save className="h-4 w-4" />
+              Save Changes
+            </Button>
           </div>
 
         </motion.div>

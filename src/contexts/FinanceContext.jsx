@@ -9,6 +9,8 @@ const STORAGE_KEYS = {
   clients: 'finance_clients',
   invoices: 'finance_invoices',
   settings: 'finance_settings',
+  assets: 'finance_assets',
+  loans: 'finance_loans',
 };
 
 const createId = (prefix) => {
@@ -24,6 +26,9 @@ const getDefaultSettings = () => ({
   taxEnabled: true,
   theme: 'dark',
   logo: null, // data URL for logo image
+  openingCash: 0, // Opening cash balance at business start
+  ownerCapital: 0, // Owner deposits / initial investment
+  payables: 0, // Unpaid bills (manual entry until bills feature exists)
   expenseCategories: [
     'Hosting',
     'Tools & Subscriptions',
@@ -40,6 +45,8 @@ export const FinanceProvider = ({ children }) => {
   const [clients, setClients] = useState([]);
   const [invoices, setInvoices] = useState([]);
   const [settings, setSettings] = useState(getDefaultSettings);
+  const [assets, setAssets] = useState([]);
+  const [loans, setLoans] = useState([]);
 
   // Load from storage on mount
   useEffect(() => {
@@ -56,6 +63,9 @@ export const FinanceProvider = ({ children }) => {
     } else {
       setInvoices([]);
     }
+
+    setAssets(getStorageData(STORAGE_KEYS.assets, []));
+    setLoans(getStorageData(STORAGE_KEYS.loans, []));
   }, []);
 
   // Persist changes
@@ -78,6 +88,14 @@ export const FinanceProvider = ({ children }) => {
   useEffect(() => {
     setStorageData(STORAGE_KEYS.settings, settings);
   }, [settings]);
+
+  useEffect(() => {
+    setStorageData(STORAGE_KEYS.assets, assets);
+  }, [assets]);
+
+  useEffect(() => {
+    setStorageData(STORAGE_KEYS.loans, loans);
+  }, [loans]);
 
   const addClient = (data) => {
     const client = {
@@ -246,6 +264,38 @@ export const FinanceProvider = ({ children }) => {
     }));
   };
 
+  const addAsset = (data) => {
+    const asset = {
+      id: createId('AST'),
+      name: data.name?.trim() || 'Asset',
+      amount: Number(data.amount) || 0,
+      date: data.date || new Date().toISOString(),
+      createdAt: new Date().toISOString(),
+    };
+    setAssets((prev) => [asset, ...prev]);
+    return asset;
+  };
+
+  const deleteAsset = (id) => {
+    setAssets((prev) => prev.filter((a) => a.id !== id));
+  };
+
+  const addLoan = (data) => {
+    const loan = {
+      id: createId('LN'),
+      name: data.name?.trim() || 'Loan',
+      amount: Number(data.amount) || 0,
+      date: data.date || new Date().toISOString(),
+      createdAt: new Date().toISOString(),
+    };
+    setLoans((prev) => [loan, ...prev]);
+    return loan;
+  };
+
+  const deleteLoan = (id) => {
+    setLoans((prev) => prev.filter((l) => l.id !== id));
+  };
+
   const totals = useMemo(() => {
     const now = new Date();
     const thisMonth = now.getMonth();
@@ -295,6 +345,8 @@ export const FinanceProvider = ({ children }) => {
     clients,
     invoices,
     settings,
+    assets,
+    loans,
     addClient,
     addIncome,
     addExpense,
@@ -308,6 +360,10 @@ export const FinanceProvider = ({ children }) => {
     updateInvoiceStatus,
     deleteInvoice,
     updateSettings,
+    addAsset,
+    deleteAsset,
+    addLoan,
+    deleteLoan,
     totals,
   };
 

@@ -61,10 +61,19 @@ const DialogTitle = React.forwardRef(({ className, ...props }, ref) => (
 ));
 DialogTitle.displayName = DialogPrimitive.Title.displayName;
 
+const DialogFooter = ({ className, ...props }) => (
+  <div
+    className={cn("flex flex-col-reverse sm:flex-row sm:justify-end sm:gap-2", className)}
+    {...props}
+  />
+);
+DialogFooter.displayName = "DialogFooter";
+
 export {
   Dialog,
   DialogTrigger,
   DialogContent,
   DialogHeader,
   DialogTitle,
+  DialogFooter,
 };

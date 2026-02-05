@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Helmet } from 'react-helmet';
 import { motion } from 'framer-motion';
-import { Search, Plus, Download, RefreshCw, Pencil, Trash2 } from 'lucide-react';
+import { Search, Plus, Download, RefreshCw, Pencil, Trash2, Eye, Printer } from 'lucide-react';
 import { useFinance } from '@/contexts/FinanceContext';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -15,6 +15,7 @@ const Orders = () => {
   const [filteredOrders, setFilteredOrders] = useState([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedOrder, setSelectedOrder] = useState(null);
+  const [invoiceAction, setInvoiceAction] = useState(null); // 'view' | 'download' | 'print'
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const { toast } = useToast();
 
@@ -295,12 +296,48 @@ const Orders = () => {
                       </span>
                     </td>
                     <td className="px-4 py-3">
-                      <div className="flex items-center justify-center gap-2">
+                      <div className="flex items-center justify-center gap-1 flex-wrap">
                         <button
                           type="button"
-                          onClick={() => setSelectedOrder(order)}
+                          onClick={() => {
+                            setSelectedOrder(order);
+                            setInvoiceAction('view');
+                          }}
+                          className="p-2 hover:bg-secondary rounded-lg transition-colors text-blue-400 hover:text-blue-300"
+                          title="View"
+                        >
+                          <Eye className="w-4 h-4" />
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setSelectedOrder(order);
+                            setInvoiceAction('download');
+                          }}
+                          className="p-2 hover:bg-secondary rounded-lg transition-colors text-muted-foreground hover:text-foreground"
+                          title="Download PDF"
+                        >
+                          <Download className="w-4 h-4" />
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setSelectedOrder(order);
+                            setInvoiceAction('print');
+                          }}
+                          className="p-2 hover:bg-secondary rounded-lg transition-colors text-muted-foreground hover:text-foreground"
+                          title="Print"
+                        >
+                          <Printer className="w-4 h-4" />
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setSelectedOrder(order);
+                            setInvoiceAction('view');
+                          }}
                           className="p-2 hover:bg-secondary rounded-lg transition-colors text-green-500 hover:text-green-400"
-                          title="View / Edit"
+                          title="Edit"
                         >
                           <Pencil className="w-4 h-4" />
                         </button>
@@ -344,12 +381,27 @@ const Orders = () => {
       </div>
 
       {/* View invoice */}
-      <Dialog open={!!selectedOrder} onOpenChange={() => setSelectedOrder(null)}>
+      <Dialog
+        open={!!selectedOrder}
+        onOpenChange={(open) => {
+          if (!open) {
+            setSelectedOrder(null);
+            setInvoiceAction(null);
+          }
+        }}
+      >
         <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Invoice Details</DialogTitle>
           </DialogHeader>
-          {selectedOrder && <InvoiceTemplate invoice={selectedOrder} currency={settings.currency} />}
+          {selectedOrder && (
+            <InvoiceTemplate
+              invoice={selectedOrder}
+              currency={settings.currency}
+              autoAction={invoiceAction === 'download' || invoiceAction === 'print' ? invoiceAction : null}
+              onAutoActionDone={() => setInvoiceAction(null)}
+            />
+          )}
         </DialogContent>
       </Dialog>
 

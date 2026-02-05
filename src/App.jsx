@@ -8,7 +8,13 @@ import POS from './pages/POS';
 import Inventory from './pages/Inventory';
 import Orders from './pages/Orders';
 import Customers from './pages/Customers';
-import Reports from './pages/Reports';
+import ReportOverview from './pages/reports/ReportOverview';
+import ReportIncome from './pages/reports/ReportIncome';
+import ReportExpense from './pages/reports/ReportExpense';
+import ReportTax from './pages/reports/ReportTax';
+import BalanceSheet from './pages/reports/BalanceSheet';
+import ReportProfitLoss from './pages/reports/ReportProfitLoss';
+import ReportCashFlow from './pages/reports/ReportCashFlow';
 import CashFlow from './pages/CashFlow';
 import Settings from './pages/Settings';
 import Layout from './components/Layout';
@@ -36,7 +42,14 @@ function App() {
         <Route path="expenses" element={<Inventory />} />
         <Route path="invoices" element={<Orders />} />
         <Route path="clients" element={<Customers />} />
-        <Route path="reports" element={<Reports />} />
+        <Route path="reports" element={<Navigate to="/reports/overview" replace />} />
+        <Route path="reports/overview" element={<ReportOverview />} />
+        <Route path="reports/profit-loss" element={<ReportProfitLoss />} />
+        <Route path="reports/cash-flow" element={<ReportCashFlow />} />
+        <Route path="reports/income" element={<ReportIncome />} />
+        <Route path="reports/expense" element={<ReportExpense />} />
+        <Route path="reports/tax" element={<ReportTax />} />
+        <Route path="reports/balance-sheet" element={<BalanceSheet />} />
         <Route path="cash-flow" element={<CashFlow />} />
         <Route path="settings" element={<Settings />} />
       </Route>

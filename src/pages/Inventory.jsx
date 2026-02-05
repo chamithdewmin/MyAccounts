@@ -1,7 +1,7 @@
 import React, { useMemo, useState } from 'react';
 import { Helmet } from 'react-helmet';
 import { motion } from 'framer-motion';
-import { Download, Upload, RefreshCw, Plus, DollarSign, Repeat, PieChart } from 'lucide-react';
+import { Download, Upload, RefreshCw, Plus, DollarSign, Repeat, PieChart, Pencil, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/components/ui/use-toast';
@@ -10,7 +10,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Label } from '@/components/ui/label';
 
 const Inventory = () => {
-  const { expenses, settings, addExpense } = useFinance();
+  const { expenses, settings, addExpense, updateExpense, deleteExpense } = useFinance();
   const { toast } = useToast();
 
   const [form, setForm] = useState({
@@ -30,6 +30,7 @@ const Inventory = () => {
   });
   const [searchQuery, setSearchQuery] = useState('');
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [editingExpense, setEditingExpense] = useState(null);
 
   const exportCSV = () => {
     const headers = ['ID', 'Category', 'Amount', 'Date', 'Recurring', 'Notes'];
@@ -97,19 +98,23 @@ const Inventory = () => {
         ? form.customCategory
         : form.category;
 
-    addExpense({
+    const payload = {
       category,
       amount: Number(form.amount),
       date: form.date || new Date().toISOString(),
       isRecurring: form.isRecurring,
       notes: form.notes,
       receipt: form.receipt,
-    });
+    };
 
-    toast({
-      title: 'Expense added',
-      description: 'New expense record has been saved.',
-    });
+    if (editingExpense) {
+      updateExpense(editingExpense.id, payload);
+      toast({ title: 'Expense updated', description: 'Expense record has been updated.' });
+      setEditingExpense(null);
+    } else {
+      addExpense(payload);
+      toast({ title: 'Expense added', description: 'New expense record has been saved.' });
+    }
 
     setForm({
       category: 'Hosting',
@@ -120,6 +125,29 @@ const Inventory = () => {
       notes: '',
       receipt: null,
     });
+    setIsDialogOpen(false);
+  };
+
+  const openEdit = (exp) => {
+    setEditingExpense(exp);
+    const isCustom = !settings.expenseCategories.includes(exp.category);
+    setForm({
+      category: isCustom ? 'Custom' : exp.category,
+      customCategory: isCustom ? exp.category : '',
+      amount: String(exp.amount || ''),
+      date: exp.date ? exp.date.slice(0, 10) : '',
+      isRecurring: exp.isRecurring || false,
+      notes: exp.notes || '',
+      receipt: exp.receipt || null,
+    });
+    setIsDialogOpen(true);
+  };
+
+  const handleDeleteExpense = (exp) => {
+    if (window.confirm(`Delete expense of ${settings.currency} ${exp.amount.toLocaleString()} (${exp.category})?`)) {
+      deleteExpense(exp.id);
+      toast({ title: 'Expense deleted', description: 'Expense record has been removed.' });
+    }
   };
 
   const filteredExpenses = useMemo(() => {
@@ -233,18 +261,6 @@ const Inventory = () => {
           </div>
         </div>
 
-        {/* Search */}
-        <div className="max-w-xl">
-          <div className="relative">
-            <Input
-              placeholder="Search by category, notes, or date..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-3"
-            />
-          </div>
-        </div>
-
         {/* Summary cards */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <motion.div
@@ -305,6 +321,18 @@ const Inventory = () => {
           </motion.div>
         </div>
 
+        {/* Search */}
+        <div className="max-w-xl">
+          <div className="relative">
+            <Input
+              placeholder="Search by category, notes, or date..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="pl-3"
+            />
+          </div>
+        </div>
+
         {/* Filters and table */}
         <div className="space-y-4">
           <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
@@ -354,6 +382,7 @@ const Inventory = () => {
                     <th className="px-4 py-3 text-left text-sm font-semibold">Recurring</th>
                     <th className="px-4 py-3 text-left text-sm font-semibold">Receipt</th>
                     <th className="px-4 py-3 text-right text-sm font-semibold">Amount</th>
+                    <th className="px-4 py-3 text-center text-sm font-semibold uppercase">Actions</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -394,6 +423,26 @@ const Inventory = () => {
                       <td className="px-4 py-3 text-sm font-semibold text-right">
                         {settings.currency} {exp.amount.toLocaleString()}
                       </td>
+                      <td className="px-4 py-3">
+                        <div className="flex items-center justify-center gap-2">
+                          <button
+                            type="button"
+                            onClick={() => openEdit(exp)}
+                            className="p-2 hover:bg-secondary rounded-lg transition-colors text-green-500 hover:text-green-400"
+                            title="Edit"
+                          >
+                            <Pencil className="w-4 h-4" />
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => handleDeleteExpense(exp)}
+                            className="p-2 hover:bg-secondary rounded-lg transition-colors text-red-500 hover:text-red-400"
+                            title="Delete"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        </div>
+                      </td>
                     </motion.tr>
                   ))}
                 </tbody>
@@ -409,12 +458,18 @@ const Inventory = () => {
       </div>
 
       {/* Add expense dialog */}
-      <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+      <Dialog
+        open={isDialogOpen}
+        onOpenChange={(open) => {
+          setIsDialogOpen(open);
+          if (!open) setEditingExpense(null);
+        }}
+      >
         <DialogContent className="max-w-xl">
           <DialogHeader>
-            <DialogTitle>Add Expense</DialogTitle>
+            <DialogTitle>{editingExpense ? 'Edit Expense' : 'Add Expense'}</DialogTitle>
           </DialogHeader>
-          <form onSubmit={(e) => { handleSubmit(e); setIsDialogOpen(false); }} className="space-y-4">
+          <form onSubmit={handleSubmit} className="space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label className="text-sm font-medium">Category</Label>
@@ -506,7 +561,7 @@ const Inventory = () => {
                 Cancel
               </Button>
               <Button type="submit">
-                Save Expense
+                {editingExpense ? 'Update Expense' : 'Save Expense'}
               </Button>
             </div>
           </form>

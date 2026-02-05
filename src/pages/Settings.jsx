@@ -1,28 +1,14 @@
 import React from 'react';
 import { Helmet } from 'react-helmet';
 import { motion } from 'framer-motion';
-import { RefreshCw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
-import { resetDemoData } from '@/utils/storage';
 import { useFinance } from '@/contexts/FinanceContext';
-import { useToast } from '@/components/ui/use-toast';
+import { cn } from '@/lib/utils';
 
 const Settings = () => {
-  const { toast } = useToast();
   const { settings, updateSettings } = useFinance();
-
-  const handleResetData = () => {
-    resetDemoData();
-    toast({
-      title: 'Data reset successful',
-      description: 'All financial data has been cleared.',
-    });
-    setTimeout(() => {
-      window.location.reload();
-    }, 1000);
-  };
 
   return (
     <>
@@ -31,10 +17,10 @@ const Settings = () => {
         <meta name="description" content="Configure business settings, tax, and currency" />
       </Helmet>
 
-      <div className="space-y-6 max-w-2xl">
+      <div className="space-y-6 max-w-5xl mx-auto">
         <div>
             <h1 className="text-3xl font-bold">Settings</h1>
-            <p className="text-muted-foreground">Configure your business profile and tax.</p>
+            <p className="text-muted-foreground">Configure application settings and preferences.</p>
         </div>
 
         <motion.div
@@ -42,6 +28,39 @@ const Settings = () => {
           animate={{ opacity: 1, y: 0 }}
           className="bg-card rounded-lg p-6 border border-secondary space-y-6"
         >
+          {/* Appearance */}
+          <div className="space-y-4">
+            <h2 className="text-xl font-bold">Appearance</h2>
+            <div className="rounded-lg border border-secondary bg-card px-4 py-4 flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium">Theme</p>
+                <p className="text-xs text-muted-foreground">
+                  Switch between light and dark mode.
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() =>
+                  updateSettings({ theme: settings.theme === 'dark' ? 'light' : 'dark' })
+                }
+                className={cn(
+                  'relative inline-flex h-7 w-14 items-center rounded-full border transition-colors',
+                  settings.theme === 'dark'
+                    ? 'bg-primary border-primary'
+                    : 'bg-muted border-secondary',
+                )}
+                aria-pressed={settings.theme === 'dark'}
+              >
+                <span
+                  className={cn(
+                    'inline-block h-5 w-5 transform rounded-full bg-background shadow transition-transform',
+                    settings.theme === 'dark' ? 'translate-x-7' : 'translate-x-1',
+                  )}
+                />
+              </button>
+            </div>
+          </div>
+
           <div>
             <h2 className="text-xl font-bold mb-4">Business Information</h2>
             <div className="space-y-4">
@@ -77,36 +96,6 @@ const Settings = () => {
                   <option value="EUR">EUR (€)</option>
                   <option value="GBP">GBP (£)</option>
                 </select>
-              </div>
-              <div className="space-y-2">
-                <Label>Theme</Label>
-                <p className="text-xs text-muted-foreground">
-                  Choose between a clean light theme or the original dark theme.
-                </p>
-                <div className="flex gap-3">
-                  <button
-                    type="button"
-                    onClick={() => updateSettings({ theme: 'light' })}
-                    className={`px-3 py-2 rounded-lg text-sm border ${
-                      settings.theme === 'dark'
-                        ? 'bg-card text-muted-foreground border-secondary'
-                        : 'bg-primary text-primary-foreground border-primary'
-                    }`}
-                  >
-                    Light
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => updateSettings({ theme: 'dark' })}
-                    className={`px-3 py-2 rounded-lg text-sm border ${
-                      settings.theme === 'dark'
-                        ? 'bg-primary text-primary-foreground border-primary'
-                        : 'bg-card text-muted-foreground border-secondary'
-                    }`}
-                  >
-                    Dark
-                  </button>
-                </div>
               </div>
               <div className="space-y-2">
                 <Label htmlFor="logo-upload">Invoice Logo</Label>
@@ -186,16 +175,6 @@ const Settings = () => {
             </div>
           </div>
 
-          <div className="pt-6 border-t border-secondary">
-            <h2 className="text-xl font-bold mb-4">Data</h2>
-            <p className="text-sm text-muted-foreground mb-4">
-              Reset all financial data. This will clear incomes, expenses, clients, and invoices from this browser.
-            </p>
-            <Button onClick={handleResetData} variant="destructive">
-              <RefreshCw className="w-4 h-4 mr-2" />
-              Reset All Data
-            </Button>
-          </div>
         </motion.div>
       </div>
     </>

@@ -1,7 +1,7 @@
 import React, { useMemo, useState } from 'react';
 import { Helmet } from 'react-helmet';
 import { motion } from 'framer-motion';
-import { Plus, Search, DollarSign, Wallet, CreditCard } from 'lucide-react';
+import { Plus, Search, DollarSign, Wallet, CreditCard, Download, RefreshCw, Pencil, Trash2 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/components/ui/use-toast';
@@ -10,7 +10,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Label } from '@/components/ui/label';
 
 const POS = () => {
-  const { incomes, clients, addIncome, settings } = useFinance();
+  const { incomes, clients, addIncome, updateIncome, deleteIncome, settings } = useFinance();
   const { toast } = useToast();
 
   const [form, setForm] = useState({
@@ -29,6 +29,7 @@ const POS = () => {
     paymentMethod: 'all',
   });
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [editingIncome, setEditingIncome] = useState(null);
 
   const handleChange = (field, value) => {
     setForm((prev) => ({ ...prev, [field]: value }));
@@ -51,7 +52,7 @@ const POS = () => {
     const selectedClient =
       clients.find((c) => c.id === form.clientId) || null;
 
-    addIncome({
+    const payload = {
       clientId: selectedClient?.id || null,
       clientName: selectedClient?.name || form.clientName,
       serviceType: form.serviceType,
@@ -59,12 +60,16 @@ const POS = () => {
       amount: Number(form.amount),
       date: form.date || new Date().toISOString(),
       notes: form.notes,
-    });
+    };
 
-    toast({
-      title: 'Income added',
-      description: 'New income record has been saved.',
-    });
+    if (editingIncome) {
+      updateIncome(editingIncome.id, payload);
+      toast({ title: 'Income updated', description: 'Income record has been updated.' });
+      setEditingIncome(null);
+    } else {
+      addIncome(payload);
+      toast({ title: 'Income added', description: 'New income record has been saved.' });
+    }
 
     setForm({
       clientId: '',
@@ -75,6 +80,28 @@ const POS = () => {
       date: '',
       notes: '',
     });
+    setIsDialogOpen(false);
+  };
+
+  const openEdit = (income) => {
+    setEditingIncome(income);
+    setForm({
+      clientId: income.clientId || '',
+      clientName: income.clientName || '',
+      serviceType: income.serviceType || '',
+      paymentMethod: income.paymentMethod || 'cash',
+      amount: String(income.amount || ''),
+      date: income.date ? income.date.slice(0, 10) : '',
+      notes: income.notes || '',
+    });
+    setIsDialogOpen(true);
+  };
+
+  const handleDeleteIncome = (income) => {
+    if (window.confirm(`Delete income of ${settings.currency} ${income.amount.toLocaleString()} from ${income.clientName || 'Unknown'}?`)) {
+      deleteIncome(income.id);
+      toast({ title: 'Income deleted', description: 'Income record has been removed.' });
+    }
   };
 
   const filteredIncomes = useMemo(() => {
@@ -133,6 +160,33 @@ const POS = () => {
     return { total, cash, nonCash };
   }, [incomes]);
 
+  const exportCSV = () => {
+    const headers = ['ID', 'Client', 'Service', 'Amount', 'Payment Method', 'Date', 'Notes'];
+    const rows = incomes.map((inc) => [
+      inc.id,
+      inc.clientName,
+      inc.serviceType,
+      inc.amount,
+      inc.paymentMethod,
+      inc.date,
+      (inc.notes || '').replace(/[\r\n]+/g, ' '),
+    ]);
+
+    const csvContent = [headers.join(','), ...rows.map((row) => row.join(','))].join('\n');
+
+    const blob = new Blob([csvContent], { type: 'text/csv' });
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'income.csv';
+    a.click();
+
+    toast({
+      title: 'Export successful',
+      description: 'Income exported to CSV',
+    });
+  };
+
   return (
     <>
       <Helmet>
@@ -148,10 +202,28 @@ const POS = () => {
               Track client payments, services, and cash inflow.
             </p>
           </div>
-          <Button onClick={() => setIsDialogOpen(true)}>
-            <Plus className="w-4 h-4 mr-2" />
-            Add Income
-          </Button>
+          <div className="flex gap-3">
+            <Button
+              variant="outline"
+              onClick={() => {
+                toast({
+                  title: 'Refreshed',
+                  description: 'Income data has been refreshed.',
+                });
+              }}
+            >
+              <RefreshCw className="w-4 h-4 mr-2" />
+              Refresh
+            </Button>
+            <Button onClick={exportCSV} variant="outline">
+              <Download className="w-4 h-4 mr-2" />
+              Export CSV
+            </Button>
+            <Button onClick={() => setIsDialogOpen(true)}>
+              <Plus className="w-4 h-4 mr-2" />
+              Add Income
+            </Button>
+          </div>
         </div>
 
         {/* Summary cards */}
@@ -214,18 +286,21 @@ const POS = () => {
           </motion.div>
         </div>
 
+        {/* Search */}
+        <div className="max-w-xl">
+          <div className="relative">
+            <Input
+              placeholder="Search by client, service, or date..."
+              value={filters.search}
+              onChange={(e) => handleFilterChange('search', e.target.value)}
+              className="pl-3"
+            />
+          </div>
+        </div>
+
         {/* Filters & list */}
         <div className="space-y-4">
           <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-            <div className="relative md:w-64">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-              <Input
-                placeholder="Filter by client or service..."
-                className="pl-10"
-                value={filters.search}
-                onChange={(e) => handleFilterChange('search', e.target.value)}
-              />
-            </div>
             <div className="flex flex-wrap gap-3">
               <select
                 className="px-3 py-2 bg-card border border-secondary rounded-lg text-sm"
@@ -259,6 +334,7 @@ const POS = () => {
                     <th className="px-4 py-3 text-left text-sm font-semibold">Service</th>
                     <th className="px-4 py-3 text-left text-sm font-semibold">Payment</th>
                     <th className="px-4 py-3 text-right text-sm font-semibold">Amount</th>
+                    <th className="px-4 py-3 text-center text-sm font-semibold uppercase">Actions</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -283,6 +359,26 @@ const POS = () => {
                       <td className="px-4 py-3 text-sm font-semibold text-right">
                         {settings.currency} {income.amount.toLocaleString()}
                       </td>
+                      <td className="px-4 py-3">
+                        <div className="flex items-center justify-center gap-2">
+                          <button
+                            type="button"
+                            onClick={() => openEdit(income)}
+                            className="p-2 hover:bg-secondary rounded-lg transition-colors text-green-500 hover:text-green-400"
+                            title="Edit"
+                          >
+                            <Pencil className="w-4 h-4" />
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => handleDeleteIncome(income)}
+                            className="p-2 hover:bg-secondary rounded-lg transition-colors text-red-500 hover:text-red-400"
+                            title="Delete"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        </div>
+                      </td>
                     </motion.tr>
                   ))}
                 </tbody>
@@ -298,18 +394,18 @@ const POS = () => {
       </div>
 
       {/* Add income dialog */}
-      <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+      <Dialog
+        open={isDialogOpen}
+        onOpenChange={(open) => {
+          setIsDialogOpen(open);
+          if (!open) setEditingIncome(null);
+        }}
+      >
         <DialogContent className="max-w-xl">
           <DialogHeader>
-            <DialogTitle>Add Income</DialogTitle>
+            <DialogTitle>{editingIncome ? 'Edit Income' : 'Add Income'}</DialogTitle>
           </DialogHeader>
-          <form
-            onSubmit={(e) => {
-              handleSubmit(e);
-              setIsDialogOpen(false);
-            }}
-            className="space-y-4"
-          >
+          <form onSubmit={handleSubmit} className="space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label className="text-sm font-medium">Client</Label>
@@ -386,7 +482,7 @@ const POS = () => {
                 Cancel
               </Button>
               <Button type="submit">
-                Save Income
+                {editingIncome ? 'Update Income' : 'Save Income'}
               </Button>
             </div>
           </form>

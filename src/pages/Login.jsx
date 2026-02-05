@@ -6,7 +6,8 @@ import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { ShoppingCart, AlertCircle } from 'lucide-react';
+import { AlertCircle } from 'lucide-react';
+import logoIcon from '@/assets/icon.png';
 
 const Login = () => {
   const [email, setEmail] = useState('');
@@ -30,8 +31,8 @@ const Login = () => {
   return (
     <>
       <Helmet>
-        <title>Login - AutoPOS</title>
-        <meta name="description" content="Login to AutoPOS car dealership management system" />
+        <title>Login - MyAccounts</title>
+        <meta name="description" content="Login to MyAccounts accounting management system" />
       </Helmet>
       
       <div className="min-h-screen flex items-center justify-center p-4">
@@ -44,11 +45,15 @@ const Login = () => {
           <div className="bg-card rounded-lg shadow-2xl p-8 space-y-6">
             {/* Logo */}
             <div className="text-center space-y-2">
-              <div className="w-16 h-16 bg-primary rounded-lg flex items-center justify-center mx-auto">
-                <ShoppingCart className="w-8 h-8 text-white" />
+              <div className="flex items-center justify-center mx-auto">
+                <img
+                  src={logoIcon}
+                  alt="MyAccounts logo"
+                  className="w-16 h-16 object-contain"
+                />
               </div>
-              <h1 className="text-2xl font-bold">AutoPOS</h1>
-              <p className="text-muted-foreground">Car Dealership Management</p>
+              <h1 className="text-2xl font-bold">MyAccounts</h1>
+              <p className="text-muted-foreground">Accounting Management System</p>
             </div>
 
             {/* Error message */}

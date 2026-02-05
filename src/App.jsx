@@ -9,6 +9,7 @@ import Inventory from './pages/Inventory';
 import Orders from './pages/Orders';
 import Customers from './pages/Customers';
 import Reports from './pages/Reports';
+import CashFlow from './pages/CashFlow';
 import Settings from './pages/Settings';
 import Layout from './components/Layout';
 
@@ -31,11 +32,12 @@ function App() {
       <Route path="/" element={isAuthenticated ? <Layout /> : <Navigate to="/login" />}>
         <Route index element={<Navigate to="/dashboard" />} />
         <Route path="dashboard" element={<Dashboard />} />
-        <Route path="pos" element={<POS />} />
-        <Route path="inventory" element={<Inventory />} />
-        <Route path="orders" element={<Orders />} />
-        <Route path="customers" element={<Customers />} />
+        <Route path="income" element={<POS />} />
+        <Route path="expenses" element={<Inventory />} />
+        <Route path="invoices" element={<Orders />} />
+        <Route path="clients" element={<Customers />} />
         <Route path="reports" element={<Reports />} />
+        <Route path="cash-flow" element={<CashFlow />} />
         <Route path="settings" element={<Settings />} />
       </Route>
     </Routes>

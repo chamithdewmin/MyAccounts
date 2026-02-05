@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Helmet } from 'react-helmet';
 import { motion } from 'framer-motion';
-import { Download } from 'lucide-react';
+import { Download, RefreshCw } from 'lucide-react';
 import { BarChart, Bar, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
 import { useFinance } from '@/contexts/FinanceContext';
 import { Button } from '@/components/ui/button';
@@ -45,9 +45,23 @@ const Reports = () => {
   const COLORS = ['#ff6a00', '#ff8533', '#ffa366', '#ffc199', '#ffd9cc'];
 
   const handleExport = () => {
+    const headers = ['Period', 'Income', 'Expenses', 'Profit'];
+    const rows = profitTrend.map((row) => [
+      row.date,
+      row.income,
+      row.expenses,
+      row.profit,
+    ]);
+    const csvContent = [headers.join(','), ...rows.map((r) => r.join(','))].join('\n');
+    const blob = new Blob([csvContent], { type: 'text/csv' });
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'reports.csv';
+    a.click();
     toast({
-      title: 'Export coming soon',
-      description: 'You can already export expenses as CSV from the Expenses page.',
+      title: 'Export successful',
+      description: 'Report data exported to CSV',
     });
   };
 
@@ -75,10 +89,24 @@ const Reports = () => {
               Deep dive into income, expenses, profit, and tax.
             </p>
           </div>
-          <Button onClick={handleExport} variant="outline">
-            <Download className="w-4 h-4 mr-2" />
-            Export Report
-          </Button>
+          <div className="flex gap-3">
+            <Button
+              variant="outline"
+              onClick={() => {
+                toast({
+                  title: 'Refreshed',
+                  description: 'Report data has been refreshed.',
+                });
+              }}
+            >
+              <RefreshCw className="w-4 h-4 mr-2" />
+              Refresh
+            </Button>
+            <Button onClick={handleExport} variant="outline">
+              <Download className="w-4 h-4 mr-2" />
+              Export CSV
+            </Button>
+          </div>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">

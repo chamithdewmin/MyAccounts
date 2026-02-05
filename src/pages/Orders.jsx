@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Helmet } from 'react-helmet';
 import { motion } from 'framer-motion';
-import { Search, Eye, Plus } from 'lucide-react';
+import { Search, Plus, Download, RefreshCw, Pencil, Trash2 } from 'lucide-react';
 import { useFinance } from '@/contexts/FinanceContext';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -18,7 +18,7 @@ const Orders = () => {
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const { toast } = useToast();
 
-  const { invoices, clients, settings, updateInvoiceStatus, addInvoice } = useFinance();
+  const { invoices, clients, settings, updateInvoiceStatus, addInvoice, deleteInvoice } = useFinance();
 
   const [form, setForm] = useState({
     clientId: '',
@@ -186,10 +186,52 @@ const Orders = () => {
               Create and manage invoices, due dates, and payment status.
             </p>
           </div>
-          <Button onClick={() => setIsCreateOpen(true)}>
-            <Plus className="w-4 h-4 mr-2" />
-            Create Invoice
-          </Button>
+          <div className="flex gap-3">
+            <Button
+              variant="outline"
+              onClick={() => {
+                toast({
+                  title: 'Refreshed',
+                  description: 'Invoice data has been refreshed.',
+                });
+              }}
+            >
+              <RefreshCw className="w-4 h-4 mr-2" />
+              Refresh
+            </Button>
+            <Button
+              variant="outline"
+              onClick={() => {
+                const headers = ['Invoice #', 'Client', 'Total', 'Status', 'Payment', 'Date'];
+                const rows = invoices.map((inv) => [
+                  inv.invoiceNumber,
+                  inv.clientName,
+                  inv.total,
+                  inv.status,
+                  inv.paymentMethod,
+                  inv.createdAt,
+                ]);
+                const csvContent = [headers.join(','), ...rows.map((r) => r.join(','))].join('\n');
+                const blob = new Blob([csvContent], { type: 'text/csv' });
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = 'invoices.csv';
+                a.click();
+                toast({
+                  title: 'Export successful',
+                  description: 'Invoices exported to CSV',
+                });
+              }}
+            >
+              <Download className="w-4 h-4 mr-2" />
+              Export CSV
+            </Button>
+            <Button onClick={() => setIsCreateOpen(true)}>
+              <Plus className="w-4 h-4 mr-2" />
+              Create Invoice
+            </Button>
+          </div>
         </div>
 
         <div className="relative">
@@ -223,7 +265,7 @@ const Orders = () => {
                   <th className="px-4 py-3 text-left text-sm font-semibold">Total</th>
                   <th className="px-4 py-3 text-left text-sm font-semibold">Payment</th>
                   <th className="px-4 py-3 text-left text-sm font-semibold">Status</th>
-                  <th className="px-4 py-3 text-left text-sm font-semibold">Actions</th>
+                  <th className="px-4 py-3 text-center text-sm font-semibold uppercase">Actions</th>
                 </tr>
               </thead>
               <tbody>
@@ -253,15 +295,32 @@ const Orders = () => {
                       </span>
                     </td>
                     <td className="px-4 py-3">
-                      <div className="flex items-center gap-2">
+                      <div className="flex items-center justify-center gap-2">
                         <button
+                          type="button"
                           onClick={() => setSelectedOrder(order)}
-                          className="p-2 hover:bg-secondary rounded-lg transition-colors"
+                          className="p-2 hover:bg-secondary rounded-lg transition-colors text-green-500 hover:text-green-400"
+                          title="View / Edit"
                         >
-                          <Eye className="w-4 h-4" />
+                          <Pencil className="w-4 h-4" />
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            if (window.confirm(`Delete invoice ${order.invoiceNumber}?`)) {
+                              deleteInvoice(order.id);
+                              setSelectedOrder(null);
+                              toast({ title: 'Invoice deleted', description: 'Invoice has been removed.' });
+                            }
+                          }}
+                          className="p-2 hover:bg-secondary rounded-lg transition-colors text-red-500 hover:text-red-400"
+                          title="Delete"
+                        >
+                          <Trash2 className="w-4 h-4" />
                         </button>
                         {order.status !== 'paid' && (
                           <button
+                            type="button"
                             onClick={() => updateInvoiceStatus(order.id, 'paid')}
                             className="text-xs px-3 py-1 rounded-full bg-primary text-white hover:bg-primary/90"
                           >

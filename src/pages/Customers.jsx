@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Helmet } from 'react-helmet';
 import { motion } from 'framer-motion';
-import { Search, Plus, Eye } from 'lucide-react';
+import { Search, Plus, Download, RefreshCw, Pencil, Trash2 } from 'lucide-react';
 import { useFinance } from '@/contexts/FinanceContext';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -13,8 +13,9 @@ const Customers = () => {
   const [filteredCustomers, setFilteredCustomers] = useState([]);
   const [searchQuery, setSearchQuery] = useState('');
   const { toast } = useToast();
-  const { clients, addClient } = useFinance();
+  const { clients, addClient, updateClient, deleteClient } = useFinance();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [editingClient, setEditingClient] = useState(null);
   const [form, setForm] = useState({
     name: '',
     email: '',
@@ -54,20 +55,45 @@ const Customers = () => {
       return;
     }
 
-    const client = addClient({
-      name: form.name,
-      email: form.email,
-      phone: form.phone,
-      address: form.address,
-    });
-
-    toast({
-      title: 'Client added',
-      description: `${client.name} has been added to your clients list.`,
-    });
+    if (editingClient) {
+      updateClient(editingClient.id, {
+        name: form.name,
+        email: form.email,
+        phone: form.phone,
+        address: form.address,
+      });
+      toast({ title: 'Client updated', description: `${form.name} has been updated.` });
+      setEditingClient(null);
+    } else {
+      const client = addClient({
+        name: form.name,
+        email: form.email,
+        phone: form.phone,
+        address: form.address,
+      });
+      toast({ title: 'Client added', description: `${client.name} has been added to your clients list.` });
+    }
 
     setForm({ name: '', email: '', phone: '', address: '' });
     setIsDialogOpen(false);
+  };
+
+  const openEdit = (customer) => {
+    setEditingClient(customer);
+    setForm({
+      name: customer.name,
+      email: customer.email || '',
+      phone: customer.phone || '',
+      address: customer.address || '',
+    });
+    setIsDialogOpen(true);
+  };
+
+  const handleDeleteClient = (customer) => {
+    if (window.confirm(`Delete client "${customer.name}"?`)) {
+      deleteClient(customer.id);
+      toast({ title: 'Client deleted', description: 'Client has been removed.' });
+    }
   };
 
   return (
@@ -83,10 +109,52 @@ const Customers = () => {
             <h1 className="text-3xl font-bold">Clients</h1>
             <p className="text-muted-foreground">Store client details, projects, and balances.</p>
           </div>
-          <Button onClick={() => setIsDialogOpen(true)}>
-            <Plus className="w-4 h-4 mr-2" />
-            Add Customer
-          </Button>
+          <div className="flex gap-3">
+            <Button
+              variant="outline"
+              onClick={() => {
+                toast({
+                  title: 'Refreshed',
+                  description: 'Client data has been refreshed.',
+                });
+              }}
+            >
+              <RefreshCw className="w-4 h-4 mr-2" />
+              Refresh
+            </Button>
+            <Button
+              variant="outline"
+              onClick={() => {
+                const headers = ['ID', 'Name', 'Email', 'Phone', 'Address', 'Created At'];
+                const rows = clients.map((c) => [
+                  c.id,
+                  c.name,
+                  c.email,
+                  c.phone,
+                  c.address,
+                  c.createdAt,
+                ]);
+                const csvContent = [headers.join(','), ...rows.map((r) => r.join(','))].join('\n');
+                const blob = new Blob([csvContent], { type: 'text/csv' });
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = 'clients.csv';
+                a.click();
+                toast({
+                  title: 'Export successful',
+                  description: 'Clients exported to CSV',
+                });
+              }}
+            >
+              <Download className="w-4 h-4 mr-2" />
+              Export CSV
+            </Button>
+            <Button onClick={() => setIsDialogOpen(true)}>
+              <Plus className="w-4 h-4 mr-2" />
+              Add Customer
+            </Button>
+          </div>
         </div>
 
         <div className="relative">
@@ -99,46 +167,73 @@ const Customers = () => {
           />
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {filteredCustomers.map((customer, index) => (
-            <motion.div
-              key={customer.id}
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: index * 0.05 }}
-              whileHover={{ y: -4 }}
-              className="bg-card rounded-lg p-6 border border-secondary"
-            >
-              <div className="flex items-start justify-between mb-4">
-                <div className="w-12 h-12 bg-primary rounded-full flex items-center justify-center text-white font-bold text-xl">
-                  {customer.name.charAt(0)}
-                </div>
-                <button className="p-2 hover:bg-secondary rounded-lg transition-colors">
-                  <Eye className="w-4 h-4" />
-                </button>
-              </div>
-              <h3 className="font-bold text-lg mb-1">{customer.name}</h3>
-              <p className="text-sm text-muted-foreground mb-1">{customer.email}</p>
-              <p className="text-sm text-muted-foreground mb-3">{customer.phone}</p>
-              <div className="pt-3 border-t border-secondary">
-                <p className="text-xs text-muted-foreground">
-                  Purchases: {customer.purchaseHistory?.length || 0}
-                </p>
-              </div>
-            </motion.div>
-          ))}
+        <div className="bg-card rounded-lg border border-secondary overflow-hidden">
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead className="bg-secondary">
+                <tr>
+                  <th className="px-4 py-3 text-left text-sm font-semibold">Name</th>
+                  <th className="px-4 py-3 text-left text-sm font-semibold">Email</th>
+                  <th className="px-4 py-3 text-left text-sm font-semibold">Phone</th>
+                  <th className="px-4 py-3 text-left text-sm font-semibold">Address</th>
+                  <th className="px-4 py-3 text-center text-sm font-semibold uppercase">Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {filteredCustomers.map((customer, index) => (
+                  <motion.tr
+                    key={customer.id}
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    transition={{ delay: index * 0.02 }}
+                    className="border-b border-secondary hover:bg-secondary/50 transition-colors"
+                  >
+                    <td className="px-4 py-3 text-sm font-medium">{customer.name}</td>
+                    <td className="px-4 py-3 text-sm text-muted-foreground">{customer.email || '—'}</td>
+                    <td className="px-4 py-3 text-sm text-muted-foreground">{customer.phone || '—'}</td>
+                    <td className="px-4 py-3 text-sm text-muted-foreground">{customer.address || '—'}</td>
+                    <td className="px-4 py-3">
+                      <div className="flex items-center justify-center gap-2">
+                        <button
+                          type="button"
+                          onClick={() => openEdit(customer)}
+                          className="p-2 hover:bg-secondary rounded-lg transition-colors text-green-500 hover:text-green-400"
+                          title="Edit"
+                        >
+                          <Pencil className="w-4 h-4" />
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handleDeleteClient(customer)}
+                          className="p-2 hover:bg-secondary rounded-lg transition-colors text-red-500 hover:text-red-400"
+                          title="Delete"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </div>
+                    </td>
+                  </motion.tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+          {filteredCustomers.length === 0 && (
+            <div className="text-center py-12">
+              <p className="text-muted-foreground">No clients found</p>
+            </div>
+          )}
         </div>
 
-        {filteredCustomers.length === 0 && (
-          <div className="text-center py-12">
-            <p className="text-muted-foreground">No customers found</p>
-          </div>
-        )}
-
-        <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+        <Dialog
+          open={isDialogOpen}
+          onOpenChange={(open) => {
+            setIsDialogOpen(open);
+            if (!open) setEditingClient(null);
+          }}
+        >
           <DialogContent>
             <DialogHeader>
-              <DialogTitle>Add New Client</DialogTitle>
+              <DialogTitle>{editingClient ? 'Edit Client' : 'Add New Client'}</DialogTitle>
             </DialogHeader>
             <form onSubmit={handleSubmit} className="space-y-4">
               <div className="space-y-2">
@@ -184,7 +279,7 @@ const Customers = () => {
                   Cancel
                 </Button>
                 <Button type="submit">
-                  Save Client
+                  {editingClient ? 'Update Client' : 'Save Client'}
                 </Button>
               </div>
             </form>

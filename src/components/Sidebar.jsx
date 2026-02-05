@@ -8,6 +8,7 @@ import {
   FileText,
   Users,
   BarChart3,
+  TrendingUp,
   Settings,
   X,
 } from 'lucide-react';
@@ -15,11 +16,12 @@ import { cn } from '@/lib/utils';
 
 const navItems = [
   { to: '/dashboard', icon: LayoutDashboard, label: 'Dashboard' },
-  { to: '/pos', icon: Wallet, label: 'Income' },
-  { to: '/inventory', icon: Receipt, label: 'Expenses' },
-  { to: '/orders', icon: FileText, label: 'Invoices' },
-  { to: '/customers', icon: Users, label: 'Clients' },
+  { to: '/income', icon: Wallet, label: 'Income' },
+  { to: '/expenses', icon: Receipt, label: 'Expenses' },
+  { to: '/invoices', icon: FileText, label: 'Invoices' },
+  { to: '/clients', icon: Users, label: 'Clients' },
   { to: '/reports', icon: BarChart3, label: 'Reports & Analytics' },
+  { to: '/cash-flow', icon: TrendingUp, label: 'Cash Flow' },
   { to: '/settings', icon: Settings, label: 'Settings' },
 ];
 

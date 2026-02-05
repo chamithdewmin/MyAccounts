@@ -1,123 +1,397 @@
-import React, { useState, useEffect } from 'react';
+import React, { useMemo, useState } from 'react';
 import { Helmet } from 'react-helmet';
 import { motion } from 'framer-motion';
-import { getStorageData } from '@/utils/storage';
-import ProductCard from '@/components/ProductCard';
-import FilterBar from '@/components/FilterBar';
-import ProductModal from '@/components/ProductModal';
+import { Plus, Search, DollarSign, Wallet, CreditCard } from 'lucide-react';
+import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
+import { useToast } from '@/components/ui/use-toast';
+import { useFinance } from '@/contexts/FinanceContext';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Label } from '@/components/ui/label';
 
 const POS = () => {
-  const [cars, setCars] = useState([]);
-  const [filteredCars, setFilteredCars] = useState([]);
-  const [selectedCar, setSelectedCar] = useState(null);
-  const [filters, setFilters] = useState({
-    search: '',
-    colors: [],
-    priceRange: [0, 100000],
-    yearRange: [2015, 2024],
-    make: '',
-    sortBy: 'latest',
+  const { incomes, clients, addIncome, settings } = useFinance();
+  const { toast } = useToast();
+
+  const [form, setForm] = useState({
+    clientId: '',
+    clientName: '',
+    serviceType: '',
+    paymentMethod: 'cash',
+    amount: '',
+    date: '',
+    notes: '',
   });
 
-  useEffect(() => {
-    const loadedCars = getStorageData('cars', []);
-    setCars(loadedCars);
-    setFilteredCars(loadedCars);
-  }, []);
+  const [filters, setFilters] = useState({
+    search: '',
+    period: 'month', // month | year | all
+    paymentMethod: 'all',
+  });
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
 
-  useEffect(() => {
-    let result = [...cars];
+  const handleChange = (field, value) => {
+    setForm((prev) => ({ ...prev, [field]: value }));
+  };
 
-    // Search filter
-    if (filters.search) {
-      const searchLower = filters.search.toLowerCase();
-      result = result.filter(car =>
-        car.make.toLowerCase().includes(searchLower) ||
-        car.model.toLowerCase().includes(searchLower) ||
-        car.vin.toLowerCase().includes(searchLower)
-      );
+  const handleFilterChange = (field, value) => {
+    setFilters((prev) => ({ ...prev, [field]: value }));
+  };
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    if (!form.amount) {
+      toast({
+        title: 'Amount is required',
+        description: 'Please enter an income amount.',
+      });
+      return;
     }
 
-    // Color filter
-    if (filters.colors.length > 0) {
-      result = result.filter(car =>
-        car.colors.some(color => filters.colors.includes(color))
-      );
-    }
+    const selectedClient =
+      clients.find((c) => c.id === form.clientId) || null;
 
-    // Price range filter
-    result = result.filter(car =>
-      car.price >= filters.priceRange[0] && car.price <= filters.priceRange[1]
-    );
+    addIncome({
+      clientId: selectedClient?.id || null,
+      clientName: selectedClient?.name || form.clientName,
+      serviceType: form.serviceType,
+      paymentMethod: form.paymentMethod,
+      amount: Number(form.amount),
+      date: form.date || new Date().toISOString(),
+      notes: form.notes,
+    });
 
-    // Year range filter
-    result = result.filter(car =>
-      car.year >= filters.yearRange[0] && car.year <= filters.yearRange[1]
-    );
+    toast({
+      title: 'Income added',
+      description: 'New income record has been saved.',
+    });
 
-    // Make filter
-    if (filters.make) {
-      result = result.filter(car => car.make === filters.make);
-    }
+    setForm({
+      clientId: '',
+      clientName: '',
+      serviceType: '',
+      paymentMethod: 'cash',
+      amount: '',
+      date: '',
+      notes: '',
+    });
+  };
 
-    // Sorting
-    switch (filters.sortBy) {
-      case 'price-low':
-        result.sort((a, b) => a.price - b.price);
-        break;
-      case 'price-high':
-        result.sort((a, b) => b.price - a.price);
-        break;
-      case 'latest':
-        result.sort((a, b) => b.year - a.year);
-        break;
-      default:
-        break;
-    }
+  const filteredIncomes = useMemo(() => {
+    const now = new Date();
+    const thisMonth = now.getMonth();
+    const thisYear = now.getFullYear();
 
-    setFilteredCars(result);
-  }, [filters, cars]);
+    return incomes.filter((income) => {
+      const d = new Date(income.date);
+      if (Number.isNaN(d.getTime())) return false;
+
+      if (filters.period === 'month') {
+        if (d.getMonth() !== thisMonth || d.getFullYear() !== thisYear) return false;
+      } else if (filters.period === 'year') {
+        if (d.getFullYear() !== thisYear) return false;
+      }
+
+      if (filters.paymentMethod !== 'all' && income.paymentMethod !== filters.paymentMethod) {
+        return false;
+      }
+
+      if (filters.search) {
+        const q = filters.search.toLowerCase();
+        const haystack = `${income.clientName} ${income.serviceType}`.toLowerCase();
+        if (!haystack.includes(q)) return false;
+      }
+
+      return true;
+    });
+  }, [incomes, filters]);
+
+  const totalFilteredIncome = useMemo(
+    () => filteredIncomes.reduce((sum, i) => sum + i.amount, 0),
+    [filteredIncomes],
+  );
+
+  const summary = useMemo(() => {
+    const now = new Date();
+    const thisMonth = now.getMonth();
+    const thisYear = now.getFullYear();
+
+    let total = 0;
+    let cash = 0;
+    let nonCash = 0;
+
+    incomes.forEach((inc) => {
+      const d = new Date(inc.date);
+      if (Number.isNaN(d.getTime())) return;
+      if (d.getMonth() !== thisMonth || d.getFullYear() !== thisYear) return;
+
+      total += inc.amount;
+      if (inc.paymentMethod === 'cash') cash += inc.amount;
+      else nonCash += inc.amount;
+    });
+
+    return { total, cash, nonCash };
+  }, [incomes]);
 
   return (
     <>
       <Helmet>
-        <title>POS / Catalog - AutoPOS</title>
-        <meta name="description" content="Browse and purchase vehicles from our catalog" />
+        <title>Income - MyAccounts</title>
+        <meta name="description" content="Manage all money coming into your business" />
       </Helmet>
 
       <div className="space-y-6">
-        <div>
-          <h1 className="text-3xl font-bold">POS / Catalog</h1>
-          <p className="text-muted-foreground">Browse and add vehicles to cart</p>
-        </div>
-
-        <FilterBar filters={filters} setFilters={setFilters} cars={cars} />
-
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-          {filteredCars.map((car, index) => (
-            <motion.div
-              key={car.id}
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: index * 0.05 }}
-            >
-              <ProductCard car={car} onQuickView={() => setSelectedCar(car)} />
-            </motion.div>
-          ))}
-        </div>
-
-        {filteredCars.length === 0 && (
-          <div className="text-center py-12">
-            <p className="text-muted-foreground">No vehicles found matching your filters</p>
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-3xl font-bold">Income Management</h1>
+            <p className="text-muted-foreground">
+              Track client payments, services, and cash inflow.
+            </p>
           </div>
-        )}
+          <Button onClick={() => setIsDialogOpen(true)}>
+            <Plus className="w-4 h-4 mr-2" />
+            Add Income
+          </Button>
+        </div>
+
+        {/* Summary cards */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="bg-card rounded-lg border border-secondary p-4 flex items-center justify-between"
+          >
+            <div>
+              <p className="text-xs uppercase tracking-wide text-muted-foreground">
+                Total Income
+              </p>
+              <p className="text-2xl font-bold">
+                {settings.currency} {summary.total.toLocaleString()}
+              </p>
+              <p className="text-xs text-muted-foreground">This month</p>
+            </div>
+            <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
+              <DollarSign className="w-5 h-5 text-primary" />
+            </div>
+          </motion.div>
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.05 }}
+            className="bg-card rounded-lg border border-secondary p-4 flex items-center justify-between"
+          >
+            <div>
+              <p className="text-xs uppercase tracking-wide text-muted-foreground">
+                Cash Income
+              </p>
+              <p className="text-2xl font-bold">
+                {settings.currency} {summary.cash.toLocaleString()}
+              </p>
+              <p className="text-xs text-muted-foreground">Payments received in cash</p>
+            </div>
+            <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
+              <Wallet className="w-5 h-5 text-primary" />
+            </div>
+          </motion.div>
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.1 }}
+            className="bg-card rounded-lg border border-secondary p-4 flex items-center justify-between"
+          >
+            <div>
+              <p className="text-xs uppercase tracking-wide text-muted-foreground">
+                Non‑cash Income
+              </p>
+              <p className="text-2xl font-bold">
+                {settings.currency} {summary.nonCash.toLocaleString()}
+              </p>
+              <p className="text-xs text-muted-foreground">Bank & online payments</p>
+            </div>
+            <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
+              <CreditCard className="w-5 h-5 text-primary" />
+            </div>
+          </motion.div>
+        </div>
+
+        {/* Filters & list */}
+        <div className="space-y-4">
+          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+            <div className="relative md:w-64">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+              <Input
+                placeholder="Filter by client or service..."
+                className="pl-10"
+                value={filters.search}
+                onChange={(e) => handleFilterChange('search', e.target.value)}
+              />
+            </div>
+            <div className="flex flex-wrap gap-3">
+              <select
+                className="px-3 py-2 bg-card border border-secondary rounded-lg text-sm"
+                value={filters.period}
+                onChange={(e) => handleFilterChange('period', e.target.value)}
+              >
+                <option value="month">This month</option>
+                <option value="year">This year</option>
+                <option value="all">All time</option>
+              </select>
+              <select
+                className="px-3 py-2 bg-card border border-secondary rounded-lg text-sm"
+                value={filters.paymentMethod}
+                onChange={(e) => handleFilterChange('paymentMethod', e.target.value)}
+              >
+                <option value="all">All payment methods</option>
+                <option value="cash">Cash</option>
+                <option value="bank">Bank</option>
+                <option value="online">Online</option>
+              </select>
+            </div>
+          </div>
+
+          <div className="bg-card rounded-lg border border-secondary overflow-hidden">
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead className="bg-secondary">
+                  <tr>
+                    <th className="px-4 py-3 text-left text-sm font-semibold">Date</th>
+                    <th className="px-4 py-3 text-left text-sm font-semibold">Client</th>
+                    <th className="px-4 py-3 text-left text-sm font-semibold">Service</th>
+                    <th className="px-4 py-3 text-left text-sm font-semibold">Payment</th>
+                    <th className="px-4 py-3 text-right text-sm font-semibold">Amount</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {filteredIncomes.map((income, index) => (
+                    <motion.tr
+                      key={income.id}
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      transition={{ delay: index * 0.02 }}
+                      className="border-b border-secondary hover:bg-secondary/50 transition-colors"
+                    >
+                      <td className="px-4 py-3 text-sm text-muted-foreground">
+                        {new Date(income.date).toLocaleDateString('en-US', {
+                          year: 'numeric',
+                          month: 'short',
+                          day: 'numeric',
+                        })}
+                      </td>
+                      <td className="px-4 py-3 text-sm">{income.clientName || '—'}</td>
+                      <td className="px-4 py-3 text-sm">{income.serviceType || '—'}</td>
+                      <td className="px-4 py-3 text-sm capitalize">{income.paymentMethod}</td>
+                      <td className="px-4 py-3 text-sm font-semibold text-right">
+                        {settings.currency} {income.amount.toLocaleString()}
+                      </td>
+                    </motion.tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+            {filteredIncomes.length === 0 && (
+              <div className="text-center py-8 text-muted-foreground text-sm">
+                No income records found for the selected filters.
+              </div>
+            )}
+          </div>
+        </div>
       </div>
 
-      <ProductModal
-        car={selectedCar}
-        isOpen={!!selectedCar}
-        onClose={() => setSelectedCar(null)}
-      />
+      {/* Add income dialog */}
+      <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+        <DialogContent className="max-w-xl">
+          <DialogHeader>
+            <DialogTitle>Add Income</DialogTitle>
+          </DialogHeader>
+          <form
+            onSubmit={(e) => {
+              handleSubmit(e);
+              setIsDialogOpen(false);
+            }}
+            className="space-y-4"
+          >
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label className="text-sm font-medium">Client</Label>
+                <select
+                  className="w-full px-3 py-2 bg-secondary border border-secondary rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+                  value={form.clientId}
+                  onChange={(e) => handleChange('clientId', e.target.value)}
+                >
+                  <option value="">Select existing client (optional)</option>
+                  {clients.map((c) => (
+                    <option key={c.id} value={c.id}>
+                      {c.name}
+                    </option>
+                  ))}
+                </select>
+                <Input
+                  placeholder="Or type client name manually"
+                  value={form.clientName}
+                  onChange={(e) => handleChange('clientName', e.target.value)}
+                  className="mt-2"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label className="text-sm font-medium">Service Type</Label>
+                <Input
+                  placeholder="e.g. Web development, Design, Software"
+                  value={form.serviceType}
+                  onChange={(e) => handleChange('serviceType', e.target.value)}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label className="text-sm font-medium">Amount ({settings.currency})</Label>
+                <Input
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  value={form.amount}
+                  onChange={(e) => handleChange('amount', e.target.value)}
+                  required
+                />
+              </div>
+              <div className="space-y-2">
+                <Label className="text-sm font-medium">Payment Method</Label>
+                <select
+                  className="w-full px-3 py-2 bg-secondary border border-secondary rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+                  value={form.paymentMethod}
+                  onChange={(e) => handleChange('paymentMethod', e.target.value)}
+                >
+                  <option value="cash">Cash</option>
+                  <option value="bank">Bank Transfer</option>
+                  <option value="online">Online Payment</option>
+                </select>
+              </div>
+              <div className="space-y-2">
+                <Label className="text-sm font-medium">Date</Label>
+                <Input
+                  type="date"
+                  value={form.date}
+                  onChange={(e) => handleChange('date', e.target.value)}
+                />
+              </div>
+              <div className="space-y-2 md:col-span-2">
+                <Label className="text-sm font-medium">Notes</Label>
+                <textarea
+                  className="w-full px-3 py-2 bg-secondary border border-secondary rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary min-h-[60px]"
+                  placeholder="Optional notes about this payment"
+                  value={form.notes}
+                  onChange={(e) => handleChange('notes', e.target.value)}
+                />
+              </div>
+            </div>
+            <div className="flex justify-end gap-2">
+              <Button type="button" variant="outline" onClick={() => setIsDialogOpen(false)}>
+                Cancel
+              </Button>
+              <Button type="submit">
+                Save Income
+              </Button>
+            </div>
+          </form>
+        </DialogContent>
+      </Dialog>
     </>
   );
 };

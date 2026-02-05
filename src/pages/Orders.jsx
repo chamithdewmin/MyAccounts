@@ -1,9 +1,12 @@
-import React, { useState, useEffect } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { Helmet } from 'react-helmet';
 import { motion } from 'framer-motion';
-import { Search, Eye } from 'lucide-react';
-import { getStorageData } from '@/utils/storage';
+import { Search, Eye, Plus } from 'lucide-react';
+import { useFinance } from '@/contexts/FinanceContext';
 import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
+import { Label } from '@/components/ui/label';
+import { useToast } from '@/components/ui/use-toast';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import InvoiceTemplate from '@/components/InvoiceTemplate';
 
@@ -12,18 +15,137 @@ const Orders = () => {
   const [filteredOrders, setFilteredOrders] = useState([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedOrder, setSelectedOrder] = useState(null);
+  const [isCreateOpen, setIsCreateOpen] = useState(false);
+  const { toast } = useToast();
+
+  const { invoices, clients, settings, updateInvoiceStatus, addInvoice } = useFinance();
+
+  const [form, setForm] = useState({
+    clientId: '',
+    clientName: '',
+    clientEmail: '',
+    clientPhone: '',
+    paymentMethod: 'bank',
+    dueDate: '',
+    notes: '',
+    items: [
+      { description: '', price: '', quantity: 1 },
+    ],
+  });
+
+  const handleChange = (field, value) => {
+    setForm((prev) => ({ ...prev, [field]: value }));
+  };
+
+  const handleItemChange = (index, field, value) => {
+    setForm((prev) => {
+      const nextItems = prev.items.map((item, i) =>
+        i === index ? { ...item, [field]: value } : item,
+      );
+      return { ...prev, items: nextItems };
+    });
+  };
+
+  const addItemRow = () => {
+    setForm((prev) => ({
+      ...prev,
+      items: [...prev.items, { description: '', price: '', quantity: 1 }],
+    }));
+  };
+
+  const removeItemRow = (index) => {
+    setForm((prev) => ({
+      ...prev,
+      items: prev.items.filter((_, i) => i !== index),
+    }));
+  };
+
+  const subtotal = useMemo(
+    () =>
+      form.items.reduce(
+        (sum, item) =>
+          sum + (Number(item.price) || 0) * (Number(item.quantity) || 1),
+        0,
+      ),
+    [form.items],
+  );
+
+  const handleCreateInvoice = (e) => {
+    e.preventDefault();
+
+    if (!form.clientId && !form.clientName.trim()) {
+      toast({
+        title: 'Client name is required',
+        description: 'Select a client or enter a name.',
+      });
+      return;
+    }
+
+    const selectedClient =
+      clients.find((c) => c.id === form.clientId) || null;
+
+    const normalizedItems = form.items
+      .filter((item) => item.description.trim() && Number(item.price) > 0)
+      .map((item) => ({
+        description: item.description.trim(),
+        price: Number(item.price) || 0,
+        quantity: Number(item.quantity) || 1,
+      }));
+
+    if (normalizedItems.length === 0) {
+      toast({
+        title: 'Add at least one item',
+        description: 'Please add at least one service or line item.',
+      });
+      return;
+    }
+
+    const dueDateIso = form.dueDate
+      ? new Date(`${form.dueDate}T00:00:00`).toISOString()
+      : new Date().toISOString();
+
+    const invoice = addInvoice({
+      clientId: selectedClient?.id || null,
+      clientName: selectedClient?.name || form.clientName,
+      clientEmail: selectedClient?.email || form.clientEmail,
+      clientPhone: selectedClient?.phone || form.clientPhone,
+      items: normalizedItems,
+      subtotal,
+      paymentMethod: form.paymentMethod,
+      dueDate: dueDateIso,
+      notes: form.notes,
+    });
+
+    toast({
+      title: 'Invoice created',
+      description: `Invoice ${invoice.invoiceNumber} has been created.`,
+    });
+
+    setForm({
+      clientId: '',
+      clientName: '',
+      clientEmail: '',
+      clientPhone: '',
+      paymentMethod: 'bank',
+      dueDate: '',
+      notes: '',
+      items: [
+        { description: '', price: '', quantity: 1 },
+      ],
+    });
+    setIsCreateOpen(false);
+  };
 
   useEffect(() => {
-    const loadedOrders = getStorageData('orders', []);
-    setOrders(loadedOrders);
-    setFilteredOrders(loadedOrders);
-  }, []);
+    setOrders(invoices);
+    setFilteredOrders(invoices);
+  }, [invoices]);
 
   useEffect(() => {
     if (searchQuery) {
       const filtered = orders.filter(order =>
-        order.id.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        order.customerName.toLowerCase().includes(searchQuery.toLowerCase())
+        order.invoiceNumber.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        order.clientName.toLowerCase().includes(searchQuery.toLowerCase())
       );
       setFilteredOrders(filtered);
     } else {
@@ -41,27 +163,52 @@ const Orders = () => {
     });
   };
 
+  const totalPending = useMemo(
+    () =>
+      filteredOrders
+        .filter((o) => o.status !== 'paid')
+        .reduce((sum, o) => sum + (Number(o.total) || 0), 0),
+    [filteredOrders],
+  );
+
   return (
     <>
       <Helmet>
-        <title>Orders - AutoPOS</title>
-        <meta name="description" content="View and manage customer orders" />
+        <title>Invoices - MyAccounts</title>
+        <meta name="description" content="Create, track, and manage invoices" />
       </Helmet>
 
       <div className="space-y-6">
-        <div>
-          <h1 className="text-3xl font-bold">Orders</h1>
-          <p className="text-muted-foreground">View and manage customer orders</p>
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-3xl font-bold">Invoices</h1>
+            <p className="text-muted-foreground">
+              Create and manage invoices, due dates, and payment status.
+            </p>
+          </div>
+          <Button onClick={() => setIsCreateOpen(true)}>
+            <Plus className="w-4 h-4 mr-2" />
+            Create Invoice
+          </Button>
         </div>
 
         <div className="relative">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
           <Input
-            placeholder="Search by order ID or customer name..."
+            placeholder="Search by invoice number or client name..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             className="pl-10"
           />
+        </div>
+
+        <div className="flex items-center justify-between text-sm text-muted-foreground">
+          <span>Total invoices: {filteredOrders.length}</span>
+          <span>
+            Pending payments: <span className="font-semibold text-primary">
+              {settings.currency} {totalPending.toLocaleString()}
+            </span>
+          </span>
         </div>
 
         <div className="bg-card rounded-lg border border-secondary overflow-hidden">
@@ -69,8 +216,8 @@ const Orders = () => {
             <table className="w-full">
               <thead className="bg-secondary">
                 <tr>
-                  <th className="px-4 py-3 text-left text-sm font-semibold">Order ID</th>
-                  <th className="px-4 py-3 text-left text-sm font-semibold">Customer</th>
+                  <th className="px-4 py-3 text-left text-sm font-semibold">Invoice #</th>
+                  <th className="px-4 py-3 text-left text-sm font-semibold">Client</th>
                   <th className="px-4 py-3 text-left text-sm font-semibold">Date</th>
                   <th className="px-4 py-3 text-left text-sm font-semibold">Items</th>
                   <th className="px-4 py-3 text-left text-sm font-semibold">Total</th>
@@ -88,26 +235,40 @@ const Orders = () => {
                     transition={{ delay: index * 0.05 }}
                     className="border-b border-secondary hover:bg-secondary/50 transition-colors"
                   >
-                    <td className="px-4 py-3 text-sm font-mono">{order.id}</td>
-                    <td className="px-4 py-3 text-sm">{order.customerName}</td>
-                    <td className="px-4 py-3 text-sm text-muted-foreground">{formatDate(order.date)}</td>
+                    <td className="px-4 py-3 text-sm font-mono">{order.invoiceNumber}</td>
+                    <td className="px-4 py-3 text-sm">{order.clientName}</td>
+                    <td className="px-4 py-3 text-sm text-muted-foreground">{formatDate(order.createdAt)}</td>
                     <td className="px-4 py-3 text-sm">{order.items.length}</td>
-                    <td className="px-4 py-3 text-sm font-semibold text-primary">${order.total.toLocaleString()}</td>
+                    <td className="px-4 py-3 text-sm font-semibold text-primary">
+                      {settings.currency} {Number(order.total || 0).toLocaleString()}
+                    </td>
                     <td className="px-4 py-3 text-sm capitalize">{order.paymentMethod}</td>
                     <td className="px-4 py-3">
                       <span className={`px-2 py-1 rounded-full text-xs font-semibold ${
-                        order.status === 'Paid' ? 'bg-green-500/20 text-green-500' : 'bg-yellow-500/20 text-yellow-500'
+                        order.status === 'paid'
+                          ? 'bg-green-500/20 text-green-500'
+                          : 'bg-yellow-500/20 text-yellow-500'
                       }`}>
-                        {order.status}
+                        {order.status === 'paid' ? 'Paid' : 'Unpaid'}
                       </span>
                     </td>
                     <td className="px-4 py-3">
-                      <button
-                        onClick={() => setSelectedOrder(order)}
-                        className="p-2 hover:bg-secondary rounded-lg transition-colors"
-                      >
-                        <Eye className="w-4 h-4" />
-                      </button>
+                      <div className="flex items-center gap-2">
+                        <button
+                          onClick={() => setSelectedOrder(order)}
+                          className="p-2 hover:bg-secondary rounded-lg transition-colors"
+                        >
+                          <Eye className="w-4 h-4" />
+                        </button>
+                        {order.status !== 'paid' && (
+                          <button
+                            onClick={() => updateInvoiceStatus(order.id, 'paid')}
+                            className="text-xs px-3 py-1 rounded-full bg-primary text-white hover:bg-primary/90"
+                          >
+                            Mark Paid
+                          </button>
+                        )}
+                      </div>
                     </td>
                   </motion.tr>
                 ))}
@@ -123,12 +284,155 @@ const Orders = () => {
         )}
       </div>
 
+      {/* View invoice */}
       <Dialog open={!!selectedOrder} onOpenChange={() => setSelectedOrder(null)}>
         <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>Order Details</DialogTitle>
+            <DialogTitle>Invoice Details</DialogTitle>
           </DialogHeader>
-          {selectedOrder && <InvoiceTemplate order={selectedOrder} />}
+          {selectedOrder && <InvoiceTemplate invoice={selectedOrder} currency={settings.currency} />}
+        </DialogContent>
+      </Dialog>
+
+      {/* Create invoice */}
+      <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Create Invoice</DialogTitle>
+          </DialogHeader>
+          <form onSubmit={handleCreateInvoice} className="space-y-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label className="text-sm font-medium">Client</Label>
+                <select
+                  className="w-full px-3 py-2 bg-secondary border border-secondary rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+                  value={form.clientId}
+                  onChange={(e) => handleChange('clientId', e.target.value)}
+                >
+                  <option value="">Select existing client (optional)</option>
+                  {clients.map((c) => (
+                    <option key={c.id} value={c.id}>
+                      {c.name}
+                    </option>
+                  ))}
+                </select>
+                <Input
+                  placeholder="Or type client name"
+                  value={form.clientName}
+                  onChange={(e) => handleChange('clientName', e.target.value)}
+                  className="mt-2"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label className="text-sm font-medium">Payment Method</Label>
+                <select
+                  className="w-full px-3 py-2 bg-secondary border border-secondary rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+                  value={form.paymentMethod}
+                  onChange={(e) => handleChange('paymentMethod', e.target.value)}
+                >
+                  <option value="bank">Bank Transfer</option>
+                  <option value="cash">Cash</option>
+                  <option value="online">Online</option>
+                </select>
+                <div className="space-y-2 mt-2">
+                  <Label className="text-sm font-medium">Due Date</Label>
+                  <Input
+                    type="date"
+                    value={form.dueDate}
+                    onChange={(e) => handleChange('dueDate', e.target.value)}
+                  />
+                </div>
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label className="text-sm font-medium">Items</Label>
+              <div className="space-y-3">
+                {form.items.map((item, index) => (
+                  <div
+                    key={index}
+                    className="grid grid-cols-1 md:grid-cols-[2fr,1fr,1fr,auto] gap-2 items-center"
+                  >
+                    <Input
+                      placeholder="Description"
+                      value={item.description}
+                      onChange={(e) =>
+                        handleItemChange(index, 'description', e.target.value)
+                      }
+                    />
+                    <Input
+                      type="number"
+                      min="0"
+                      step="0.01"
+                      placeholder="Price"
+                      value={item.price}
+                      onChange={(e) =>
+                        handleItemChange(index, 'price', e.target.value)
+                      }
+                    />
+                    <Input
+                      type="number"
+                      min="1"
+                      step="1"
+                      placeholder="Qty"
+                      value={item.quantity}
+                      onChange={(e) =>
+                        handleItemChange(index, 'quantity', e.target.value)
+                      }
+                    />
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={() => removeItemRow(index)}
+                      disabled={form.items.length === 1}
+                    >
+                      Remove
+                    </Button>
+                  </div>
+                ))}
+              </div>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                className="mt-2"
+                onClick={addItemRow}
+              >
+                Add Item
+              </Button>
+            </div>
+
+            <div className="space-y-2">
+              <Label className="text-sm font-medium">Notes</Label>
+              <textarea
+                className="w-full px-3 py-2 bg-secondary border border-secondary rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary min-h-[60px]"
+                placeholder="Optional notes for this invoice"
+                value={form.notes}
+                onChange={(e) => handleChange('notes', e.target.value)}
+              />
+            </div>
+
+            <div className="flex items-center justify-between pt-2">
+              <div className="text-sm text-muted-foreground">
+                Subtotal:{' '}
+                <span className="font-semibold text-primary">
+                  {settings.currency} {subtotal.toLocaleString()}
+                </span>
+              </div>
+              <div className="flex gap-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => setIsCreateOpen(false)}
+                >
+                  Cancel
+                </Button>
+                <Button type="submit">
+                  Save Invoice
+                </Button>
+              </div>
+            </div>
+          </form>
         </DialogContent>
       </Dialog>
     </>

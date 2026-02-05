@@ -3,6 +3,62 @@
 @tailwind utilities;
 
 @layer base {
+  :root {
+    /* Light theme: clean white, soft grays, orange accent */
+    --background: 0 0% 100%;
+    --foreground: 222 47% 11%;
+
+    --card: 0 0% 100%;
+    --card-foreground: 222 47% 11%;
+
+    --primary: 20 100% 50%; /* warm orange */
+    --primary-foreground: 0 0% 100%;
+
+    --secondary: 210 40% 96%;
+    --secondary-foreground: 222 47% 11%;
+
+    --muted: 210 40% 96%;
+    --muted-foreground: 215 15% 35%;
+
+    --accent: 20 100% 50%;
+    --accent-foreground: 0 0% 100%;
+
+    --destructive: 0 72% 51%;
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 214 32% 91%;
+    --input: 214 32% 91%;
+    --ring: 222 84% 56%;
+  }
+
+  .dark {
+    /* Dark theme approximating original palette */
+    --background: 210 21% 7%;
+    --foreground: 210 40% 96%;
+
+    --card: 216 20% 8%;
+    --card-foreground: 210 40% 96%;
+
+    --primary: 20 100% 50%;
+    --primary-foreground: 0 0% 100%;
+
+    --secondary: 210 25% 18%;
+    --secondary-foreground: 210 30% 80%;
+
+    --muted: 210 25% 18%;
+    --muted-foreground: 210 30% 80%;
+
+    --accent: 20 100% 50%;
+    --accent-foreground: 0 0% 100%;
+
+    --destructive: 0 72% 51%;
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 216 19% 15%;
+    --input: 216 19% 15%;
+    --ring: 222 84% 56%;
+  }
+
   * {
     @apply border-border;
   }
@@ -19,7 +75,7 @@
 @layer utilities {
   .glass-effect {
     backdrop-filter: blur(10px);
-    background: rgba(17, 19, 22, 0.8);
+    background-color: hsl(var(--card) / 0.9);
   }
 }
 

@@ -2,7 +2,6 @@ import React, { useState } from 'react';
 import { Outlet } from 'react-router-dom';
 import Sidebar from '@/components/Sidebar';
 import Topbar from '@/components/Topbar';
-import CartDrawer from '@/components/CartDrawer';
 
 const Layout = () => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -16,7 +15,6 @@ const Layout = () => {
           <Outlet />
         </main>
       </div>
-      <CartDrawer />
     </div>
   );
 };

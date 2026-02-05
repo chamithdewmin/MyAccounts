@@ -2,22 +2,30 @@ import React, { useState, useEffect } from 'react';
 import { Helmet } from 'react-helmet';
 import { motion } from 'framer-motion';
 import { Search, Plus, Eye } from 'lucide-react';
-import { getStorageData, setStorageData } from '@/utils/storage';
+import { useFinance } from '@/contexts/FinanceContext';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/components/ui/use-toast';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 
 const Customers = () => {
   const [customers, setCustomers] = useState([]);
   const [filteredCustomers, setFilteredCustomers] = useState([]);
   const [searchQuery, setSearchQuery] = useState('');
   const { toast } = useToast();
+  const { clients, addClient } = useFinance();
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [form, setForm] = useState({
+    name: '',
+    email: '',
+    phone: '',
+    address: '',
+  });
 
   useEffect(() => {
-    const loadedCustomers = getStorageData('customers', []);
-    setCustomers(loadedCustomers);
-    setFilteredCustomers(loadedCustomers);
-  }, []);
+    setCustomers(clients);
+    setFilteredCustomers(clients);
+  }, [clients]);
 
   useEffect(() => {
     if (searchQuery) {
@@ -32,27 +40,50 @@ const Customers = () => {
     }
   }, [searchQuery, customers]);
 
-  const handleAddCustomer = () => {
-    toast({
-      title: "Feature coming soon",
-      description: "🚧 This feature isn't implemented yet—but don't worry! You can request it in your next prompt! 🚀",
+  const handleChange = (field, value) => {
+    setForm((prev) => ({ ...prev, [field]: value }));
+  };
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    if (!form.name.trim()) {
+      toast({
+        title: 'Name is required',
+        description: 'Please enter a client name.',
+      });
+      return;
+    }
+
+    const client = addClient({
+      name: form.name,
+      email: form.email,
+      phone: form.phone,
+      address: form.address,
     });
+
+    toast({
+      title: 'Client added',
+      description: `${client.name} has been added to your clients list.`,
+    });
+
+    setForm({ name: '', email: '', phone: '', address: '' });
+    setIsDialogOpen(false);
   };
 
   return (
     <>
       <Helmet>
-        <title>Customers - AutoPOS</title>
-        <meta name="description" content="Manage your customer database" />
+        <title>Clients - MyAccounts</title>
+        <meta name="description" content="Manage your client database and payment history" />
       </Helmet>
 
       <div className="space-y-6">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-3xl font-bold">Customers</h1>
-            <p className="text-muted-foreground">Manage your customer database</p>
+            <h1 className="text-3xl font-bold">Clients</h1>
+            <p className="text-muted-foreground">Store client details, projects, and balances.</p>
           </div>
-          <Button onClick={handleAddCustomer}>
+          <Button onClick={() => setIsDialogOpen(true)}>
             <Plus className="w-4 h-4 mr-2" />
             Add Customer
           </Button>
@@ -103,6 +134,62 @@ const Customers = () => {
             <p className="text-muted-foreground">No customers found</p>
           </div>
         )}
+
+        <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Add New Client</DialogTitle>
+            </DialogHeader>
+            <form onSubmit={handleSubmit} className="space-y-4">
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Name</label>
+                <Input
+                  value={form.name}
+                  onChange={(e) => handleChange('name', e.target.value)}
+                  placeholder="Client name"
+                  required
+                />
+              </div>
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Email</label>
+                <Input
+                  type="email"
+                  value={form.email}
+                  onChange={(e) => handleChange('email', e.target.value)}
+                  placeholder="client@example.com"
+                />
+              </div>
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Phone</label>
+                <Input
+                  value={form.phone}
+                  onChange={(e) => handleChange('phone', e.target.value)}
+                  placeholder="Phone number"
+                />
+              </div>
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Address</label>
+                <Input
+                  value={form.address}
+                  onChange={(e) => handleChange('address', e.target.value)}
+                  placeholder="Address (optional)"
+                />
+              </div>
+              <div className="flex justify-end gap-2 pt-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => setIsDialogOpen(false)}
+                >
+                  Cancel
+                </Button>
+                <Button type="submit">
+                  Save Client
+                </Button>
+              </div>
+            </form>
+          </DialogContent>
+        </Dialog>
       </div>
     </>
   );

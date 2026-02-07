@@ -14,6 +14,9 @@ import {
   ChevronDown,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { useFinance } from '@/contexts/FinanceContext';
+import sidebarLogo from '@/assets/side bar logo.png';
+import sidebarLogoLight from '@/assets/side-bar-light.png';
 
 const reportItems = [
   { to: '/reports/overview', label: 'Overview Reports' },
@@ -34,8 +37,10 @@ const navItems = [
 
 const Sidebar = ({ isOpen, onClose }) => {
   const location = useLocation();
+  const { settings } = useFinance();
   const isReportsActive = location.pathname.startsWith('/reports');
   const [reportsExpanded, setReportsExpanded] = useState(isReportsActive);
+  const logoSrc = settings.theme === 'light' ? sidebarLogoLight : sidebarLogo;
 
   useEffect(() => {
     if (isReportsActive) setReportsExpanded(true);
@@ -66,11 +71,8 @@ const Sidebar = ({ isOpen, onClose }) => {
         <div className="flex flex-col h-full">
           {/* Logo */}
           <div className="flex items-center justify-between p-6 border-b border-secondary">
-            <div className="flex items-center gap-2">
-              <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
-                <Wallet className="w-5 h-5 text-white" />
-              </div>
-              <span className="text-xl font-bold text-foreground">MyAccounts</span>
+            <div className="flex items-center">
+              <img src={logoSrc} alt="MyAccounts" className="h-8 object-contain" />
             </div>
             <button
               onClick={onClose}

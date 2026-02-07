@@ -3,6 +3,7 @@ import { Helmet } from 'react-helmet';
 import { motion } from 'framer-motion';
 import { Download, RefreshCw, Calendar } from 'lucide-react';
 import { useFinance } from '@/contexts/FinanceContext';
+import { getPrintHtml, downloadReportPdf } from '@/utils/pdfPrint';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -143,7 +144,7 @@ const ReportCashFlow = () => {
     toast({ title: 'Export successful', description: 'Cash Flow report exported to CSV' });
   };
 
-  const handleDownloadPDF = () => {
+  const handleDownloadPDF = async () => {
     if (!range || !cashFlowData) return;
     let cashInRows = cashFlowData.cashInItems
       .map((i) => `<tr><td style="padding:8px; border:1px solid #ccc;">${i.name}</td><td style="padding:8px; border:1px solid #ccc; text-align:right;">${formatAmount(i.amount)}</td></tr>`)
@@ -155,7 +156,7 @@ const ReportCashFlow = () => {
     if (cashFlowData.cashInItems.length === 0) cashInRows = '<tr><td colspan="2" style="padding:8px; border:1px solid #ccc; color:#888;">No cash in this period</td></tr>';
     if (cashFlowData.cashOutItems.length === 0) cashOutRows = '<tr><td colspan="2" style="padding:8px; border:1px solid #ccc; color:#888;">No cash out in this period</td></tr>';
 
-    const printContent = `
+    const innerContent = `
       <h1>Cash Flow Report</h1>
       <p><strong>Period: ${periodLabel}</strong></p>
       <table style="width:100%; border-collapse: collapse; margin-top: 24px;">
@@ -173,12 +174,9 @@ const ReportCashFlow = () => {
         <tr><td style="padding:8px; border:1px solid #ccc; background:#e3f2fd;"><strong>CLOSING CASH</strong></td><td style="padding:8px; border:1px solid #ccc; text-align:right; background:#e3f2fd;"><strong>${formatAmount(cashFlowData.closingCash)}</strong></td></tr>
       </table>
     `;
-    const win = window.open('', '_blank');
-    win.document.write(`<html><body>${printContent}</body></html>`);
-    win.document.close();
-    win.print();
-    win.close();
-    toast({ title: 'PDF ready', description: 'Use Print dialog to save as PDF' });
+    const fullHtml = getPrintHtml(innerContent, { logo: settings?.logo, businessName: settings?.businessName });
+    await downloadReportPdf(fullHtml, `cash-flow-${range.start.toISOString().slice(0, 10)}.pdf`);
+    toast({ title: 'PDF downloaded', description: 'Cash Flow report saved to your device' });
   };
 
   return (

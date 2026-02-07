@@ -140,6 +140,7 @@ export const FinanceProvider = ({ children }) => {
       currency: settings.currency,
       date: data.date || new Date().toISOString(),
       notes: data.notes || '',
+      paymentMethod: data.paymentMethod || 'cash',
       isRecurring: Boolean(data.isRecurring),
       recurringFrequency: data.recurringFrequency || 'monthly',
       recurringEndDate: data.continueIndefinitely ? null : data.recurringEndDate || null,
@@ -217,6 +218,7 @@ export const FinanceProvider = ({ children }) => {
               category: data.category ?? e.category,
               amount: Number(data.amount) ?? e.amount,
               date: data.date ?? e.date,
+              paymentMethod: data.paymentMethod ?? e.paymentMethod,
               isRecurring: data.isRecurring ?? e.isRecurring,
               recurringFrequency: data.recurringFrequency ?? e.recurringFrequency,
               recurringEndDate: data.continueIndefinitely ? null : (data.recurringEndDate ?? e.recurringEndDate),
@@ -326,6 +328,17 @@ export const FinanceProvider = ({ children }) => {
     const estimatedTaxYearly =
       settings.taxEnabled && yearlyProfit > 0 ? (yearlyProfit * settings.taxRate) / 100 : 0;
 
+    const openingCash = Number(settings.openingCash) || 0;
+    const norm = (pm) => String(pm || '').toLowerCase().replace(/\s+/g, '_');
+    const isCash = (pm) => !pm || norm(pm) === 'cash';
+    const isBank = (pm) => ['bank', 'card', 'online', 'online_transfer', 'online_payment'].includes(norm(pm));
+    const incomeCash = incomes.filter((i) => isCash(i.paymentMethod)).reduce((s, i) => s + i.amount, 0);
+    const incomeBank = incomes.filter((i) => isBank(i.paymentMethod)).reduce((s, i) => s + i.amount, 0);
+    const expenseCash = expenses.filter((e) => isCash(e.paymentMethod)).reduce((s, e) => s + e.amount, 0);
+    const expenseBank = expenses.filter((e) => isBank(e.paymentMethod)).reduce((s, e) => s + e.amount, 0);
+    const cashInHand = openingCash + incomeCash - expenseCash;
+    const bankBalance = incomeBank - expenseBank;
+
     return {
       monthlyIncome,
       yearlyIncome,
@@ -336,6 +349,8 @@ export const FinanceProvider = ({ children }) => {
       pendingPayments,
       estimatedTaxMonthly,
       estimatedTaxYearly,
+      cashInHand,
+      bankBalance,
     };
   }, [incomes, expenses, invoices, settings.taxEnabled, settings.taxRate]);
 

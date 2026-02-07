@@ -3,6 +3,7 @@ import { Helmet } from 'react-helmet';
 import { motion } from 'framer-motion';
 import { Download, RefreshCw, Calendar } from 'lucide-react';
 import { useFinance } from '@/contexts/FinanceContext';
+import { getPrintHtml, downloadReportPdf } from '@/utils/pdfPrint';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -129,7 +130,7 @@ const ReportProfitLoss = () => {
     toast({ title: 'Export successful', description: 'Profit & Loss report exported to CSV' });
   };
 
-  const handleDownloadPDF = () => {
+  const handleDownloadPDF = async () => {
     if (!range) return;
     let incomeRows = plData.incomeItems
       .map((i) => `<tr><td style="padding:8px; border:1px solid #ccc;">${i.name}</td><td style="padding:8px; border:1px solid #ccc; text-align:right;">${formatAmount(i.amount)}</td></tr>`)
@@ -141,7 +142,7 @@ const ReportProfitLoss = () => {
     if (plData.incomeItems.length === 0) incomeRows = '<tr><td colspan="2" style="padding:8px; border:1px solid #ccc; color:#888;">No income in this period</td></tr>';
     if (plData.expenseItems.length === 0) expenseRows = '<tr><td colspan="2" style="padding:8px; border:1px solid #ccc; color:#888;">No expenses in this period</td></tr>';
 
-    const printContent = `
+    const innerContent = `
       <h1>Profit & Loss Report</h1>
       <p><strong>Period: ${periodLabel}</strong></p>
       <table style="width:100%; border-collapse: collapse; margin-top: 24px;">
@@ -156,12 +157,9 @@ const ReportProfitLoss = () => {
         <tr><td style="padding:8px; border:1px solid #ccc; background:#e8f5e9;"><strong>NET PROFIT</strong></td><td style="padding:8px; border:1px solid #ccc; text-align:right; background:#e8f5e9;"><strong>${formatAmount(plData.netProfit)}</strong></td></tr>
       </table>
     `;
-    const win = window.open('', '_blank');
-    win.document.write(`<html><body>${printContent}</body></html>`);
-    win.document.close();
-    win.print();
-    win.close();
-    toast({ title: 'PDF ready', description: 'Use Print dialog to save as PDF' });
+    const fullHtml = getPrintHtml(innerContent, { logo: settings?.logo, businessName: settings?.businessName });
+    await downloadReportPdf(fullHtml, `profit-loss-${range.start.toISOString().slice(0, 10)}.pdf`);
+    toast({ title: 'PDF downloaded', description: 'Profit & Loss report saved to your device' });
   };
 
   return (

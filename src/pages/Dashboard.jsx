@@ -1,7 +1,7 @@
 import React, { useMemo } from 'react';
 import { Helmet } from 'react-helmet';
 import { motion } from 'framer-motion';
-import { Users, DollarSign, Wallet, AlertTriangle } from 'lucide-react';
+import { Coins, DollarSign, Wallet, AlertTriangle } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import KpiCard from '@/components/KpiCard';
 import { useFinance } from '@/contexts/FinanceContext';
@@ -49,25 +49,67 @@ const Dashboard = () => {
         </div>
 
         {/* KPI Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          <KpiCard
-            title="Total Income (This Month)"
-            value={`${settings.currency} ${totals.monthlyIncome.toLocaleString()}`}
-            icon={DollarSign}
-            trend={0}
-            trendUp={true}
-          />
-          <KpiCard
-            title="Total Expenses (This Month)"
-            value={`${settings.currency} ${totals.monthlyExpenses.toLocaleString()}`}
-            icon={Wallet}
-            trend={0}
-            trendUp={false}
-          />
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 xl:grid-cols-4 gap-6">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            whileHover={{ y: -4, boxShadow: '0 10px 30px rgba(255, 106, 0, 0.2)' }}
+            transition={{ duration: 0.2 }}
+            className="bg-card rounded-lg p-6 border border-secondary"
+          >
+            <div className="flex items-center gap-3 mb-4">
+              <div className="w-12 h-12 bg-primary/10 rounded-lg flex items-center justify-center">
+                <Wallet className="w-6 h-6 text-primary" />
+              </div>
+              <span className="text-sm font-medium text-muted-foreground">Cash in Hand / Bank Balance</span>
+            </div>
+            <div className="space-y-3">
+              <div className="flex items-center justify-between">
+                <span className="text-sm text-muted-foreground">Cash in Hand</span>
+                <span className={`text-lg font-bold ${(totals.cashInHand ?? 0) >= 0 ? '' : 'text-red-500'}`}>
+                  {settings.currency} {(totals.cashInHand ?? 0).toLocaleString()}
+                </span>
+              </div>
+              <div className="flex items-center justify-between border-t border-secondary pt-3">
+                <span className="text-sm text-muted-foreground">Bank Balance</span>
+                <span className={`text-lg font-bold ${(totals.bankBalance ?? 0) >= 0 ? '' : 'text-red-500'}`}>
+                  {settings.currency} {(totals.bankBalance ?? 0).toLocaleString()}
+                </span>
+              </div>
+            </div>
+          </motion.div>
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            whileHover={{ y: -4, boxShadow: '0 10px 30px rgba(255, 106, 0, 0.2)' }}
+            transition={{ duration: 0.2 }}
+            className="bg-card rounded-lg p-6 border border-secondary"
+          >
+            <div className="flex items-center gap-3 mb-4">
+              <div className="w-12 h-12 bg-primary/10 rounded-lg flex items-center justify-center">
+                <DollarSign className="w-6 h-6 text-primary" />
+              </div>
+              <span className="text-sm font-medium text-muted-foreground">Income & Expenses (This Month)</span>
+            </div>
+            <div className="space-y-3">
+              <div className="flex items-center justify-between">
+                <span className="text-sm text-muted-foreground">Total Income</span>
+                <span className="text-lg font-bold text-green-500">
+                  {settings.currency} {totals.monthlyIncome.toLocaleString()}
+                </span>
+              </div>
+              <div className="flex items-center justify-between border-t border-secondary pt-3">
+                <span className="text-sm text-muted-foreground">Total Expenses</span>
+                <span className="text-lg font-bold text-red-500">
+                  {settings.currency} {totals.monthlyExpenses.toLocaleString()}
+                </span>
+              </div>
+            </div>
+          </motion.div>
           <KpiCard
             title="Net Profit (This Month)"
             value={`${settings.currency} ${totals.monthlyProfit.toLocaleString()}`}
-            icon={Users}
+            icon={Coins}
             trend={0}
             trendUp={totals.monthlyProfit >= 0}
           />

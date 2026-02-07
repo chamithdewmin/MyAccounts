@@ -18,6 +18,7 @@ import { useFinance } from '@/contexts/FinanceContext';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/components/ui/use-toast';
 import ExportReportDialog from '@/components/ExportReportDialog';
+import { getPrintHtml, downloadReportPdf } from '@/utils/pdfPrint';
 
 const filterByRange = (items, range, dateKey = 'date') => {
   if (!range) return items;
@@ -71,7 +72,7 @@ const ReportIncome = () => {
     toast({ title: 'Export successful', description: 'Income report exported to CSV' });
   };
 
-  const handlePDF = (range) => {
+  const handlePDF = async (range) => {
     const filtered = filterByRange(incomes, range);
     const total = filtered.reduce((s, i) => s + i.amount, 0);
     const byClientData = filtered.reduce((acc, i) => {
@@ -97,12 +98,9 @@ const ReportIncome = () => {
     });
     table += '</table>';
 
-    const win = window.open('', '_blank');
-    win.document.write(`<html><body>${table}</body></html>`);
-    win.document.close();
-    win.print();
-    win.close();
-    toast({ title: 'PDF ready', description: 'Use Print dialog to save as PDF' });
+    const fullHtml = getPrintHtml(table, { logo: settings?.logo, businessName: settings?.businessName });
+    await downloadReportPdf(fullHtml, `income-report-${range.start.toISOString().slice(0, 10)}.pdf`);
+    toast({ title: 'PDF downloaded', description: 'Income report saved to your device' });
   };
 
   return (

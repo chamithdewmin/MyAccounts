@@ -389,6 +389,7 @@ const CashFlow = () => {
       customCategory: '',
       amount: '',
       date: new Date().toISOString().slice(0, 10),
+      paymentMethod: 'cash',
       notes: '',
       isRecurring: false,
       clientId: '',
@@ -411,6 +412,7 @@ const CashFlow = () => {
         category: tx.raw.serviceType || 'Sales',
         amount: String(tx.amount),
         date: tx.date ? tx.date.slice(0, 10) : '',
+        paymentMethod: tx.raw.paymentMethod || 'cash',
         notes: tx.raw.notes || '',
         isRecurring: false,
         clientId: tx.raw.clientId || '',
@@ -428,6 +430,7 @@ const CashFlow = () => {
         customCategory: isCustom ? tx.category : '',
         amount: String(tx.amount),
         date: tx.date ? tx.date.slice(0, 10) : '',
+        paymentMethod: tx.raw.paymentMethod || 'cash',
         notes: tx.raw.notes || '',
         isRecurring: tx.raw.isRecurring || false,
         clientId: '',
@@ -457,6 +460,7 @@ const CashFlow = () => {
           serviceType: form.category,
           amount,
           date,
+          paymentMethod: form.paymentMethod || 'cash',
           notes: form.notes,
           isRecurringInflow: form.isRecurringInflow,
           recurringFrequency: form.recurringFrequency,
@@ -472,6 +476,7 @@ const CashFlow = () => {
           serviceType: form.category,
           amount,
           date,
+          paymentMethod: form.paymentMethod || 'cash',
           notes: form.notes,
           isRecurringInflow: form.isRecurringInflow,
           recurringFrequency: form.recurringFrequency,
@@ -491,6 +496,7 @@ const CashFlow = () => {
           category,
           amount,
           date,
+          paymentMethod: form.paymentMethod || 'cash',
           notes: form.notes,
           isRecurring: form.isRecurring,
           recurringFrequency: form.recurringFrequency,
@@ -504,6 +510,7 @@ const CashFlow = () => {
           category,
           amount,
           date,
+          paymentMethod: form.paymentMethod || 'cash',
           notes: form.notes,
           isRecurring: form.isRecurring,
           recurringFrequency: form.recurringFrequency,
@@ -968,6 +975,20 @@ const CashFlow = () => {
                   />
                 </div>
                 <div className="space-y-2">
+                  <Label>Payment Method</Label>
+                  <select
+                    className="w-full px-3 py-2 bg-secondary border border-secondary rounded-lg text-sm"
+                    value={form.paymentMethod}
+                    onChange={(e) => setForm((p) => ({ ...p, paymentMethod: e.target.value }))}
+                  >
+                    <option value="cash">Cash</option>
+                    <option value="bank">Bank Transfer</option>
+                    <option value="card">Card</option>
+                    <option value="online_transfer">Online Transfer</option>
+                    <option value="online_payment">Online Payment</option>
+                  </select>
+                </div>
+                <div className="space-y-2">
                   <Label className="inline-flex items-center gap-2 cursor-pointer">
                     <input
                       type="checkbox"
@@ -1060,6 +1081,19 @@ const CashFlow = () => {
                       onChange={(e) => setForm((p) => ({ ...p, customCategory: e.target.value }))}
                     />
                   )}
+                </div>
+                <div className="space-y-2">
+                  <Label>Payment Method</Label>
+                  <select
+                    className="w-full px-3 py-2 bg-secondary border border-secondary rounded-lg text-sm"
+                    value={form.paymentMethod}
+                    onChange={(e) => setForm((p) => ({ ...p, paymentMethod: e.target.value }))}
+                  >
+                    <option value="cash">Cash</option>
+                    <option value="bank">Bank Transfer</option>
+                    <option value="card">Card</option>
+                    <option value="online_payment">Online Payment</option>
+                  </select>
                 </div>
                 <div className="space-y-2">
                   <Label className="inline-flex items-center gap-2 cursor-pointer">

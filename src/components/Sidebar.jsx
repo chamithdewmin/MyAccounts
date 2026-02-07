@@ -29,7 +29,6 @@ const navItems = [
   { to: '/expenses', icon: Receipt, label: 'Expenses' },
   { to: '/invoices', icon: FileText, label: 'Invoices' },
   { to: '/clients', icon: Users, label: 'Clients' },
-  { to: '/cash-flow', icon: TrendingUp, label: 'Cash Flow' },
   { to: '/settings', icon: Settings, label: 'Settings' },
 ];
 
@@ -101,6 +100,23 @@ const Sidebar = ({ isOpen, onClose }) => {
                 <span className="font-medium">{item.label}</span>
               </NavLink>
             ))}
+
+            {/* Cash Flow - above Reports */}
+            <NavLink
+              to="/cash-flow"
+              onClick={() => onClose()}
+              className={({ isActive }) =>
+                cn(
+                  "flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200",
+                  isActive
+                    ? "bg-primary text-white shadow-lg hover:bg-primary"
+                    : "text-secondary-foreground hover:bg-secondary hover:translate-x-1"
+                )
+              }
+            >
+              <TrendingUp className="w-5 h-5" />
+              <span className="font-medium">Cash Flow</span>
+            </NavLink>
 
             {/* Reports expandable section */}
             <div className="space-y-0.5">

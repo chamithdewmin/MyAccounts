@@ -18,6 +18,7 @@ const Inventory = () => {
     customCategory: '',
     amount: '',
     date: '',
+    paymentMethod: 'cash',
     isRecurring: false,
     notes: '',
     receipt: null,
@@ -102,6 +103,7 @@ const Inventory = () => {
       category,
       amount: Number(form.amount),
       date: form.date || new Date().toISOString(),
+      paymentMethod: form.paymentMethod || 'cash',
       isRecurring: form.isRecurring,
       notes: form.notes,
       receipt: form.receipt,
@@ -121,6 +123,7 @@ const Inventory = () => {
       customCategory: '',
       amount: '',
       date: '',
+      paymentMethod: 'cash',
       isRecurring: false,
       notes: '',
       receipt: null,
@@ -136,6 +139,7 @@ const Inventory = () => {
       customCategory: isCustom ? exp.category : '',
       amount: String(exp.amount || ''),
       date: exp.date ? exp.date.slice(0, 10) : '',
+      paymentMethod: exp.paymentMethod || 'cash',
       isRecurring: exp.isRecurring || false,
       notes: exp.notes || '',
       receipt: exp.receipt || null,
@@ -379,6 +383,7 @@ const Inventory = () => {
                   <tr>
                     <th className="px-4 py-3 text-left text-sm font-semibold">Date</th>
                     <th className="px-4 py-3 text-left text-sm font-semibold">Category</th>
+                    <th className="px-4 py-3 text-left text-sm font-semibold">Payment</th>
                     <th className="px-4 py-3 text-left text-sm font-semibold">Recurring</th>
                     <th className="px-4 py-3 text-left text-sm font-semibold">Receipt</th>
                     <th className="px-4 py-3 text-right text-sm font-semibold">Amount</th>
@@ -402,6 +407,9 @@ const Inventory = () => {
                         })}
                       </td>
                       <td className="px-4 py-3 text-sm">{exp.category}</td>
+                      <td className="px-4 py-3 text-sm capitalize">
+                        {(exp.paymentMethod || 'cash').replace(/_/g, ' ')}
+                      </td>
                       <td className="px-4 py-3 text-sm">
                         {exp.isRecurring ? 'Yes' : 'No'}
                       </td>
@@ -512,6 +520,19 @@ const Inventory = () => {
                   value={form.date}
                   onChange={(e) => handleFormChange('date', e.target.value)}
                 />
+              </div>
+              <div className="space-y-2">
+                <Label className="text-sm font-medium">Payment Method</Label>
+                <select
+                  className="w-full px-3 py-2 bg-secondary border border-secondary rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+                  value={form.paymentMethod}
+                  onChange={(e) => handleFormChange('paymentMethod', e.target.value)}
+                >
+                  <option value="cash">Cash</option>
+                  <option value="bank">Bank Transfer</option>
+                  <option value="card">Card</option>
+                  <option value="online_payment">Online Payment</option>
+                </select>
               </div>
               <div className="space-y-2">
                 <Label className="text-sm font-medium flex items-center gap-2">

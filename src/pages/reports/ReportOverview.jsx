@@ -17,6 +17,7 @@ import { useFinance } from '@/contexts/FinanceContext';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/components/ui/use-toast';
 import ExportReportDialog from '@/components/ExportReportDialog';
+import { getPrintHtml, downloadReportPdf } from '@/utils/pdfPrint';
 
 const filterByRange = (items, range, dateKey = 'date') => {
   if (!range) return items;
@@ -73,14 +74,14 @@ const ReportOverview = () => {
     toast({ title: 'Export successful', description: 'Overview report exported to CSV' });
   };
 
-  const handlePDF = (range) => {
+  const handlePDF = async (range) => {
     const filteredIncomes = filterByRange(incomes, range);
     const filteredExpenses = filterByRange(expenses, range);
     const totalIncome = filteredIncomes.reduce((s, i) => s + i.amount, 0);
     const totalExpenses = filteredExpenses.reduce((s, e) => s + e.amount, 0);
     const profit = totalIncome - totalExpenses;
 
-    const printContent = `
+    const innerContent = `
       <h1>Overview Report</h1>
       <p>Period: ${range.start.toLocaleDateString()} - ${range.end.toLocaleDateString()}</p>
       <table style="width:100%; border-collapse: collapse; margin-top: 20px;">
@@ -89,12 +90,9 @@ const ReportOverview = () => {
         <tr><td style="padding:8px; border:1px solid #ccc;"><strong>Profit</strong></td><td style="padding:8px; border:1px solid #ccc;">${settings.currency} ${profit.toLocaleString()}</td></tr>
       </table>
     `;
-    const win = window.open('', '_blank');
-    win.document.write(`<html><body>${printContent}</body></html>`);
-    win.document.close();
-    win.print();
-    win.close();
-    toast({ title: 'PDF ready', description: 'Use Print dialog to save as PDF' });
+    const fullHtml = getPrintHtml(innerContent, { logo: settings?.logo, businessName: settings?.businessName });
+    await downloadReportPdf(fullHtml, `overview-report-${range.start.toISOString().slice(0, 10)}.pdf`);
+    toast({ title: 'PDF downloaded', description: 'Overview report saved to your device' });
   };
 
   return (

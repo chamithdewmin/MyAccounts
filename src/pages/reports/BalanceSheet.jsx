@@ -3,6 +3,7 @@ import { Helmet } from 'react-helmet';
 import { motion } from 'framer-motion';
 import { Download, RefreshCw, Plus, Trash2, Calendar, AlertTriangle, CheckCircle } from 'lucide-react';
 import { useFinance } from '@/contexts/FinanceContext';
+import { getPrintHtml, downloadReportPdf } from '@/utils/pdfPrint';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -166,13 +167,13 @@ const BalanceSheet = () => {
     toast({ title: 'Export successful', description: 'Balance sheet exported to CSV' });
   };
 
-  const handleDownloadPDF = () => {
+  const handleDownloadPDF = async () => {
     const dateLabel = new Date(asAtDate).toLocaleDateString('en-US', {
       day: 'numeric',
       month: 'long',
       year: 'numeric',
     });
-    const printContent = `
+    const innerContent = `
       <h1>Balance Sheet</h1>
       <p><strong>As at ${dateLabel}</strong></p>
       <p>${balanceData.isBalanced ? '✓ Balanced' : '⚠ NOT BALANCED'}</p>
@@ -195,12 +196,10 @@ const BalanceSheet = () => {
         <tr><td style="padding:8px; border:1px solid #ccc;"><strong>Total Owner's Equity</strong></td><td style="padding:8px; border:1px solid #ccc; text-align:right;"><strong>${formatAmount(balanceData.ownersEquity)}</strong></td></tr>
       </table>
     `;
-    const win = window.open('', '_blank');
-    win.document.write(`<html><body>${printContent}</body></html>`);
-    win.document.close();
-    win.print();
-    win.close();
-    toast({ title: 'PDF ready', description: 'Use Print dialog to save as PDF' });
+    const fullHtml = getPrintHtml(innerContent, { logo: settings?.logo, businessName: settings?.businessName });
+    const dateStr = asAtDate.replace(/-/g, '');
+    await downloadReportPdf(fullHtml, `balance-sheet-${dateStr}.pdf`);
+    toast({ title: 'PDF downloaded', description: 'Balance sheet saved to your device' });
   };
 
   const dateLabel = new Date(asAtDate).toLocaleDateString('en-US', {

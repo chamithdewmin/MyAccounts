@@ -3,6 +3,7 @@ import { Helmet } from 'react-helmet';
 import { motion } from 'framer-motion';
 import { Download, RefreshCw, Calendar } from 'lucide-react';
 import { useFinance } from '@/contexts/FinanceContext';
+import { getPrintHtml, downloadReportPdf } from '@/utils/pdfPrint';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -147,7 +148,7 @@ const ReportTax = () => {
     toast({ title: 'Export successful', description: 'Tax report exported to CSV' });
   };
 
-  const handleDownloadPDF = () => {
+  const handleDownloadPDF = async () => {
     if (!range || !taxData) return;
     let incomeRows = taxData.incomeItems
       .map((i) => `<tr><td style="padding:8px; border:1px solid #ccc;">${i.name}</td><td style="padding:8px; border:1px solid #ccc; text-align:right;">${formatAmount(i.amount)}</td><td style="padding:8px; border:1px solid #ccc; text-align:right;">${formatAmount(i.tax)}</td></tr>`)
@@ -160,7 +161,7 @@ const ReportTax = () => {
     if (taxData.expenseItems.length === 0) expenseRows = '<tr><td colspan="3" style="padding:8px; border:1px solid #ccc; color:#888;">No expenses in this period</td></tr>';
 
     const netColor = taxData.netTaxPayable >= 0 ? '#dc2626' : '#16a34a';
-    const printContent = `
+    const innerContent = `
       <h1>Tax Report</h1>
       <p><strong>Period: ${periodLabel}</strong></p>
       <p>Tax Rate: ${settings.taxRate}%</p>
@@ -178,12 +179,9 @@ const ReportTax = () => {
         <tr><td style="padding:8px; border:1px solid #ccc; background:#e3f2fd;"><strong>NET TAX PAYABLE</strong></td><td colspan="2" style="padding:8px; border:1px solid #ccc; text-align:right; background:#e3f2fd; color:${netColor};"><strong>${formatAmount(taxData.netTaxPayable)}</strong></td></tr>
       </table>
     `;
-    const win = window.open('', '_blank');
-    win.document.write(`<html><body>${printContent}</body></html>`);
-    win.document.close();
-    win.print();
-    win.close();
-    toast({ title: 'PDF ready', description: 'Use Print dialog to save as PDF' });
+    const fullHtml = getPrintHtml(innerContent, { logo: settings?.logo, businessName: settings?.businessName });
+    await downloadReportPdf(fullHtml, `tax-report-${range.start.toISOString().slice(0, 10)}.pdf`);
+    toast({ title: 'PDF downloaded', description: 'Tax report saved to your device' });
   };
 
   return (

@@ -28,11 +28,19 @@ const InvoiceTemplate = ({ invoice, currency = 'LKR', autoAction = null, onAutoA
       margin: 10,
       filename,
       image: { type: 'jpeg', quality: 0.98 },
-      html2canvas: { scale: 2 },
+      html2canvas: { scale: 2, useCORS: true, allowTaint: true, logging: false },
       jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
     };
     try {
-      await html2pdf().set(opt).from(element).save();
+      const blob = await html2pdf().set(opt).from(element).outputPdf('blob');
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
     } catch (err) {
       console.error('PDF download failed:', err);
       const orig = document.title;
@@ -53,11 +61,19 @@ const InvoiceTemplate = ({ invoice, currency = 'LKR', autoAction = null, onAutoA
             margin: 10,
             filename,
             image: { type: 'jpeg', quality: 0.98 },
-            html2canvas: { scale: 2 },
+            html2canvas: { scale: 2, useCORS: true, allowTaint: true, logging: false },
             jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
           };
           try {
-            await html2pdf().set(opt).from(element).save();
+            const blob = await html2pdf().set(opt).from(element).outputPdf('blob');
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = filename;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
           } catch (err) {
             document.title = filename.replace('.pdf', '');
             window.print();
@@ -85,56 +101,51 @@ const InvoiceTemplate = ({ invoice, currency = 'LKR', autoAction = null, onAutoA
           Print
         </Button>
       </div>
-      <div ref={printAreaRef} className="print-area bg-white text-black px-8 py-8 space-y-6">
-        {/* Header */}
-        <div className="border-b-2 border-black pb-4 flex items-center justify-between">
+      <div ref={printAreaRef} className="print-area bg-white text-black px-8 py-8 space-y-6 font-sans">
+        {/* Header - Company name left, date right */}
+        <div className="border-b border-gray-300 pb-4 flex items-start justify-between gap-4">
           <div>
             <img
               src={settings.logo || defaultLogo}
-              alt={settings.businessName || 'Logo'}
-              className="h-12 object-contain"
+              alt="Logo"
+              className="h-12 w-auto object-contain mb-2"
             />
-            <p className="text-sm text-gray-600 mt-1">Invoice</p>
+            <p className="text-sm text-gray-600">Invoice</p>
           </div>
-          <div className="text-right text-sm text-gray-600">
+          <div className="text-right text-sm text-gray-600 shrink-0">
             <p>{formatDate(invoice.createdAt || invoice.dueDate)}</p>
           </div>
         </div>
 
-        {/* Invoice details */}
-        <div className="grid grid-cols-2 gap-8">
+        {/* Invoice To and Invoice Details - two columns */}
+        <div className="grid grid-cols-2 gap-8 pt-2">
           <div>
-            <h2 className="font-bold text-lg mb-2 text-black">Invoice To:</h2>
-            <p className="text-black font-semibold">{invoice.clientName}</p>
+            <h2 className="font-bold text-base mb-2 text-black">Invoice To:</h2>
+            <p className="text-black">{invoice.clientName}</p>
             {invoice.clientEmail && (
-              <p className="text-sm text-gray-600">{invoice.clientEmail}</p>
+              <p className="text-sm text-gray-600 mt-0.5">{invoice.clientEmail}</p>
             )}
             {invoice.clientPhone && (
               <p className="text-sm text-gray-600">{invoice.clientPhone}</p>
             )}
           </div>
           <div className="text-right">
-            <h2 className="font-bold text-lg mb-2 text-black">Invoice Details:</h2>
-            <p className="text-black">
-              <span className="font-semibold">Invoice #:</span> {invoice.invoiceNumber}
-            </p>
-            <p className="text-sm text-gray-600">
-              Due: {formatDate(invoice.dueDate || invoice.createdAt)}
-            </p>
-            <p className="text-sm text-gray-600">
-              Payment: {invoice.paymentMethod?.toUpperCase()}
-            </p>
+            <h2 className="font-bold text-base mb-2 text-black">Invoice Details:</h2>
+            <p className="text-sm text-black">Invoice #: {invoice.invoiceNumber}</p>
+            <p className="text-sm text-gray-600 mt-0.5">Due: {formatDate(invoice.dueDate || invoice.createdAt)}</p>
+            <p className="text-sm text-gray-600">Payment: {invoice.paymentMethod?.toUpperCase() || 'N/A'}</p>
           </div>
         </div>
 
         {/* Items table */}
+        <div className="border-t border-gray-300 pt-4">
         <table className="w-full">
           <thead>
-            <tr className="border-b-2 border-black">
-              <th className="text-left py-2 text-black">Service / Item</th>
-              <th className="text-center py-2 text-black">Qty</th>
-              <th className="text-right py-2 text-black">Price</th>
-              <th className="text-right py-2 text-black">Total</th>
+            <tr className="border-b border-gray-300">
+              <th className="text-left py-2 font-bold text-black">Service / Item</th>
+              <th className="text-center py-2 font-bold text-black">Qty</th>
+              <th className="text-right py-2 font-bold text-black">Price</th>
+              <th className="text-right py-2 font-bold text-black">Total</th>
             </tr>
           </thead>
           <tbody>
@@ -160,33 +171,28 @@ const InvoiceTemplate = ({ invoice, currency = 'LKR', autoAction = null, onAutoA
             ))}
           </tbody>
         </table>
+        </div>
 
-        {/* Totals */}
-        <div className="flex justify-end">
+        {/* Summary - right aligned */}
+        <div className="flex justify-end pt-2">
           <div className="w-64 space-y-2">
             <div className="flex justify-between text-black">
               <span>Subtotal:</span>
-              <span>
-                {currency} {(invoice.subtotal || 0).toLocaleString()}
-              </span>
+              <span>{currency} {(invoice.subtotal || 0).toLocaleString()}</span>
             </div>
             <div className="flex justify-between text-black">
               <span>Tax ({invoice.taxRate ?? 0}%):</span>
-              <span>
-                {currency} {(invoice.taxAmount || 0).toLocaleString()}
-              </span>
+              <span>{currency} {(invoice.taxAmount || 0).toLocaleString()}</span>
             </div>
-            <div className="flex justify-between text-xl font-bold border-t-2 border-black pt-2 text-black">
+            <div className="flex justify-between text-lg font-bold pt-2 text-black">
               <span>Total:</span>
-              <span>
-                {currency} {(invoice.total || 0).toLocaleString()}
-              </span>
+              <span>{currency} {(invoice.total || 0).toLocaleString()}</span>
             </div>
           </div>
         </div>
 
         {/* Footer */}
-        <div className="border-t-2 border-black pt-4 text-center text-sm text-gray-600">
+        <div className="border-t border-gray-300 pt-4 text-center text-sm text-gray-600 space-y-1">
           <p>Thank you for your business!</p>
           <p>Please make payment before the due date.</p>
         </div>

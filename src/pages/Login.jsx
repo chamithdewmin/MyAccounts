@@ -6,13 +6,14 @@ import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { AlertCircle } from 'lucide-react';
+import { AlertCircle, Eye, EyeOff } from 'lucide-react';
 import loginBackground from '@/assets/login-background.jpg';
 import loginLogo from '@/assets/login logo.png';
 
 const Login = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
   const { login } = useAuth();
   const navigate = useNavigate();
@@ -46,7 +47,7 @@ const Login = () => {
           transition={{ duration: 0.5 }}
           className="w-full max-w-md"
         >
-          <div className="bg-[#1A1A2E] rounded-3xl shadow-xl p-8 sm:p-10">
+          <div className="bg-[#121212] rounded-3xl shadow-xl p-8 sm:p-10">
             <div className="flex justify-center mb-6">
               <img src={loginLogo} alt="MyAccounts" className="h-10 object-contain" />
             </div>
@@ -74,7 +75,7 @@ const Login = () => {
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   required
-                  className="h-12 bg-[#26263B] border-[#3d4150] text-[#D3D3D3] placeholder:text-[#8a8d98] focus:ring-2 focus:ring-[#6A6FF7] focus:border-[#6A6FF7] rounded-lg"
+                  className="h-12 bg-[#0a0a0a] border-[#0a0a0a] text-[#a0a0a0] placeholder:text-[#6b6b6b] "
                 />
               </div>
 
@@ -85,15 +86,25 @@ const Login = () => {
                     Forgot Password?
                   </a>
                 </div>
-                <Input
-                  id="password"
-                  type="password"
-                  placeholder="••••••••"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  required
-                  className="h-12 bg-[#26263B] border-[#3d4150] text-[#D3D3D3] placeholder:text-[#8a8d98] focus:ring-2 focus:ring-[#6A6FF7] focus:border-[#6A6FF7] rounded-lg"
-                />
+                <div className="relative">
+                  <Input
+                    id="password"
+                    type={showPassword ? 'text' : 'password'}
+                    placeholder="••••••••"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    required
+                    className="h-12 bg-[#0a0a0a] border-[#0a0a0a] text-[#a0a0a0] placeholder:text-[#6b6b6b] pr-10"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-[#a0a0a0] hover:text-[#D3D3D3] transition-colors"
+                    aria-label={showPassword ? 'Hide password' : 'Show password'}
+                  >
+                    {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                  </button>
+                </div>
               </div>
 
               <Button
@@ -111,14 +122,11 @@ const Login = () => {
               </a>
             </p>
 
-            <div className="text-center mt-8 pt-6">
+            <div className="text-center mt-4">
               <p className="text-[#D3D3D3] text-xs">Version: 1.0.0</p>
             </div>
           </div>
 
-          <p className="text-center text-[#D3D3D3]/80 text-sm mt-4">
-            Demo: admin@gmail.com / admin123
-          </p>
         </motion.div>
       </div>
     </>

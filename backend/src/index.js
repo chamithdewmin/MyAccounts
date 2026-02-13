@@ -22,6 +22,10 @@ app.use(cors({
 }));
 app.use(express.json({ limit: '10mb' }));
 
+app.get('/api', (req, res) => {
+  res.json({ status: 'ok', message: 'MyAccounts Backend is Running...' });
+});
+
 app.get('/api/health', (req, res) => {
   res.json({ status: 'ok', message: 'MyAccounts API' });
 });

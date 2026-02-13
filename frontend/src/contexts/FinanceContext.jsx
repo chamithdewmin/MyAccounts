@@ -1,7 +1,10 @@
 import React, { createContext, useContext, useEffect, useMemo, useState } from 'react';
 import { getStorageData, setStorageData } from '@/utils/storage';
+import { api } from '@/lib/api';
 
 const FinanceContext = createContext(null);
+
+const hasToken = () => !!localStorage.getItem('token');
 
 const STORAGE_KEYS = {
   incomes: 'finance_incomes',
@@ -48,253 +51,206 @@ export const FinanceProvider = ({ children }) => {
   const [assets, setAssets] = useState([]);
   const [loans, setLoans] = useState([]);
 
-  // Load from storage on mount
+  // Load: from API when token exists, else from localStorage
   useEffect(() => {
-    setIncomes(getStorageData(STORAGE_KEYS.incomes, []));
-    setExpenses(getStorageData(STORAGE_KEYS.expenses, []));
-    setClients(getStorageData(STORAGE_KEYS.clients, []));
-    const storedSettings = getStorageData(STORAGE_KEYS.settings, null);
-    setSettings(storedSettings ? { ...getDefaultSettings(), ...storedSettings } : getDefaultSettings());
-
-    // Ensure invoices array exists in storage but don't crash if shape is different
-    const storedInvoices = getStorageData(STORAGE_KEYS.invoices, []);
-    if (Array.isArray(storedInvoices)) {
-      setInvoices(storedInvoices);
-    } else {
-      setInvoices([]);
-    }
-
-    setAssets(getStorageData(STORAGE_KEYS.assets, []));
-    setLoans(getStorageData(STORAGE_KEYS.loans, []));
+    const load = async () => {
+      if (hasToken()) {
+        try {
+          const [incomesRes, expensesRes, clientsRes, invoicesRes, settingsRes, assetsRes, loansRes] = await Promise.all([
+            api.incomes.list().catch(() => []),
+            api.expenses.list().catch(() => []),
+            api.clients.list().catch(() => []),
+            api.invoices.list().catch(() => []),
+            api.settings.get().catch(() => getDefaultSettings()),
+            api.assets.list().catch(() => []),
+            api.loans.list().catch(() => []),
+          ]);
+          setIncomes(Array.isArray(incomesRes) ? incomesRes : []);
+          setExpenses(Array.isArray(expensesRes) ? expensesRes : []);
+          setClients(Array.isArray(clientsRes) ? clientsRes : []);
+          setInvoices(Array.isArray(invoicesRes) ? invoicesRes : []);
+          setSettings(settingsRes && typeof settingsRes === 'object' ? { ...getDefaultSettings(), ...settingsRes } : getDefaultSettings());
+          setAssets(Array.isArray(assetsRes) ? assetsRes : []);
+          setLoans(Array.isArray(loansRes) ? loansRes : []);
+        } catch {
+          // Fallback to localStorage on API error
+          loadFromStorage();
+        }
+      } else {
+        loadFromStorage();
+      }
+    };
+    const loadFromStorage = () => {
+      setIncomes(getStorageData(STORAGE_KEYS.incomes, []));
+      setExpenses(getStorageData(STORAGE_KEYS.expenses, []));
+      setClients(getStorageData(STORAGE_KEYS.clients, []));
+      const storedSettings = getStorageData(STORAGE_KEYS.settings, null);
+      setSettings(storedSettings ? { ...getDefaultSettings(), ...storedSettings } : getDefaultSettings());
+      const storedInvoices = getStorageData(STORAGE_KEYS.invoices, []);
+      setInvoices(Array.isArray(storedInvoices) ? storedInvoices : []);
+      setAssets(getStorageData(STORAGE_KEYS.assets, []));
+      setLoans(getStorageData(STORAGE_KEYS.loans, []));
+    };
+    load();
   }, []);
 
-  // Persist changes
+  // Persist to localStorage only when not using API
   useEffect(() => {
-    setStorageData(STORAGE_KEYS.incomes, incomes);
+    if (!hasToken()) setStorageData(STORAGE_KEYS.incomes, incomes);
   }, [incomes]);
-
   useEffect(() => {
-    setStorageData(STORAGE_KEYS.expenses, expenses);
+    if (!hasToken()) setStorageData(STORAGE_KEYS.expenses, expenses);
   }, [expenses]);
-
   useEffect(() => {
-    setStorageData(STORAGE_KEYS.clients, clients);
+    if (!hasToken()) setStorageData(STORAGE_KEYS.clients, clients);
   }, [clients]);
-
   useEffect(() => {
-    setStorageData(STORAGE_KEYS.invoices, invoices);
+    if (!hasToken()) setStorageData(STORAGE_KEYS.invoices, invoices);
   }, [invoices]);
-
   useEffect(() => {
-    setStorageData(STORAGE_KEYS.settings, settings);
+    if (!hasToken()) setStorageData(STORAGE_KEYS.settings, settings);
   }, [settings]);
-
   useEffect(() => {
-    setStorageData(STORAGE_KEYS.assets, assets);
+    if (!hasToken()) setStorageData(STORAGE_KEYS.assets, assets);
   }, [assets]);
-
   useEffect(() => {
-    setStorageData(STORAGE_KEYS.loans, loans);
+    if (!hasToken()) setStorageData(STORAGE_KEYS.loans, loans);
   }, [loans]);
 
-  const addClient = (data) => {
-    const client = {
-      id: createId('CL'),
-      name: data.name.trim(),
-      email: data.email?.trim() || '',
-      phone: data.phone?.trim() || '',
-      address: data.address?.trim() || '',
-      projects: data.projects || [],
-      createdAt: data.createdAt || new Date().toISOString(),
-    };
+  const addClient = async (data) => {
+    if (hasToken()) {
+      const client = await api.clients.create({ name: data.name, email: data.email, phone: data.phone, address: data.address, projects: data.projects });
+      setClients((prev) => [client, ...prev]);
+      return client;
+    }
+    const client = { id: createId('CL'), name: data.name.trim(), email: data.email?.trim() || '', phone: data.phone?.trim() || '', address: data.address?.trim() || '', projects: data.projects || [], createdAt: data.createdAt || new Date().toISOString() };
     setClients((prev) => [client, ...prev]);
     return client;
   };
 
-  const addIncome = (data) => {
-    const income = {
-      id: createId('INC'),
-      clientId: data.clientId || null,
-      clientName: data.clientName?.trim() || '',
-      serviceType: data.serviceType?.trim() || '',
-      paymentMethod: data.paymentMethod || 'cash',
-      amount: Number(data.amount) || 0,
-      currency: settings.currency,
-      date: data.date || new Date().toISOString(),
-      notes: data.notes || '',
-      createdAt: new Date().toISOString(),
-      isRecurring: Boolean(data.isRecurringInflow),
-      recurringFrequency: data.recurringFrequency || 'monthly',
-      recurringEndDate: data.continueIndefinitely ? null : data.recurringEndDate || null,
-      recurringNotes: data.recurringNotes || '',
-    };
+  const addIncome = async (data) => {
+    const payload = { ...data, currency: settings.currency };
+    if (hasToken()) {
+      const income = await api.incomes.create(payload);
+      setIncomes((prev) => [income, ...prev]);
+      return income;
+    }
+    const income = { id: createId('INC'), clientId: data.clientId || null, clientName: data.clientName?.trim() || '', serviceType: data.serviceType?.trim() || '', paymentMethod: data.paymentMethod || 'cash', amount: Number(data.amount) || 0, currency: settings.currency, date: data.date || new Date().toISOString(), notes: data.notes || '', createdAt: new Date().toISOString(), isRecurring: Boolean(data.isRecurringInflow), recurringFrequency: data.recurringFrequency || 'monthly', recurringEndDate: data.continueIndefinitely ? null : data.recurringEndDate || null, recurringNotes: data.recurringNotes || '' };
     setIncomes((prev) => [income, ...prev]);
     return income;
   };
 
-  const addExpense = (data) => {
-    const expense = {
-      id: createId('EXP'),
-      category: data.category || 'Other',
-      amount: Number(data.amount) || 0,
-      currency: settings.currency,
-      date: data.date || new Date().toISOString(),
-      notes: data.notes || '',
-      paymentMethod: data.paymentMethod || 'cash',
-      isRecurring: Boolean(data.isRecurring),
-      recurringFrequency: data.recurringFrequency || 'monthly',
-      recurringEndDate: data.continueIndefinitely ? null : data.recurringEndDate || null,
-      recurringNotes: data.recurringNotes || '',
-      receipt: data.receipt || null, // { name, size, type, dataUrl }
-      createdAt: new Date().toISOString(),
-    };
+  const addExpense = async (data) => {
+    const payload = { ...data, currency: settings.currency };
+    if (hasToken()) {
+      const expense = await api.expenses.create(payload);
+      setExpenses((prev) => [expense, ...prev]);
+      return expense;
+    }
+    const expense = { id: createId('EXP'), category: data.category || 'Other', amount: Number(data.amount) || 0, currency: settings.currency, date: data.date || new Date().toISOString(), notes: data.notes || '', paymentMethod: data.paymentMethod || 'cash', isRecurring: Boolean(data.isRecurring), recurringFrequency: data.recurringFrequency || 'monthly', recurringEndDate: data.continueIndefinitely ? null : data.recurringEndDate || null, recurringNotes: data.recurringNotes || '', receipt: data.receipt || null, createdAt: new Date().toISOString() };
     setExpenses((prev) => [expense, ...prev]);
     return expense;
   };
 
-  const addInvoice = (data) => {
+  const addInvoice = async (data) => {
+    const inv = { ...data, taxRate: settings.taxEnabled ? settings.taxRate : 0, taxAmount: data.taxAmount ?? (settings.taxEnabled ? (Number(data.subtotal) || 0) * (settings.taxRate / 100) : 0), total: data.total || Number(data.subtotal) + (data.taxAmount ?? 0) };
+    if (hasToken()) {
+      const invoice = await api.invoices.create(inv);
+      setInvoices((prev) => [invoice, ...prev]);
+      return invoice;
+    }
     const invoiceNumber = data.invoiceNumber || createId('INV');
-    const invoice = {
-      id: invoiceNumber,
-      invoiceNumber,
-      clientId: data.clientId || null,
-      clientName: data.clientName?.trim() || '',
-      clientEmail: data.clientEmail?.trim() || '',
-      clientPhone: data.clientPhone?.trim() || '',
-      items: data.items || [],
-      subtotal: Number(data.subtotal) || 0,
-      taxRate: settings.taxEnabled ? settings.taxRate : 0,
-      taxAmount: Number(data.taxAmount ?? (settings.taxEnabled ? (Number(data.subtotal) || 0) * (settings.taxRate / 100) : 0)),
-      total: Number(data.total) || Number(data.subtotal) + Number(data.taxAmount ?? 0),
-      paymentMethod: data.paymentMethod || 'bank',
-      status: data.status || 'unpaid',
-      dueDate: data.dueDate || new Date().toISOString(),
-      createdAt: data.createdAt || new Date().toISOString(),
-      notes: data.notes || '',
-    };
+    const invoice = { id: invoiceNumber, invoiceNumber, clientId: data.clientId || null, clientName: data.clientName?.trim() || '', clientEmail: data.clientEmail?.trim() || '', clientPhone: data.clientPhone?.trim() || '', items: data.items || [], subtotal: Number(data.subtotal) || 0, taxRate: settings.taxEnabled ? settings.taxRate : 0, taxAmount: inv.taxAmount, total: Number(inv.total) || Number(data.subtotal) + inv.taxAmount, paymentMethod: data.paymentMethod || 'bank', status: data.status || 'unpaid', dueDate: data.dueDate || new Date().toISOString(), createdAt: data.createdAt || new Date().toISOString(), notes: data.notes || '' };
     setInvoices((prev) => [invoice, ...prev]);
     return invoice;
   };
 
-  const updateInvoiceStatus = (invoiceId, status) => {
-    setInvoices((prev) =>
-      prev.map((inv) => (inv.id === invoiceId || inv.invoiceNumber === invoiceId ? { ...inv, status } : inv)),
-    );
+  const updateInvoiceStatus = async (invoiceId, status) => {
+    if (hasToken()) await api.invoices.updateStatus(invoiceId, status);
+    setInvoices((prev) => prev.map((inv) => (inv.id === invoiceId || inv.invoiceNumber === invoiceId ? { ...inv, status } : inv)));
   };
 
-  const updateIncome = (id, data) => {
-    setIncomes((prev) =>
-      prev.map((i) =>
-        i.id === id
-          ? {
-              ...i,
-              clientId: data.clientId ?? i.clientId,
-              clientName: data.clientName ?? i.clientName,
-              serviceType: data.serviceType ?? i.serviceType,
-              paymentMethod: data.paymentMethod ?? i.paymentMethod,
-              amount: Number(data.amount) ?? i.amount,
-              date: data.date ?? i.date,
-              notes: data.notes ?? i.notes,
-              isRecurring: data.isRecurringInflow ?? i.isRecurring,
-              recurringFrequency: data.recurringFrequency ?? i.recurringFrequency,
-              recurringEndDate: data.continueIndefinitely ? null : (data.recurringEndDate ?? i.recurringEndDate),
-              recurringNotes: data.recurringNotes ?? i.recurringNotes,
-            }
-          : i,
-      ),
-    );
+  const updateIncome = async (id, data) => {
+    if (hasToken()) {
+      const updated = await api.incomes.update(id, data);
+      setIncomes((prev) => prev.map((i) => (i.id === id ? updated : i)));
+      return;
+    }
+    setIncomes((prev) => prev.map((i) => (i.id === id ? { ...i, clientId: data.clientId ?? i.clientId, clientName: data.clientName ?? i.clientName, serviceType: data.serviceType ?? i.serviceType, paymentMethod: data.paymentMethod ?? i.paymentMethod, amount: Number(data.amount) ?? i.amount, date: data.date ?? i.date, notes: data.notes ?? i.notes, isRecurring: data.isRecurringInflow ?? i.isRecurring, recurringFrequency: data.recurringFrequency ?? i.recurringFrequency, recurringEndDate: data.continueIndefinitely ? null : (data.recurringEndDate ?? i.recurringEndDate), recurringNotes: data.recurringNotes ?? i.recurringNotes } : i)));
   };
 
-  const deleteIncome = (id) => {
+  const deleteIncome = async (id) => {
+    if (hasToken()) await api.incomes.delete(id);
     setIncomes((prev) => prev.filter((i) => i.id !== id));
   };
 
-  const updateExpense = (id, data) => {
-    setExpenses((prev) =>
-      prev.map((e) =>
-        e.id === id
-          ? {
-              ...e,
-              category: data.category ?? e.category,
-              amount: Number(data.amount) ?? e.amount,
-              date: data.date ?? e.date,
-              paymentMethod: data.paymentMethod ?? e.paymentMethod,
-              isRecurring: data.isRecurring ?? e.isRecurring,
-              recurringFrequency: data.recurringFrequency ?? e.recurringFrequency,
-              recurringEndDate: data.continueIndefinitely ? null : (data.recurringEndDate ?? e.recurringEndDate),
-              recurringNotes: data.recurringNotes ?? e.recurringNotes,
-              notes: data.notes ?? e.notes,
-              receipt: data.receipt ?? e.receipt,
-            }
-          : e,
-      ),
-    );
+  const updateExpense = async (id, data) => {
+    if (hasToken()) {
+      const updated = await api.expenses.update(id, data);
+      setExpenses((prev) => prev.map((e) => (e.id === id ? updated : e)));
+      return;
+    }
+    setExpenses((prev) => prev.map((e) => (e.id === id ? { ...e, category: data.category ?? e.category, amount: Number(data.amount) ?? e.amount, date: data.date ?? e.date, paymentMethod: data.paymentMethod ?? e.paymentMethod, isRecurring: data.isRecurring ?? e.isRecurring, recurringFrequency: data.recurringFrequency ?? e.recurringFrequency, recurringEndDate: data.continueIndefinitely ? null : (data.recurringEndDate ?? e.recurringEndDate), recurringNotes: data.recurringNotes ?? e.recurringNotes, notes: data.notes ?? e.notes, receipt: data.receipt ?? e.receipt } : e)));
   };
 
-  const deleteExpense = (id) => {
+  const deleteExpense = async (id) => {
+    if (hasToken()) await api.expenses.delete(id);
     setExpenses((prev) => prev.filter((e) => e.id !== id));
   };
 
-  const updateClient = (id, data) => {
-    setClients((prev) =>
-      prev.map((c) =>
-        c.id === id
-          ? {
-              ...c,
-              name: data.name ?? c.name,
-              email: data.email ?? c.email,
-              phone: data.phone ?? c.phone,
-              address: data.address ?? c.address,
-            }
-          : c,
-      ),
-    );
+  const updateClient = async (id, data) => {
+    if (hasToken()) {
+      const updated = await api.clients.update(id, data);
+      setClients((prev) => prev.map((c) => (c.id === id ? updated : c)));
+      return;
+    }
+    setClients((prev) => prev.map((c) => (c.id === id ? { ...c, name: data.name ?? c.name, email: data.email ?? c.email, phone: data.phone ?? c.phone, address: data.address ?? c.address } : c)));
   };
 
-  const deleteClient = (id) => {
+  const deleteClient = async (id) => {
+    if (hasToken()) await api.clients.delete(id);
     setClients((prev) => prev.filter((c) => c.id !== id));
   };
 
-  const deleteInvoice = (id) => {
+  const deleteInvoice = async (id) => {
+    if (hasToken()) await api.invoices.delete(id);
     setInvoices((prev) => prev.filter((inv) => inv.id !== id && inv.invoiceNumber !== id));
   };
 
-  const updateSettings = (partial) => {
-    setSettings((prev) => ({
-      ...prev,
-      ...partial,
-    }));
+  const updateSettings = async (partial) => {
+    if (hasToken()) await api.settings.update(partial);
+    setSettings((prev) => ({ ...prev, ...partial }));
   };
 
-  const addAsset = (data) => {
-    const asset = {
-      id: createId('AST'),
-      name: data.name?.trim() || 'Asset',
-      amount: Number(data.amount) || 0,
-      date: data.date || new Date().toISOString(),
-      createdAt: new Date().toISOString(),
-    };
+  const addAsset = async (data) => {
+    if (hasToken()) {
+      const asset = await api.assets.create(data);
+      setAssets((prev) => [asset, ...prev]);
+      return asset;
+    }
+    const asset = { id: createId('AST'), name: data.name?.trim() || 'Asset', amount: Number(data.amount) || 0, date: data.date || new Date().toISOString(), createdAt: new Date().toISOString() };
     setAssets((prev) => [asset, ...prev]);
     return asset;
   };
 
-  const deleteAsset = (id) => {
+  const deleteAsset = async (id) => {
+    if (hasToken()) await api.assets.delete(id);
     setAssets((prev) => prev.filter((a) => a.id !== id));
   };
 
-  const addLoan = (data) => {
-    const loan = {
-      id: createId('LN'),
-      name: data.name?.trim() || 'Loan',
-      amount: Number(data.amount) || 0,
-      date: data.date || new Date().toISOString(),
-      createdAt: new Date().toISOString(),
-    };
+  const addLoan = async (data) => {
+    if (hasToken()) {
+      const loan = await api.loans.create(data);
+      setLoans((prev) => [loan, ...prev]);
+      return loan;
+    }
+    const loan = { id: createId('LN'), name: data.name?.trim() || 'Loan', amount: Number(data.amount) || 0, date: data.date || new Date().toISOString(), createdAt: new Date().toISOString() };
     setLoans((prev) => [loan, ...prev]);
     return loan;
   };
 
-  const deleteLoan = (id) => {
+  const deleteLoan = async (id) => {
+    if (hasToken()) await api.loans.delete(id);
     setLoans((prev) => prev.filter((l) => l.id !== id));
   };
 

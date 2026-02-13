@@ -15,18 +15,25 @@ const Login = () => {
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
   const { login } = useAuth();
   const navigate = useNavigate();
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
-
-    const result = login(email, password);
-    if (result.success) {
-      navigate('/dashboard');
-    } else {
-      setError(result.error);
+    setLoading(true);
+    try {
+      const result = await login(email, password);
+      if (result.success) {
+        navigate('/dashboard');
+      } else {
+        setError(result.error || 'Invalid credentials');
+      }
+    } catch {
+      setError('Login failed. Please try again.');
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -109,9 +116,10 @@ const Login = () => {
 
               <Button
                 type="submit"
+                disabled={loading}
                 className="w-full h-12 bg-[#f97316] hover:bg-[#ea580c] text-white font-semibold rounded-lg transition-colors"
               >
-                Sign in
+                {loading ? 'Signing in...' : 'Sign in'}
               </Button>
             </form>
 

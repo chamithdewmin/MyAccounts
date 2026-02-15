@@ -85,16 +85,19 @@ router.delete('/:id', async (req, res) => {
       await client.query('BEGIN');
       const tables = ['orders', 'incomes', 'invoices', 'clients', 'customers', 'expenses', 'cars', 'assets', 'loans', 'transfers', 'reminders', 'settings'];
       for (const table of tables) {
+        await client.query('SAVEPOINT del_user');
         try {
           await client.query(`DELETE FROM ${table} WHERE user_id = $1`, [id]);
         } catch (tErr) {
+          await client.query('ROLLBACK TO SAVEPOINT del_user');
           if (tErr.code !== '42P01' && tErr.code !== '42703') throw tErr;
         }
       }
+      await client.query('SAVEPOINT del_user');
       try {
         await client.query('DELETE FROM password_reset_otps WHERE email = $1', [userEmail]);
       } catch {
-        /* table may not exist */
+        await client.query('ROLLBACK TO SAVEPOINT del_user');
       }
       const { rowCount } = await client.query('DELETE FROM users WHERE id = $1', [id]);
       if (rowCount === 0) throw new Error('User delete failed');
@@ -103,7 +106,7 @@ router.delete('/:id', async (req, res) => {
       try {
         await client.query('ROLLBACK');
       } catch {
-        /* ignore rollback error */
+        /* ignore */
       }
       throw txErr;
     } finally {

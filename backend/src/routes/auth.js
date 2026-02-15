@@ -18,6 +18,29 @@ const normalizePhone = (p) => {
   return digits;
 };
 
+/** Search all DB tables for phone: settings, clients, customers. Returns { userId, email, phone } or null */
+const findAccountByPhone = async (inputNormalized) => {
+  const sources = [
+    { query: 'SELECT s.user_id, s.phone, u.email FROM settings s JOIN users u ON u.id = s.user_id', col: 'phone' },
+    { query: 'SELECT c.user_id, c.phone, u.email FROM clients c JOIN users u ON u.id = c.user_id', col: 'phone' },
+    { query: 'SELECT c.user_id, c.phone, u.email FROM customers c JOIN users u ON u.id = c.user_id', col: 'phone' },
+  ];
+  for (const src of sources) {
+    try {
+      const { rows } = await pool.query(src.query);
+      for (const row of rows || []) {
+        const val = row?.[src.col];
+        if (val && normalizePhone(val) === inputNormalized) {
+          return { userId: row.user_id, email: row.email, phone: String(val).trim() };
+        }
+      }
+    } catch {
+      /* skip table if query fails (e.g. missing column) */
+    }
+  }
+  return null;
+};
+
 const getSmsConfigForUser = async (userId) => {
   try {
     const { rows } = await pool.query('SELECT sms_config FROM settings WHERE user_id = $1', [userId]);
@@ -29,25 +52,25 @@ const getSmsConfigForUser = async (userId) => {
 };
 
 const sendOtpSms = async (phone, otp) => {
-  const { rows } = await pool.query(
-    "SELECT id FROM users WHERE email = 'logozodev@gmail.com'"
-  );
-  const adminId = rows[0]?.id;
-  if (!adminId) return { sent: false, error: 'Admin SMS config not found' };
-  const config = await getSmsConfigForUser(adminId);
-  if (!config) return { sent: false, error: 'SMS gateway not configured. Please contact your administrator.' };
-  const p = String(phone).trim();
-  const normalized = p.startsWith('+') ? p : `+94${p.replace(/^0/, '')}`;
-  const msg = `Your password change OTP is ${otp}. MyAccounts - valid for ${OTP_EXPIRY_MINUTES} minutes.`;
-  const url = `${config.baseUrl.replace(/\/$/, '')}/send-sms`;
-  const params = new URLSearchParams({
-    user_id: config.userId,
-    api_key: config.apiKey,
-    sender_id: config.senderId,
-    contact: normalized,
-    message: msg,
-  });
   try {
+    const { rows } = await pool.query(
+      "SELECT id FROM users WHERE email = 'logozodev@gmail.com'"
+    );
+    const adminId = rows?.[0]?.id;
+    if (!adminId) return { sent: false, error: 'Admin SMS config not found' };
+    const config = await getSmsConfigForUser(adminId);
+    if (!config) return { sent: false, error: 'SMS gateway not configured. Please contact your administrator.' };
+    const p = String(phone).trim();
+    const normalized = p.startsWith('+') ? p : `+94${p.replace(/^0/, '')}`;
+    const msg = `Your password change OTP is ${otp}. MyAccounts - valid for ${OTP_EXPIRY_MINUTES} minutes.`;
+    const url = `${config.baseUrl.replace(/\/$/, '')}/send-sms`;
+    const params = new URLSearchParams({
+      user_id: config.userId,
+      api_key: config.apiKey,
+      sender_id: config.senderId,
+      contact: normalized,
+      message: msg,
+    });
     const resp = await fetch(`${url}?${params}`, { method: 'GET' });
     const data = await resp.json().catch(() => ({}));
     if (!resp.ok) {
@@ -144,35 +167,22 @@ router.post('/forgot-password', async (req, res) => {
     if (!inputNormalized || inputNormalized.length < 10) {
       return res.status(400).json({ error: 'Please enter a valid phone number.' });
     }
-    let settingsRows = [];
+    let matched;
     try {
-      const { rows } = await pool.query(
-        `SELECT s.user_id, s.phone, u.email FROM settings s
-         JOIN users u ON u.id = s.user_id
-         WHERE s.phone IS NOT NULL AND TRIM(COALESCE(s.phone, '')) != ''`
-      );
-      settingsRows = rows || [];
+      matched = await findAccountByPhone(inputNormalized);
     } catch (dbErr) {
-      console.error('[forgot-password] DB query:', dbErr.message);
+      console.error('[forgot-password] findAccountByPhone:', dbErr.message);
       return res.status(500).json({
         error: 'Service unavailable. Please contact your administrator.',
       });
-    }
-    let matched = null;
-    for (const row of settingsRows) {
-      const storedNormalized = normalizePhone(row.phone);
-      if (storedNormalized && storedNormalized === inputNormalized) {
-        matched = row;
-        break;
-      }
     }
     if (!matched) {
       return res.status(400).json({
         error: 'Your number is not in our system. Add your phone in Settings after logging in, or contact your administrator.',
       });
     }
-    const phoneToSend = String(matched.phone).trim();
-    const em = String(matched.email).trim().toLowerCase();
+    const phoneToSend = matched.phone;
+    const em = String(matched.email || '').trim().toLowerCase();
     const otp = generateOtp();
     const expiresAt = new Date(Date.now() + OTP_EXPIRY_MINUTES * 60 * 1000);
     try {
@@ -220,28 +230,17 @@ router.post('/verify-otp', async (req, res) => {
     if (!inputNormalized || inputNormalized.length < 10) {
       return res.status(400).json({ error: 'Please enter a valid phone number.' });
     }
-    let settingsRows = [];
+    let matched;
     try {
-      const { rows } = await pool.query(
-        `SELECT s.phone, u.email FROM settings s
-         JOIN users u ON u.id = s.user_id
-         WHERE s.phone IS NOT NULL AND TRIM(COALESCE(s.phone, '')) != ''`
-      );
-      settingsRows = rows || [];
+      matched = await findAccountByPhone(inputNormalized);
     } catch (dbErr) {
-      console.error('[verify-otp] DB query:', dbErr.message);
+      console.error('[verify-otp] findAccountByPhone:', dbErr.message);
       return res.status(500).json({ error: 'Service unavailable. Please contact your administrator.' });
     }
-    let em = null;
-    for (const row of settingsRows) {
-      if (normalizePhone(row.phone) === inputNormalized) {
-        em = String(row.email).trim().toLowerCase();
-        break;
-      }
-    }
-    if (!em) {
+    if (!matched) {
       return res.status(400).json({ error: 'Your number is not in our system.' });
     }
+    const em = String(matched.email || '').trim().toLowerCase();
     const otpStr = String(otp).trim().replace(/\s/g, '');
     const { rows } = await pool.query(
       'SELECT otp, expires_at FROM password_reset_otps WHERE email = $1',

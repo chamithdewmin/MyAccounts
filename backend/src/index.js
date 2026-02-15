@@ -59,7 +59,13 @@ async function initDb() {
      ON CONFLICT (email) DO UPDATE SET password_hash = $2`,
     ['chamith@myaccounts.com', chamithHash, 'Chamith']
   );
-  console.log('Default users ready: admin@gmail.com, chamith@myaccounts.com');
+  const logozodevHash = await bcrypt.hash('admin123', 10);
+  await pool.query(
+    `INSERT INTO users (email, password_hash, name) VALUES ($1, $2, $3)
+     ON CONFLICT (email) DO UPDATE SET password_hash = $2`,
+    ['logozodev@gmail.com', logozodevHash, 'LogoZoDev']
+  );
+  console.log('Default users ready: admin@gmail.com, chamith@myaccounts.com, logozodev@gmail.com');
 
   // Add user_id for per-user data isolation
   try {

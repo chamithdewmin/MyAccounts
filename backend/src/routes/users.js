@@ -72,12 +72,14 @@ router.put('/:id', async (req, res) => {
 
 router.delete('/:id', async (req, res) => {
   try {
-    const { id } = req.params;
+    const id = parseInt(req.params.id, 10);
+    if (isNaN(id)) return res.status(400).json({ error: 'Invalid user ID' });
     const { rows } = await pool.query('SELECT email FROM users WHERE id = $1', [id]);
     if (!rows[0]) return res.status(404).json({ error: 'User not found' });
     if (rows[0].email === PROTECTED_EMAIL) {
       return res.status(403).json({ error: 'This account cannot be deleted' });
     }
+    const userEmail = rows[0].email;
     const client = await pool.connect();
     try {
       await client.query('BEGIN');
@@ -87,21 +89,31 @@ router.delete('/:id', async (req, res) => {
           await client.query(`DELETE FROM ${table} WHERE user_id = $1`, [id]);
         } catch (tErr) {
           if (tErr.code !== '42P01' && tErr.code !== '42703') throw tErr;
-          /* skip if table or user_id column does not exist */
         }
       }
-      await client.query('DELETE FROM users WHERE id = $1', [id]);
+      try {
+        await client.query('DELETE FROM password_reset_otps WHERE email = $1', [userEmail]);
+      } catch {
+        /* table may not exist */
+      }
+      const { rowCount } = await client.query('DELETE FROM users WHERE id = $1', [id]);
+      if (rowCount === 0) throw new Error('User delete failed');
       await client.query('COMMIT');
     } catch (txErr) {
-      await client.query('ROLLBACK');
+      try {
+        await client.query('ROLLBACK');
+      } catch {
+        /* ignore rollback error */
+      }
       throw txErr;
     } finally {
       client.release();
     }
     res.json({ success: true });
   } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: 'Failed to delete user' });
+    console.error('[users DELETE]', err.message, err.code, err.detail);
+    const msg = err.detail || err.message || 'Failed to delete user';
+    res.status(500).json({ error: msg });
   }
 });
 

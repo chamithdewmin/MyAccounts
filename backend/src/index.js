@@ -21,7 +21,23 @@ import pool from './config/db.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
+const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+
+async function waitForDb(maxAttempts = 10) {
+  for (let i = 0; i < maxAttempts; i++) {
+    try {
+      await pool.query('SELECT 1');
+      return;
+    } catch (err) {
+      if (i === maxAttempts - 1) throw err;
+      console.log(`Waiting for database... (${i + 1}/${maxAttempts})`);
+      await sleep(2000);
+    }
+  }
+}
+
 async function initDb() {
+  await waitForDb();
   const sqlPath = path.join(__dirname, '..', 'scripts', 'schema.sql');
   const sql = fs.readFileSync(sqlPath, 'utf8');
   await pool.query(sql);
@@ -43,10 +59,14 @@ async function initDb() {
   console.log('Default users ready: admin@gmail.com, chamith@myaccounts.com');
 
   // Add user_id for per-user data isolation
-  const migratePath = path.join(__dirname, '..', 'scripts', 'migrate-user-id.sql');
-  const migrate = fs.readFileSync(migratePath, 'utf8');
-  await pool.query(migrate);
-  console.log('Per-user data isolation enabled.');
+  try {
+    const migratePath = path.join(__dirname, '..', 'scripts', 'migrate-user-id.sql');
+    const migrate = fs.readFileSync(migratePath, 'utf8');
+    await pool.query(migrate);
+    console.log('Per-user data isolation enabled.');
+  } catch (migErr) {
+    console.warn('Migration warning (app will continue):', migErr.message);
+  }
 }
 
 const app = express();
@@ -89,13 +109,15 @@ app.use('/api/customers', customersRoutes);
 app.use('/api/orders', ordersRoutes);
 app.use('/api/users', usersRoutes);
 
+const HOST = '0.0.0.0'; // Required for Docker: listen on all interfaces
+
 initDb()
   .catch((err) => {
     console.error('Failed to initialize database:', err.message);
     process.exit(1);
   })
   .then(() => {
-    app.listen(PORT, () => {
-      console.log(`MyAccounts API running on port ${PORT}`);
+    app.listen(PORT, HOST, () => {
+      console.log(`MyAccounts API running on ${HOST}:${PORT}`);
     });
   });

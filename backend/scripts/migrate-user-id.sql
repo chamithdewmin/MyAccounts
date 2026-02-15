@@ -25,12 +25,9 @@ UPDATE cars SET user_id = 1 WHERE user_id IS NULL;
 UPDATE customers SET user_id = 1 WHERE user_id IS NULL;
 UPDATE orders SET user_id = 1 WHERE user_id IS NULL;
 
--- Allow multiple settings rows: use sequence for id
-DO $$
-BEGIN
-  IF NOT EXISTS (SELECT 1 FROM pg_sequences WHERE schemaname = 'public' AND sequencename = 'settings_id_seq') THEN
-    CREATE SEQUENCE settings_id_seq;
-    SELECT setval('settings_id_seq', (SELECT COALESCE(MAX(id), 1) FROM settings));
-    ALTER TABLE settings ALTER COLUMN id SET DEFAULT nextval('settings_id_seq');
-  END IF;
-END $$;
+-- Allow multiple settings rows: use sequence for id (skip if sequence exists)
+CREATE SEQUENCE IF NOT EXISTS settings_id_seq;
+-- Set next value above current max (safe to run multiple times)
+SELECT setval('settings_id_seq', (SELECT COALESCE(MAX(id), 1) FROM settings));
+-- Set default for new rows only (existing rows keep their id)
+ALTER TABLE settings ALTER COLUMN id SET DEFAULT nextval('settings_id_seq');

@@ -86,10 +86,14 @@ router.post('/login', async (req, res) => {
     if (!email || !password) {
       return res.status(400).json({ error: 'Email and password required' });
     }
+    const emailTrimmed = String(email).trim().toLowerCase();
+    if (!emailTrimmed) {
+      return res.status(400).json({ error: 'Email and password required' });
+    }
 
     const { rows } = await pool.query(
-      'SELECT id, email, name, password_hash FROM users WHERE email = $1',
-      [email]
+      'SELECT id, email, name, password_hash FROM users WHERE LOWER(TRIM(email)) = $1',
+      [emailTrimmed]
     );
 
     const user = rows[0];

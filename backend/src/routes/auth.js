@@ -140,11 +140,20 @@ router.post('/forgot-password', async (req, res) => {
     if (!inputNormalized || inputNormalized.length < 10) {
       return res.status(400).json({ error: 'Please enter a valid phone number.' });
     }
-    const { rows: settingsRows } = await pool.query(
-      `SELECT s.user_id, s.phone, u.email FROM settings s
-       JOIN users u ON u.id = s.user_id
-       WHERE s.phone IS NOT NULL AND TRIM(s.phone) != ''`
-    );
+    let settingsRows = [];
+    try {
+      const { rows } = await pool.query(
+        `SELECT s.user_id, s.phone, u.email FROM settings s
+         JOIN users u ON u.id = s.user_id
+         WHERE s.phone IS NOT NULL AND TRIM(COALESCE(s.phone, '')) != ''`
+      );
+      settingsRows = rows || [];
+    } catch (dbErr) {
+      console.error('[forgot-password] DB query:', dbErr.message);
+      return res.status(500).json({
+        error: 'Service unavailable. Please contact your administrator.',
+      });
+    }
     let matched = null;
     for (const row of settingsRows) {
       const storedNormalized = normalizePhone(row.phone);
@@ -155,17 +164,24 @@ router.post('/forgot-password', async (req, res) => {
     }
     if (!matched) {
       return res.status(400).json({
-        error: 'No account found with this phone number. Add your phone in Settings after logging in.',
+        error: 'Your number is not in our system. Add your phone in Settings after logging in, or contact your administrator.',
       });
     }
     const phoneToSend = String(matched.phone).trim();
     const em = String(matched.email).trim().toLowerCase();
     const otp = generateOtp();
     const expiresAt = new Date(Date.now() + OTP_EXPIRY_MINUTES * 60 * 1000);
-    await pool.query(
-      'INSERT INTO password_reset_otps (email, otp, expires_at) VALUES ($1, $2, $3) ON CONFLICT (email) DO UPDATE SET otp = $2, expires_at = $3',
-      [em, otp, expiresAt]
-    );
+    try {
+      await pool.query(
+        'INSERT INTO password_reset_otps (email, otp, expires_at) VALUES ($1, $2, $3) ON CONFLICT (email) DO UPDATE SET otp = $2, expires_at = $3',
+        [em, otp, expiresAt]
+      );
+    } catch (dbErr) {
+      console.error('[forgot-password] OTP store:', dbErr.message);
+      return res.status(500).json({
+        error: 'Service unavailable. Please try again later or contact your administrator.',
+      });
+    }
     const result = await sendOtpSms(phoneToSend, otp);
     if (!result.sent) {
       const isGatewayNotConfigured = /not configured|gateway not configured/i.test(String(result.error || ''));
@@ -181,7 +197,12 @@ router.post('/forgot-password', async (req, res) => {
     res.json({ success: true, message: 'OTP sent to your registered phone number.' });
   } catch (err) {
     console.error('[forgot-password]', err);
-    res.status(500).json({ error: 'Server error' });
+    const isDbError = err.code === '42P01' || err.code === '42703' || err.message?.includes('relation') || err.message?.includes('column');
+    res.status(500).json({
+      error: isDbError
+        ? 'Service unavailable. Please ensure the database migration has been run.'
+        : 'Something went wrong. Please try again or contact your administrator.',
+    });
   }
 });
 
@@ -195,11 +216,18 @@ router.post('/verify-otp', async (req, res) => {
     if (!inputNormalized || inputNormalized.length < 10) {
       return res.status(400).json({ error: 'Please enter a valid phone number.' });
     }
-    const { rows: settingsRows } = await pool.query(
-      `SELECT s.phone, u.email FROM settings s
-       JOIN users u ON u.id = s.user_id
-       WHERE s.phone IS NOT NULL AND TRIM(s.phone) != ''`
-    );
+    let settingsRows = [];
+    try {
+      const { rows } = await pool.query(
+        `SELECT s.phone, u.email FROM settings s
+         JOIN users u ON u.id = s.user_id
+         WHERE s.phone IS NOT NULL AND TRIM(COALESCE(s.phone, '')) != ''`
+      );
+      settingsRows = rows || [];
+    } catch (dbErr) {
+      console.error('[verify-otp] DB query:', dbErr.message);
+      return res.status(500).json({ error: 'Service unavailable. Please contact your administrator.' });
+    }
     let em = null;
     for (const row of settingsRows) {
       if (normalizePhone(row.phone) === inputNormalized) {
@@ -208,7 +236,7 @@ router.post('/verify-otp', async (req, res) => {
       }
     }
     if (!em) {
-      return res.status(400).json({ error: 'No account found with this phone number.' });
+      return res.status(400).json({ error: 'Your number is not in our system.' });
     }
     const otpStr = String(otp).trim().replace(/\s/g, '');
     const { rows } = await pool.query(

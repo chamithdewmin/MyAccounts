@@ -7,17 +7,6 @@ export const CartProvider = ({ children }) => {
   const [cart, setCart] = useState([]);
   const { toast } = useToast();
 
-  useEffect(() => {
-    const savedCart = localStorage.getItem('cart');
-    if (savedCart) {
-      setCart(JSON.parse(savedCart));
-    }
-  }, []);
-
-  useEffect(() => {
-    localStorage.setItem('cart', JSON.stringify(cart));
-  }, [cart]);
-
   const addToCart = (car, quantity = 1, selectedColor = null) => {
     const existingItem = cart.find(item => item.id === car.id && item.selectedColor === selectedColor);
     

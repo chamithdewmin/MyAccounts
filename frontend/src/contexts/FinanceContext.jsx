@@ -1,20 +1,9 @@
 import React, { createContext, useContext, useEffect, useMemo, useState } from 'react';
-import { getStorageData, setStorageData } from '@/utils/storage';
 import { api } from '@/lib/api';
 
 const FinanceContext = createContext(null);
 
 const hasToken = () => !!localStorage.getItem('token');
-
-const STORAGE_KEYS = {
-  incomes: 'finance_incomes',
-  expenses: 'finance_expenses',
-  clients: 'finance_clients',
-  invoices: 'finance_invoices',
-  settings: 'finance_settings',
-  assets: 'finance_assets',
-  loans: 'finance_loans',
-};
 
 const createId = (prefix) => {
   const random = Math.random().toString(36).slice(2, 8).toUpperCase();
@@ -51,71 +40,48 @@ export const FinanceProvider = ({ children }) => {
   const [assets, setAssets] = useState([]);
   const [loans, setLoans] = useState([]);
 
-  // Load: from API when token exists, else from localStorage
+  // Load from database via API when logged in
   useEffect(() => {
     const load = async () => {
-      if (hasToken()) {
-        try {
-          const [incomesRes, expensesRes, clientsRes, invoicesRes, settingsRes, assetsRes, loansRes] = await Promise.all([
-            api.incomes.list().catch(() => []),
-            api.expenses.list().catch(() => []),
-            api.clients.list().catch(() => []),
-            api.invoices.list().catch(() => []),
-            api.settings.get().catch(() => getDefaultSettings()),
-            api.assets.list().catch(() => []),
-            api.loans.list().catch(() => []),
-          ]);
-          setIncomes(Array.isArray(incomesRes) ? incomesRes : []);
-          setExpenses(Array.isArray(expensesRes) ? expensesRes : []);
-          setClients(Array.isArray(clientsRes) ? clientsRes : []);
-          setInvoices(Array.isArray(invoicesRes) ? invoicesRes : []);
-          setSettings(settingsRes && typeof settingsRes === 'object' ? { ...getDefaultSettings(), ...settingsRes } : getDefaultSettings());
-          setAssets(Array.isArray(assetsRes) ? assetsRes : []);
-          setLoans(Array.isArray(loansRes) ? loansRes : []);
-        } catch {
-          // Fallback to localStorage on API error
-          loadFromStorage();
-        }
-      } else {
-        loadFromStorage();
+      if (!hasToken()) {
+        setIncomes([]);
+        setExpenses([]);
+        setClients([]);
+        setInvoices([]);
+        setSettings(getDefaultSettings());
+        setAssets([]);
+        setLoans([]);
+        return;
       }
-    };
-    const loadFromStorage = () => {
-      setIncomes(getStorageData(STORAGE_KEYS.incomes, []));
-      setExpenses(getStorageData(STORAGE_KEYS.expenses, []));
-      setClients(getStorageData(STORAGE_KEYS.clients, []));
-      const storedSettings = getStorageData(STORAGE_KEYS.settings, null);
-      setSettings(storedSettings ? { ...getDefaultSettings(), ...storedSettings } : getDefaultSettings());
-      const storedInvoices = getStorageData(STORAGE_KEYS.invoices, []);
-      setInvoices(Array.isArray(storedInvoices) ? storedInvoices : []);
-      setAssets(getStorageData(STORAGE_KEYS.assets, []));
-      setLoans(getStorageData(STORAGE_KEYS.loans, []));
+      try {
+        const [incomesRes, expensesRes, clientsRes, invoicesRes, settingsRes, assetsRes, loansRes] = await Promise.all([
+          api.incomes.list().catch(() => []),
+          api.expenses.list().catch(() => []),
+          api.clients.list().catch(() => []),
+          api.invoices.list().catch(() => []),
+          api.settings.get().catch(() => getDefaultSettings()),
+          api.assets.list().catch(() => []),
+          api.loans.list().catch(() => []),
+        ]);
+        setIncomes(Array.isArray(incomesRes) ? incomesRes : []);
+        setExpenses(Array.isArray(expensesRes) ? expensesRes : []);
+        setClients(Array.isArray(clientsRes) ? clientsRes : []);
+        setInvoices(Array.isArray(invoicesRes) ? invoicesRes : []);
+        setSettings(settingsRes && typeof settingsRes === 'object' ? { ...getDefaultSettings(), ...settingsRes } : getDefaultSettings());
+        setAssets(Array.isArray(assetsRes) ? assetsRes : []);
+        setLoans(Array.isArray(loansRes) ? loansRes : []);
+      } catch {
+        setIncomes([]);
+        setExpenses([]);
+        setClients([]);
+        setInvoices([]);
+        setSettings(getDefaultSettings());
+        setAssets([]);
+        setLoans([]);
+      }
     };
     load();
   }, []);
-
-  // Persist to localStorage only when not using API
-  useEffect(() => {
-    if (!hasToken()) setStorageData(STORAGE_KEYS.incomes, incomes);
-  }, [incomes]);
-  useEffect(() => {
-    if (!hasToken()) setStorageData(STORAGE_KEYS.expenses, expenses);
-  }, [expenses]);
-  useEffect(() => {
-    if (!hasToken()) setStorageData(STORAGE_KEYS.clients, clients);
-  }, [clients]);
-  useEffect(() => {
-    if (!hasToken()) setStorageData(STORAGE_KEYS.invoices, invoices);
-  }, [invoices]);
-  useEffect(() => {
-    if (!hasToken()) setStorageData(STORAGE_KEYS.settings, settings);
-  }, [settings]);
-  useEffect(() => {
-    if (!hasToken()) setStorageData(STORAGE_KEYS.assets, assets);
-  }, [assets]);
-  useEffect(() => {
-    if (!hasToken()) setStorageData(STORAGE_KEYS.loans, loans);
-  }, [loans]);
 
   const addClient = async (data) => {
     if (hasToken()) {

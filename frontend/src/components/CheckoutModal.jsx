@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { useCart } from '@/contexts/CartContext';
 import { useToast } from '@/components/ui/use-toast';
-import { getStorageData, setStorageData } from '@/utils/storage';
+import { api } from '@/lib/api';
 import { Printer, CreditCard, Banknote, Building2 } from 'lucide-react';
 import InvoiceTemplate from '@/components/InvoiceTemplate';
 
@@ -14,12 +14,14 @@ const CheckoutModal = ({ isOpen, onClose }) => {
   const [paymentMethod, setPaymentMethod] = useState('card');
   const [showInvoice, setShowInvoice] = useState(false);
   const [currentInvoice, setCurrentInvoice] = useState(null);
+  const [loading, setLoading] = useState(false);
   const { cart, clearCart, getTotal, getTax, getGrandTotal } = useCart();
   const { toast } = useToast();
 
   useEffect(() => {
-    const loadedCustomers = getStorageData('customers', []);
-    setCustomers(loadedCustomers);
+    if (isOpen && !!localStorage.getItem('token')) {
+      api.customers.list().then((list) => setCustomers(Array.isArray(list) ? list : [])).catch(() => setCustomers([]));
+    }
   }, [isOpen]);
 
   const generateInvoiceNumber = () => {
@@ -27,7 +29,7 @@ const CheckoutModal = ({ isOpen, onClose }) => {
     return `INV-${timestamp}`;
   };
 
-  const handleCheckout = () => {
+  const handleCheckout = async () => {
     if (!selectedCustomer) {
       toast({
         title: "Error",
@@ -39,57 +41,38 @@ const CheckoutModal = ({ isOpen, onClose }) => {
 
     const customer = customers.find(c => c.id === selectedCustomer);
     const invoiceNumber = generateInvoiceNumber();
-    const orderDate = new Date().toISOString();
 
     const order = {
       id: invoiceNumber,
       customerId: selectedCustomer,
-      customerName: customer.name,
+      customerName: customer?.name || '',
       items: cart,
       subtotal: getTotal(),
       tax: getTax(),
       total: getGrandTotal(),
       paymentMethod,
       status: 'Paid',
-      date: orderDate,
     };
 
-    // Save order
-    const orders = getStorageData('orders', []);
-    orders.unshift(order);
-    setStorageData('orders', orders);
-
-    // Update inventory
-    const cars = getStorageData('cars', []);
-    const updatedCars = cars.map(car => {
-      const cartItem = cart.find(item => item.id === car.id);
-      if (cartItem) {
-        return { ...car, stock: Math.max(0, car.stock - cartItem.quantity) };
-      }
-      return car;
-    });
-    setStorageData('cars', updatedCars);
-
-    // Update customer purchase history
-    const updatedCustomers = customers.map(c => {
-      if (c.id === selectedCustomer) {
-        return {
-          ...c,
-          purchaseHistory: [...(c.purchaseHistory || []), invoiceNumber]
-        };
-      }
-      return c;
-    });
-    setStorageData('customers', updatedCustomers);
-
-    setCurrentInvoice(order);
-    setShowInvoice(true);
-    clearCart();
-
-    toast({
-      title: "Order completed!",
-      description: `Invoice ${invoiceNumber} created successfully`,
-    });
+    setLoading(true);
+    try {
+      await api.orders.create(order);
+      setCurrentInvoice(order);
+      setShowInvoice(true);
+      clearCart();
+      toast({
+        title: "Order completed!",
+        description: `Invoice ${invoiceNumber} created successfully`,
+      });
+    } catch (err) {
+      toast({
+        title: "Order failed",
+        description: err.message || "Could not save order to database",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handlePrint = () => {
@@ -199,8 +182,8 @@ const CheckoutModal = ({ isOpen, onClose }) => {
             </div>
           </div>
 
-          <Button onClick={handleCheckout} className="w-full">
-            Complete Sale
+          <Button onClick={handleCheckout} className="w-full" disabled={loading}>
+            {loading ? 'Saving...' : 'Complete Sale'}
           </Button>
         </div>
       </DialogContent>

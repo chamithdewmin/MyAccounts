@@ -32,8 +32,8 @@ export const api = {
   auth: {
     login: (email, password) => request('/auth/login', { method: 'POST', body: JSON.stringify({ email, password }) }),
     me: () => request('/auth/me'),
-    forgotPassword: (email) => request('/auth/forgot-password', { method: 'POST', body: JSON.stringify({ email }) }),
-    verifyOtp: (email, otp) => request('/auth/verify-otp', { method: 'POST', body: JSON.stringify({ email, otp }) }),
+    forgotPassword: (phone) => request('/auth/forgot-password', { method: 'POST', body: JSON.stringify({ phone }) }),
+    verifyOtp: (phone, otp) => request('/auth/verify-otp', { method: 'POST', body: JSON.stringify({ phone, otp }) }),
     resetPassword: (resetToken, newPassword) => request('/auth/reset-password', { method: 'POST', body: JSON.stringify({ resetToken, newPassword }) }),
   },
   clients: {

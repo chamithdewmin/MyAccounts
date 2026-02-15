@@ -9,6 +9,15 @@ const RESET_TOKEN_EXPIRY = '15m';
 
 const generateOtp = () => String(Math.floor(100000 + Math.random() * 900000));
 
+const normalizePhone = (p) => {
+  const digits = String(p || '').replace(/\D/g, '');
+  if (!digits) return '';
+  if (digits.startsWith('94') && digits.length >= 11) return digits;
+  if (digits.startsWith('0') && digits.length >= 10) return '94' + digits.slice(1);
+  if (digits.length >= 9) return '94' + digits;
+  return digits;
+};
+
 const getSmsConfigForUser = async (userId) => {
   const { rows } = await pool.query('SELECT sms_config FROM settings WHERE user_id = $1', [userId]);
   const c = rows[0]?.sms_config;
@@ -123,38 +132,41 @@ router.get('/me', async (req, res) => {
 
 router.post('/forgot-password', async (req, res) => {
   try {
-    const { email } = req.body;
-    if (!email || !String(email).trim()) {
-      return res.status(400).json({ error: 'Email is required' });
+    const { phone } = req.body;
+    if (!phone || !String(phone).trim()) {
+      return res.status(400).json({ error: 'Phone number is required' });
     }
-    const em = String(email).trim().toLowerCase();
-    const { rows: userRows } = await pool.query(
-      'SELECT id FROM users WHERE LOWER(email) = $1',
-      [em]
-    );
-    if (!userRows[0]) {
-      return res.status(400).json({ error: 'No account found with this email.' });
+    const inputNormalized = normalizePhone(phone);
+    if (!inputNormalized || inputNormalized.length < 10) {
+      return res.status(400).json({ error: 'Please enter a valid phone number.' });
     }
-    const userId = userRows[0].id;
     const { rows: settingsRows } = await pool.query(
-      'SELECT phone FROM settings WHERE user_id = $1',
-      [userId]
+      `SELECT s.user_id, s.phone, u.email FROM settings s
+       JOIN users u ON u.id = s.user_id
+       WHERE s.phone IS NOT NULL AND TRIM(s.phone) != ''`
     );
-    let phone = settingsRows[0]?.phone;
-    if (typeof phone !== 'string') phone = '';
-    phone = String(phone).trim();
-    if (!phone) {
+    let matched = null;
+    for (const row of settingsRows) {
+      const storedNormalized = normalizePhone(row.phone);
+      if (storedNormalized && storedNormalized === inputNormalized) {
+        matched = row;
+        break;
+      }
+    }
+    if (!matched) {
       return res.status(400).json({
-        error: 'No phone number on file. Add your phone in Settings after logging in, or contact your administrator.',
+        error: 'No account found with this phone number. Add your phone in Settings after logging in.',
       });
     }
+    const phoneToSend = String(matched.phone).trim();
+    const em = String(matched.email).trim().toLowerCase();
     const otp = generateOtp();
     const expiresAt = new Date(Date.now() + OTP_EXPIRY_MINUTES * 60 * 1000);
     await pool.query(
       'INSERT INTO password_reset_otps (email, otp, expires_at) VALUES ($1, $2, $3) ON CONFLICT (email) DO UPDATE SET otp = $2, expires_at = $3',
       [em, otp, expiresAt]
     );
-    const result = await sendOtpSms(phone, otp);
+    const result = await sendOtpSms(phoneToSend, otp);
     if (!result.sent) {
       const isGatewayNotConfigured = /not configured|gateway not configured/i.test(String(result.error || ''));
       if (isGatewayNotConfigured && process.env.NODE_ENV !== 'production') {
@@ -175,11 +187,29 @@ router.post('/forgot-password', async (req, res) => {
 
 router.post('/verify-otp', async (req, res) => {
   try {
-    const { email, otp } = req.body;
-    if (!email || !otp) {
-      return res.status(400).json({ error: 'Email and OTP are required' });
+    const { phone, otp } = req.body;
+    if (!phone || !otp) {
+      return res.status(400).json({ error: 'Phone number and OTP are required' });
     }
-    const em = String(email).trim().toLowerCase();
+    const inputNormalized = normalizePhone(phone);
+    if (!inputNormalized || inputNormalized.length < 10) {
+      return res.status(400).json({ error: 'Please enter a valid phone number.' });
+    }
+    const { rows: settingsRows } = await pool.query(
+      `SELECT s.phone, u.email FROM settings s
+       JOIN users u ON u.id = s.user_id
+       WHERE s.phone IS NOT NULL AND TRIM(s.phone) != ''`
+    );
+    let em = null;
+    for (const row of settingsRows) {
+      if (normalizePhone(row.phone) === inputNormalized) {
+        em = String(row.email).trim().toLowerCase();
+        break;
+      }
+    }
+    if (!em) {
+      return res.status(400).json({ error: 'No account found with this phone number.' });
+    }
     const otpStr = String(otp).trim().replace(/\s/g, '');
     const { rows } = await pool.query(
       'SELECT otp, expires_at FROM password_reset_otps WHERE email = $1',

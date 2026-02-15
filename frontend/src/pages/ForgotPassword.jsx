@@ -10,11 +10,11 @@ import { AlertCircle, CheckCircle, Eye, EyeOff } from 'lucide-react';
 import loginBackground from '@/assets/login-background.webp';
 import loginLogo from '@/assets/login logo.png';
 
-const STEPS = { EMAIL: 1, OTP: 2, PASSWORD: 3 };
+const STEPS = { PHONE: 1, OTP: 2, PASSWORD: 3 };
 
 const ForgotPassword = () => {
-  const [step, setStep] = useState(STEPS.EMAIL);
-  const [email, setEmail] = useState('');
+  const [step, setStep] = useState(STEPS.PHONE);
+  const [phone, setPhone] = useState('');
   const [otp, setOtp] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -36,7 +36,7 @@ const ForgotPassword = () => {
     setSuccess('');
     setLoading(true);
     try {
-      const data = await api.auth.forgotPassword(email.trim());
+      const data = await api.auth.forgotPassword(phone.trim());
       if (data.success) {
         setStep(STEPS.OTP);
         if (data.devOtp) {
@@ -56,7 +56,7 @@ const ForgotPassword = () => {
     setError('');
     setLoading(true);
     try {
-      const data = await api.auth.verifyOtp(email.trim(), otp.replace(/\s/g, ''));
+      const data = await api.auth.verifyOtp(phone.trim(), otp.replace(/\s/g, ''));
       if (data.success && data.resetToken) {
         setResetToken(data.resetToken);
         setStep(STEPS.PASSWORD);
@@ -117,7 +117,7 @@ const ForgotPassword = () => {
             </div>
             <h2 className="text-xl font-bold text-[#D3D3D3] mb-2 text-center">Forgot Password</h2>
             <p className="text-sm text-[#a0a0a0] text-center mb-6">
-              {step === STEPS.EMAIL && 'Enter your business email to receive an OTP'}
+              {step === STEPS.PHONE && 'Enter your registered phone number to receive an OTP'}
               {step === STEPS.OTP && 'Enter the OTP sent to your phone'}
               {step === STEPS.PASSWORD && 'Create your new password'}
             </p>
@@ -147,9 +147,9 @@ const ForgotPassword = () => {
             )}
 
             <AnimatePresence mode="wait">
-              {step === STEPS.EMAIL && (
+              {step === STEPS.PHONE && (
                 <motion.form
-                  key="email"
+                  key="phone"
                   initial={{ opacity: 0, x: -20 }}
                   animate={{ opacity: 1, x: 0 }}
                   exit={{ opacity: 0, x: 20 }}
@@ -157,13 +157,13 @@ const ForgotPassword = () => {
                   className="space-y-5"
                 >
                   <div className="space-y-2">
-                    <Label htmlFor="email" className={labelClass}>Business Email</Label>
+                    <Label htmlFor="phone" className={labelClass}>Phone Number</Label>
                     <Input
-                      id="email"
-                      type="email"
-                      placeholder="hello@yourcompany.com"
-                      value={email}
-                      onChange={(e) => setEmail(e.target.value)}
+                      id="phone"
+                      type="tel"
+                      placeholder="07XXXXXXXX or +947XXXXXXXX"
+                      value={phone}
+                      onChange={(e) => setPhone(e.target.value)}
                       required
                       className={inputClass}
                     />
@@ -216,10 +216,10 @@ const ForgotPassword = () => {
                   </Button>
                   <button
                     type="button"
-                    onClick={() => { setStep(STEPS.EMAIL); setOtp(''); setDevOtp(''); setError(''); setSuccess(''); }}
+                    onClick={() => { setStep(STEPS.PHONE); setPhone(''); setOtp(''); setDevOtp(''); setError(''); setSuccess(''); }}
                     className="w-full text-sm text-[#a0a0a0] hover:text-[#D3D3D3]"
                   >
-                    Use a different email
+                    Use a different phone number
                   </button>
                 </motion.form>
               )}

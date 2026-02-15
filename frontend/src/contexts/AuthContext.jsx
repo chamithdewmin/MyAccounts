@@ -13,11 +13,34 @@ export const AuthProvider = ({ children }) => {
       const token = localStorage.getItem('token');
       if (token) {
         try {
-          const { user: userData } = await api.auth.me();
-          setIsAuthenticated(true);
-          setUser(userData);
+          const res = await fetch(`${import.meta.env.VITE_API_URL || '/api'}/auth/me`, {
+            headers: { Authorization: `Bearer ${token}` },
+          });
+          const data = await res.json().catch(() => ({}));
+          if (res.ok) {
+            setIsAuthenticated(true);
+            setUser(data.user);
+          } else if (res.status === 401) {
+            localStorage.removeItem('token');
+          } else {
+            // Network/server error: use JWT payload as fallback so session persists
+            try {
+              const payload = JSON.parse(atob(token.split('.')[1].replace(/-/g, '+').replace(/_/g, '/')));
+              setIsAuthenticated(true);
+              setUser({ id: payload.id, email: payload.email, name: payload.email || 'User' });
+            } catch {
+              localStorage.removeItem('token');
+            }
+          }
         } catch {
-          localStorage.removeItem('token');
+          // Fetch failed (e.g. network): use JWT payload so session persists
+          try {
+            const payload = JSON.parse(atob(token.split('.')[1].replace(/-/g, '+').replace(/_/g, '/')));
+            setIsAuthenticated(true);
+            setUser({ id: payload.id, email: payload.email, name: payload.email || 'User' });
+          } catch {
+            localStorage.removeItem('token');
+          }
         }
       }
       setLoading(false);

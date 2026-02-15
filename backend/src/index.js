@@ -1,4 +1,7 @@
 import 'dotenv/config';
+import fs from 'fs';
+import path from 'path';
+import { fileURLToPath } from 'url';
 import express from 'express';
 import cors from 'cors';
 import authRoutes from './routes/auth.js';
@@ -13,6 +16,15 @@ import carsRoutes from './routes/cars.js';
 import customersRoutes from './routes/customers.js';
 import ordersRoutes from './routes/orders.js';
 import pool from './config/db.js';
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+
+async function initDb() {
+  const sqlPath = path.join(__dirname, '..', 'scripts', 'schema.sql');
+  const sql = fs.readFileSync(sqlPath, 'utf8');
+  await pool.query(sql);
+  console.log('Database tables ready.');
+}
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -53,6 +65,13 @@ app.use('/api/cars', carsRoutes);
 app.use('/api/customers', customersRoutes);
 app.use('/api/orders', ordersRoutes);
 
-app.listen(PORT, () => {
-  console.log(`MyAccounts API running on port ${PORT}`);
-});
+initDb()
+  .catch((err) => {
+    console.error('Failed to initialize database:', err.message);
+    process.exit(1);
+  })
+  .then(() => {
+    app.listen(PORT, () => {
+      console.log(`MyAccounts API running on port ${PORT}`);
+    });
+  });

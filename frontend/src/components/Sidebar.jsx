@@ -8,6 +8,7 @@ import {
   FileText,
   Users,
   UserPlus,
+  MessageSquare,
   BarChart3,
   TrendingUp,
   Settings,
@@ -34,6 +35,7 @@ const navItems = [
   { to: '/invoices', icon: FileText, label: 'Invoices' },
   { to: '/clients', icon: Users, label: 'Clients' },
   { to: '/users', icon: UserPlus, label: 'Users' },
+  { to: '/sms', icon: MessageSquare, label: 'SMS' },
   { to: '/settings', icon: Settings, label: 'Settings' },
 ];
 

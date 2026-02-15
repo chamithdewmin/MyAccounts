@@ -18,10 +18,11 @@ import ReportCashFlow from './pages/reports/ReportCashFlow';
 import CashFlow from './pages/CashFlow';
 import Settings from './pages/Settings';
 import Users from './pages/Users';
+import SMS from './pages/SMS';
 import Layout from './components/Layout';
 
 function App() {
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, loading } = useAuth();
   const { settings } = useFinance();
 
   useEffect(() => {
@@ -33,10 +34,18 @@ function App() {
     }
   }, [settings.theme]);
 
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="animate-pulse text-muted-foreground">Loading...</div>
+      </div>
+    );
+  }
+
   return (
     <Routes>
       <Route path="/login" element={!isAuthenticated ? <Login /> : <Navigate to="/dashboard" />} />
-      <Route path="/" element={isAuthenticated ? <Layout /> : <Navigate to="/login" />}>
+      <Route path="/" element={isAuthenticated ? <Layout /> : <Navigate to="/login" replace />}>
         <Route index element={<Navigate to="/dashboard" />} />
         <Route path="dashboard" element={<Dashboard />} />
         <Route path="income" element={<POS />} />
@@ -53,6 +62,7 @@ function App() {
         <Route path="reports/balance-sheet" element={<BalanceSheet />} />
         <Route path="cash-flow" element={<CashFlow />} />
         <Route path="users" element={<Users />} />
+        <Route path="sms" element={<SMS />} />
         <Route path="settings" element={<Settings />} />
       </Route>
     </Routes>

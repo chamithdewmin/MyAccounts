@@ -16,6 +16,7 @@ import carsRoutes from './routes/cars.js';
 import customersRoutes from './routes/customers.js';
 import ordersRoutes from './routes/orders.js';
 import usersRoutes from './routes/users.js';
+import smsRoutes from './routes/sms.js';
 import bcrypt from 'bcryptjs';
 import pool from './config/db.js';
 
@@ -108,6 +109,7 @@ app.use('/api/cars', carsRoutes);
 app.use('/api/customers', customersRoutes);
 app.use('/api/orders', ordersRoutes);
 app.use('/api/users', usersRoutes);
+app.use('/api/sms', smsRoutes);
 
 const HOST = '0.0.0.0'; // Required for Docker: listen on all interfaces
 

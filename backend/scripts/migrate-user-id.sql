@@ -31,3 +31,6 @@ CREATE SEQUENCE IF NOT EXISTS settings_id_seq;
 SELECT setval('settings_id_seq', (SELECT COALESCE(MAX(id), 1) FROM settings));
 -- Set default for new rows only (existing rows keep their id)
 ALTER TABLE settings ALTER COLUMN id SET DEFAULT nextval('settings_id_seq');
+
+-- SMS gateway config (per user, stored in settings)
+ALTER TABLE settings ADD COLUMN IF NOT EXISTS sms_config JSONB DEFAULT NULL;

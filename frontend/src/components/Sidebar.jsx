@@ -16,6 +16,7 @@ import {
   ChevronDown,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { useAuth } from '@/contexts/AuthContext';
 import { useFinance } from '@/contexts/FinanceContext';
 import sidebarLogo from '@/assets/side bar logo.png';
 import sidebarLogoLight from '@/assets/side-bar-light.png';
@@ -39,9 +40,13 @@ const navItems = [
   { to: '/settings', icon: Settings, label: 'Settings' },
 ];
 
+const ADMIN_EMAIL = 'logozodev@gmail.com';
+
 const Sidebar = ({ isOpen, onClose }) => {
   const location = useLocation();
+  const { user } = useAuth();
   const { settings } = useFinance();
+  const canManageUsers = user?.email === ADMIN_EMAIL;
   const isReportsActive = location.pathname.startsWith('/reports');
   const [reportsExpanded, setReportsExpanded] = useState(isReportsActive);
   const logoSrc = settings.theme === 'light' ? sidebarLogoLight : sidebarLogo;
@@ -178,7 +183,7 @@ const Sidebar = ({ isOpen, onClose }) => {
               </AnimatePresence>
             </div>
 
-            {navItems.slice(5).map((item) => (
+            {navItems.slice(5).filter((item) => item.to !== '/users' || canManageUsers).map((item) => (
               <NavLink
                 key={item.to}
                 to={item.to}

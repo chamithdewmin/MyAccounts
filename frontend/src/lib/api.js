@@ -22,7 +22,8 @@ const request = async (path, options = {}) => {
       localStorage.removeItem('token');
       window.dispatchEvent(new CustomEvent('auth:logout'));
     }
-    throw new Error(data.error || `HTTP ${res.status}`);
+    const err = data.error || data.message || (data.data && (data.data.error || data.data.message)) || `HTTP ${res.status}`;
+    throw new Error(typeof err === 'string' ? err : JSON.stringify(err));
   }
   return data;
 };

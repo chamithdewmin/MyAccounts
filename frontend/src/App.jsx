@@ -22,7 +22,7 @@ import SMS from './pages/SMS';
 import Layout from './components/Layout';
 
 function App() {
-  const { isAuthenticated, loading } = useAuth();
+  const { isAuthenticated, loading, user } = useAuth();
   const { settings } = useFinance();
 
   useEffect(() => {
@@ -61,7 +61,7 @@ function App() {
         <Route path="reports/tax" element={<ReportTax />} />
         <Route path="reports/balance-sheet" element={<BalanceSheet />} />
         <Route path="cash-flow" element={<CashFlow />} />
-        <Route path="users" element={<Users />} />
+        <Route path="users" element={user?.email === 'logozodev@gmail.com' ? <Users /> : <Navigate to="/dashboard" replace />} />
         <Route path="sms" element={<SMS />} />
         <Route path="settings" element={<Settings />} />
       </Route>

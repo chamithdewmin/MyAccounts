@@ -61,34 +61,37 @@ router.post('/test', async (req, res) => {
   try {
     const config = await getSmsConfig(req.user.id);
     if (!config) {
-      return res.status(400).json({ error: 'SMS gateway not configured' });
+      return res.status(400).json({ error: 'SMS gateway not configured. Save your User ID, API Key, Base URL, and Sender ID first.' });
     }
-    const url = `${config.baseUrl}/send-sms`;
+    // Use account-status to validate credentials without sending SMS
+    const url = `${config.baseUrl.replace(/\/$/, '')}/account-status`;
     const params = new URLSearchParams({
       user_id: config.userId,
       api_key: config.apiKey,
-      sender_id: config.senderId,
-      contact: '+94771234567',
-      message: 'SMS gateway test from MyAccounts',
     });
     const resp = await fetch(`${url}?${params}`, { method: 'GET' });
-    const data = await resp.json().catch(() => ({}));
-    const errMsg = data.message || data.error || data.msg || data.status_message || (typeof data === 'string' ? data : null);
+    const data = await resp.json().catch((e) => {
+      console.error('[SMS test] Parse error:', e.message);
+      return {};
+    });
+    const errMsg = data.message || data.error || data.msg || data.status_message || data.detail || (typeof data === 'string' ? data : null);
     if (!resp.ok) {
+      console.error('[SMS test] SMS API error:', resp.status, JSON.stringify(data));
       return res.status(400).json({
-        error: errMsg || `SMS API returned ${resp.status}`,
+        error: errMsg || `SMS API returned ${resp.status}. Check User ID, API Key, and Sender ID (use SMSlenzDEMO for testing).`,
       });
     }
     if (data.status === 'error' || data.success === false) {
+      console.error('[SMS test] SMS API reject:', JSON.stringify(data));
       return res.status(400).json({
-        error: errMsg || 'SMS gateway rejected the request',
+        error: errMsg || 'Invalid credentials. Verify User ID and API Key at smslenz.lk/account/api-key',
       });
     }
     res.json({ success: true, message: 'SMS gateway is configured correctly' });
   } catch (err) {
-    console.error(err);
+    console.error('[SMS test]', err);
     res.status(500).json({
-      error: err.message || 'Failed to reach SMS gateway',
+      error: err.message || 'Failed to reach SMS gateway. Check API Base URL.',
     });
   }
 });
@@ -125,23 +128,28 @@ router.post('/send-bulk', async (req, res) => {
       body: formData.toString(),
     });
 
-    const data = await resp.json().catch(() => ({}));
-    const errMsg = data.message || data.error || data.msg || data.status_message || (typeof data === 'string' ? data : null);
+    const data = await resp.json().catch((e) => {
+      console.error('[SMS send-bulk] Parse error:', e.message);
+      return {};
+    });
+    const errMsg = data.message || data.error || data.msg || data.status_message || data.detail || (typeof data === 'string' ? data : null);
     if (!resp.ok) {
+      console.error('[SMS send-bulk] SMS API error:', resp.status, JSON.stringify(data));
       return res.status(400).json({
-        error: errMsg || `SMS API returned ${resp.status}`,
+        error: errMsg || `SMS API returned ${resp.status}. Check credentials and Sender ID (SMSlenzDEMO for testing).`,
       });
     }
     if (data.status === 'error' || data.success === false) {
+      console.error('[SMS send-bulk] SMS API reject:', JSON.stringify(data));
       return res.status(400).json({
-        error: errMsg || 'SMS gateway rejected the send request',
+        error: errMsg || 'SMS gateway rejected the request. Verify account credits and Sender ID.',
       });
     }
     res.json({ success: true, sent: normalizedContacts.length });
   } catch (err) {
-    console.error(err);
+    console.error('[SMS send-bulk]', err);
     res.status(500).json({
-      error: err.message || 'Failed to send SMS',
+      error: err.message || 'Failed to send SMS. Check API Base URL and network.',
     });
   }
 });

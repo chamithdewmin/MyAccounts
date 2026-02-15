@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Helmet } from 'react-helmet';
 import { motion } from 'framer-motion';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -89,9 +89,9 @@ const Login = () => {
               <div className="space-y-2">
                 <div className="flex justify-between items-center">
                   <Label htmlFor="password" className="text-[#D3D3D3]">Password</Label>
-                  <a href="#" className="text-sm text-[#6A6FF7] hover:text-[#8b8ff9]">
+                  <Link to="/forgot-password" className="text-sm text-[#6A6FF7] hover:text-[#8b8ff9]">
                     Forgot Password?
-                  </a>
+                  </Link>
                 </div>
                 <div className="relative">
                   <Input

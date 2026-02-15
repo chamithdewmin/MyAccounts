@@ -50,6 +50,14 @@ CREATE TABLE IF NOT EXISTS transfers (
   created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
+-- Password reset OTPs (email, otp, 5 min expiry)
+CREATE TABLE IF NOT EXISTS password_reset_otps (
+  email VARCHAR(255) PRIMARY KEY,
+  otp VARCHAR(10) NOT NULL,
+  expires_at TIMESTAMPTZ NOT NULL,
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
 -- Reminders: linked to income/expense, send SMS on a date
 CREATE TABLE IF NOT EXISTS reminders (
   id VARCHAR(50) PRIMARY KEY,

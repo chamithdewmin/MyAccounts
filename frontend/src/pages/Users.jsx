@@ -1,12 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import { Helmet } from 'react-helmet';
 import { motion } from 'framer-motion';
-import { Search, Plus, RefreshCw, UserPlus } from 'lucide-react';
+import { Search, Plus, RefreshCw, UserPlus, Pencil, Trash2 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/components/ui/use-toast';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { api } from '@/lib/api';
+
+const PROTECTED_EMAIL = 'logozodev@gmail.com';
 
 const Users = () => {
   const [users, setUsers] = useState([]);
@@ -14,6 +16,7 @@ const Users = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [loading, setLoading] = useState(true);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [editingUser, setEditingUser] = useState(null);
   const [saving, setSaving] = useState(false);
   const [form, setForm] = useState({
     name: '',
@@ -63,33 +66,78 @@ const Users = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!form.name.trim() || !form.email.trim() || !form.password) {
+    if (!form.name.trim() || !form.email.trim()) {
       toast({
-        title: 'All fields required',
-        description: 'Please enter name, email, and password.',
+        title: 'Name and email required',
+        description: 'Please enter name and email.',
+        variant: 'destructive',
+      });
+      return;
+    }
+    if (!editingUser && !form.password) {
+      toast({
+        title: 'Password required',
+        description: 'Please enter a password for new users.',
         variant: 'destructive',
       });
       return;
     }
     setSaving(true);
     try {
-      await api.users.create({
-        name: form.name.trim(),
-        email: form.email.trim(),
-        password: form.password,
-      });
-      toast({ title: 'User added', description: `${form.name} can now log in.` });
+      if (editingUser) {
+        const payload = { name: form.name.trim(), email: form.email.trim() };
+        if (form.password) payload.password = form.password;
+        await api.users.update(editingUser.id, payload);
+        toast({ title: 'User updated', description: `${form.name} has been updated.` });
+      } else {
+        await api.users.create({
+          name: form.name.trim(),
+          email: form.email.trim(),
+          password: form.password,
+        });
+        toast({ title: 'User added', description: `${form.name} can now log in.` });
+      }
       setForm({ name: '', email: '', password: '' });
+      setEditingUser(null);
       setIsDialogOpen(false);
       loadUsers();
     } catch (err) {
       toast({
-        title: 'Failed to add user',
-        description: err.message || 'Could not create user',
+        title: editingUser ? 'Failed to update user' : 'Failed to add user',
+        description: err.message || 'Could not save user',
         variant: 'destructive',
       });
     } finally {
       setSaving(false);
+    }
+  };
+
+  const openEdit = (user) => {
+    setEditingUser(user);
+    setForm({ name: user.name, email: user.email, password: '' });
+    setIsDialogOpen(true);
+  };
+
+  const handleDelete = async (user) => {
+    if (user.email === PROTECTED_EMAIL) {
+      toast({
+        title: 'Cannot delete',
+        description: 'This account is protected and cannot be deleted.',
+        variant: 'destructive',
+      });
+      return;
+    }
+    if (!window.confirm(`Delete user "${user.name}"?`)) return;
+    try {
+      await api.users.delete(user.id);
+      toast({ title: 'User deleted', description: `${user.name} has been removed.` });
+      loadUsers();
+    } catch (err) {
+      toast({
+        title: 'Failed to delete',
+        description: err.message || 'Could not delete user',
+        variant: 'destructive',
+      });
     }
   };
 
@@ -145,12 +193,13 @@ const Users = () => {
                   <th className="px-4 py-3 text-left text-sm font-semibold">Name</th>
                   <th className="px-4 py-3 text-left text-sm font-semibold">Email</th>
                   <th className="px-4 py-3 text-left text-sm font-semibold">Created</th>
+                  <th className="px-4 py-3 text-center text-sm font-semibold uppercase">Actions</th>
                 </tr>
               </thead>
               <tbody>
                 {loading ? (
                   <tr>
-                    <td colSpan={3} className="px-4 py-8 text-center text-muted-foreground">
+                    <td colSpan={4} className="px-4 py-8 text-center text-muted-foreground">
                       Loading users...
                     </td>
                   </tr>
@@ -168,6 +217,28 @@ const Users = () => {
                       <td className="px-4 py-3 text-sm text-muted-foreground">
                         {formatDate(user.created_at)}
                       </td>
+                      <td className="px-4 py-3">
+                        <div className="flex items-center justify-center gap-2">
+                          <button
+                            type="button"
+                            onClick={() => openEdit(user)}
+                            className="p-2 hover:bg-secondary rounded-lg transition-colors text-green-500 hover:text-green-400"
+                            title="Edit"
+                          >
+                            <Pencil className="w-4 h-4" />
+                          </button>
+                          {user.email !== PROTECTED_EMAIL && (
+                            <button
+                              type="button"
+                              onClick={() => handleDelete(user)}
+                              className="p-2 hover:bg-secondary rounded-lg transition-colors text-red-500 hover:text-red-400"
+                              title="Delete"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </button>
+                          )}
+                        </div>
+                      </td>
                     </motion.tr>
                   ))
                 )}
@@ -181,10 +252,16 @@ const Users = () => {
           )}
         </div>
 
-        <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+        <Dialog
+          open={isDialogOpen}
+          onOpenChange={(open) => {
+            setIsDialogOpen(open);
+            if (!open) setEditingUser(null);
+          }}
+        >
           <DialogContent>
             <DialogHeader>
-              <DialogTitle>Add New User</DialogTitle>
+              <DialogTitle>{editingUser ? 'Edit User' : 'Add New User'}</DialogTitle>
             </DialogHeader>
             <form onSubmit={handleSubmit} className="space-y-4">
               <div className="space-y-2">
@@ -207,13 +284,13 @@ const Users = () => {
                 />
               </div>
               <div className="space-y-2">
-                <label className="text-sm font-medium">Password</label>
+                <label className="text-sm font-medium">Password {editingUser && '(leave blank to keep)'}</label>
                 <Input
                   type="password"
                   value={form.password}
                   onChange={(e) => handleChange('password', e.target.value)}
-                  placeholder="Password"
-                  required
+                  placeholder={editingUser ? 'Leave blank to keep current' : 'Password'}
+                  required={!editingUser}
                 />
               </div>
               <div className="flex justify-end gap-2 pt-2">
@@ -225,7 +302,7 @@ const Users = () => {
                   Cancel
                 </Button>
                 <Button type="submit" disabled={saving}>
-                  {saving ? 'Adding...' : 'Add User'}
+                  {saving ? 'Saving...' : editingUser ? 'Update User' : 'Add User'}
                 </Button>
               </div>
             </form>

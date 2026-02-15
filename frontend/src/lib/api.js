@@ -99,6 +99,11 @@ export const api = {
     test: () => request('/sms/test', { method: 'POST' }),
     sendBulk: (data) => request('/sms/send-bulk', { method: 'POST', body: JSON.stringify(data) }),
   },
+  transfers: {
+    list: () => request('/transfers'),
+    create: (data) => request('/transfers', { method: 'POST', body: JSON.stringify(data) }),
+    delete: (id) => request(`/transfers/${id}`, { method: 'DELETE' }),
+  },
 };
 
 export const useApi = () => !!import.meta.env.VITE_API_URL || window.location.origin.includes('myaccounts.logozodev.com');

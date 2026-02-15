@@ -78,11 +78,25 @@ router.delete('/:id', async (req, res) => {
     if (rows[0].email === PROTECTED_EMAIL) {
       return res.status(403).json({ error: 'This account cannot be deleted' });
     }
-    await pool.query('DELETE FROM users WHERE id = $1', [id]);
+    const client = await pool.connect();
+    try {
+      await client.query('BEGIN');
+      const tables = ['orders', 'incomes', 'invoices', 'clients', 'customers', 'expenses', 'cars', 'assets', 'loans', 'transfers', 'settings'];
+      for (const table of tables) {
+        await client.query(`DELETE FROM ${table} WHERE user_id = $1`, [id]);
+      }
+      await client.query('DELETE FROM users WHERE id = $1', [id]);
+      await client.query('COMMIT');
+    } catch (txErr) {
+      await client.query('ROLLBACK');
+      throw txErr;
+    } finally {
+      client.release();
+    }
     res.json({ success: true });
   } catch (err) {
     console.error(err);
-    res.status(500).json({ error: 'Server error' });
+    res.status(500).json({ error: err.code === '42P01' ? 'Table does not exist' : 'Server error' });
   }
 });
 

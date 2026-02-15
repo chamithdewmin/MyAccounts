@@ -1,13 +1,53 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useState } from 'react';
 import { Helmet } from 'react-helmet';
 import { motion } from 'framer-motion';
-import { Coins, DollarSign, Wallet, AlertTriangle } from 'lucide-react';
+import { Coins, DollarSign, Wallet, AlertTriangle, ArrowRightLeft } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import KpiCard from '@/components/KpiCard';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { useToast } from '@/components/ui/use-toast';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { useFinance } from '@/contexts/FinanceContext';
 
 const Dashboard = () => {
-  const { incomes, expenses, clients, invoices, totals, settings } = useFinance();
+  const { incomes, expenses, clients, invoices, totals, settings, addTransfer } = useFinance();
+  const { toast } = useToast();
+  const [transferOpen, setTransferOpen] = useState(false);
+  const [transferType, setTransferType] = useState('cash-to-bank');
+  const [transferForm, setTransferForm] = useState({ amount: '', date: new Date().toISOString().slice(0, 10), notes: '' });
+
+  const handleTransfer = async (e) => {
+    e.preventDefault();
+    const amount = Number(transferForm.amount) || 0;
+    if (amount <= 0) {
+      toast({ title: 'Invalid amount', description: 'Enter a positive amount.', variant: 'destructive' });
+      return;
+    }
+    if (transferType === 'cash-to-bank' && amount > (totals.cashInHand ?? 0)) {
+      toast({ title: 'Insufficient cash', description: `You have ${settings.currency} ${(totals.cashInHand ?? 0).toLocaleString()} in hand.`, variant: 'destructive' });
+      return;
+    }
+    if (transferType === 'bank-to-cash' && amount > (totals.bankBalance ?? 0)) {
+      toast({ title: 'Insufficient bank balance', description: `Bank balance: ${settings.currency} ${(totals.bankBalance ?? 0).toLocaleString()}`, variant: 'destructive' });
+      return;
+    }
+    try {
+      await addTransfer({
+        fromAccount: transferType === 'cash-to-bank' ? 'cash' : 'bank',
+        toAccount: transferType === 'cash-to-bank' ? 'bank' : 'cash',
+        amount,
+        date: transferForm.date,
+        notes: transferForm.notes,
+      });
+      toast({ title: 'Transfer recorded', description: `${settings.currency} ${amount.toLocaleString()} ${transferType === 'cash-to-bank' ? 'deposited to bank' : 'withdrawn to cash'}.` });
+      setTransferOpen(false);
+      setTransferForm({ amount: '', date: new Date().toISOString().slice(0, 10), notes: '' });
+    } catch (err) {
+      toast({ title: 'Transfer failed', description: err.message, variant: 'destructive' });
+    }
+  };
 
   const incomeVsExpenseData = useMemo(() => {
     const map = new Map();
@@ -75,6 +115,16 @@ const Dashboard = () => {
                 <span className={`text-lg font-bold ${(totals.bankBalance ?? 0) >= 0 ? '' : 'text-red-500'}`}>
                   {settings.currency} {(totals.bankBalance ?? 0).toLocaleString()}
                 </span>
+              </div>
+              <div className="flex gap-2 pt-3 border-t border-secondary">
+                <Button size="sm" variant="outline" className="flex-1" onClick={() => { setTransferType('cash-to-bank'); setTransferForm({ amount: '', date: new Date().toISOString().slice(0, 10), notes: '' }); setTransferOpen(true); }}>
+                  <ArrowRightLeft className="w-4 h-4 mr-1" />
+                  Deposit to Bank
+                </Button>
+                <Button size="sm" variant="outline" className="flex-1" onClick={() => { setTransferType('bank-to-cash'); setTransferForm({ amount: '', date: new Date().toISOString().slice(0, 10), notes: '' }); setTransferOpen(true); }}>
+                  <ArrowRightLeft className="w-4 h-4 mr-1" />
+                  Withdraw
+                </Button>
               </div>
             </div>
           </motion.div>
@@ -197,6 +247,51 @@ const Dashboard = () => {
           </motion.div>
         </div>
       </div>
+
+      <Dialog open={transferOpen} onOpenChange={setTransferOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>
+              {transferType === 'cash-to-bank' ? 'Deposit Cash to Bank' : 'Withdraw from Bank'}
+            </DialogTitle>
+            <DialogDescription>
+              {transferType === 'cash-to-bank' ? 'Record cash deposited from hand into your bank account.' : 'Record cash withdrawn from bank to hand.'}
+            </DialogDescription>
+          </DialogHeader>
+          <form onSubmit={handleTransfer} className="space-y-4">
+            <div>
+              <Label>Amount ({settings.currency})</Label>
+              <Input
+                type="number"
+                min="0.01"
+                step="0.01"
+                value={transferForm.amount}
+                onChange={(e) => setTransferForm((f) => ({ ...f, amount: e.target.value }))}
+                placeholder="0.00"
+              />
+            </div>
+            <div>
+              <Label>Date</Label>
+              <Input
+                type="date"
+                value={transferForm.date}
+                onChange={(e) => setTransferForm((f) => ({ ...f, date: e.target.value }))}
+              />
+            </div>
+            <div>
+              <Label>Notes (optional)</Label>
+              <Input
+                value={transferForm.notes}
+                onChange={(e) => setTransferForm((f) => ({ ...f, notes: e.target.value }))}
+                placeholder="e.g. Daily deposit"
+              />
+            </div>
+            <Button type="submit" className="w-full">
+              {transferType === 'cash-to-bank' ? 'Deposit to Bank' : 'Withdraw to Cash'}
+            </Button>
+          </form>
+        </DialogContent>
+      </Dialog>
     </>
   );
 };

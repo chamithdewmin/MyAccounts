@@ -34,3 +34,15 @@ ALTER TABLE settings ALTER COLUMN id SET DEFAULT nextval('settings_id_seq');
 
 -- SMS gateway config (per user, stored in settings)
 ALTER TABLE settings ADD COLUMN IF NOT EXISTS sms_config JSONB DEFAULT NULL;
+
+-- Transfers: cash ↔ bank (e.g. deposit cash to bank, withdraw from bank)
+CREATE TABLE IF NOT EXISTS transfers (
+  id VARCHAR(50) PRIMARY KEY,
+  user_id INT REFERENCES users(id),
+  from_account VARCHAR(20) NOT NULL,
+  to_account VARCHAR(20) NOT NULL,
+  amount DECIMAL(15,2) NOT NULL DEFAULT 0,
+  date DATE NOT NULL,
+  notes TEXT DEFAULT '',
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);

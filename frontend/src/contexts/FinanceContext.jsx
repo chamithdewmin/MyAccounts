@@ -39,6 +39,7 @@ export const FinanceProvider = ({ children }) => {
   const [settings, setSettings] = useState(getDefaultSettings);
   const [assets, setAssets] = useState([]);
   const [loans, setLoans] = useState([]);
+  const [transfers, setTransfers] = useState([]);
 
   const loadData = async () => {
     if (!hasToken()) {
@@ -49,10 +50,11 @@ export const FinanceProvider = ({ children }) => {
       setSettings(getDefaultSettings());
       setAssets([]);
       setLoans([]);
+      setTransfers([]);
       return;
     }
     try {
-      const [incomesRes, expensesRes, clientsRes, invoicesRes, settingsRes, assetsRes, loansRes] = await Promise.all([
+      const [incomesRes, expensesRes, clientsRes, invoicesRes, settingsRes, assetsRes, loansRes, transfersRes] = await Promise.all([
         api.incomes.list().catch(() => []),
         api.expenses.list().catch(() => []),
         api.clients.list().catch(() => []),
@@ -60,6 +62,7 @@ export const FinanceProvider = ({ children }) => {
         api.settings.get().catch(() => getDefaultSettings()),
         api.assets.list().catch(() => []),
         api.loans.list().catch(() => []),
+        api.transfers.list().catch(() => []),
       ]);
       setIncomes(Array.isArray(incomesRes) ? incomesRes : []);
       setExpenses(Array.isArray(expensesRes) ? expensesRes : []);
@@ -68,6 +71,7 @@ export const FinanceProvider = ({ children }) => {
       setSettings(settingsRes && typeof settingsRes === 'object' ? { ...getDefaultSettings(), ...settingsRes } : getDefaultSettings());
       setAssets(Array.isArray(assetsRes) ? assetsRes : []);
       setLoans(Array.isArray(loansRes) ? loansRes : []);
+      setTransfers(Array.isArray(transfersRes) ? transfersRes : []);
     } catch {
       setIncomes([]);
       setExpenses([]);
@@ -76,6 +80,7 @@ export const FinanceProvider = ({ children }) => {
       setSettings(getDefaultSettings());
       setAssets([]);
       setLoans([]);
+      setTransfers([]);
     }
   };
 
@@ -234,6 +239,22 @@ export const FinanceProvider = ({ children }) => {
     setLoans((prev) => prev.filter((l) => l.id !== id));
   };
 
+  const addTransfer = async (data) => {
+    if (hasToken()) {
+      const t = await api.transfers.create(data);
+      setTransfers((prev) => [t, ...prev]);
+      return t;
+    }
+    const t = { id: createId('TRF'), fromAccount: data.fromAccount, toAccount: data.toAccount, amount: Number(data.amount) || 0, date: data.date || new Date().toISOString().slice(0, 10), notes: data.notes || '', createdAt: new Date().toISOString() };
+    setTransfers((prev) => [t, ...prev]);
+    return t;
+  };
+
+  const deleteTransfer = async (id) => {
+    if (hasToken()) await api.transfers.delete(id);
+    setTransfers((prev) => prev.filter((t) => t.id !== id));
+  };
+
   const totals = useMemo(() => {
     const now = new Date();
     const thisMonth = now.getMonth();
@@ -272,8 +293,10 @@ export const FinanceProvider = ({ children }) => {
     const incomeBank = incomes.filter((i) => isBank(i.paymentMethod)).reduce((s, i) => s + i.amount, 0);
     const expenseCash = expenses.filter((e) => isCash(e.paymentMethod)).reduce((s, e) => s + e.amount, 0);
     const expenseBank = expenses.filter((e) => isBank(e.paymentMethod)).reduce((s, e) => s + e.amount, 0);
-    const cashInHand = openingCash + incomeCash - expenseCash;
-    const bankBalance = incomeBank - expenseBank;
+    const cashToBank = transfers.filter((t) => t.fromAccount === 'cash' && t.toAccount === 'bank').reduce((s, t) => s + (t.amount || 0), 0);
+    const bankToCash = transfers.filter((t) => t.fromAccount === 'bank' && t.toAccount === 'cash').reduce((s, t) => s + (t.amount || 0), 0);
+    const cashInHand = openingCash + incomeCash - expenseCash - cashToBank + bankToCash;
+    const bankBalance = incomeBank - expenseBank + cashToBank - bankToCash;
 
     return {
       monthlyIncome,
@@ -288,7 +311,7 @@ export const FinanceProvider = ({ children }) => {
       cashInHand,
       bankBalance,
     };
-  }, [incomes, expenses, invoices, settings.taxEnabled, settings.taxRate]);
+  }, [incomes, expenses, invoices, transfers, settings.taxEnabled, settings.taxRate, settings.openingCash]);
 
   const value = {
     incomes,
@@ -316,6 +339,9 @@ export const FinanceProvider = ({ children }) => {
     deleteAsset,
     addLoan,
     deleteLoan,
+    transfers,
+    addTransfer,
+    deleteTransfer,
     totals,
   };
 

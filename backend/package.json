@@ -1,6 +1,6 @@
 {
   "name": "myaccounts-backend",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "MyAccounts API Backend",
   "main": "src/index.js",
   "type": "module",

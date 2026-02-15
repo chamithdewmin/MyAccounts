@@ -9,6 +9,7 @@ import { Label } from '@/components/ui/label';
 import { AlertCircle, CheckCircle, Eye, EyeOff } from 'lucide-react';
 import loginBackground from '@/assets/login-background.webp';
 import loginLogo from '@/assets/login logo.png';
+import { APP_VERSION } from '@/constants';
 
 const STEPS = { PHONE: 1, OTP: 2, PASSWORD: 3 };
 
@@ -288,7 +289,7 @@ const ForgotPassword = () => {
             </p>
 
             <div className="text-center mt-4">
-              <p className="text-[#a0a0a0] text-xs">Version: 1.0.0</p>
+              <p className="text-[#a0a0a0] text-xs">Version: {APP_VERSION}</p>
             </div>
           </div>
         </motion.div>

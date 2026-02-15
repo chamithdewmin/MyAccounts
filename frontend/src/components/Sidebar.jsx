@@ -7,6 +7,7 @@ import {
   Receipt,
   FileText,
   Users,
+  UserPlus,
   BarChart3,
   TrendingUp,
   Settings,
@@ -32,6 +33,7 @@ const navItems = [
   { to: '/expenses', icon: Receipt, label: 'Expenses' },
   { to: '/invoices', icon: FileText, label: 'Invoices' },
   { to: '/clients', icon: Users, label: 'Clients' },
+  { to: '/users', icon: UserPlus, label: 'Users' },
   { to: '/settings', icon: Settings, label: 'Settings' },
 ];
 

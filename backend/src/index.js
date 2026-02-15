@@ -15,6 +15,7 @@ import loansRoutes from './routes/loans.js';
 import carsRoutes from './routes/cars.js';
 import customersRoutes from './routes/customers.js';
 import ordersRoutes from './routes/orders.js';
+import usersRoutes from './routes/users.js';
 import pool from './config/db.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -64,6 +65,7 @@ app.use('/api/loans', loansRoutes);
 app.use('/api/cars', carsRoutes);
 app.use('/api/customers', customersRoutes);
 app.use('/api/orders', ordersRoutes);
+app.use('/api/users', usersRoutes);
 
 initDb()
   .catch((err) => {

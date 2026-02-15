@@ -17,6 +17,7 @@ import ReportProfitLoss from './pages/reports/ReportProfitLoss';
 import ReportCashFlow from './pages/reports/ReportCashFlow';
 import CashFlow from './pages/CashFlow';
 import Settings from './pages/Settings';
+import Users from './pages/Users';
 import Layout from './components/Layout';
 
 function App() {
@@ -51,6 +52,7 @@ function App() {
         <Route path="reports/tax" element={<ReportTax />} />
         <Route path="reports/balance-sheet" element={<BalanceSheet />} />
         <Route path="cash-flow" element={<CashFlow />} />
+        <Route path="users" element={<Users />} />
         <Route path="settings" element={<Settings />} />
       </Route>
     </Routes>

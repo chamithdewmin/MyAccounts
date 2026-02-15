@@ -80,6 +80,10 @@ export const api = {
     list: () => request('/orders'),
     create: (data) => request('/orders', { method: 'POST', body: JSON.stringify(data) }),
   },
+  users: {
+    list: () => request('/users'),
+    create: (data) => request('/users', { method: 'POST', body: JSON.stringify(data) }),
+  },
 };
 
 export const useApi = () => !!import.meta.env.VITE_API_URL || window.location.origin.includes('myaccounts.logozodev.com');

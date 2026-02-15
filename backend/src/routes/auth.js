@@ -18,25 +18,20 @@ const normalizePhone = (p) => {
   return digits;
 };
 
-/** Search all DB tables for phone: settings, clients, customers. Returns { userId, email, phone } or null */
+/** Search settings only (GET /api/settings phone). Returns { userId, email, phone } or null */
 const findAccountByPhone = async (inputNormalized) => {
-  const sources = [
-    { query: 'SELECT s.user_id, s.phone, u.email FROM settings s JOIN users u ON u.id = s.user_id', col: 'phone' },
-    { query: 'SELECT c.user_id, c.phone, u.email FROM clients c JOIN users u ON u.id = c.user_id', col: 'phone' },
-    { query: 'SELECT c.user_id, c.phone, u.email FROM customers c JOIN users u ON u.id = c.user_id', col: 'phone' },
-  ];
-  for (const src of sources) {
-    try {
-      const { rows } = await pool.query(src.query);
-      for (const row of rows || []) {
-        const val = row?.[src.col];
-        if (val && normalizePhone(val) === inputNormalized) {
-          return { userId: row.user_id, email: row.email, phone: String(val).trim() };
-        }
+  try {
+    const { rows } = await pool.query(
+      'SELECT s.user_id, s.phone, u.email FROM settings s JOIN users u ON u.id = s.user_id WHERE s.phone IS NOT NULL AND TRIM(COALESCE(s.phone, \'\')) != \'\''
+    );
+    for (const row of rows || []) {
+      const val = row?.phone;
+      if (val && normalizePhone(val) === inputNormalized) {
+        return { userId: row.user_id, email: row.email, phone: String(val).trim() };
       }
-    } catch {
-      /* skip table if query fails (e.g. missing column) */
     }
+  } catch {
+    /* query failed */
   }
   return null;
 };

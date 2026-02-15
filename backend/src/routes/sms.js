@@ -73,9 +73,15 @@ router.post('/test', async (req, res) => {
     });
     const resp = await fetch(`${url}?${params}`, { method: 'GET' });
     const data = await resp.json().catch(() => ({}));
+    const errMsg = data.message || data.error || data.msg || data.status_message || (typeof data === 'string' ? data : null);
     if (!resp.ok) {
       return res.status(400).json({
-        error: data.message || data.error || `SMS API returned ${resp.status}`,
+        error: errMsg || `SMS API returned ${resp.status}`,
+      });
+    }
+    if (data.status === 'error' || data.success === false) {
+      return res.status(400).json({
+        error: errMsg || 'SMS gateway rejected the request',
       });
     }
     res.json({ success: true, message: 'SMS gateway is configured correctly' });
@@ -120,9 +126,15 @@ router.post('/send-bulk', async (req, res) => {
     });
 
     const data = await resp.json().catch(() => ({}));
+    const errMsg = data.message || data.error || data.msg || data.status_message || (typeof data === 'string' ? data : null);
     if (!resp.ok) {
       return res.status(400).json({
-        error: data.message || data.error || `SMS API returned ${resp.status}`,
+        error: errMsg || `SMS API returned ${resp.status}`,
+      });
+    }
+    if (data.status === 'error' || data.success === false) {
+      return res.status(400).json({
+        error: errMsg || 'SMS gateway rejected the send request',
       });
     }
     res.json({ success: true, sent: normalizedContacts.length });

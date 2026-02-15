@@ -5,7 +5,7 @@ import { MessageSquare, Send, Settings2 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/components/ui/use-toast';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { api } from '@/lib/api';
 import { useFinance } from '@/contexts/FinanceContext';
 
@@ -313,6 +313,9 @@ const SMS = () => {
         <DialogContent className="max-w-md">
           <DialogHeader>
             <DialogTitle>Setup SMS Gateway</DialogTitle>
+            <DialogDescription>
+              Enter your SMS gateway credentials. Use SMSlenzDEMO as Sender ID for testing.
+            </DialogDescription>
           </DialogHeader>
           <form onSubmit={handleSaveAndTest} className="space-y-4">
             <div className="space-y-2">

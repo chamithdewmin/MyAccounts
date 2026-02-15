@@ -91,7 +91,33 @@ async function initDb() {
         created_at TIMESTAMPTZ DEFAULT NOW()
       )
     `);
-    console.log('Forgot-password tables ready.');
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS transfers (
+        id VARCHAR(50) PRIMARY KEY,
+        user_id INT REFERENCES users(id),
+        from_account VARCHAR(20) NOT NULL,
+        to_account VARCHAR(20) NOT NULL,
+        amount DECIMAL(15,2) NOT NULL DEFAULT 0,
+        date DATE NOT NULL,
+        notes TEXT DEFAULT '',
+        created_at TIMESTAMPTZ DEFAULT NOW()
+      )
+    `);
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS reminders (
+        id VARCHAR(50) PRIMARY KEY,
+        user_id INT REFERENCES users(id),
+        type VARCHAR(20) NOT NULL,
+        reference_id VARCHAR(100) NOT NULL,
+        reminder_date DATE NOT NULL,
+        sms_contact VARCHAR(50) NOT NULL,
+        message TEXT DEFAULT '',
+        status VARCHAR(20) DEFAULT 'pending',
+        sent_at TIMESTAMPTZ,
+        created_at TIMESTAMPTZ DEFAULT NOW()
+      )
+    `);
+    console.log('Forgot-password and user-delete tables ready.');
   } catch (e) {
     console.warn('Forgot-password setup:', e.message);
   }

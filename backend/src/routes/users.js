@@ -83,7 +83,12 @@ router.delete('/:id', async (req, res) => {
       await client.query('BEGIN');
       const tables = ['orders', 'incomes', 'invoices', 'clients', 'customers', 'expenses', 'cars', 'assets', 'loans', 'transfers', 'reminders', 'settings'];
       for (const table of tables) {
-        await client.query(`DELETE FROM ${table} WHERE user_id = $1`, [id]);
+        try {
+          await client.query(`DELETE FROM ${table} WHERE user_id = $1`, [id]);
+        } catch (tErr) {
+          if (tErr.code !== '42P01' && tErr.code !== '42703') throw tErr;
+          /* skip if table or user_id column does not exist */
+        }
       }
       await client.query('DELETE FROM users WHERE id = $1', [id]);
       await client.query('COMMIT');
@@ -96,7 +101,7 @@ router.delete('/:id', async (req, res) => {
     res.json({ success: true });
   } catch (err) {
     console.error(err);
-    res.status(500).json({ error: err.code === '42P01' ? 'Table does not exist' : 'Server error' });
+    res.status(500).json({ error: 'Failed to delete user' });
   }
 });
 

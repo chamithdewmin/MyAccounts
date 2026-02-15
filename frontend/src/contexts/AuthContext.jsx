@@ -9,6 +9,16 @@ export const AuthProvider = ({ children }) => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    const handleLogout = () => {
+      setIsAuthenticated(false);
+      setUser(null);
+      localStorage.removeItem('token');
+    };
+    window.addEventListener('auth:logout', handleLogout);
+    return () => window.removeEventListener('auth:logout', handleLogout);
+  }, []);
+
+  useEffect(() => {
     const initAuth = async () => {
       const token = localStorage.getItem('token');
       if (token) {
@@ -20,6 +30,7 @@ export const AuthProvider = ({ children }) => {
           if (res.ok) {
             setIsAuthenticated(true);
             setUser(data.user);
+            window.dispatchEvent(new CustomEvent('auth:login'));
           } else if (res.status === 401) {
             localStorage.removeItem('token');
           } else {
@@ -55,6 +66,7 @@ export const AuthProvider = ({ children }) => {
         localStorage.setItem('token', data.token);
         setIsAuthenticated(true);
         setUser(data.user);
+        window.dispatchEvent(new CustomEvent('auth:login'));
         return { success: true };
       }
     } catch (err) {

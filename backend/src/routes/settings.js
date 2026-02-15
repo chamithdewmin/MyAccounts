@@ -20,10 +20,14 @@ const toSettings = (row) => ({
 
 router.get('/', async (req, res) => {
   try {
-    const { rows } = await pool.query('SELECT * FROM settings WHERE id = 1');
+    const uid = req.user.id;
+    const { rows } = await pool.query('SELECT * FROM settings WHERE user_id = $1', [uid]);
     if (!rows[0]) {
-      await pool.query(`INSERT INTO settings (id) VALUES (1)`);
-      const { rows: r } = await pool.query('SELECT * FROM settings WHERE id = 1');
+      await pool.query(
+        `INSERT INTO settings (user_id, business_name) VALUES ($1, 'My Business')`,
+        [uid]
+      );
+      const { rows: r } = await pool.query('SELECT * FROM settings WHERE user_id = $1', [uid]);
       return res.json(toSettings(r[0]));
     }
     res.json(toSettings(rows[0]));
@@ -35,13 +39,15 @@ router.get('/', async (req, res) => {
 
 router.put('/', async (req, res) => {
   try {
+    const uid = req.user.id;
     const d = req.body;
     const params = [
       d.businessName, d.currency, d.taxRate != null ? d.taxRate : null, d.taxEnabled,
       d.theme, d.logo, d.openingCash, d.ownerCapital, d.payables,
       d.expenseCategories ? JSON.stringify(d.expenseCategories) : null,
+      uid,
     ];
-    await pool.query(
+    const { rowCount } = await pool.query(
       `UPDATE settings SET
         business_name = COALESCE($1, business_name),
         currency = COALESCE($2, currency),
@@ -54,10 +60,17 @@ router.put('/', async (req, res) => {
         payables = COALESCE($9, payables),
         expense_categories = COALESCE($10, expense_categories),
         updated_at = NOW()
-       WHERE id = 1`,
+       WHERE user_id = $11`,
       params
     );
-    const { rows } = await pool.query('SELECT * FROM settings WHERE id = 1');
+    if (rowCount === 0) {
+      await pool.query(
+        `INSERT INTO settings (user_id, business_name, currency, tax_rate, tax_enabled, theme, logo, opening_cash, owner_capital, payables, expense_categories)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)`,
+        [uid, d.businessName || 'My Business', d.currency || 'LKR', d.taxRate ?? 10, d.taxEnabled ?? true, d.theme || 'dark', d.logo, d.openingCash ?? 0, d.ownerCapital ?? 0, d.payables ?? 0, d.expenseCategories ? JSON.stringify(d.expenseCategories) : '["Hosting","Tools & Subscriptions","Advertising & Marketing","Transport","Office & Utilities","Other"]']
+      );
+    }
+    const { rows } = await pool.query('SELECT * FROM settings WHERE user_id = $1', [uid]);
     res.json(toSettings(rows[0]));
   } catch (err) {
     console.error(err);

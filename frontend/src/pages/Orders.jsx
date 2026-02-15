@@ -19,7 +19,7 @@ const Orders = () => {
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const { toast } = useToast();
 
-  const { invoices, clients, settings, updateInvoiceStatus, addInvoice, deleteInvoice } = useFinance();
+  const { invoices, clients, settings, updateInvoiceStatus, addInvoice, deleteInvoice, loadData } = useFinance();
 
   const [form, setForm] = useState({
     clientId: '',
@@ -191,6 +191,7 @@ const Orders = () => {
             <Button
               variant="outline"
               onClick={() => {
+                loadData();
                 toast({
                   title: 'Refreshed',
                   description: 'Invoice data has been refreshed.',

@@ -24,7 +24,7 @@ const filterByDate = (items, asAtDate, dateKey = 'date') => {
 };
 
 const BalanceSheet = () => {
-  const { incomes, expenses, invoices, assets, loans, settings, addAsset, deleteAsset, addLoan, deleteLoan } =
+  const { incomes, expenses, invoices, assets, loans, settings, addAsset, deleteAsset, addLoan, deleteLoan, loadData } =
     useFinance();
   const { toast } = useToast();
 
@@ -236,7 +236,7 @@ const BalanceSheet = () => {
                 className="w-[160px]"
               />
             </div>
-            <Button variant="outline" onClick={() => toast({ title: 'Refreshed', description: 'Data refreshed' })}>
+            <Button variant="outline" onClick={() => { loadData(); toast({ title: 'Refreshed', description: 'Data refreshed' }); }}>
               <RefreshCw className="w-4 h-4 mr-2" />
               Refresh
             </Button>

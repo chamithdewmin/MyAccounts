@@ -20,7 +20,8 @@ const toOrder = (row) => ({
 
 router.get('/', async (req, res) => {
   try {
-    const { rows } = await pool.query('SELECT * FROM orders ORDER BY created_at DESC');
+    const uid = req.user.id;
+    const { rows } = await pool.query('SELECT * FROM orders WHERE user_id = $1 ORDER BY created_at DESC', [uid]);
     res.json(rows.map(toOrder));
   } catch (err) {
     console.error(err);
@@ -30,6 +31,7 @@ router.get('/', async (req, res) => {
 
 router.post('/', async (req, res) => {
   try {
+    const uid = req.user.id;
     const d = req.body;
     const id = d.id || `INV-${Date.now()}`;
     const subtotal = Number(d.subtotal) || 0;
@@ -37,28 +39,28 @@ router.post('/', async (req, res) => {
     const total = Number(d.total) || subtotal + tax;
 
     await pool.query(
-      `INSERT INTO orders (id, customer_id, customer_name, items, subtotal, tax, total, payment_method, status)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)`,
-      [id, d.customerId || null, d.customerName || '', JSON.stringify(d.items || []), subtotal, tax, total, d.paymentMethod || 'card', d.status || 'Paid']
+      `INSERT INTO orders (id, user_id, customer_id, customer_name, items, subtotal, tax, total, payment_method, status)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)`,
+      [id, uid, d.customerId || null, d.customerName || '', JSON.stringify(d.items || []), subtotal, tax, total, d.paymentMethod || 'card', d.status || 'Paid']
     );
 
-    // Update car stock for each item
+    // Update car stock for each item (only user's cars)
     for (const item of d.items || []) {
       if (item.id) {
         await pool.query(
-          'UPDATE cars SET stock = GREATEST(0, stock - $2) WHERE id = $1',
-          [item.id, item.quantity || 1]
+          'UPDATE cars SET stock = GREATEST(0, stock - $2) WHERE id = $1 AND user_id = $3',
+          [item.id, item.quantity || 1, uid]
         );
       }
     }
 
-    // Update customer purchase history
+    // Update customer purchase history (only user's customers)
     if (d.customerId) {
-      const { rows: cust } = await pool.query('SELECT purchase_history FROM customers WHERE id = $1', [d.customerId]);
+      const { rows: cust } = await pool.query('SELECT purchase_history FROM customers WHERE id = $1 AND user_id = $2', [d.customerId, uid]);
       if (cust[0]) {
         const hist = cust[0].purchase_history || [];
         hist.push(id);
-        await pool.query('UPDATE customers SET purchase_history = $2 WHERE id = $1', [d.customerId, JSON.stringify(hist)]);
+        await pool.query('UPDATE customers SET purchase_history = $2 WHERE id = $1 AND user_id = $3', [d.customerId, JSON.stringify(hist), uid]);
       }
     }
 

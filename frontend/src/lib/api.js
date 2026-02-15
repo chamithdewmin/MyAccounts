@@ -17,7 +17,13 @@ const request = async (path, options = {}) => {
 
   const res = await fetch(url, { ...options, headers });
   const data = await res.json().catch(() => ({}));
-  if (!res.ok) throw new Error(data.error || `HTTP ${res.status}`);
+  if (!res.ok) {
+    if (res.status === 401) {
+      localStorage.removeItem('token');
+      window.dispatchEvent(new CustomEvent('auth:logout'));
+    }
+    throw new Error(data.error || `HTTP ${res.status}`);
+  }
   return data;
 };
 

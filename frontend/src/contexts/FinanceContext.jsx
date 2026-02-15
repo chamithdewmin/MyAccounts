@@ -40,47 +40,61 @@ export const FinanceProvider = ({ children }) => {
   const [assets, setAssets] = useState([]);
   const [loans, setLoans] = useState([]);
 
-  // Load from database via API when logged in
+  const loadData = async () => {
+    if (!hasToken()) {
+      setIncomes([]);
+      setExpenses([]);
+      setClients([]);
+      setInvoices([]);
+      setSettings(getDefaultSettings());
+      setAssets([]);
+      setLoans([]);
+      return;
+    }
+    try {
+      const [incomesRes, expensesRes, clientsRes, invoicesRes, settingsRes, assetsRes, loansRes] = await Promise.all([
+        api.incomes.list().catch(() => []),
+        api.expenses.list().catch(() => []),
+        api.clients.list().catch(() => []),
+        api.invoices.list().catch(() => []),
+        api.settings.get().catch(() => getDefaultSettings()),
+        api.assets.list().catch(() => []),
+        api.loans.list().catch(() => []),
+      ]);
+      setIncomes(Array.isArray(incomesRes) ? incomesRes : []);
+      setExpenses(Array.isArray(expensesRes) ? expensesRes : []);
+      setClients(Array.isArray(clientsRes) ? clientsRes : []);
+      setInvoices(Array.isArray(invoicesRes) ? invoicesRes : []);
+      setSettings(settingsRes && typeof settingsRes === 'object' ? { ...getDefaultSettings(), ...settingsRes } : getDefaultSettings());
+      setAssets(Array.isArray(assetsRes) ? assetsRes : []);
+      setLoans(Array.isArray(loansRes) ? loansRes : []);
+    } catch {
+      setIncomes([]);
+      setExpenses([]);
+      setClients([]);
+      setInvoices([]);
+      setSettings(getDefaultSettings());
+      setAssets([]);
+      setLoans([]);
+    }
+  };
+
+  // Load from database when logged in, refetch on focus
   useEffect(() => {
-    const load = async () => {
-      if (!hasToken()) {
-        setIncomes([]);
-        setExpenses([]);
-        setClients([]);
-        setInvoices([]);
-        setSettings(getDefaultSettings());
-        setAssets([]);
-        setLoans([]);
-        return;
-      }
-      try {
-        const [incomesRes, expensesRes, clientsRes, invoicesRes, settingsRes, assetsRes, loansRes] = await Promise.all([
-          api.incomes.list().catch(() => []),
-          api.expenses.list().catch(() => []),
-          api.clients.list().catch(() => []),
-          api.invoices.list().catch(() => []),
-          api.settings.get().catch(() => getDefaultSettings()),
-          api.assets.list().catch(() => []),
-          api.loans.list().catch(() => []),
-        ]);
-        setIncomes(Array.isArray(incomesRes) ? incomesRes : []);
-        setExpenses(Array.isArray(expensesRes) ? expensesRes : []);
-        setClients(Array.isArray(clientsRes) ? clientsRes : []);
-        setInvoices(Array.isArray(invoicesRes) ? invoicesRes : []);
-        setSettings(settingsRes && typeof settingsRes === 'object' ? { ...getDefaultSettings(), ...settingsRes } : getDefaultSettings());
-        setAssets(Array.isArray(assetsRes) ? assetsRes : []);
-        setLoans(Array.isArray(loansRes) ? loansRes : []);
-      } catch {
-        setIncomes([]);
-        setExpenses([]);
-        setClients([]);
-        setInvoices([]);
-        setSettings(getDefaultSettings());
-        setAssets([]);
-        setLoans([]);
-      }
+    loadData();
+  }, []);
+
+  useEffect(() => {
+    const onFocus = () => {
+      if (hasToken()) loadData();
     };
-    load();
+    const onLogin = () => loadData();
+    window.addEventListener('focus', onFocus);
+    window.addEventListener('auth:login', onLogin);
+    return () => {
+      window.removeEventListener('focus', onFocus);
+      window.removeEventListener('auth:login', onLogin);
+    };
   }, []);
 
   const addClient = async (data) => {
@@ -284,6 +298,7 @@ export const FinanceProvider = ({ children }) => {
     settings,
     assets,
     loans,
+    loadData,
     addClient,
     addIncome,
     addExpense,

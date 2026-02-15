@@ -31,7 +31,7 @@ const filterByRange = (items, range, dateKey = 'date') => {
 const COLORS = ['#ef4444', '#dc2626', '#b91c1c', '#991b1b', '#7f1d1d', '#450a0a'];
 
 const ReportExpense = () => {
-  const { expenses, settings } = useFinance();
+  const { expenses, settings, loadData } = useFinance();
   const { toast } = useToast();
   const [exportOpen, setExportOpen] = React.useState(false);
 
@@ -94,7 +94,7 @@ const ReportExpense = () => {
             <p className="text-muted-foreground">Expense breakdown, Budget vs actual</p>
           </div>
           <div className="flex gap-3">
-            <Button variant="outline" onClick={() => toast({ title: 'Refreshed', description: 'Data refreshed' })}>
+            <Button variant="outline" onClick={() => { loadData(); toast({ title: 'Refreshed', description: 'Data refreshed' }); }}>
               <RefreshCw className="w-4 h-4 mr-2" />
               Refresh
             </Button>

@@ -11,7 +11,7 @@ const Reports = () => {
   const [salesByDay, setSalesByDay] = useState([]);
   const [expenseByCategory, setExpenseByCategory] = useState([]);
   const { toast } = useToast();
-  const { incomes, expenses, totals, settings } = useFinance();
+  const { incomes, expenses, totals, settings, loadData } = useFinance();
 
   useEffect(() => {
     const map = new Map();
@@ -93,6 +93,7 @@ const Reports = () => {
             <Button
               variant="outline"
               onClick={() => {
+                loadData();
                 toast({
                   title: 'Refreshed',
                   description: 'Report data has been refreshed.',

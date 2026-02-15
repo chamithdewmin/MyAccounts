@@ -26,7 +26,8 @@ const toInvoice = (row) => ({
 
 router.get('/', async (req, res) => {
   try {
-    const { rows } = await pool.query('SELECT * FROM invoices ORDER BY created_at DESC');
+    const uid = req.user.id;
+    const { rows } = await pool.query('SELECT * FROM invoices WHERE user_id = $1 ORDER BY created_at DESC', [uid]);
     res.json(rows.map(toInvoice));
   } catch (err) {
     console.error(err);
@@ -36,6 +37,7 @@ router.get('/', async (req, res) => {
 
 router.post('/', async (req, res) => {
   try {
+    const uid = req.user.id;
     const d = req.body;
     const id = d.invoiceNumber || d.id || `INV-${Date.now()}`;
     const subtotal = Number(d.subtotal) || 0;
@@ -44,10 +46,11 @@ router.post('/', async (req, res) => {
     const total = Number(d.total) || subtotal + taxAmount;
 
     await pool.query(
-      `INSERT INTO invoices (id, invoice_number, client_id, client_name, client_email, client_phone, items, subtotal, tax_rate, tax_amount, total, payment_method, status, due_date, notes)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)`,
+      `INSERT INTO invoices (id, user_id, invoice_number, client_id, client_name, client_email, client_phone, items, subtotal, tax_rate, tax_amount, total, payment_method, status, due_date, notes)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16)`,
       [
         id,
+        uid,
         d.invoiceNumber || id,
         d.clientId || null,
         d.clientName || '',
@@ -74,10 +77,11 @@ router.post('/', async (req, res) => {
 
 router.patch('/:id/status', async (req, res) => {
   try {
+    const uid = req.user.id;
     const { id } = req.params;
     const { status } = req.body;
-    await pool.query('UPDATE invoices SET status = $2 WHERE id = $1', [id, status]);
-    const { rows } = await pool.query('SELECT * FROM invoices WHERE id = $1', [id]);
+    await pool.query('UPDATE invoices SET status = $2 WHERE id = $1 AND user_id = $3', [id, status, uid]);
+    const { rows } = await pool.query('SELECT * FROM invoices WHERE id = $1 AND user_id = $2', [id, uid]);
     if (!rows[0]) return res.status(404).json({ error: 'Not found' });
     res.json(toInvoice(rows[0]));
   } catch (err) {
@@ -88,7 +92,8 @@ router.patch('/:id/status', async (req, res) => {
 
 router.delete('/:id', async (req, res) => {
   try {
-    const { rowCount } = await pool.query('DELETE FROM invoices WHERE id = $1', [req.params.id]);
+    const uid = req.user.id;
+    const { rowCount } = await pool.query('DELETE FROM invoices WHERE id = $1 AND user_id = $2', [req.params.id, uid]);
     if (rowCount === 0) return res.status(404).json({ error: 'Not found' });
     res.json({ success: true });
   } catch (err) {

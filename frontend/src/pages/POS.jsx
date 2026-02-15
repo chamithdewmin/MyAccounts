@@ -10,7 +10,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Label } from '@/components/ui/label';
 
 const POS = () => {
-  const { incomes, clients, addIncome, updateIncome, deleteIncome, settings } = useFinance();
+  const { incomes, clients, addIncome, updateIncome, deleteIncome, settings, loadData } = useFinance();
   const { toast } = useToast();
 
   const [form, setForm] = useState({
@@ -206,6 +206,7 @@ const POS = () => {
             <Button
               variant="outline"
               onClick={() => {
+                loadData();
                 toast({
                   title: 'Refreshed',
                   description: 'Income data has been refreshed.',

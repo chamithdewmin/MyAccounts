@@ -13,7 +13,7 @@ const Customers = () => {
   const [filteredCustomers, setFilteredCustomers] = useState([]);
   const [searchQuery, setSearchQuery] = useState('');
   const { toast } = useToast();
-  const { clients, addClient, updateClient, deleteClient } = useFinance();
+  const { clients, addClient, updateClient, deleteClient, loadData } = useFinance();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingClient, setEditingClient] = useState(null);
   const [form, setForm] = useState({
@@ -113,6 +113,7 @@ const Customers = () => {
             <Button
               variant="outline"
               onClick={() => {
+                loadData();
                 toast({
                   title: 'Refreshed',
                   description: 'Client data has been refreshed.',

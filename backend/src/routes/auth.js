@@ -27,8 +27,13 @@ router.post('/login', async (req, res) => {
       return res.status(401).json({ success: false, error: 'Invalid credentials' });
     }
 
+    // Increment token_version to invalidate all other sessions (single-session)
+    await pool.query('UPDATE users SET token_version = COALESCE(token_version, 0) + 1 WHERE id = $1', [user.id]);
+    const { rows: vrows } = await pool.query('SELECT token_version FROM users WHERE id = $1', [user.id]);
+    const tokenVersion = vrows[0]?.token_version ?? 1;
+
     const token = jwt.sign(
-      { id: user.id, email: user.email },
+      { id: user.id, email: user.email, v: tokenVersion },
       process.env.JWT_SECRET,
       { expiresIn: '7d' }
     );
@@ -55,13 +60,18 @@ router.get('/me', async (req, res) => {
   try {
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
     const { rows } = await pool.query(
-      'SELECT id, email, name FROM users WHERE id = $1',
+      'SELECT id, email, name, token_version FROM users WHERE id = $1',
       [decoded.id]
     );
     if (!rows[0]) {
       return res.status(401).json({ error: 'User not found' });
     }
-    res.json({ user: rows[0] });
+    const currentVersion = rows[0].token_version ?? 0;
+    const tokenVersion = decoded.v ?? 0;
+    if (tokenVersion !== currentVersion) {
+      return res.status(401).json({ error: 'Session expired' });
+    }
+    res.json({ user: { id: rows[0].id, email: rows[0].email, name: rows[0].name } });
   } catch {
     res.status(401).json({ error: 'Invalid token' });
   }

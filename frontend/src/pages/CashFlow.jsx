@@ -51,6 +51,7 @@ const CashFlow = () => {
     deleteIncome,
     deleteExpense,
     updateInvoiceStatus,
+    loadData,
   } = useFinance();
   const { toast } = useToast();
 
@@ -592,7 +593,7 @@ const CashFlow = () => {
             </p>
           </div>
           <div className="flex gap-3">
-            <Button variant="outline" onClick={() => toast({ title: 'Refreshed', description: 'Data refreshed.' })}>
+            <Button variant="outline" onClick={() => { loadData(); toast({ title: 'Refreshed', description: 'Data refreshed.' }); }}>
               <RefreshCw className="w-4 h-4 mr-2" />
               Refresh
             </Button>

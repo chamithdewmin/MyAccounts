@@ -27,7 +27,7 @@ async function initDb() {
   await pool.query(sql);
   console.log('Database tables ready.');
 
-  // Create default users if they don't exist
+  // Create default users if they don't exist (before migration so user_id refs work)
   const adminHash = await bcrypt.hash('admin123', 10);
   const chamithHash = await bcrypt.hash('chamith123', 10);
   await pool.query(
@@ -41,6 +41,12 @@ async function initDb() {
     ['chamith@myaccounts.com', chamithHash, 'Chamith']
   );
   console.log('Default users ready: admin@gmail.com, chamith@myaccounts.com');
+
+  // Add user_id for per-user data isolation
+  const migratePath = path.join(__dirname, '..', 'scripts', 'migrate-user-id.sql');
+  const migrate = fs.readFileSync(migratePath, 'utf8');
+  await pool.query(migrate);
+  console.log('Per-user data isolation enabled.');
 }
 
 const app = express();

@@ -44,7 +44,7 @@ const getDateRange = (option, fromDate, toDate) => {
 };
 
 const ReportTax = () => {
-  const { incomes, expenses, settings } = useFinance();
+  const { incomes, expenses, settings, loadData } = useFinance();
   const { toast } = useToast();
 
   const [periodOption, setPeriodOption] = useState('this_month');
@@ -200,7 +200,7 @@ const ReportTax = () => {
             </p>
           </div>
           <div className="flex flex-wrap gap-2">
-            <Button variant="outline" onClick={() => toast({ title: 'Refreshed', description: 'Data refreshed' })}>
+            <Button variant="outline" onClick={() => { loadData(); toast({ title: 'Refreshed', description: 'Data refreshed' }); }}>
               <RefreshCw className="w-4 h-4 mr-2" />
               Refresh
             </Button>

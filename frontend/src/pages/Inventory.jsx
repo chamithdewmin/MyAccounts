@@ -10,7 +10,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Label } from '@/components/ui/label';
 
 const Inventory = () => {
-  const { expenses, settings, addExpense, updateExpense, deleteExpense } = useFinance();
+  const { expenses, settings, addExpense, updateExpense, deleteExpense, loadData } = useFinance();
   const { toast } = useToast();
 
   const [form, setForm] = useState({
@@ -244,7 +244,7 @@ const Inventory = () => {
             <Button
               variant="outline"
               onClick={() => {
-                // simple refresh: just show a toast since data is local
+                loadData();
                 toast({
                   title: 'Refreshed',
                   description: 'Expense data has been refreshed.',

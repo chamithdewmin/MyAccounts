@@ -115,18 +115,34 @@ router.post('/send-bulk', async (req, res) => {
       return res.status(400).json({ error: 'No valid contacts' });
     }
 
-    const url = `${config.baseUrl}/send-bulk-sms`;
-    const formData = new URLSearchParams();
-    formData.append('user_id', config.userId);
-    formData.append('api_key', config.apiKey);
-    formData.append('sender_id', config.senderId);
-    formData.append('contacts', JSON.stringify(normalizedContacts));
-    formData.append('message', String(message).slice(0, 1500));
-    const resp = await fetch(url, {
+    const baseUrl = config.baseUrl.replace(/\/$/, '');
+    const url = `${baseUrl}/send-bulk-sms`;
+    const msg = String(message).slice(0, 1500);
+    const body = {
+      user_id: config.userId,
+      api_key: config.apiKey,
+      sender_id: config.senderId,
+      contacts: normalizedContacts,
+      message: msg,
+    };
+    let resp = await fetch(url, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-      body: formData.toString(),
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
     });
+    if (resp.status === 415) {
+      const fd = new URLSearchParams();
+      fd.append('user_id', config.userId);
+      fd.append('api_key', config.apiKey);
+      fd.append('sender_id', config.senderId);
+      fd.append('contacts', JSON.stringify(normalizedContacts));
+      fd.append('message', msg);
+      resp = await fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: fd.toString(),
+      });
+    }
 
     const data = await resp.json().catch((e) => {
       console.error('[SMS send-bulk] Parse error:', e.message);

@@ -70,6 +70,24 @@ async function initDb() {
   } catch (migErr) {
     console.warn('Migration warning (app will continue):', migErr.message);
   }
+
+  // Ensure forgot-password structures exist (in case migration failed partway)
+  try {
+    await pool.query('ALTER TABLE settings ADD COLUMN IF NOT EXISTS user_id INT');
+    await pool.query("ALTER TABLE settings ADD COLUMN IF NOT EXISTS phone VARCHAR(50) DEFAULT ''");
+    await pool.query('UPDATE settings SET user_id = 1 WHERE user_id IS NULL');
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS password_reset_otps (
+        email VARCHAR(255) PRIMARY KEY,
+        otp VARCHAR(10) NOT NULL,
+        expires_at TIMESTAMPTZ NOT NULL,
+        created_at TIMESTAMPTZ DEFAULT NOW()
+      )
+    `);
+    console.log('Forgot-password tables ready.');
+  } catch (e) {
+    console.warn('Forgot-password setup:', e.message);
+  }
 }
 
 const app = express();

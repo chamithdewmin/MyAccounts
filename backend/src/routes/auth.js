@@ -19,9 +19,13 @@ const normalizePhone = (p) => {
 };
 
 const getSmsConfigForUser = async (userId) => {
-  const { rows } = await pool.query('SELECT sms_config FROM settings WHERE user_id = $1', [userId]);
-  const c = rows[0]?.sms_config;
-  return c && c.userId ? c : null;
+  try {
+    const { rows } = await pool.query('SELECT sms_config FROM settings WHERE user_id = $1', [userId]);
+    const c = rows[0]?.sms_config;
+    return c && c.userId ? c : null;
+  } catch {
+    return null;
+  }
 };
 
 const sendOtpSms = async (phone, otp) => {

@@ -16,6 +16,7 @@ import carsRoutes from './routes/cars.js';
 import customersRoutes from './routes/customers.js';
 import ordersRoutes from './routes/orders.js';
 import usersRoutes from './routes/users.js';
+import bcrypt from 'bcryptjs';
 import pool from './config/db.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -25,6 +26,21 @@ async function initDb() {
   const sql = fs.readFileSync(sqlPath, 'utf8');
   await pool.query(sql);
   console.log('Database tables ready.');
+
+  // Create default users if they don't exist
+  const adminHash = await bcrypt.hash('admin123', 10);
+  const chamithHash = await bcrypt.hash('chamith123', 10);
+  await pool.query(
+    `INSERT INTO users (email, password_hash, name) VALUES ($1, $2, $3)
+     ON CONFLICT (email) DO UPDATE SET password_hash = $2`,
+    ['admin@gmail.com', adminHash, 'Admin']
+  );
+  await pool.query(
+    `INSERT INTO users (email, password_hash, name) VALUES ($1, $2, $3)
+     ON CONFLICT (email) DO UPDATE SET password_hash = $2`,
+    ['chamith@myaccounts.com', chamithHash, 'Chamith']
+  );
+  console.log('Default users ready: admin@gmail.com, chamith@myaccounts.com');
 }
 
 const app = express();

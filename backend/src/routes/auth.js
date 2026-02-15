@@ -300,7 +300,13 @@ router.post('/reset-password', async (req, res) => {
     }
     const email = decoded.email;
     const hash = await bcrypt.hash(pwd, 10);
-    await pool.query('UPDATE users SET password_hash = $2, token_version = COALESCE(token_version, 0) + 1 WHERE LOWER(email) = $1', [email, hash]);
+    const { rowCount } = await pool.query(
+      'UPDATE users SET password_hash = $2, token_version = COALESCE(token_version, 0) + 1 WHERE LOWER(TRIM(email)) = $1',
+      [email.toLowerCase().trim(), hash]
+    );
+    if (rowCount === 0) {
+      return res.status(400).json({ error: 'Account not found. Please request a new OTP.' });
+    }
     res.json({ success: true, message: 'Password updated successfully. You can now sign in.' });
   } catch (err) {
     console.error('[reset-password]', err);

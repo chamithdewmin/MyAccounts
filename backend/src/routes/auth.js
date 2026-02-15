@@ -183,15 +183,26 @@ router.post('/forgot-password', async (req, res) => {
     }
     const phoneToSend = matched.phone;
     const em = String(matched.email || '').trim().toLowerCase();
+    if (!em) {
+      return res.status(400).json({ error: 'Could not determine account. Please contact your administrator.' });
+    }
     const otp = generateOtp();
     const expiresAt = new Date(Date.now() + OTP_EXPIRY_MINUTES * 60 * 1000);
     try {
+      await pool.query(`
+        CREATE TABLE IF NOT EXISTS password_reset_otps (
+          email VARCHAR(255) PRIMARY KEY,
+          otp VARCHAR(10) NOT NULL,
+          expires_at TIMESTAMPTZ NOT NULL,
+          created_at TIMESTAMPTZ DEFAULT NOW()
+        )
+      `);
       await pool.query(
         'INSERT INTO password_reset_otps (email, otp, expires_at) VALUES ($1, $2, $3) ON CONFLICT (email) DO UPDATE SET otp = $2, expires_at = $3',
         [em, otp, expiresAt]
       );
     } catch (dbErr) {
-      console.error('[forgot-password] OTP store:', dbErr.message);
+      console.error('[forgot-password] OTP store:', dbErr.message, dbErr.code);
       return res.status(500).json({
         error: 'Service unavailable. Please try again later or contact your administrator.',
       });

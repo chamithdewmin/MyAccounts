@@ -44,6 +44,16 @@ const Settings = () => {
                 />
               </div>
               <div className="space-y-2">
+                <Label htmlFor="phone-number">Phone Number</Label>
+                <Input
+                  id="phone-number"
+                  type="tel"
+                  value={settings.phone ?? ''}
+                  onChange={(e) => updateSettings({ phone: e.target.value })}
+                  placeholder="+94761234567 or 0761234567"
+                />
+              </div>
+              <div className="space-y-2">
                 <Label htmlFor="tax-rate">Tax Rate (%)</Label>
                 <Input
                   id="tax-rate"

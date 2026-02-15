@@ -19,6 +19,7 @@ import CashFlow from './pages/CashFlow';
 import Settings from './pages/Settings';
 import Users from './pages/Users';
 import SMS from './pages/SMS';
+import Reminders from './pages/Reminders';
 import Layout from './components/Layout';
 
 function App() {
@@ -63,6 +64,7 @@ function App() {
         <Route path="cash-flow" element={<CashFlow />} />
         <Route path="users" element={user?.email === 'logozodev@gmail.com' ? <Users /> : <Navigate to="/dashboard" replace />} />
         <Route path="sms" element={<SMS />} />
+        <Route path="reminders" element={<Reminders />} />
         <Route path="settings" element={<Settings />} />
       </Route>
     </Routes>

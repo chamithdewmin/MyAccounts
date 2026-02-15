@@ -35,6 +35,9 @@ ALTER TABLE settings ALTER COLUMN id SET DEFAULT nextval('settings_id_seq');
 -- SMS gateway config (per user, stored in settings)
 ALTER TABLE settings ADD COLUMN IF NOT EXISTS sms_config JSONB DEFAULT NULL;
 
+-- Business phone number
+ALTER TABLE settings ADD COLUMN IF NOT EXISTS phone VARCHAR(50) DEFAULT '';
+
 -- Transfers: cash ↔ bank (e.g. deposit cash to bank, withdraw from bank)
 CREATE TABLE IF NOT EXISTS transfers (
   id VARCHAR(50) PRIMARY KEY,
@@ -44,5 +47,19 @@ CREATE TABLE IF NOT EXISTS transfers (
   amount DECIMAL(15,2) NOT NULL DEFAULT 0,
   date DATE NOT NULL,
   notes TEXT DEFAULT '',
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- Reminders: linked to income/expense, send SMS on a date
+CREATE TABLE IF NOT EXISTS reminders (
+  id VARCHAR(50) PRIMARY KEY,
+  user_id INT REFERENCES users(id),
+  type VARCHAR(20) NOT NULL,
+  reference_id VARCHAR(100) NOT NULL,
+  reminder_date DATE NOT NULL,
+  sms_contact VARCHAR(50) NOT NULL,
+  message TEXT DEFAULT '',
+  status VARCHAR(20) DEFAULT 'pending',
+  sent_at TIMESTAMPTZ,
   created_at TIMESTAMPTZ DEFAULT NOW()
 );

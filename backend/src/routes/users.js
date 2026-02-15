@@ -81,7 +81,7 @@ router.delete('/:id', async (req, res) => {
     const client = await pool.connect();
     try {
       await client.query('BEGIN');
-      const tables = ['orders', 'incomes', 'invoices', 'clients', 'customers', 'expenses', 'cars', 'assets', 'loans', 'transfers', 'settings'];
+      const tables = ['orders', 'incomes', 'invoices', 'clients', 'customers', 'expenses', 'cars', 'assets', 'loans', 'transfers', 'reminders', 'settings'];
       for (const table of tables) {
         await client.query(`DELETE FROM ${table} WHERE user_id = $1`, [id]);
       }

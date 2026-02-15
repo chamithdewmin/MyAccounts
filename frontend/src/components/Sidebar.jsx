@@ -9,6 +9,7 @@ import {
   Users,
   UserPlus,
   MessageSquare,
+  Bell,
   BarChart3,
   TrendingUp,
   Settings,
@@ -37,6 +38,7 @@ const navItems = [
   { to: '/clients', icon: Users, label: 'Clients' },
   { to: '/users', icon: UserPlus, label: 'Users' },
   { to: '/sms', icon: MessageSquare, label: 'SMS' },
+  { to: '/reminders', icon: Bell, label: 'Reminders' },
   { to: '/settings', icon: Settings, label: 'Settings' },
 ];
 

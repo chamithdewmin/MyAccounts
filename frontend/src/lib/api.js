@@ -104,6 +104,11 @@ export const api = {
     create: (data) => request('/transfers', { method: 'POST', body: JSON.stringify(data) }),
     delete: (id) => request(`/transfers/${id}`, { method: 'DELETE' }),
   },
+  reminders: {
+    list: () => request('/reminders'),
+    create: (data) => request('/reminders', { method: 'POST', body: JSON.stringify(data) }),
+    delete: (id) => request(`/reminders/${id}`, { method: 'DELETE' }),
+  },
 };
 
 export const useApi = () => !!import.meta.env.VITE_API_URL || window.location.origin.includes('myaccounts.logozodev.com');

@@ -13,6 +13,7 @@ const createId = (prefix) => {
 
 const getDefaultSettings = () => ({
   businessName: 'My Business',
+  phone: '',
   currency: 'LKR',
   taxRate: 10,
   taxEnabled: true,

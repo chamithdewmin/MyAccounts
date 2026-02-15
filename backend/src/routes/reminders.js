@@ -8,10 +8,19 @@ router.use(authMiddleware);
 router.get('/', async (req, res) => {
   try {
     const uid = req.user.id;
-    const { rows } = await pool.query(
-      'SELECT id, type, reference_id, reminder_date, sms_contact, message, status, sent_at, created_at FROM reminders WHERE user_id = $1 ORDER BY reminder_date DESC, created_at DESC',
-      [uid]
-    );
+    let rows = [];
+    try {
+      const result = await pool.query(
+        'SELECT id, type, reference_id, reminder_date, sms_contact, message, status, sent_at, created_at FROM reminders WHERE user_id = $1 ORDER BY reminder_date DESC, created_at DESC',
+        [uid]
+      );
+      rows = result.rows;
+    } catch (tblErr) {
+      if (tblErr.code === '42P01') {
+        return res.json([]);
+      }
+      throw tblErr;
+    }
     res.json(rows.map((r) => ({
       id: r.id,
       type: r.type,
@@ -24,7 +33,7 @@ router.get('/', async (req, res) => {
       createdAt: r.created_at,
     })));
   } catch (err) {
-    console.error(err);
+    console.error('[reminders GET]', err);
     res.status(500).json({ error: 'Server error' });
   }
 });
@@ -55,8 +64,8 @@ router.post('/', async (req, res) => {
       status: 'pending',
     });
   } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: 'Server error' });
+    console.error('[reminders POST]', err);
+    res.status(500).json({ error: err.code === '42P01' ? 'Reminders not available yet. Please restart the server.' : 'Server error' });
   }
 });
 
@@ -67,7 +76,7 @@ router.delete('/:id', async (req, res) => {
     if (rowCount === 0) return res.status(404).json({ error: 'Reminder not found' });
     res.json({ success: true });
   } catch (err) {
-    console.error(err);
+    console.error('[reminders DELETE]', err);
     res.status(500).json({ error: 'Server error' });
   }
 });

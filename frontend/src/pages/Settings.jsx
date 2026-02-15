@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { Helmet } from 'react-helmet';
 import { motion } from 'framer-motion';
 import { Save } from 'lucide-react';
@@ -9,9 +9,47 @@ import { useToast } from '@/components/ui/use-toast';
 import { useFinance } from '@/contexts/FinanceContext';
 import { cn } from '@/lib/utils';
 
+const DEBOUNCE_MS = 600;
+
 const Settings = () => {
   const { settings, updateSettings } = useFinance();
   const { toast } = useToast();
+  const [local, setLocal] = useState(settings);
+  const saveTimeoutRef = useRef(null);
+  const initialSync = useRef(false);
+
+  useEffect(() => {
+    if (!initialSync.current && settings?.businessName != null) {
+      setLocal((prev) => ({ ...prev, ...settings }));
+      initialSync.current = true;
+    }
+  }, [settings]);
+
+  const debouncedSave = useCallback(
+    (partial) => {
+      setLocal((prev) => ({ ...prev, ...partial }));
+      if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current);
+      saveTimeoutRef.current = setTimeout(() => {
+        updateSettings(partial);
+        saveTimeoutRef.current = null;
+      }, DEBOUNCE_MS);
+    },
+    [updateSettings]
+  );
+
+  const saveNow = useCallback(
+    (partial) => {
+      if (saveTimeoutRef.current) {
+        clearTimeout(saveTimeoutRef.current);
+        saveTimeoutRef.current = null;
+      }
+      setLocal((prev) => ({ ...prev, ...partial }));
+      updateSettings(partial);
+    },
+    [updateSettings]
+  );
+
+  const s = local;
 
   return (
     <>
@@ -39,8 +77,8 @@ const Settings = () => {
                 <Label htmlFor="company-name">Company Name</Label>
                 <Input
                   id="company-name"
-                  value={settings.businessName}
-                  onChange={(e) => updateSettings({ businessName: e.target.value })}
+                  value={s.businessName}
+                  onChange={(e) => debouncedSave({ businessName: e.target.value })}
                 />
               </div>
               <div className="space-y-2">
@@ -48,8 +86,8 @@ const Settings = () => {
                 <Input
                   id="phone-number"
                   type="tel"
-                  value={settings.phone ?? ''}
-                  onChange={(e) => updateSettings({ phone: e.target.value })}
+                  value={s.phone ?? ''}
+                  onChange={(e) => debouncedSave({ phone: e.target.value })}
                   placeholder="+94761234567 or 0761234567"
                 />
               </div>
@@ -58,9 +96,9 @@ const Settings = () => {
                 <Input
                   id="tax-rate"
                   type="number"
-                  value={settings.taxRate}
+                  value={s.taxRate}
                   onChange={(e) =>
-                    updateSettings({ taxRate: Number(e.target.value || 0) })
+                    debouncedSave({ taxRate: Number(e.target.value || 0) })
                   }
                 />
               </div>
@@ -69,8 +107,8 @@ const Settings = () => {
                 <select
                   id="currency"
                   className="w-full px-3 py-2 bg-secondary border border-secondary rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
-                  value={settings.currency}
-                  onChange={(e) => updateSettings({ currency: e.target.value })}
+                  value={s.currency}
+                  onChange={(e) => debouncedSave({ currency: e.target.value })}
                 >
                   <option value="LKR">LKR (රු)</option>
                   <option value="USD">USD ($)</option>
@@ -93,7 +131,7 @@ const Settings = () => {
                       if (!file) return;
                       const reader = new FileReader();
                       reader.onload = () => {
-                        updateSettings({ logo: reader.result });
+                        saveNow({ logo: reader.result });
                       };
                       reader.readAsDataURL(file);
                     }}
@@ -104,10 +142,10 @@ const Settings = () => {
                       file:bg-secondary file:text-foreground
                       hover:file:bg-secondary/80"
                   />
-                  {settings.logo && (
+                  {s.logo && (
                     <div className="flex items-center gap-2">
                       <img
-                        src={settings.logo}
+                        src={s.logo}
                         alt="Logo preview"
                         className="h-10 w-10 rounded border border-secondary object-contain bg-white"
                       />
@@ -115,7 +153,7 @@ const Settings = () => {
                         type="button"
                         variant="outline"
                         size="sm"
-                        onClick={() => updateSettings({ logo: null })}
+                        onClick={() => saveNow({ logo: null })}
                       >
                         Remove
                       </Button>
@@ -138,9 +176,9 @@ const Settings = () => {
                 <Input
                   id="opening-cash"
                   type="number"
-                  value={settings.openingCash ?? 0}
+                  value={s.openingCash ?? 0}
                   onChange={(e) =>
-                    updateSettings({ openingCash: Number(e.target.value || 0) })
+                    debouncedSave({ openingCash: Number(e.target.value || 0) })
                   }
                 />
                 <p className="text-xs text-muted-foreground">Cash at business start</p>
@@ -150,9 +188,9 @@ const Settings = () => {
                 <Input
                   id="owner-capital"
                   type="number"
-                  value={settings.ownerCapital ?? 0}
+                  value={s.ownerCapital ?? 0}
                   onChange={(e) =>
-                    updateSettings({ ownerCapital: Number(e.target.value || 0) })
+                    debouncedSave({ ownerCapital: Number(e.target.value || 0) })
                   }
                 />
                 <p className="text-xs text-muted-foreground">Owner deposits / investment</p>
@@ -162,9 +200,9 @@ const Settings = () => {
                 <Input
                   id="payables"
                   type="number"
-                  value={settings.payables ?? 0}
+                  value={s.payables ?? 0}
                   onChange={(e) =>
-                    updateSettings({ payables: Number(e.target.value || 0) })
+                    debouncedSave({ payables: Number(e.target.value || 0) })
                   }
                 />
                 <p className="text-xs text-muted-foreground">Unpaid bills at start</p>
@@ -186,20 +224,20 @@ const Settings = () => {
                 <button
                   type="button"
                   onClick={() =>
-                    updateSettings({ theme: settings.theme === 'dark' ? 'light' : 'dark' })
+                    saveNow({ theme: s.theme === 'dark' ? 'light' : 'dark' })
                   }
                   className={cn(
                     'relative inline-flex h-7 w-14 items-center rounded-full border transition-colors',
-                    settings.theme === 'dark'
+                    s.theme === 'dark'
                       ? 'bg-primary border-primary'
                       : 'bg-muted border-secondary',
                   )}
-                  aria-pressed={settings.theme === 'dark'}
+                  aria-pressed={s.theme === 'dark'}
                 >
                   <span
                     className={cn(
                       'inline-block h-5 w-5 transform rounded-full bg-white shadow transition-transform',
-                      settings.theme === 'dark' ? 'translate-x-7' : 'translate-x-1',
+                      s.theme === 'dark' ? 'translate-x-7' : 'translate-x-1',
                     )}
                   />
                 </button>
@@ -214,11 +252,11 @@ const Settings = () => {
                 <button
                   type="button"
                   role="switch"
-                  aria-checked={settings.taxEnabled}
-                  onClick={() => updateSettings({ taxEnabled: !settings.taxEnabled })}
+                  aria-checked={s.taxEnabled}
+                  onClick={() => saveNow({ taxEnabled: !s.taxEnabled })}
                   className={cn(
                     'relative inline-flex h-7 w-14 items-center rounded-full border transition-colors',
-                    settings.taxEnabled
+                    s.taxEnabled
                       ? 'bg-primary border-primary'
                       : 'bg-muted border-secondary',
                   )}
@@ -226,7 +264,7 @@ const Settings = () => {
                   <span
                     className={cn(
                       'inline-block h-5 w-5 transform rounded-full bg-white shadow transition-transform',
-                      settings.taxEnabled ? 'translate-x-7' : 'translate-x-1',
+                      s.taxEnabled ? 'translate-x-7' : 'translate-x-1',
                     )}
                   />
                 </button>
@@ -236,12 +274,17 @@ const Settings = () => {
 
           <div className="pt-4 flex justify-end">
             <Button
-              onClick={() =>
+              onClick={() => {
+                if (saveTimeoutRef.current) {
+                  clearTimeout(saveTimeoutRef.current);
+                  saveTimeoutRef.current = null;
+                }
+                updateSettings(local);
                 toast({
                   title: 'Changes saved',
                   description: 'Your settings have been updated successfully.',
-                })
-              }
+                });
+              }}
               className="gap-2"
             >
               <Save className="h-4 w-4" />

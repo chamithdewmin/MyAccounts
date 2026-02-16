@@ -28,7 +28,7 @@ const InvoiceTemplate = ({
       return;
     }
     const clone = el.cloneNode(true);
-    clone.style.cssText = 'position:fixed;left:0;top:0;width:182mm;max-width:182mm;min-height:297mm;background:white;color:#000;z-index:999999;padding:14mm 16mm;overflow:visible;box-sizing:border-box;';
+    clone.style.cssText = 'position:fixed;left:0;top:0;width:182mm;max-width:182mm;background:white;color:#000;z-index:999999;padding:14mm 16mm;overflow:visible;box-sizing:border-box;';
     clone.id = 'invoice-print-clone';
     document.body.appendChild(clone);
     const style = document.createElement('style');
@@ -75,7 +75,7 @@ const InvoiceTemplate = ({
         format: 'a4',
         orientation: 'portrait',
       },
-      pagebreak: { mode: ['css', 'legacy'] },
+      pagebreak: { mode: ['css', 'legacy'], avoid: ['tr', 'table'] },
     };
 
     await html2pdf().set(opt).from(element).save();
@@ -215,7 +215,6 @@ const InvoiceTemplate = ({
         .invoice-a4 {
           width: 182mm;
           max-width: 182mm;
-          min-height: 297mm;
           margin: auto;
           padding: 14mm 16mm;
           box-sizing: border-box;

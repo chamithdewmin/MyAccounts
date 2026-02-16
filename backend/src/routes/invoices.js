@@ -21,6 +21,7 @@ const toInvoice = (row) => ({
   status: row.status || 'unpaid',
   dueDate: row.due_date,
   notes: row.notes || '',
+  bankDetails: row.bank_details || null,
   createdAt: row.created_at,
 });
 
@@ -45,9 +46,12 @@ router.post('/', async (req, res) => {
     const taxAmount = d.taxAmount != null ? Number(d.taxAmount) : subtotal * (taxRate / 100);
     const total = Number(d.total) || subtotal + taxAmount;
 
+    const bankDetailsJson = d.bankDetails && (d.bankDetails.accountNumber || d.bankDetails.accountName || d.bankDetails.bankName)
+      ? JSON.stringify(d.bankDetails)
+      : null;
     await pool.query(
-      `INSERT INTO invoices (id, user_id, invoice_number, client_id, client_name, client_email, client_phone, items, subtotal, tax_rate, tax_amount, total, payment_method, status, due_date, notes)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16)`,
+      `INSERT INTO invoices (id, user_id, invoice_number, client_id, client_name, client_email, client_phone, items, subtotal, tax_rate, tax_amount, total, payment_method, status, due_date, notes, bank_details)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17)`,
       [
         id,
         uid,
@@ -65,6 +69,7 @@ router.post('/', async (req, res) => {
         d.status || 'unpaid',
         d.dueDate || null,
         d.notes || '',
+        bankDetailsJson,
       ]
     );
     const { rows } = await pool.query('SELECT * FROM invoices WHERE id = $1', [id]);

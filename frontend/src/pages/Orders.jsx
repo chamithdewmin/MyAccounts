@@ -29,10 +29,17 @@ const Orders = () => {
     paymentMethod: 'bank',
     dueDate: '',
     notes: '',
+    bankDetails: null,
     items: [
       { description: '', price: '', quantity: 1 },
     ],
   });
+  const [showBankDetailsPopup, setShowBankDetailsPopup] = useState(false);
+
+  const hasBankDetailsInSettings = useMemo(() => {
+    const b = settings?.bankDetails;
+    return b && b.accountNumber && b.accountName && b.bankName;
+  }, [settings?.bankDetails]);
 
   const handleChange = (field, value) => {
     setForm((prev) => ({ ...prev, [field]: value }));
@@ -115,6 +122,7 @@ const Orders = () => {
       paymentMethod: form.paymentMethod,
       dueDate: dueDateIso,
       notes: form.notes,
+      bankDetails: form.bankDetails,
     });
 
     toast({
@@ -130,6 +138,7 @@ const Orders = () => {
       paymentMethod: 'bank',
       dueDate: '',
       notes: '',
+      bankDetails: null,
       items: [
         { description: '', price: '', quantity: 1 },
       ],
@@ -446,6 +455,25 @@ const Orders = () => {
                   <option value="cash">Cash</option>
                   <option value="online">Online</option>
                 </select>
+                {form.paymentMethod === 'bank' && (
+                  <div className="mt-2">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      disabled={!hasBankDetailsInSettings}
+                      title={!hasBankDetailsInSettings ? 'Enter your bank details on the Settings page' : undefined}
+                      onClick={() => form.bankDetails ? handleChange('bankDetails', null) : setShowBankDetailsPopup(true)}
+                    >
+                      {form.bankDetails ? '✓ Bank details added (click to remove)' : 'Add Payment Details'}
+                    </Button>
+                    {!hasBankDetailsInSettings && (
+                      <p className="text-xs text-muted-foreground mt-1">
+                        Enter your bank details on the Settings page
+                      </p>
+                    )}
+                  </div>
+                )}
                 <div className="space-y-2 mt-2">
                   <Label className="text-sm font-medium">Due Date</Label>
                   <Input
@@ -545,6 +573,40 @@ const Orders = () => {
               </div>
             </div>
           </form>
+        </DialogContent>
+      </Dialog>
+
+      {/* Add Payment Details popup */}
+      <Dialog open={showBankDetailsPopup} onOpenChange={setShowBankDetailsPopup}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Add Bank Details to Invoice</DialogTitle>
+          </DialogHeader>
+          {hasBankDetailsInSettings && settings?.bankDetails && (
+            <div className="space-y-3">
+              <div className="rounded-lg border border-secondary bg-secondary/30 p-4 space-y-2 text-sm">
+                <p><span className="text-muted-foreground">Account Number:</span> {settings.bankDetails.accountNumber}</p>
+                <p><span className="text-muted-foreground">Account Name:</span> {settings.bankDetails.accountName}</p>
+                <p><span className="text-muted-foreground">Bank:</span> {settings.bankDetails.bankName}</p>
+                {settings.bankDetails.branch && (
+                  <p><span className="text-muted-foreground">Branch:</span> {settings.bankDetails.branch}</p>
+                )}
+              </div>
+              <div className="flex justify-end gap-2">
+                <Button variant="outline" onClick={() => setShowBankDetailsPopup(false)}>
+                  Cancel
+                </Button>
+                <Button
+                  onClick={() => {
+                    handleChange('bankDetails', settings.bankDetails);
+                    setShowBankDetailsPopup(false);
+                  }}
+                >
+                  Add to Invoice
+                </Button>
+              </div>
+            </div>
+          )}
         </DialogContent>
       </Dialog>
     </>

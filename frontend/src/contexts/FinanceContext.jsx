@@ -14,6 +14,7 @@ const createId = (prefix) => {
 const getDefaultSettings = () => ({
   businessName: 'My Business',
   phone: '',
+  bankDetails: null, // { accountNumber, accountName, bankName, branch? }
   currency: 'LKR',
   taxRate: 10,
   taxEnabled: true,
@@ -139,14 +140,14 @@ export const FinanceProvider = ({ children }) => {
   };
 
   const addInvoice = async (data) => {
-    const inv = { ...data, taxRate: settings.taxEnabled ? settings.taxRate : 0, taxAmount: data.taxAmount ?? (settings.taxEnabled ? (Number(data.subtotal) || 0) * (settings.taxRate / 100) : 0), total: data.total || Number(data.subtotal) + (data.taxAmount ?? 0) };
+    const inv = { ...data, taxRate: settings.taxEnabled ? settings.taxRate : 0, taxAmount: data.taxAmount ?? (settings.taxEnabled ? (Number(data.subtotal) || 0) * (settings.taxRate / 100) : 0), total: data.total || Number(data.subtotal) + (data.taxAmount ?? 0), bankDetails: data.bankDetails || null };
     if (hasToken()) {
       const invoice = await api.invoices.create(inv);
       setInvoices((prev) => [invoice, ...prev]);
       return invoice;
     }
     const invoiceNumber = data.invoiceNumber || createId('INV');
-    const invoice = { id: invoiceNumber, invoiceNumber, clientId: data.clientId || null, clientName: data.clientName?.trim() || '', clientEmail: data.clientEmail?.trim() || '', clientPhone: data.clientPhone?.trim() || '', items: data.items || [], subtotal: Number(data.subtotal) || 0, taxRate: settings.taxEnabled ? settings.taxRate : 0, taxAmount: inv.taxAmount, total: Number(inv.total) || Number(data.subtotal) + inv.taxAmount, paymentMethod: data.paymentMethod || 'bank', status: data.status || 'unpaid', dueDate: data.dueDate || new Date().toISOString(), createdAt: data.createdAt || new Date().toISOString(), notes: data.notes || '' };
+    const invoice = { id: invoiceNumber, invoiceNumber, clientId: data.clientId || null, clientName: data.clientName?.trim() || '', clientEmail: data.clientEmail?.trim() || '', clientPhone: data.clientPhone?.trim() || '', items: data.items || [], subtotal: Number(data.subtotal) || 0, taxRate: settings.taxEnabled ? settings.taxRate : 0, taxAmount: inv.taxAmount, total: Number(inv.total) || Number(data.subtotal) + inv.taxAmount, paymentMethod: data.paymentMethod || 'bank', status: data.status || 'unpaid', dueDate: data.dueDate || new Date().toISOString(), createdAt: data.createdAt || new Date().toISOString(), notes: data.notes || '', bankDetails: data.bankDetails || null };
     setInvoices((prev) => [invoice, ...prev]);
     return invoice;
   };

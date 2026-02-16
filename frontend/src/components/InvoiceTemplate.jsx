@@ -191,6 +191,21 @@ const InvoiceTemplate = ({ invoice, currency = 'LKR', autoAction = null, onAutoA
           </div>
         </div>
 
+        {/* Bank details for Bank Transfer */}
+        {invoice.bankDetails && (invoice.paymentMethod === 'bank' || invoice.paymentMethod === 'Bank Transfer') && (
+          <div className="border-t border-gray-300 pt-4">
+            <h3 className="font-bold text-sm mb-2 text-black">Bank Transfer Details</h3>
+            <div className="text-sm text-black space-y-1">
+              <p>Account Number: {invoice.bankDetails.accountNumber}</p>
+              <p>Account Name: {invoice.bankDetails.accountName}</p>
+              <p>Bank: {invoice.bankDetails.bankName}</p>
+              {invoice.bankDetails.branch && (
+                <p>Branch: {invoice.bankDetails.branch}</p>
+              )}
+            </div>
+          </div>
+        )}
+
         {/* Footer */}
         <div className="border-t border-gray-300 pt-4 text-center text-sm text-gray-600 space-y-1">
           <p>Thank you for your business!</p>

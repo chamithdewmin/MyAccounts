@@ -1,23 +1,44 @@
 import express from 'express';
 import pool from '../config/db.js';
 import { authMiddleware } from '../middleware/auth.js';
+import { encrypt, decrypt } from '../lib/crypto.js';
 
 const router = express.Router();
 router.use(authMiddleware);
 
-const toSettings = (row) => ({
-  businessName: row.business_name || 'My Business',
-  phone: (row && (row.phone ?? '')) || '',
-  currency: row.currency || 'LKR',
-  taxRate: parseFloat(row.tax_rate) || 10,
-  taxEnabled: row.tax_enabled ?? true,
-  theme: row.theme || 'dark',
-  logo: row.logo,
-  openingCash: parseFloat(row.opening_cash) || 0,
-  ownerCapital: parseFloat(row.owner_capital) || 0,
-  payables: parseFloat(row.payables) || 0,
-  expenseCategories: row.expense_categories || ['Hosting', 'Tools & Subscriptions', 'Advertising & Marketing', 'Transport', 'Office & Utilities', 'Other'],
-});
+const parseBankDetails = (encrypted) => {
+  if (!encrypted) return null;
+  const raw = decrypt(encrypted);
+  if (!raw) return null;
+  try {
+    const obj = JSON.parse(raw);
+    return obj && (obj.accountNumber || obj.accountName || obj.bankName) ? obj : null;
+  } catch {
+    return null;
+  }
+};
+
+const toSettings = (row) => {
+  const base = {
+    businessName: row.business_name || 'My Business',
+    phone: (row && (row.phone ?? '')) || '',
+    currency: row.currency || 'LKR',
+    taxRate: parseFloat(row.tax_rate) || 10,
+    taxEnabled: row.tax_enabled ?? true,
+    theme: row.theme || 'dark',
+    logo: row.logo,
+    openingCash: parseFloat(row.opening_cash) || 0,
+    ownerCapital: parseFloat(row.owner_capital) || 0,
+    payables: parseFloat(row.payables) || 0,
+    expenseCategories: row.expense_categories || ['Hosting', 'Tools & Subscriptions', 'Advertising & Marketing', 'Transport', 'Office & Utilities', 'Other'],
+  };
+  if (row.bank_details_encrypted) {
+    base.bankDetails = parseBankDetails(row.bank_details_encrypted);
+  } else {
+    base.bankDetails = null;
+  }
+  return base;
+};
 
 router.get('/', async (req, res) => {
   try {
@@ -109,6 +130,28 @@ router.put('/', async (req, res) => {
           `INSERT INTO settings (user_id, business_name, currency, tax_rate, tax_enabled, theme, logo, opening_cash, owner_capital, payables, expense_categories)
            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)`,
           [uid, d.businessName || 'My Business', d.currency || 'LKR', d.taxRate ?? 10, d.taxEnabled ?? true, d.theme || 'dark', d.logo, d.openingCash ?? 0, d.ownerCapital ?? 0, d.payables ?? 0, expenseCategoriesJson || '["Hosting","Tools & Subscriptions","Advertising & Marketing","Transport","Office & Utilities","Other"]']
+        );
+      }
+    }
+    if (d.bankDetails != null) {
+      const hasBankCol = await pool.query(
+        `SELECT 1 FROM information_schema.columns WHERE table_name = 'settings' AND column_name = 'bank_details_encrypted'`
+      );
+      if (hasBankCol.rows.length > 0) {
+        const bank = d.bankDetails;
+        const toEncrypt =
+          bank && (bank.accountNumber || bank.accountName || bank.bankName)
+            ? JSON.stringify({
+                accountNumber: String(bank.accountNumber || '').trim(),
+                accountName: String(bank.accountName || '').trim(),
+                bankName: String(bank.bankName || '').trim(),
+                branch: String(bank.branch || '').trim() || null,
+              })
+            : null;
+        const encrypted = toEncrypt ? encrypt(toEncrypt) : null;
+        await pool.query(
+          'UPDATE settings SET bank_details_encrypted = $2, updated_at = NOW() WHERE user_id = $1',
+          [uid, encrypted]
         );
       }
     }

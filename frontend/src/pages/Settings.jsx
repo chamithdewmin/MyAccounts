@@ -91,6 +91,48 @@ const Settings = () => {
                   placeholder="+94761234567 or 0761234567"
                 />
               </div>
+              <div className="space-y-3 p-4 rounded-lg border border-secondary bg-secondary/30">
+                <h3 className="text-sm font-semibold">Bank Account Details</h3>
+                <p className="text-xs text-muted-foreground">Used for Bank Transfer invoices. Stored securely.</p>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="bank-account-number">Account Number</Label>
+                    <Input
+                      id="bank-account-number"
+                      value={s.bankDetails?.accountNumber ?? ''}
+                      onChange={(e) => debouncedSave({ bankDetails: { ...(s.bankDetails || {}), accountNumber: e.target.value } })}
+                      placeholder="1234567890"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="bank-account-name">Account Name</Label>
+                    <Input
+                      id="bank-account-name"
+                      value={s.bankDetails?.accountName ?? ''}
+                      onChange={(e) => debouncedSave({ bankDetails: { ...(s.bankDetails || {}), accountName: e.target.value } })}
+                      placeholder="Your Business Name"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="bank-name">Bank Name</Label>
+                    <Input
+                      id="bank-name"
+                      value={s.bankDetails?.bankName ?? ''}
+                      onChange={(e) => debouncedSave({ bankDetails: { ...(s.bankDetails || {}), bankName: e.target.value } })}
+                      placeholder="Commercial Bank"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="bank-branch">Branch Location (optional)</Label>
+                    <Input
+                      id="bank-branch"
+                      value={s.bankDetails?.branch ?? ''}
+                      onChange={(e) => debouncedSave({ bankDetails: { ...(s.bankDetails || {}), branch: e.target.value } })}
+                      placeholder="Colombo Main"
+                    />
+                  </div>
+                </div>
+              </div>
               <div className="space-y-2">
                 <Label htmlFor="tax-rate">Tax Rate (%)</Label>
                 <Input

@@ -60,21 +60,17 @@ router.post('/', async (req, res) => {
     const payload = { accountNumber, accountName, bankName, branch };
     const encrypted = encrypt(JSON.stringify(payload));
 
-    const { rowCount } = await pool.query(
-      'UPDATE bank_details SET data_encrypted = $2, updated_at = NOW() WHERE user_id = $1',
+    await pool.query(
+      `INSERT INTO bank_details (user_id, data_encrypted) VALUES ($1, $2)
+       ON CONFLICT (user_id) DO UPDATE SET data_encrypted = $2, updated_at = NOW()`,
       [uid, encrypted]
     );
-    if (rowCount === 0) {
-      await pool.query(
-        'INSERT INTO bank_details (user_id, data_encrypted) VALUES ($1, $2)',
-        [uid, encrypted]
-      );
-    }
 
     res.json({ bankDetails: payload, success: true });
   } catch (err) {
     console.error('[bankDetails POST]', err);
-    res.status(500).json({ error: 'Server error' });
+    const msg = process.env.NODE_ENV === 'development' ? err.message : 'Server error';
+    res.status(500).json({ error: msg });
   }
 });
 

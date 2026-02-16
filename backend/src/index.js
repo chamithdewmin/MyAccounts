@@ -99,6 +99,11 @@ async function initDb() {
     await pool.query('ALTER TABLE settings ADD COLUMN IF NOT EXISTS bank_details_encrypted TEXT');
     await pool.query('ALTER TABLE invoices ADD COLUMN IF NOT EXISTS bank_details JSONB');
     await pool.query('ALTER TABLE invoices ADD COLUMN IF NOT EXISTS bank_details_encrypted TEXT');
+    console.log('Forgot-password and user-delete tables ready.');
+  } catch (e) {
+    console.warn('Forgot-password setup:', e.message);
+  }
+  try {
     await pool.query(`
       CREATE TABLE IF NOT EXISTS bank_details (
         user_id INT PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,
@@ -107,9 +112,9 @@ async function initDb() {
         updated_at TIMESTAMPTZ DEFAULT NOW()
       )
     `);
-    console.log('Forgot-password and user-delete tables ready.');
+    console.log('Bank details table ready.');
   } catch (e) {
-    console.warn('Forgot-password setup:', e.message);
+    console.warn('Bank details table:', e.message);
   }
 }
 

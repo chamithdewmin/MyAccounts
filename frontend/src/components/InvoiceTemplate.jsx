@@ -109,12 +109,12 @@ const InvoiceTemplate = ({
             <img src={settings.logo || defaultLogo} alt="logo" className="h-12 w-auto object-contain" />
           </div>
           <div className="text-right">
-            <div
-              className="inline-block text-2xl font-bold text-white py-3 px-6 -mr-6 rounded-l"
-              style={{ backgroundColor: themeColor }}
+            <p
+              className="text-3xl font-bold"
+              style={{ color: themeColor }}
             >
               INVOICE
-            </div>
+            </p>
             <div className="mt-2 space-y-0.5">
               <p className="text-sm text-gray-600">Invoice # {invoice.invoiceNumber}</p>
               <p className="text-sm text-gray-600">Date: {formatDate(invoice.createdAt)}</p>

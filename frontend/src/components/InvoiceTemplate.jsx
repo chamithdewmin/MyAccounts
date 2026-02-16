@@ -62,19 +62,8 @@ const InvoiceTemplate = ({
 
     const filename = `Invoice-${invoice.invoiceNumber || 'invoice'}.pdf`;
 
-    // Clone the invoice and place in a full-screen overlay so html2pdf captures
-    // the correct layout (modal constraints cause layout differences otherwise)
-    const clone = element.cloneNode(true);
-    clone.id = 'invoice-pdf-clone';
-    clone.style.cssText = 'position:fixed;left:50%;top:0;transform:translateX(-50%);width:182mm;max-width:182mm;background:white;box-shadow:none;z-index:999999;overflow:visible;box-sizing:border-box;';
-    const overlay = document.createElement('div');
-    overlay.id = 'invoice-pdf-overlay';
-    overlay.style.cssText = 'position:fixed;inset:0;background:#fff;z-index:999998;overflow:auto;';
-    overlay.appendChild(clone);
-    document.body.appendChild(overlay);
-
-    // Let the clone layout; html2canvas captures more reliably after a brief delay
-    await new Promise((r) => setTimeout(r, 100));
+    element.scrollIntoView({ behavior: 'instant', block: 'start' });
+    await new Promise((r) => setTimeout(r, 150));
 
     const opt = {
       margin: [12, 14, 12, 14],
@@ -86,8 +75,10 @@ const InvoiceTemplate = ({
         allowTaint: true,
         logging: false,
         backgroundColor: '#ffffff',
-        scrollX: 0,
-        scrollY: 0,
+        width: element.offsetWidth,
+        height: element.scrollHeight,
+        windowWidth: element.scrollWidth,
+        windowHeight: element.scrollHeight,
       },
       jsPDF: {
         unit: 'mm',
@@ -97,11 +88,7 @@ const InvoiceTemplate = ({
       pagebreak: { mode: ['css', 'legacy'], avoid: ['tr', '.avoid-break'] },
     };
 
-    try {
-      await html2pdf().set(opt).from(clone).save();
-    } finally {
-      overlay.remove();
-    }
+    await html2pdf().set(opt).from(element).save();
   };
 
   useEffect(() => {

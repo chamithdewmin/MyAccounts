@@ -2,7 +2,6 @@ import React, { useEffect, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { useFinance } from '@/contexts/FinanceContext';
 import defaultLogo from '@/assets/logo.png';
-import html2pdf from 'html2pdf.js';
 
 const InvoiceTemplate = ({
   invoice,
@@ -56,43 +55,10 @@ const InvoiceTemplate = ({
     });
   };
 
-  const handleDownloadPdf = async () => {
-    const element = printAreaRef.current;
-    if (!element) return;
-
-    const filename = `Invoice-${invoice.invoiceNumber || 'invoice'}.pdf`;
-
-    // Use same clone approach as Print - captures exactly what the popup shows
-    const clone = element.cloneNode(true);
-    clone.id = 'invoice-pdf-clone';
-    clone.style.cssText = 'position:fixed;left:0;top:0;width:182mm;max-width:182mm;background:white;color:#000;z-index:999999;padding:0;overflow:visible;box-sizing:border-box;box-shadow:none;';
-    document.body.appendChild(clone);
-    await new Promise((r) => setTimeout(r, 250));
-
-    const opt = {
-      margin: [12, 14, 12, 14],
-      filename,
-      image: { type: 'png', quality: 1 },
-      html2canvas: {
-        scale: 2,
-        useCORS: true,
-        allowTaint: true,
-        logging: false,
-        backgroundColor: '#ffffff',
-      },
-      jsPDF: {
-        unit: 'mm',
-        format: 'a4',
-        orientation: 'portrait',
-      },
-      pagebreak: { mode: ['css', 'legacy'], avoid: ['tr', '.avoid-break'] },
-    };
-
-    try {
-      await html2pdf().set(opt).from(clone).save();
-    } finally {
-      document.getElementById('invoice-pdf-clone')?.remove();
-    }
+  const handleDownloadPdf = () => {
+    // Use print dialog – choose "Save as PDF" or "Microsoft Print to PDF" for a file.
+    // This matches the on-screen invoice and avoids empty PDFs from html2pdf.
+    runPrint();
   };
 
   useEffect(() => {

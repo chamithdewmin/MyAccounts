@@ -102,19 +102,21 @@ const InvoiceTemplate = ({
         </Button>
       </div>
 
-      <div ref={printAreaRef} className="invoice-a4 invoice-a4-wrapper bg-white text-gray-900" data-invoice-theme={themeColor}>
+      <div ref={printAreaRef} className="invoice-a4 bg-white text-gray-900" data-invoice-theme={themeColor}>
         {/* Header: Logo left, INVOICE right (full-width accent) */}
         <div className="flex justify-between items-start mb-6">
           <div>
             <img src={settings.logo || defaultLogo} alt="logo" className="h-12 w-auto object-contain" />
           </div>
           <div className="text-right">
-            <p
-              className="text-3xl font-bold"
-              style={{ color: themeColor }}
+            <div
+              className="inline-flex items-center justify-center rounded px-6 py-3"
+              style={{ backgroundColor: themeColor }}
             >
-              INVOICE
-            </p>
+              <p className="text-2xl font-light text-white tracking-wide">
+                INVOICE
+              </p>
+            </div>
             <div className="mt-4 space-y-0.5">
               <p className="text-sm text-gray-600">Invoice # {invoice.invoiceNumber}</p>
               <p className="text-sm text-gray-600">Date: {formatDate(invoice.createdAt)}</p>
@@ -142,8 +144,8 @@ const InvoiceTemplate = ({
           <table className="w-full invoice-table">
             <thead>
               <tr style={{ backgroundColor: themeColor, color: 'white' }}>
-                <th className="text-left py-3 px-4 font-semibold">QTY</th>
                 <th className="text-left py-3 px-4 font-semibold">PRODUCT DESCRIPTION</th>
+                <th className="text-center py-3 px-4 font-semibold">QTY</th>
                 <th className="text-right py-3 px-4 font-semibold">PRICE</th>
                 <th className="text-right py-3 px-4 font-semibold">TOTAL</th>
               </tr>
@@ -151,14 +153,14 @@ const InvoiceTemplate = ({
             <tbody>
               {items.map((item, i) => (
                 <tr key={i} className={i % 2 === 0 ? 'bg-[#F8F8F8]' : 'bg-white'}>
-                  <td className="py-3 px-4 border-b border-gray-200 text-center">
-                    {item.quantity ?? 1}
-                  </td>
                   <td className="py-3 px-4 border-b border-gray-200">
                     <div className="font-medium text-gray-900">{item.description}</div>
                     {item.serviceType && (
                       <div className="text-sm text-gray-500">{item.serviceType}</div>
                     )}
+                  </td>
+                  <td className="py-3 px-4 border-b border-gray-200 text-center">
+                    {item.quantity ?? 1}
                   </td>
                   <td className="py-3 px-4 border-b border-gray-200 text-right">
                     {currency} {(item.price || 0).toLocaleString()}
@@ -230,20 +232,6 @@ const InvoiceTemplate = ({
           </div>
         </div>
 
-        {/* Geometric accent - bottom right corner */}
-        <svg
-          className="invoice-geometric-accent"
-          viewBox="0 0 100 100"
-          fill="none"
-          xmlns="http://www.w3.org/2000/svg"
-          preserveAspectRatio="xMaxYMax meet"
-        >
-          <path d="M100 100 L100 20 L60 60 L100 100 Z" fill="#374151" />
-          <path d="M100 20 L60 60 L80 20 L100 20 Z" fill={themeColor} />
-          <path d="M60 60 L20 100 L60 100 L100 100 L100 60 Z" fill="#9CA3AF" />
-          <path d="M60 60 L40 80 L60 80 L80 60 Z" fill="#6B7280" />
-          <path d="M80 20 L60 60 L80 60 L100 20 Z" fill="#D1D5DB" />
-        </svg>
       </div>
 
       <style jsx global>{`
@@ -253,20 +241,6 @@ const InvoiceTemplate = ({
           margin: auto;
           padding: 14mm 6mm;
           box-sizing: border-box;
-        }
-        .invoice-a4-wrapper {
-          position: relative;
-          overflow: hidden;
-        }
-        .invoice-geometric-accent {
-          position: absolute;
-          bottom: 0;
-          right: 0;
-          width: 100px;
-          height: 100px;
-          pointer-events: none;
-          -webkit-print-color-adjust: exact;
-          print-color-adjust: exact;
         }
         .invoice-table {
           border-collapse: collapse;

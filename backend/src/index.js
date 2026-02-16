@@ -125,7 +125,8 @@ async function initDb() {
   }
   try {
     await pool.query('ALTER TABLE reminders ADD COLUMN IF NOT EXISTS reason VARCHAR(255) DEFAULT \'\'');
-    console.log('Reminders reason column ready.');
+    await pool.query('ALTER TABLE reminders ADD COLUMN IF NOT EXISTS amount DECIMAL(15,2) DEFAULT 0');
+    console.log('Reminders columns (reason, amount) ready.');
   } catch (e) {
     console.warn('Reminders migration:', e.message);
   }

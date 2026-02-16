@@ -7,16 +7,17 @@ router.use(authMiddleware);
 
 router.get('/', async (req, res) => {
   try {
-    const uid = req.user.id;
+    const uid = req.user?.id;
+    if (!uid) return res.status(401).json({ error: 'Unauthorized' });
     let rows = [];
     try {
       const result = await pool.query(
-        'SELECT id, type, reference_id, reason, reminder_date, sms_contact, message, status, sent_at, created_at FROM reminders WHERE user_id = $1 ORDER BY reminder_date DESC, created_at DESC',
+        'SELECT id, type, reference_id, reason, COALESCE(amount, 0) as amount, reminder_date, sms_contact, message, status, sent_at, created_at FROM reminders WHERE user_id = $1 ORDER BY reminder_date DESC, created_at DESC',
         [uid]
       );
       rows = result.rows;
     } catch (tblErr) {
-      if (tblErr.code === '42P01') {
+      if (tblErr.code === '42P01' || tblErr.code === '42703') {
         return res.json([]);
       }
       throw tblErr;
@@ -26,6 +27,7 @@ router.get('/', async (req, res) => {
       type: r.type,
       referenceId: r.reference_id,
       reason: r.reason || '',
+      amount: Number(r.amount) || 0,
       reminderDate: r.reminder_date,
       smsContact: r.sms_contact,
       message: r.message || '',
@@ -41,8 +43,9 @@ router.get('/', async (req, res) => {
 
 router.post('/', async (req, res) => {
   try {
-    const uid = req.user.id;
-    const { type, referenceId, reason, reminderDate, smsContact, message } = req.body;
+    const uid = req.user?.id;
+    if (!uid) return res.status(401).json({ error: 'Unauthorized' });
+    const { type, referenceId, reason, amount, reminderDate, smsContact, message } = req.body;
     if (!reminderDate || !smsContact) {
       return res.status(400).json({ error: 'Reminder date and SMS contact are required' });
     }
@@ -55,15 +58,26 @@ router.post('/', async (req, res) => {
     const rType = hasRef ? String(type).toLowerCase() : '';
     const rRef = hasRef ? String(referenceId) : '';
     const rReason = hasReason ? String(reason).trim() : '';
-    await pool.query(
-      'INSERT INTO reminders (id, user_id, type, reference_id, reason, reminder_date, sms_contact, message) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)',
-      [id, uid, rType, rRef, rReason, reminderDate, String(smsContact).trim(), message || '']
-    );
+    const rAmount = typeof amount === 'number' ? amount : parseFloat(amount) || 0;
+    try {
+      await pool.query(
+        'INSERT INTO reminders (id, user_id, type, reference_id, reason, amount, reminder_date, sms_contact, message) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)',
+        [id, uid, rType, rRef, rReason, rAmount, reminderDate, String(smsContact).trim(), message || '']
+      );
+    } catch (insErr) {
+      if (insErr.code === '42703') {
+        await pool.query(
+          'INSERT INTO reminders (id, user_id, type, reference_id, reason, reminder_date, sms_contact, message) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)',
+          [id, uid, rType, rRef, rReason, reminderDate, String(smsContact).trim(), message || '']
+        );
+      } else throw insErr;
+    }
     res.status(201).json({
       id,
       type: rType,
       referenceId: rRef,
       reason: rReason,
+      amount: rAmount,
       reminderDate,
       smsContact: String(smsContact).trim(),
       message: message || '',
@@ -71,7 +85,7 @@ router.post('/', async (req, res) => {
     });
   } catch (err) {
     console.error('[reminders POST]', err);
-    res.status(500).json({ error: err.code === '42P01' ? 'Reminders not available yet. Please restart the server.' : 'Server error' });
+    res.status(500).json({ error: err.code === '42P01' || err.code === '42703' ? 'Reminders not available yet. Please restart the server.' : 'Server error' });
   }
 });
 

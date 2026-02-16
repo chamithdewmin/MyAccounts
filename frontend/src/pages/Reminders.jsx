@@ -31,6 +31,7 @@ const Reminders = () => {
   const [smsConfigured, setSmsConfigured] = useState(false);
   const [form, setForm] = useState({
     reason: '',
+    amount: '',
     reminderDate: '',
     message: '',
   });
@@ -67,16 +68,18 @@ const Reminders = () => {
       toast({ title: 'Phone required', description: 'Add your phone number in Settings first.', variant: 'destructive' });
       return;
     }
+    const amountNum = parseFloat(form.amount) || 0;
     try {
       await api.reminders.create({
         reason: form.reason.trim(),
+        amount: amountNum,
         reminderDate: form.reminderDate,
         smsContact: formatPhone(contact) || contact,
         message: form.message,
       });
       toast({ title: 'Reminder added', description: 'Reminder has been saved.' });
       setAddOpen(false);
-      setForm({ reason: '', reminderDate: '', message: '' });
+      setForm({ reason: '', amount: '', reminderDate: '', message: '' });
       loadReminders();
     } catch (err) {
       toast({ title: 'Failed', description: err.message, variant: 'destructive' });
@@ -95,9 +98,11 @@ const Reminders = () => {
 
   const openRemindSms = (reminder) => {
     const item = getRefItem(reminder.type, reminder.referenceId);
-    setSmsItem(item ? { ...item, phone: reminder.smsContact, client_phone: reminder.smsContact } : { amount: 0, phone: reminder.smsContact, client_phone: reminder.smsContact });
+    const amt = reminder.amount ?? item?.amount ?? item?.total ?? 0;
+    setSmsItem(item ? { ...item, amount: amt, phone: reminder.smsContact, client_phone: reminder.smsContact } : { amount: amt, phone: reminder.smsContact, client_phone: reminder.smsContact });
     setSmsType(reminder.type || 'reminder');
-    setSmsDefaultMessage(reminder.message || (reminder.reason ? `Reminder: ${reminder.reason}` : ''));
+    const amtStr = (reminder.amount && Number(reminder.amount) > 0) ? ` ${settings?.currency || 'LKR'} ${Number(reminder.amount).toLocaleString()}` : '';
+    setSmsDefaultMessage(reminder.message || (reminder.reason ? `Reminder: ${reminder.reason}${amtStr}` : ''));
     setSmsOpen(true);
   };
 
@@ -107,7 +112,8 @@ const Reminders = () => {
       toast({ title: 'No contact', description: 'This reminder has no phone number.', variant: 'destructive' });
       return;
     }
-    const msg = reminder.message?.trim() || (reminder.reason ? `Reminder: ${reminder.reason}` : 'Reminder');
+    const amtStr = (reminder.amount && Number(reminder.amount) > 0) ? ` ${settings?.currency || 'LKR'} ${Number(reminder.amount).toLocaleString()}` : '';
+    const msg = reminder.message?.trim() || (reminder.reason ? `Reminder: ${reminder.reason}${amtStr}` : 'Reminder');
     try {
       await api.sms.sendBulk({ contacts: [formatPhone(contact)], message: msg.slice(0, 621) });
       toast({ title: 'Reminder sent', description: 'SMS sent successfully.' });
@@ -174,6 +180,7 @@ const Reminders = () => {
                 <thead className="bg-secondary">
                   <tr>
                     <th className="px-4 py-3 text-left text-sm font-medium">Reason / Name</th>
+                    <th className="px-4 py-3 text-left text-sm font-medium">Amount</th>
                     <th className="px-4 py-3 text-left text-sm font-medium">Reminder Date</th>
                     <th className="px-4 py-3 text-left text-sm font-medium">Contact</th>
                     <th className="px-4 py-3 text-left text-sm font-medium">Status</th>
@@ -191,6 +198,7 @@ const Reminders = () => {
                     return (
                       <tr key={r.id} className="border-t border-secondary hover:bg-secondary/20">
                         <td className="px-4 py-3 text-sm">{label}</td>
+                        <td className="px-4 py-3 text-sm">{(r.amount && r.amount > 0) ? `${settings?.currency || 'LKR'} ${Number(r.amount).toLocaleString()}` : '—'}</td>
                         <td className="px-4 py-3 text-sm">{(r.reminderDate || '').slice(0, 10)}</td>
                         <td className="px-4 py-3 text-sm text-muted-foreground">{r.smsContact}</td>
                         <td className="px-4 py-3">
@@ -247,6 +255,17 @@ const Reminders = () => {
                 onChange={(e) => setForm((f) => ({ ...f, reason: e.target.value }))}
                 placeholder="e.g. Payment follow-up, Invoice reminder"
                 required
+              />
+            </div>
+            <div>
+              <Label>Amount (optional)</Label>
+              <Input
+                type="number"
+                min="0"
+                step="0.01"
+                value={form.amount}
+                onChange={(e) => setForm((f) => ({ ...f, amount: e.target.value }))}
+                placeholder={`${settings?.currency || 'LKR'} 0`}
               />
             </div>
             <div>

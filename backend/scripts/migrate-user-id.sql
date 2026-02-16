@@ -58,7 +58,7 @@ CREATE TABLE IF NOT EXISTS password_reset_otps (
   created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
--- Reminders: linked to income/expense, send SMS on a date
+-- Reminders: linked to income/expense or reason-only, send SMS on a date
 CREATE TABLE IF NOT EXISTS reminders (
   id VARCHAR(50) PRIMARY KEY,
   user_id INT REFERENCES users(id),
@@ -71,3 +71,5 @@ CREATE TABLE IF NOT EXISTS reminders (
   sent_at TIMESTAMPTZ,
   created_at TIMESTAMPTZ DEFAULT NOW()
 );
+ALTER TABLE reminders ADD COLUMN IF NOT EXISTS reason VARCHAR(255) DEFAULT '';
+ALTER TABLE reminders ADD COLUMN IF NOT EXISTS amount DECIMAL(15,2) DEFAULT 0;

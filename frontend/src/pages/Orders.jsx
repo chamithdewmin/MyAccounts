@@ -425,7 +425,7 @@ const Orders = () => {
           }
         }}
       >
-        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto" aria-describedby={undefined}>
           <DialogHeader>
             <DialogTitle>Invoice Details</DialogTitle>
           </DialogHeader>
@@ -442,7 +442,7 @@ const Orders = () => {
 
       {/* Create invoice */}
       <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
-        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto" aria-describedby={undefined}>
           <DialogHeader>
             <DialogTitle>Create Invoice</DialogTitle>
           </DialogHeader>
@@ -603,7 +603,7 @@ const Orders = () => {
 
       {/* Add Payment Details popup */}
       <Dialog open={showBankDetailsPopup} onOpenChange={setShowBankDetailsPopup}>
-        <DialogContent className="max-w-md">
+        <DialogContent className="max-w-md" aria-describedby={undefined}>
           <DialogHeader>
             <DialogTitle>Add Bank Details to Invoice</DialogTitle>
           </DialogHeader>

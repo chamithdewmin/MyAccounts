@@ -81,6 +81,12 @@ router.post('/', async (req, res) => {
     const taxAmount = d.taxAmount != null ? Number(d.taxAmount) : subtotal * (taxRate / 100);
     const total = Number(d.total) || subtotal + taxAmount;
 
+    let dueDateVal = d.dueDate || null;
+    if (dueDateVal && typeof dueDateVal === 'string') {
+      const m = dueDateVal.match(/^(\d{4}-\d{2}-\d{2})/);
+      dueDateVal = m ? m[1] : dueDateVal;
+    }
+
     const bankObj = d.bankDetails && (d.bankDetails.accountNumber || d.bankDetails.accountName || d.bankDetails.bankName)
       ? {
           accountNumber: String(d.bankDetails.accountNumber || '').trim(),
@@ -108,7 +114,7 @@ router.post('/', async (req, res) => {
         total,
         d.paymentMethod || 'bank',
         d.status || 'unpaid',
-        d.dueDate || null,
+        dueDateVal,
         d.notes || '',
         bankDetailsEncrypted,
       ]
@@ -116,8 +122,9 @@ router.post('/', async (req, res) => {
     const { rows } = await pool.query('SELECT * FROM invoices WHERE id = $1', [id]);
     res.status(201).json(toInvoice(rows[0]));
   } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: 'Server error' });
+    console.error('[invoices POST]', err);
+    const msg = process.env.NODE_ENV === 'development' ? err.message : 'Server error';
+    res.status(500).json({ error: msg });
   }
 });
 

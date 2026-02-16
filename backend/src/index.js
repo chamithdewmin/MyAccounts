@@ -96,9 +96,6 @@ async function initDb() {
         created_at TIMESTAMPTZ DEFAULT NOW()
       )
     `);
-    await pool.query('ALTER TABLE settings ADD COLUMN IF NOT EXISTS bank_details_encrypted TEXT');
-    await pool.query('ALTER TABLE invoices ADD COLUMN IF NOT EXISTS bank_details JSONB');
-    await pool.query('ALTER TABLE invoices ADD COLUMN IF NOT EXISTS bank_details_encrypted TEXT');
     console.log('Forgot-password and user-delete tables ready.');
   } catch (e) {
     console.warn('Forgot-password setup:', e.message);
@@ -115,6 +112,15 @@ async function initDb() {
     console.log('Bank details table ready.');
   } catch (e) {
     console.warn('Bank details table:', e.message);
+  }
+  try {
+    await pool.query('ALTER TABLE invoices ADD COLUMN IF NOT EXISTS user_id INT REFERENCES users(id)');
+    await pool.query('ALTER TABLE invoices ADD COLUMN IF NOT EXISTS bank_details JSONB');
+    await pool.query('ALTER TABLE invoices ADD COLUMN IF NOT EXISTS bank_details_encrypted TEXT');
+    await pool.query('ALTER TABLE settings ADD COLUMN IF NOT EXISTS bank_details_encrypted TEXT');
+    console.log('Invoice and settings columns ready.');
+  } catch (e) {
+    console.warn('Invoice columns:', e.message);
   }
 }
 

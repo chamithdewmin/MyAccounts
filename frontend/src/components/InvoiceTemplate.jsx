@@ -252,7 +252,7 @@ const InvoiceTemplate = ({
         </div>
 
         {/* Footer */}
-        <div className="invoice-footer px-10 py-6 bg-black text-white avoid-break">
+        <div className="invoice-footer px-10 py-6 text-white avoid-break" style={{ backgroundColor: '#000' }}>
           <div className="flex justify-between items-center text-sm">
             <div className="space-y-2">
               <div className="flex items-center gap-2">

@@ -62,8 +62,12 @@ const InvoiceTemplate = ({
 
     const filename = `Invoice-${invoice.invoiceNumber || 'invoice'}.pdf`;
 
-    element.scrollIntoView({ behavior: 'instant', block: 'start' });
-    await new Promise((r) => setTimeout(r, 150));
+    // Use same clone approach as Print - captures exactly what the popup shows
+    const clone = element.cloneNode(true);
+    clone.id = 'invoice-pdf-clone';
+    clone.style.cssText = 'position:fixed;left:0;top:0;width:182mm;max-width:182mm;background:white;color:#000;z-index:999999;padding:0;overflow:visible;box-sizing:border-box;box-shadow:none;';
+    document.body.appendChild(clone);
+    await new Promise((r) => setTimeout(r, 250));
 
     const opt = {
       margin: [12, 14, 12, 14],
@@ -75,10 +79,6 @@ const InvoiceTemplate = ({
         allowTaint: true,
         logging: false,
         backgroundColor: '#ffffff',
-        width: element.offsetWidth,
-        height: element.scrollHeight,
-        windowWidth: element.scrollWidth,
-        windowHeight: element.scrollHeight,
       },
       jsPDF: {
         unit: 'mm',
@@ -88,7 +88,11 @@ const InvoiceTemplate = ({
       pagebreak: { mode: ['css', 'legacy'], avoid: ['tr', '.avoid-break'] },
     };
 
-    await html2pdf().set(opt).from(element).save();
+    try {
+      await html2pdf().set(opt).from(clone).save();
+    } finally {
+      document.getElementById('invoice-pdf-clone')?.remove();
+    }
   };
 
   useEffect(() => {

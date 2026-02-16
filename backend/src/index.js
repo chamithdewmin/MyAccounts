@@ -86,8 +86,8 @@ async function initDb() {
       CREATE TABLE IF NOT EXISTS reminders (
         id VARCHAR(50) PRIMARY KEY,
         user_id INT REFERENCES users(id),
-        type VARCHAR(20) NOT NULL,
-        reference_id VARCHAR(100) NOT NULL,
+        type VARCHAR(20) NOT NULL DEFAULT '',
+        reference_id VARCHAR(100) NOT NULL DEFAULT '',
         reminder_date DATE NOT NULL,
         sms_contact VARCHAR(50) NOT NULL,
         message TEXT DEFAULT '',

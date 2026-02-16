@@ -12,22 +12,28 @@ router.get('/', async (req, res) => {
     let rows = [];
     try {
       const result = await pool.query(
-        'SELECT id, type, reference_id, reason, COALESCE(amount, 0) as amount, reminder_date, sms_contact, message, status, sent_at, created_at FROM reminders WHERE user_id = $1 ORDER BY reminder_date DESC, created_at DESC',
+        'SELECT id, type, reference_id, reminder_date, sms_contact, message, status, sent_at, created_at FROM reminders WHERE user_id = $1 ORDER BY reminder_date DESC, created_at DESC',
         [uid]
       );
       rows = result.rows;
-    } catch (tblErr) {
-      if (tblErr.code === '42P01' || tblErr.code === '42703') {
-        return res.json([]);
+      const withExtras = await pool.query(
+        'SELECT id, reason, amount FROM reminders WHERE user_id = $1',
+        [uid]
+      ).catch(() => ({ rows: [] }));
+      if (withExtras?.rows?.length) {
+        const map = Object.fromEntries(withExtras.rows.map((e) => [e.id, { reason: e.reason ?? '', amount: Number(e.amount ?? 0) || 0 }]));
+        rows = rows.map((r) => ({ ...r, ...(map[r.id] || { reason: '', amount: 0 }) }));
       }
+    } catch (tblErr) {
+      if (tblErr.code === '42P01') return res.json([]);
       throw tblErr;
     }
     res.json(rows.map((r) => ({
       id: r.id,
-      type: r.type,
-      referenceId: r.reference_id,
-      reason: r.reason || '',
-      amount: Number(r.amount) || 0,
+      type: r.type || '',
+      referenceId: r.reference_id || '',
+      reason: r.reason ?? '',
+      amount: Number(r.amount ?? 0) || 0,
       reminderDate: r.reminder_date,
       smsContact: r.sms_contact,
       message: r.message || '',
@@ -59,18 +65,29 @@ router.post('/', async (req, res) => {
     const rRef = hasRef ? String(referenceId) : '';
     const rReason = hasReason ? String(reason).trim() : '';
     const rAmount = typeof amount === 'number' ? amount : parseFloat(amount) || 0;
+    const rMsg = message || '';
+    const msgWithReason = rReason ? (rMsg ? `${rReason}: ${rMsg}` : rReason) : rMsg;
     try {
       await pool.query(
         'INSERT INTO reminders (id, user_id, type, reference_id, reason, amount, reminder_date, sms_contact, message) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)',
-        [id, uid, rType, rRef, rReason, rAmount, reminderDate, String(smsContact).trim(), message || '']
+        [id, uid, rType, rRef, rReason, rAmount, reminderDate, String(smsContact).trim(), rMsg]
       );
-    } catch (insErr) {
-      if (insErr.code === '42703') {
-        await pool.query(
-          'INSERT INTO reminders (id, user_id, type, reference_id, reason, reminder_date, sms_contact, message) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)',
-          [id, uid, rType, rRef, rReason, reminderDate, String(smsContact).trim(), message || '']
-        );
-      } else throw insErr;
+    } catch (e1) {
+      if (e1.code === '42703') {
+        try {
+          await pool.query(
+            'INSERT INTO reminders (id, user_id, type, reference_id, reason, reminder_date, sms_contact, message) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)',
+            [id, uid, rType, rRef, rReason, reminderDate, String(smsContact).trim(), rMsg]
+          );
+        } catch (e2) {
+          if (e2.code === '42703') {
+            await pool.query(
+              'INSERT INTO reminders (id, user_id, type, reference_id, reminder_date, sms_contact, message) VALUES ($1, $2, $3, $4, $5, $6, $7)',
+              [id, uid, rType, rRef, reminderDate, String(smsContact).trim(), msgWithReason]
+            );
+          } else throw e2;
+        }
+      } else throw e1;
     }
     res.status(201).json({
       id,

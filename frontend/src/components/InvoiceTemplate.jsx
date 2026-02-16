@@ -60,7 +60,7 @@ const InvoiceTemplate = ({
     const opt = {
       margin: [12, 14, 12, 14],
       filename,
-      image: { type: 'jpeg', quality: 1 },
+      image: { type: 'png', quality: 1 },
       html2canvas: {
         scale: 2,
         useCORS: true,

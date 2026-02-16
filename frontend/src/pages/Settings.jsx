@@ -65,6 +65,21 @@ const Settings = () => {
 
   const s = local;
 
+  const savedBank = settings?.bankDetails || {};
+  const bankFormChanged =
+    (bankForm.accountNumber || '').trim() !== (savedBank.accountNumber || '').trim() ||
+    (bankForm.accountName || '').trim() !== (savedBank.accountName || '').trim() ||
+    (bankForm.bankName || '').trim() !== (savedBank.bankName || '').trim() ||
+    (bankForm.branch || '').trim() !== (savedBank.branch || '').trim();
+
+  const mainFields = [
+    'businessName', 'phone', 'taxRate', 'currency', 'logo',
+    'openingCash', 'ownerCapital', 'payables', 'theme', 'taxEnabled',
+  ];
+  const hasMainSettingsChanges = mainFields.some(
+    (k) => String(s[k] ?? '') !== String((settings ?? {})[k] ?? '')
+  );
+
   return (
     <>
       <Helmet>
@@ -149,7 +164,7 @@ const Settings = () => {
                 <Button
                   type="button"
                   size="sm"
-                  disabled={bankSaving}
+                  disabled={!bankFormChanged || bankSaving}
                   onClick={async () => {
                     const an = String(bankForm.accountNumber || '').trim();
                     const aname = String(bankForm.accountName || '').trim();
@@ -177,7 +192,7 @@ const Settings = () => {
                     }
                   }}
                 >
-                  {bankSaving ? 'Saving...' : 'Save Bank Details to Database'}
+                  {bankSaving ? 'Saving...' : 'Save changes'}
                 </Button>
               </div>
               <div className="space-y-2">
@@ -363,6 +378,7 @@ const Settings = () => {
 
           <div className="pt-4 flex justify-end">
             <Button
+              disabled={!hasMainSettingsChanges}
               onClick={() => {
                 if (saveTimeoutRef.current) {
                   clearTimeout(saveTimeoutRef.current);

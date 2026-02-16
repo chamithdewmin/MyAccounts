@@ -80,7 +80,7 @@ const Orders = () => {
     [form.items],
   );
 
-  const handleCreateInvoice = (e) => {
+  const handleCreateInvoice = async (e) => {
     e.preventDefault();
 
     if (!form.clientId && !form.clientName.trim()) {
@@ -114,38 +114,46 @@ const Orders = () => {
       ? new Date(`${form.dueDate}T00:00:00`).toISOString()
       : new Date().toISOString();
 
-    const invoice = addInvoice({
-      clientId: selectedClient?.id || null,
-      clientName: selectedClient?.name || form.clientName,
-      clientEmail: selectedClient?.email || form.clientEmail,
-      clientPhone: selectedClient?.phone || form.clientPhone,
-      items: normalizedItems,
-      subtotal,
-      paymentMethod: form.paymentMethod,
-      dueDate: dueDateIso,
-      notes: form.notes,
-      bankDetails: form.bankDetails,
-    });
+    try {
+      const invoice = await addInvoice({
+        clientId: selectedClient?.id || null,
+        clientName: selectedClient?.name || form.clientName,
+        clientEmail: selectedClient?.email || form.clientEmail,
+        clientPhone: selectedClient?.phone || form.clientPhone,
+        items: normalizedItems,
+        subtotal,
+        paymentMethod: form.paymentMethod,
+        dueDate: dueDateIso,
+        notes: form.notes,
+        bankDetails: form.bankDetails,
+      });
 
-    toast({
-      title: 'Invoice created',
-      description: `Invoice ${invoice.invoiceNumber} has been created.`,
-    });
+      toast({
+        title: 'Invoice created',
+        description: `Invoice ${invoice.invoiceNumber || invoice.id} has been created.`,
+      });
 
-    setForm({
-      clientId: '',
-      clientName: '',
-      clientEmail: '',
-      clientPhone: '',
-      paymentMethod: 'bank',
-      dueDate: '',
-      notes: '',
-      bankDetails: null,
-      items: [
-        { description: '', price: '', quantity: 1 },
-      ],
-    });
-    setIsCreateOpen(false);
+      setForm({
+        clientId: '',
+        clientName: '',
+        clientEmail: '',
+        clientPhone: '',
+        paymentMethod: 'bank',
+        dueDate: '',
+        notes: '',
+        bankDetails: null,
+        items: [
+          { description: '', price: '', quantity: 1 },
+        ],
+      });
+      setIsCreateOpen(false);
+    } catch (err) {
+      toast({
+        title: 'Failed to create invoice',
+        description: err?.message || 'Server error. Please try again.',
+        variant: 'destructive',
+      });
+    }
   };
 
   useEffect(() => {

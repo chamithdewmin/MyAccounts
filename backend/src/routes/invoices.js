@@ -18,6 +18,36 @@ const parseBankDetails = (encryptedText) => {
 const router = express.Router();
 router.use(authMiddleware);
 
+async function generateInvoiceNumber(pool, uid, email, businessName) {
+  let prefix = 'MY';
+  const emailLower = email ? String(email).toLowerCase() : '';
+  if (emailLower === 'logozodev@gmail.com') {
+    prefix = 'LD';
+  } else if (businessName && String(businessName).trim()) {
+    const name = String(businessName).trim();
+    const words = name.split(/\s+/).filter(Boolean);
+    if (words.length >= 2) {
+      prefix = (words[0][0] + words[1][0]).toUpperCase();
+    } else {
+      prefix = name.slice(0, 2).toUpperCase();
+    }
+    prefix = (prefix.replace(/[^A-Za-z]/g, '') || 'MY').slice(0, 2).toUpperCase();
+    if (prefix.length < 2) prefix = 'MY';
+  }
+  const year = new Date().getFullYear();
+  const pattern = `${prefix}-INV-${year}-%`;
+  const { rows } = await pool.query(
+    `SELECT invoice_number FROM invoices WHERE user_id = $1 AND invoice_number LIKE $2 ORDER BY invoice_number DESC LIMIT 1`,
+    [uid, pattern]
+  );
+  let nextSeq = 1;
+  if (rows[0]) {
+    const match = rows[0].invoice_number.match(/-(\d{4})$/);
+    if (match) nextSeq = parseInt(match[1], 10) + 1;
+  }
+  return `${prefix}-INV-${year}-${String(nextSeq).padStart(4, '0')}`;
+}
+
 const toInvoice = (row) => {
   let bankDetails = null;
   if (row.bank_details_encrypted) {
@@ -74,8 +104,16 @@ router.get('/:id', async (req, res) => {
 router.post('/', async (req, res) => {
   try {
     const uid = req.user.id;
+    const email = req.user.email || null;
     const d = req.body;
-    const id = d.invoiceNumber || d.id || `INV-${Date.now()}`;
+    let businessName = null;
+    try {
+      const { rows: settingsRows } = await pool.query('SELECT business_name FROM settings WHERE user_id = $1', [uid]);
+      businessName = settingsRows[0]?.business_name || null;
+    } catch {
+      /* ignore */
+    }
+    const id = await generateInvoiceNumber(pool, uid, email, businessName);
     const subtotal = Number(d.subtotal) || 0;
     const taxRate = Number(d.taxRate) ?? 10;
     const taxAmount = d.taxAmount != null ? Number(d.taxAmount) : subtotal * (taxRate / 100);
@@ -102,7 +140,7 @@ router.post('/', async (req, res) => {
       [
         id,
         uid,
-        d.invoiceNumber || id,
+        id,
         d.clientId || null,
         d.clientName || '',
         d.clientEmail || '',

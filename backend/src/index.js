@@ -19,7 +19,6 @@ import usersRoutes from './routes/users.js';
 import smsRoutes from './routes/sms.js';
 import transfersRoutes from './routes/transfers.js';
 import remindersRoutes from './routes/reminders.js';
-import bcrypt from 'bcryptjs';
 import pool from './config/db.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -45,27 +44,6 @@ async function initDb() {
   const sql = fs.readFileSync(sqlPath, 'utf8');
   await pool.query(sql);
   console.log('Database tables ready.');
-
-  // Create default users if they don't exist - DO NOT overwrite passwords on restart
-  const adminHash = await bcrypt.hash('admin123', 10);
-  const chamithHash = await bcrypt.hash('chamith123', 10);
-  const logozodevHash = await bcrypt.hash('admin123', 10);
-  await pool.query(
-    `INSERT INTO users (email, password_hash, name) VALUES ($1, $2, $3)
-     ON CONFLICT (email) DO NOTHING`,
-    ['admin@gmail.com', adminHash, 'Admin']
-  );
-  await pool.query(
-    `INSERT INTO users (email, password_hash, name) VALUES ($1, $2, $3)
-     ON CONFLICT (email) DO NOTHING`,
-    ['chamith@myaccounts.com', chamithHash, 'Chamith']
-  );
-  await pool.query(
-    `INSERT INTO users (email, password_hash, name) VALUES ($1, $2, $3)
-     ON CONFLICT (email) DO NOTHING`,
-    ['logozodev@gmail.com', logozodevHash, 'LogoZoDev']
-  );
-  console.log('Default users ready: admin@gmail.com, chamith@myaccounts.com, logozodev@gmail.com');
 
   // Add user_id for per-user data isolation
   try {

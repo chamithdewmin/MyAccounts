@@ -27,12 +27,11 @@ const Reminders = () => {
   const [smsOpen, setSmsOpen] = useState(false);
   const [smsItem, setSmsItem] = useState(null);
   const [smsType, setSmsType] = useState('income');
+  const [smsDefaultMessage, setSmsDefaultMessage] = useState('');
   const [smsConfigured, setSmsConfigured] = useState(false);
   const [form, setForm] = useState({
-    type: 'income',
-    referenceId: '',
+    reason: '',
     reminderDate: '',
-    smsContact: '',
     message: '',
   });
 
@@ -59,21 +58,25 @@ const Reminders = () => {
 
   const handleAddReminder = async (e) => {
     e.preventDefault();
-    if (!form.referenceId || !form.reminderDate || !form.smsContact) {
-      toast({ title: 'Required fields', description: 'Select item, date, and phone number.', variant: 'destructive' });
+    const contact = (settings?.phone || '').trim();
+    if (!form.reason?.trim() || !form.reminderDate) {
+      toast({ title: 'Required fields', description: 'Enter reminder reason/name and date.', variant: 'destructive' });
+      return;
+    }
+    if (!contact) {
+      toast({ title: 'Phone required', description: 'Add your phone number in Settings first.', variant: 'destructive' });
       return;
     }
     try {
       await api.reminders.create({
-        type: form.type,
-        referenceId: form.referenceId,
+        reason: form.reason.trim(),
         reminderDate: form.reminderDate,
-        smsContact: formatPhone(form.smsContact) || form.smsContact.trim(),
+        smsContact: formatPhone(contact) || contact,
         message: form.message,
       });
       toast({ title: 'Reminder added', description: 'Reminder has been saved.' });
       setAddOpen(false);
-      setForm({ type: 'income', referenceId: '', reminderDate: '', smsContact: '', message: '' });
+      setForm({ reason: '', reminderDate: '', message: '' });
       loadReminders();
     } catch (err) {
       toast({ title: 'Failed', description: err.message, variant: 'destructive' });
@@ -93,12 +96,26 @@ const Reminders = () => {
   const openRemindSms = (reminder) => {
     const item = getRefItem(reminder.type, reminder.referenceId);
     setSmsItem(item ? { ...item, phone: reminder.smsContact, client_phone: reminder.smsContact } : { amount: 0, phone: reminder.smsContact, client_phone: reminder.smsContact });
-    setSmsType(reminder.type);
+    setSmsType(reminder.type || 'reminder');
+    setSmsDefaultMessage(reminder.message || (reminder.reason ? `Reminder: ${reminder.reason}` : ''));
     setSmsOpen(true);
   };
 
-  const incomeOptions = incomes.map((i) => ({ id: i.id, label: `${i.clientName || 'Unknown'} - ${settings.currency} ${(i.amount || 0).toLocaleString()} (${(i.date || '').slice(0, 10)})` }));
-  const expenseOptions = expenses.map((e) => ({ id: e.id, label: `${e.category} - ${settings.currency} ${(e.amount || 0).toLocaleString()} (${(e.date || '').slice(0, 10)})` }));
+  const handleSendReminderNow = async (reminder) => {
+    const contact = reminder.smsContact?.trim();
+    if (!contact) {
+      toast({ title: 'No contact', description: 'This reminder has no phone number.', variant: 'destructive' });
+      return;
+    }
+    const msg = reminder.message?.trim() || (reminder.reason ? `Reminder: ${reminder.reason}` : 'Reminder');
+    try {
+      await api.sms.sendBulk({ contacts: [formatPhone(contact)], message: msg.slice(0, 621) });
+      toast({ title: 'Reminder sent', description: 'SMS sent successfully.' });
+      loadReminders();
+    } catch (err) {
+      toast({ title: 'Send failed', description: err.message, variant: 'destructive' });
+    }
+  };
 
   return (
     <>
@@ -112,7 +129,7 @@ const Reminders = () => {
           <div>
             <h1 className="text-3xl font-bold">Reminders</h1>
             <p className="text-muted-foreground">
-              Schedule and send SMS reminders for income payments and expenses.
+              Create reminders and send them via SMS when ready.
             </p>
           </div>
           <div className="flex gap-2">
@@ -143,7 +160,7 @@ const Reminders = () => {
             <Bell className="w-16 h-16 mx-auto text-muted-foreground mb-4" />
             <h2 className="text-xl font-semibold mb-2">No reminders yet</h2>
             <p className="text-muted-foreground mb-6 max-w-md mx-auto">
-              Add reminders for income payments or expenses. When ready, send them via SMS with one click.
+              Add reminders with a reason or name. When ready, send them via SMS with one click.
             </p>
             <Button onClick={() => setAddOpen(true)}>
               <Plus className="w-4 h-4 mr-2" />
@@ -156,8 +173,7 @@ const Reminders = () => {
               <table className="w-full">
                 <thead className="bg-secondary">
                   <tr>
-                    <th className="px-4 py-3 text-left text-sm font-medium">Type</th>
-                    <th className="px-4 py-3 text-left text-sm font-medium">Item</th>
+                    <th className="px-4 py-3 text-left text-sm font-medium">Reason / Name</th>
                     <th className="px-4 py-3 text-left text-sm font-medium">Reminder Date</th>
                     <th className="px-4 py-3 text-left text-sm font-medium">Contact</th>
                     <th className="px-4 py-3 text-left text-sm font-medium">Status</th>
@@ -167,12 +183,13 @@ const Reminders = () => {
                 <tbody>
                   {reminders.map((r) => {
                     const item = getRefItem(r.type, r.referenceId);
-                    const label = r.type === 'income'
-                      ? (item?.clientName || 'Unknown') + ' - ' + (settings.currency || '') + ' ' + (item?.amount || 0).toLocaleString()
-                      : (item?.category || 'Expense') + ' - ' + (settings.currency || '') + ' ' + (item?.amount || 0).toLocaleString();
+                    const label = r.reason
+                      ? r.reason
+                      : r.type === 'income'
+                        ? (item?.clientName || 'Unknown') + ' - ' + (settings.currency || '') + ' ' + (item?.amount || 0).toLocaleString()
+                        : (item?.category || 'Expense') + ' - ' + (settings.currency || '') + ' ' + (item?.amount || 0).toLocaleString();
                     return (
                       <tr key={r.id} className="border-t border-secondary hover:bg-secondary/20">
-                        <td className="px-4 py-3 text-sm capitalize">{r.type}</td>
                         <td className="px-4 py-3 text-sm">{label}</td>
                         <td className="px-4 py-3 text-sm">{(r.reminderDate || '').slice(0, 10)}</td>
                         <td className="px-4 py-3 text-sm text-muted-foreground">{r.smsContact}</td>
@@ -185,13 +202,21 @@ const Reminders = () => {
                           <div className="flex justify-end gap-2">
                             <Button
                               size="sm"
-                              variant="outline"
-                              onClick={() => openRemindSms(r)}
+                              onClick={() => handleSendReminderNow(r)}
                               disabled={!smsConfigured}
-                              title={!smsConfigured ? 'Setup SMS first' : 'Send reminder via SMS'}
+                              title={!smsConfigured ? 'Setup SMS first' : 'Send reminder SMS now (e.g. day before)'}
                             >
                               <MessageSquare className="w-4 h-4 mr-1" />
                               Remind by SMS
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => openRemindSms(r)}
+                              disabled={!smsConfigured}
+                              title="Edit message and send"
+                            >
+                              Edit & send
                             </Button>
                             <Button size="sm" variant="ghost" onClick={() => handleDeleteReminder(r.id)}>
                               <Trash2 className="w-4 h-4 text-red-500" />
@@ -212,50 +237,32 @@ const Reminders = () => {
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Add Reminder</DialogTitle>
-            <DialogDescription>Link a reminder to an income or expense. You can send it via SMS later.</DialogDescription>
+            <DialogDescription>Create a reminder. You can send it via SMS later.</DialogDescription>
           </DialogHeader>
           <form onSubmit={handleAddReminder} className="space-y-4">
             <div>
-              <Label>Type</Label>
-              <select
-                className="w-full px-3 py-2 bg-background border border-secondary rounded-lg"
-                value={form.type}
-                onChange={(e) => setForm((f) => ({ ...f, type: e.target.value, referenceId: '' }))}
-              >
-                <option value="income">Income</option>
-                <option value="expense">Expense</option>
-              </select>
-            </div>
-            <div>
-              <Label>{form.type === 'income' ? 'Income' : 'Expense'}</Label>
-              <select
-                className="w-full px-3 py-2 bg-background border border-secondary rounded-lg"
-                value={form.referenceId}
-                onChange={(e) => setForm((f) => ({ ...f, referenceId: e.target.value }))}
+              <Label>Reminder reason or name</Label>
+              <Input
+                value={form.reason}
+                onChange={(e) => setForm((f) => ({ ...f, reason: e.target.value }))}
+                placeholder="e.g. Payment follow-up, Invoice reminder"
                 required
-              >
-                <option value="">Select...</option>
-                {(form.type === 'income' ? incomeOptions : expenseOptions).map((o) => (
-                  <option key={o.id} value={o.id}>{o.label}</option>
-                ))}
-              </select>
-              {(form.type === 'income' ? incomeOptions : expenseOptions).length === 0 && (
-                <p className="text-xs text-muted-foreground mt-1">No {form.type}s yet. Add some first.</p>
-              )}
+              />
             </div>
             <div>
               <Label>Reminder date</Label>
               <Input type="date" value={form.reminderDate} onChange={(e) => setForm((f) => ({ ...f, reminderDate: e.target.value }))} required />
             </div>
-            <div>
-              <Label>SMS contact number</Label>
-              <Input
-                value={form.smsContact}
-                onChange={(e) => setForm((f) => ({ ...f, smsContact: e.target.value }))}
-                placeholder="+94761234567 or 0761234567"
-                required
-              />
-            </div>
+            {settings?.phone && (
+              <p className="text-xs text-muted-foreground">
+                SMS will be sent to: {settings.phone} (from Settings)
+              </p>
+            )}
+            {!settings?.phone && (
+              <p className="text-xs text-amber-600">
+                Add phone number in Settings to enable SMS reminders.
+              </p>
+            )}
             <div>
               <Label>Message (optional)</Label>
               <textarea
@@ -275,6 +282,7 @@ const Reminders = () => {
         onOpenChange={setSmsOpen}
         item={smsItem}
         type={smsType}
+        defaultMessage={smsDefaultMessage}
         settings={settings}
         clients={clients}
       />

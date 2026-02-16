@@ -123,6 +123,12 @@ async function initDb() {
   } catch (e) {
     console.warn('Invoice columns:', e.message);
   }
+  try {
+    await pool.query('ALTER TABLE reminders ADD COLUMN IF NOT EXISTS reason VARCHAR(255) DEFAULT \'\'');
+    console.log('Reminders reason column ready.');
+  } catch (e) {
+    console.warn('Reminders migration:', e.message);
+  }
 }
 
 const app = express();

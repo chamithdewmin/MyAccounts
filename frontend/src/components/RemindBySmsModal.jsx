@@ -81,7 +81,7 @@ const RemindBySmsModal = ({ open, onOpenChange, item, type, defaultMessage, sett
             <MessageSquare className="w-5 h-5" />
             Remind by SMS
           </DialogTitle>
-          <DialogDescription>Send an SMS reminder for this {type === 'income' ? 'income payment' : 'expense'}.</DialogDescription>
+          <DialogDescription>Send an SMS reminder{type === 'income' ? ' for this income payment' : type === 'expense' ? ' for this expense' : ''}.</DialogDescription>
         </DialogHeader>
         {loading ? (
           <p className="text-sm text-muted-foreground py-4">Checking SMS setup...</p>

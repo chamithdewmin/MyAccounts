@@ -11,7 +11,7 @@ router.get('/', async (req, res) => {
     let rows = [];
     try {
       const result = await pool.query(
-        'SELECT id, type, reference_id, reminder_date, sms_contact, message, status, sent_at, created_at FROM reminders WHERE user_id = $1 ORDER BY reminder_date DESC, created_at DESC',
+        'SELECT id, type, reference_id, reason, reminder_date, sms_contact, message, status, sent_at, created_at FROM reminders WHERE user_id = $1 ORDER BY reminder_date DESC, created_at DESC',
         [uid]
       );
       rows = result.rows;
@@ -25,6 +25,7 @@ router.get('/', async (req, res) => {
       id: r.id,
       type: r.type,
       referenceId: r.reference_id,
+      reason: r.reason || '',
       reminderDate: r.reminder_date,
       smsContact: r.sms_contact,
       message: r.message || '',
@@ -41,23 +42,28 @@ router.get('/', async (req, res) => {
 router.post('/', async (req, res) => {
   try {
     const uid = req.user.id;
-    const { type, referenceId, reminderDate, smsContact, message } = req.body;
-    if (!type || !referenceId || !reminderDate || !smsContact) {
-      return res.status(400).json({ error: 'Type, reference ID, reminder date, and SMS contact are required' });
+    const { type, referenceId, reason, reminderDate, smsContact, message } = req.body;
+    if (!reminderDate || !smsContact) {
+      return res.status(400).json({ error: 'Reminder date and SMS contact are required' });
     }
-    const validTypes = ['income', 'expense'];
-    if (!validTypes.includes(String(type).toLowerCase())) {
-      return res.status(400).json({ error: 'Type must be income or expense' });
+    const hasReason = reason && String(reason).trim();
+    const hasRef = type && referenceId && ['income', 'expense'].includes(String(type).toLowerCase());
+    if (!hasReason && !hasRef) {
+      return res.status(400).json({ error: 'Enter reminder reason/name' });
     }
     const id = `REM-${Date.now()}-${Math.random().toString(36).slice(2, 8).toUpperCase()}`;
+    const rType = hasRef ? String(type).toLowerCase() : '';
+    const rRef = hasRef ? String(referenceId) : '';
+    const rReason = hasReason ? String(reason).trim() : '';
     await pool.query(
-      'INSERT INTO reminders (id, user_id, type, reference_id, reminder_date, sms_contact, message) VALUES ($1, $2, $3, $4, $5, $6, $7)',
-      [id, uid, String(type).toLowerCase(), String(referenceId), reminderDate, String(smsContact).trim(), message || '']
+      'INSERT INTO reminders (id, user_id, type, reference_id, reason, reminder_date, sms_contact, message) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)',
+      [id, uid, rType, rRef, rReason, reminderDate, String(smsContact).trim(), message || '']
     );
     res.status(201).json({
       id,
-      type: String(type).toLowerCase(),
-      referenceId: String(referenceId),
+      type: rType,
+      referenceId: rRef,
+      reason: rReason,
       reminderDate,
       smsContact: String(smsContact).trim(),
       message: message || '',

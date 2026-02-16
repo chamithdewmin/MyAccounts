@@ -18,6 +18,46 @@ const parseBankDetails = (encrypted) => {
   }
 };
 
+const hasBankDetailsColumn = async () => {
+  const { rows } = await pool.query(
+    `SELECT 1 FROM information_schema.columns WHERE table_name = 'settings' AND column_name = 'bank_details_encrypted'`
+  );
+  return rows.length > 0;
+};
+
+const saveBankDetails = async (uid, bankDetails) => {
+  if (!(await hasBankDetailsColumn())) return;
+  const { rows: existingRows } = await pool.query(
+    'SELECT bank_details_encrypted FROM settings WHERE user_id = $1',
+    [uid]
+  );
+  const existing = existingRows[0]?.bank_details_encrypted
+    ? parseBankDetails(existingRows[0].bank_details_encrypted)
+    : {};
+  const bank = { ...existing, ...bankDetails };
+  const toEncrypt =
+    bank && (bank.accountNumber || bank.accountName || bank.bankName)
+      ? JSON.stringify({
+          accountNumber: String(bank.accountNumber || '').trim(),
+          accountName: String(bank.accountName || '').trim(),
+          bankName: String(bank.bankName || '').trim(),
+          branch: (String(bank.branch || '').trim() || null),
+        })
+      : null;
+  const encrypted = toEncrypt ? encrypt(toEncrypt) : null;
+  const { rowCount } = await pool.query(
+    'UPDATE settings SET bank_details_encrypted = $2, updated_at = NOW() WHERE user_id = $1',
+    [uid, encrypted]
+  );
+  if (rowCount === 0) {
+    await pool.query(
+      `INSERT INTO settings (user_id, business_name, bank_details_encrypted)
+       VALUES ($1, 'My Business', $2)`,
+      [uid, encrypted]
+    );
+  }
+};
+
 const toSettings = (row) => {
   const base = {
     businessName: row.business_name || 'My Business',
@@ -134,38 +174,32 @@ router.put('/', async (req, res) => {
       }
     }
     if (d.bankDetails != null) {
-      const hasBankCol = await pool.query(
-        `SELECT 1 FROM information_schema.columns WHERE table_name = 'settings' AND column_name = 'bank_details_encrypted'`
-      );
-      if (hasBankCol.rows.length > 0) {
-        const { rows: existingRows } = await pool.query(
-          'SELECT bank_details_encrypted FROM settings WHERE user_id = $1',
-          [uid]
-        );
-        const existing = existingRows[0]?.bank_details_encrypted
-          ? parseBankDetails(existingRows[0].bank_details_encrypted)
-          : {};
-        const bank = { ...existing, ...d.bankDetails };
-        const toEncrypt =
-          bank && (bank.accountNumber || bank.accountName || bank.bankName)
-            ? JSON.stringify({
-                accountNumber: String(bank.accountNumber || '').trim(),
-                accountName: String(bank.accountName || '').trim(),
-                bankName: String(bank.bankName || '').trim(),
-                branch: String(bank.branch || '').trim() || null,
-              })
-            : null;
-        const encrypted = toEncrypt ? encrypt(toEncrypt) : null;
-        await pool.query(
-          'UPDATE settings SET bank_details_encrypted = $2, updated_at = NOW() WHERE user_id = $1',
-          [uid, encrypted]
-        );
-      }
+      await saveBankDetails(uid, d.bankDetails);
     }
     const { rows } = await pool.query('SELECT * FROM settings WHERE user_id = $1', [uid]);
     res.json(toSettings(rows[0]));
   } catch (err) {
     console.error('[settings PUT]', err);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+// Dedicated endpoint for bank details - for testing and direct API calls
+router.patch('/bank-details', async (req, res) => {
+  try {
+    const uid = req.user.id;
+    const d = req.body;
+    const bankDetails = {
+      accountNumber: d.accountNumber || d.account_number,
+      accountName: d.accountName || d.account_name,
+      bankName: d.bankName || d.bank_name,
+      branch: d.branch,
+    };
+    await saveBankDetails(uid, bankDetails);
+    const { rows } = await pool.query('SELECT * FROM settings WHERE user_id = $1', [uid]);
+    res.json(toSettings(rows[0]));
+  } catch (err) {
+    console.error('[settings PATCH bank-details]', err);
     res.status(500).json({ error: 'Server error' });
   }
 });

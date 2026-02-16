@@ -205,7 +205,13 @@ export const FinanceProvider = ({ children }) => {
   };
 
   const updateSettings = async (partial) => {
-    if (hasToken()) await api.settings.update(partial);
+    if (hasToken()) {
+      if (partial.bankDetails != null && Object.keys(partial).length === 1) {
+        await api.settings.updateBankDetails(partial.bankDetails);
+      } else {
+        await api.settings.update(partial);
+      }
+    }
     setSettings((prev) => ({ ...prev, ...partial }));
   };
 

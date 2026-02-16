@@ -132,6 +132,21 @@ const Settings = () => {
                     />
                   </div>
                 </div>
+                <Button
+                  type="button"
+                  size="sm"
+                  onClick={() => {
+                    const b = s.bankDetails;
+                    if (b && (b.accountNumber || b.accountName || b.bankName)) {
+                      saveNow({ bankDetails: b });
+                      toast({ title: 'Bank details saved' });
+                    } else {
+                      toast({ title: 'Enter Account Number, Account Name, and Bank Name', variant: 'destructive' });
+                    }
+                  }}
+                >
+                  Save Bank Details
+                </Button>
               </div>
               <div className="space-y-2">
                 <Label htmlFor="tax-rate">Tax Rate (%)</Label>

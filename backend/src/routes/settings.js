@@ -138,7 +138,14 @@ router.put('/', async (req, res) => {
         `SELECT 1 FROM information_schema.columns WHERE table_name = 'settings' AND column_name = 'bank_details_encrypted'`
       );
       if (hasBankCol.rows.length > 0) {
-        const bank = d.bankDetails;
+        const { rows: existingRows } = await pool.query(
+          'SELECT bank_details_encrypted FROM settings WHERE user_id = $1',
+          [uid]
+        );
+        const existing = existingRows[0]?.bank_details_encrypted
+          ? parseBankDetails(existingRows[0].bank_details_encrypted)
+          : {};
+        const bank = { ...existing, ...d.bankDetails };
         const toEncrypt =
           bank && (bank.accountNumber || bank.accountName || bank.bankName)
             ? JSON.stringify({

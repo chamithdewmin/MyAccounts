@@ -73,7 +73,7 @@ const Settings = () => {
     (bankForm.branch || '').trim() !== (savedBank.branch || '').trim();
 
   const mainFields = [
-    'businessName', 'phone', 'taxRate', 'currency', 'logo',
+    'businessName', 'phone', 'taxRate', 'currency', 'logo', 'invoiceThemeColor',
     'openingCash', 'ownerCapital', 'payables', 'theme', 'taxEnabled',
   ];
   const hasMainSettingsChanges = mainFields.some(
@@ -263,6 +263,28 @@ const Settings = () => {
                       </Button>
                     </div>
                   )}
+                </div>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="invoice-theme-color">Invoice Band Color</Label>
+                <p className="text-xs text-muted-foreground">
+                  Theme color for invoice header, table headers, and total row. Default: orange.
+                </p>
+                <div className="flex items-center gap-3">
+                  <input
+                    id="invoice-theme-color"
+                    type="color"
+                    value={s.invoiceThemeColor || '#F97316'}
+                    onChange={(e) => debouncedSave({ invoiceThemeColor: e.target.value })}
+                    className="h-10 w-14 cursor-pointer rounded border border-secondary bg-transparent p-0"
+                  />
+                  <Input
+                    type="text"
+                    value={s.invoiceThemeColor || '#F97316'}
+                    onChange={(e) => debouncedSave({ invoiceThemeColor: e.target.value })}
+                    placeholder="#F97316"
+                    className="font-mono w-28"
+                  />
                 </div>
               </div>
             </div>

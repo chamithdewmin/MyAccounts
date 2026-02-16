@@ -14,6 +14,7 @@ const toSettings = (row) => {
     taxEnabled: row.tax_enabled ?? true,
     theme: row.theme || 'dark',
     logo: row.logo,
+    invoiceThemeColor: row.invoice_theme_color || '#F97316',
     openingCash: parseFloat(row.opening_cash) || 0,
     ownerCapital: parseFloat(row.owner_capital) || 0,
     payables: parseFloat(row.payables) || 0,
@@ -55,10 +56,11 @@ router.put('/', async (req, res) => {
     const usePhone = await hasPhoneColumn();
     const expenseCategoriesJson = d.expenseCategories ? JSON.stringify(d.expenseCategories) : null;
 
+    const invoiceThemeColor = (d.invoiceThemeColor || '#F97316').toString().trim().slice(0, 20);
     if (usePhone) {
       const params = [
         d.businessName, d.phone != null ? d.phone : '', d.currency, d.taxRate != null ? d.taxRate : null, d.taxEnabled,
-        d.theme, d.logo, d.openingCash, d.ownerCapital, d.payables,
+        d.theme, d.logo, invoiceThemeColor, d.openingCash, d.ownerCapital, d.payables,
         expenseCategoriesJson, uid,
       ];
       const { rowCount } = await pool.query(
@@ -70,25 +72,26 @@ router.put('/', async (req, res) => {
           tax_enabled = COALESCE($5, tax_enabled),
           theme = COALESCE($6, theme),
           logo = COALESCE($7, logo),
-          opening_cash = COALESCE($8, opening_cash),
-          owner_capital = COALESCE($9, owner_capital),
-          payables = COALESCE($10, payables),
-          expense_categories = COALESCE($11, expense_categories),
+          invoice_theme_color = COALESCE($8, invoice_theme_color),
+          opening_cash = COALESCE($9, opening_cash),
+          owner_capital = COALESCE($10, owner_capital),
+          payables = COALESCE($11, payables),
+          expense_categories = COALESCE($12, expense_categories),
           updated_at = NOW()
-         WHERE user_id = $12`,
+         WHERE user_id = $13`,
         params
       );
       if (rowCount === 0) {
         await pool.query(
-          `INSERT INTO settings (user_id, business_name, phone, currency, tax_rate, tax_enabled, theme, logo, opening_cash, owner_capital, payables, expense_categories)
-           VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)`,
-          [uid, d.businessName || 'My Business', d.phone || '', d.currency || 'LKR', d.taxRate ?? 10, d.taxEnabled ?? true, d.theme || 'dark', d.logo, d.openingCash ?? 0, d.ownerCapital ?? 0, d.payables ?? 0, expenseCategoriesJson || '["Hosting","Tools & Subscriptions","Advertising & Marketing","Transport","Office & Utilities","Other"]']
+          `INSERT INTO settings (user_id, business_name, phone, currency, tax_rate, tax_enabled, theme, logo, invoice_theme_color, opening_cash, owner_capital, payables, expense_categories)
+           VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)`,
+          [uid, d.businessName || 'My Business', d.phone || '', d.currency || 'LKR', d.taxRate ?? 10, d.taxEnabled ?? true, d.theme || 'dark', d.logo, invoiceThemeColor, d.openingCash ?? 0, d.ownerCapital ?? 0, d.payables ?? 0, expenseCategoriesJson || '["Hosting","Tools & Subscriptions","Advertising & Marketing","Transport","Office & Utilities","Other"]']
         );
       }
     } else {
       const params = [
         d.businessName, d.currency, d.taxRate != null ? d.taxRate : null, d.taxEnabled,
-        d.theme, d.logo, d.openingCash, d.ownerCapital, d.payables,
+        d.theme, d.logo, invoiceThemeColor, d.openingCash, d.ownerCapital, d.payables,
         expenseCategoriesJson, uid,
       ];
       const { rowCount } = await pool.query(
@@ -99,19 +102,20 @@ router.put('/', async (req, res) => {
           tax_enabled = COALESCE($4, tax_enabled),
           theme = COALESCE($5, theme),
           logo = COALESCE($6, logo),
-          opening_cash = COALESCE($7, opening_cash),
-          owner_capital = COALESCE($8, owner_capital),
-          payables = COALESCE($9, payables),
-          expense_categories = COALESCE($10, expense_categories),
+          invoice_theme_color = COALESCE($7, invoice_theme_color),
+          opening_cash = COALESCE($8, opening_cash),
+          owner_capital = COALESCE($9, owner_capital),
+          payables = COALESCE($10, payables),
+          expense_categories = COALESCE($11, expense_categories),
           updated_at = NOW()
-         WHERE user_id = $11`,
+         WHERE user_id = $12`,
         params
       );
       if (rowCount === 0) {
         await pool.query(
-          `INSERT INTO settings (user_id, business_name, currency, tax_rate, tax_enabled, theme, logo, opening_cash, owner_capital, payables, expense_categories)
-           VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)`,
-          [uid, d.businessName || 'My Business', d.currency || 'LKR', d.taxRate ?? 10, d.taxEnabled ?? true, d.theme || 'dark', d.logo, d.openingCash ?? 0, d.ownerCapital ?? 0, d.payables ?? 0, expenseCategoriesJson || '["Hosting","Tools & Subscriptions","Advertising & Marketing","Transport","Office & Utilities","Other"]']
+          `INSERT INTO settings (user_id, business_name, currency, tax_rate, tax_enabled, theme, logo, invoice_theme_color, opening_cash, owner_capital, payables, expense_categories)
+           VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)`,
+          [uid, d.businessName || 'My Business', d.currency || 'LKR', d.taxRate ?? 10, d.taxEnabled ?? true, d.theme || 'dark', d.logo, invoiceThemeColor, d.openingCash ?? 0, d.ownerCapital ?? 0, d.payables ?? 0, expenseCategoriesJson || '["Hosting","Tools & Subscriptions","Advertising & Marketing","Transport","Office & Utilities","Other"]']
         );
       }
     }

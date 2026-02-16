@@ -19,6 +19,7 @@ import usersRoutes from './routes/users.js';
 import smsRoutes from './routes/sms.js';
 import transfersRoutes from './routes/transfers.js';
 import remindersRoutes from './routes/reminders.js';
+import bankDetailsRoutes from './routes/bankDetails.js';
 import pool from './config/db.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -98,6 +99,14 @@ async function initDb() {
     await pool.query('ALTER TABLE settings ADD COLUMN IF NOT EXISTS bank_details_encrypted TEXT');
     await pool.query('ALTER TABLE invoices ADD COLUMN IF NOT EXISTS bank_details JSONB');
     await pool.query('ALTER TABLE invoices ADD COLUMN IF NOT EXISTS bank_details_encrypted TEXT');
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS bank_details (
+        user_id INT PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,
+        data_encrypted TEXT NOT NULL,
+        created_at TIMESTAMPTZ DEFAULT NOW(),
+        updated_at TIMESTAMPTZ DEFAULT NOW()
+      )
+    `);
     console.log('Forgot-password and user-delete tables ready.');
   } catch (e) {
     console.warn('Forgot-password setup:', e.message);
@@ -137,6 +146,7 @@ app.use('/api/incomes', incomesRoutes);
 app.use('/api/expenses', expensesRoutes);
 app.use('/api/invoices', invoicesRoutes);
 app.use('/api/settings', settingsRoutes);
+app.use('/api/bank-details', bankDetailsRoutes);
 app.use('/api/assets', assetsRoutes);
 app.use('/api/loans', loansRoutes);
 app.use('/api/cars', carsRoutes);

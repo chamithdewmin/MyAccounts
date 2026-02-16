@@ -64,7 +64,10 @@ export const api = {
   settings: {
     get: () => request('/settings'),
     update: (data) => request('/settings', { method: 'PUT', body: JSON.stringify(data) }),
-    updateBankDetails: (data) => request('/settings/bank-details', { method: 'PATCH', body: JSON.stringify(data) }),
+  },
+  bankDetails: {
+    get: () => request('/bank-details'),
+    save: (data) => request('/bank-details', { method: 'POST', body: JSON.stringify(data) }),
   },
   assets: {
     list: () => request('/assets'),

@@ -56,7 +56,7 @@ export const FinanceProvider = ({ children }) => {
       return;
     }
     try {
-      const [incomesRes, expensesRes, clientsRes, invoicesRes, settingsRes, assetsRes, loansRes, transfersRes] = await Promise.all([
+      const [incomesRes, expensesRes, clientsRes, invoicesRes, settingsRes, assetsRes, loansRes, transfersRes, bankDetailsRes] = await Promise.all([
         api.incomes.list().catch(() => []),
         api.expenses.list().catch(() => []),
         api.clients.list().catch(() => []),
@@ -65,12 +65,15 @@ export const FinanceProvider = ({ children }) => {
         api.assets.list().catch(() => []),
         api.loans.list().catch(() => []),
         api.transfers.list().catch(() => []),
+        api.bankDetails.get().catch(() => ({ bankDetails: null })),
       ]);
       setIncomes(Array.isArray(incomesRes) ? incomesRes : []);
       setExpenses(Array.isArray(expensesRes) ? expensesRes : []);
       setClients(Array.isArray(clientsRes) ? clientsRes : []);
       setInvoices(Array.isArray(invoicesRes) ? invoicesRes : []);
-      setSettings(settingsRes && typeof settingsRes === 'object' ? { ...getDefaultSettings(), ...settingsRes } : getDefaultSettings());
+      const settingsMerged = settingsRes && typeof settingsRes === 'object' ? { ...getDefaultSettings(), ...settingsRes } : getDefaultSettings();
+      settingsMerged.bankDetails = bankDetailsRes?.bankDetails ?? null;
+      setSettings(settingsMerged);
       setAssets(Array.isArray(assetsRes) ? assetsRes : []);
       setLoans(Array.isArray(loansRes) ? loansRes : []);
       setTransfers(Array.isArray(transfersRes) ? transfersRes : []);
@@ -205,14 +208,15 @@ export const FinanceProvider = ({ children }) => {
   };
 
   const updateSettings = async (partial) => {
-    if (hasToken()) {
-      if (partial.bankDetails != null && Object.keys(partial).length === 1) {
-        await api.settings.updateBankDetails(partial.bankDetails);
-      } else {
-        await api.settings.update(partial);
-      }
-    }
+    if (hasToken()) await api.settings.update(partial);
     setSettings((prev) => ({ ...prev, ...partial }));
+  };
+
+  const saveBankDetails = async (data) => {
+    if (!hasToken()) throw new Error('Login required to save bank details');
+    const res = await api.bankDetails.save(data);
+    setSettings((prev) => ({ ...prev, bankDetails: res.bankDetails }));
+    return res;
   };
 
   const addAsset = async (data) => {
@@ -343,6 +347,7 @@ export const FinanceProvider = ({ children }) => {
     updateInvoiceStatus,
     deleteInvoice,
     updateSettings,
+    saveBankDetails,
     addAsset,
     deleteAsset,
     addLoan,

@@ -12,9 +12,11 @@ import { cn } from '@/lib/utils';
 const DEBOUNCE_MS = 600;
 
 const Settings = () => {
-  const { settings, updateSettings } = useFinance();
+  const { settings, updateSettings, saveBankDetails } = useFinance();
   const { toast } = useToast();
   const [local, setLocal] = useState(settings);
+  const [bankForm, setBankForm] = useState({ accountNumber: '', accountName: '', bankName: '', branch: '' });
+  const [bankSaving, setBankSaving] = useState(false);
   const saveTimeoutRef = useRef(null);
   const initialSync = useRef(false);
 
@@ -24,6 +26,18 @@ const Settings = () => {
       initialSync.current = true;
     }
   }, [settings]);
+
+  useEffect(() => {
+    const b = settings?.bankDetails;
+    if (b) {
+      setBankForm({
+        accountNumber: b.accountNumber || '',
+        accountName: b.accountName || '',
+        bankName: b.bankName || '',
+        branch: b.branch || '',
+      });
+    }
+  }, [settings?.bankDetails]);
 
   const debouncedSave = useCallback(
     (partial) => {
@@ -93,32 +107,32 @@ const Settings = () => {
               </div>
               <div className="space-y-3 p-4 rounded-lg border border-secondary bg-secondary/30">
                 <h3 className="text-sm font-semibold">Bank Account Details</h3>
-                <p className="text-xs text-muted-foreground">Used for Bank Transfer invoices. Stored securely.</p>
+                <p className="text-xs text-muted-foreground">Saved to database only. Used for Bank Transfer invoices. Account number is encrypted.</p>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <Label htmlFor="bank-account-number">Account Number</Label>
+                    <Label htmlFor="bank-account-number">Account Number *</Label>
                     <Input
                       id="bank-account-number"
-                      value={s.bankDetails?.accountNumber ?? ''}
-                      onChange={(e) => debouncedSave({ bankDetails: { ...(s.bankDetails || {}), accountNumber: e.target.value } })}
+                      value={bankForm.accountNumber}
+                      onChange={(e) => setBankForm((p) => ({ ...p, accountNumber: e.target.value }))}
                       placeholder="1234567890"
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="bank-account-name">Account Name</Label>
+                    <Label htmlFor="bank-account-name">Account Name *</Label>
                     <Input
                       id="bank-account-name"
-                      value={s.bankDetails?.accountName ?? ''}
-                      onChange={(e) => debouncedSave({ bankDetails: { ...(s.bankDetails || {}), accountName: e.target.value } })}
+                      value={bankForm.accountName}
+                      onChange={(e) => setBankForm((p) => ({ ...p, accountName: e.target.value }))}
                       placeholder="Your Business Name"
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="bank-name">Bank Name</Label>
+                    <Label htmlFor="bank-name">Bank Name *</Label>
                     <Input
                       id="bank-name"
-                      value={s.bankDetails?.bankName ?? ''}
-                      onChange={(e) => debouncedSave({ bankDetails: { ...(s.bankDetails || {}), bankName: e.target.value } })}
+                      value={bankForm.bankName}
+                      onChange={(e) => setBankForm((p) => ({ ...p, bankName: e.target.value }))}
                       placeholder="Commercial Bank"
                     />
                   </div>
@@ -126,8 +140,8 @@ const Settings = () => {
                     <Label htmlFor="bank-branch">Branch Location (optional)</Label>
                     <Input
                       id="bank-branch"
-                      value={s.bankDetails?.branch ?? ''}
-                      onChange={(e) => debouncedSave({ bankDetails: { ...(s.bankDetails || {}), branch: e.target.value } })}
+                      value={bankForm.branch}
+                      onChange={(e) => setBankForm((p) => ({ ...p, branch: e.target.value }))}
                       placeholder="Colombo Main"
                     />
                   </div>
@@ -135,17 +149,35 @@ const Settings = () => {
                 <Button
                   type="button"
                   size="sm"
-                  onClick={() => {
-                    const b = s.bankDetails;
-                    if (b && (b.accountNumber || b.accountName || b.bankName)) {
-                      saveNow({ bankDetails: b });
-                      toast({ title: 'Bank details saved' });
-                    } else {
-                      toast({ title: 'Enter Account Number, Account Name, and Bank Name', variant: 'destructive' });
+                  disabled={bankSaving}
+                  onClick={async () => {
+                    const an = String(bankForm.accountNumber || '').trim();
+                    const aname = String(bankForm.accountName || '').trim();
+                    const bn = String(bankForm.bankName || '').trim();
+                    const errors = [];
+                    if (!an) errors.push('Account Number is required');
+                    if (!aname) errors.push('Account Name is required');
+                    if (!bn) errors.push('Bank Name is required');
+                    if (an && !/^[0-9A-Za-z\s-]+$/.test(an)) {
+                      errors.push('Account Number can only contain numbers, letters, spaces, and hyphens');
+                    }
+                    if (errors.length > 0) {
+                      toast({ title: 'Validation failed', description: errors.join('. '), variant: 'destructive' });
+                      return;
+                    }
+                    setBankSaving(true);
+                    try {
+                      await saveBankDetails({ accountNumber: an, accountName: aname, bankName: bn, branch: bankForm.branch?.trim() || null });
+                      toast({ title: 'Bank details saved to database' });
+                    } catch (err) {
+                      const msg = err?.message || err?.error || 'Failed to save';
+                      toast({ title: 'Save failed', description: typeof msg === 'string' ? msg : JSON.stringify(msg), variant: 'destructive' });
+                    } finally {
+                      setBankSaving(false);
                     }
                   }}
                 >
-                  Save Bank Details
+                  {bankSaving ? 'Saving...' : 'Save Bank Details to Database'}
                 </Button>
               </div>
               <div className="space-y-2">

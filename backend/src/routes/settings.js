@@ -1,62 +1,9 @@
 import express from 'express';
 import pool from '../config/db.js';
 import { authMiddleware } from '../middleware/auth.js';
-import { encrypt, decrypt } from '../lib/crypto.js';
 
 const router = express.Router();
 router.use(authMiddleware);
-
-const parseBankDetails = (encrypted) => {
-  if (!encrypted) return null;
-  const raw = decrypt(encrypted);
-  if (!raw) return null;
-  try {
-    const obj = JSON.parse(raw);
-    return obj && (obj.accountNumber || obj.accountName || obj.bankName) ? obj : null;
-  } catch {
-    return null;
-  }
-};
-
-const hasBankDetailsColumn = async () => {
-  const { rows } = await pool.query(
-    `SELECT 1 FROM information_schema.columns WHERE table_name = 'settings' AND column_name = 'bank_details_encrypted'`
-  );
-  return rows.length > 0;
-};
-
-const saveBankDetails = async (uid, bankDetails) => {
-  if (!(await hasBankDetailsColumn())) return;
-  const { rows: existingRows } = await pool.query(
-    'SELECT bank_details_encrypted FROM settings WHERE user_id = $1',
-    [uid]
-  );
-  const existing = existingRows[0]?.bank_details_encrypted
-    ? parseBankDetails(existingRows[0].bank_details_encrypted)
-    : {};
-  const bank = { ...existing, ...bankDetails };
-  const toEncrypt =
-    bank && (bank.accountNumber || bank.accountName || bank.bankName)
-      ? JSON.stringify({
-          accountNumber: String(bank.accountNumber || '').trim(),
-          accountName: String(bank.accountName || '').trim(),
-          bankName: String(bank.bankName || '').trim(),
-          branch: (String(bank.branch || '').trim() || null),
-        })
-      : null;
-  const encrypted = toEncrypt ? encrypt(toEncrypt) : null;
-  const { rowCount } = await pool.query(
-    'UPDATE settings SET bank_details_encrypted = $2, updated_at = NOW() WHERE user_id = $1',
-    [uid, encrypted]
-  );
-  if (rowCount === 0) {
-    await pool.query(
-      `INSERT INTO settings (user_id, business_name, bank_details_encrypted)
-       VALUES ($1, 'My Business', $2)`,
-      [uid, encrypted]
-    );
-  }
-};
 
 const toSettings = (row) => {
   const base = {
@@ -72,11 +19,6 @@ const toSettings = (row) => {
     payables: parseFloat(row.payables) || 0,
     expenseCategories: row.expense_categories || ['Hosting', 'Tools & Subscriptions', 'Advertising & Marketing', 'Transport', 'Office & Utilities', 'Other'],
   };
-  if (row.bank_details_encrypted) {
-    base.bankDetails = parseBankDetails(row.bank_details_encrypted);
-  } else {
-    base.bankDetails = null;
-  }
   return base;
 };
 
@@ -173,33 +115,10 @@ router.put('/', async (req, res) => {
         );
       }
     }
-    if (d.bankDetails != null) {
-      await saveBankDetails(uid, d.bankDetails);
-    }
     const { rows } = await pool.query('SELECT * FROM settings WHERE user_id = $1', [uid]);
     res.json(toSettings(rows[0]));
   } catch (err) {
     console.error('[settings PUT]', err);
-    res.status(500).json({ error: 'Server error' });
-  }
-});
-
-// Dedicated endpoint for bank details - for testing and direct API calls
-router.patch('/bank-details', async (req, res) => {
-  try {
-    const uid = req.user.id;
-    const d = req.body;
-    const bankDetails = {
-      accountNumber: d.accountNumber || d.account_number,
-      accountName: d.accountName || d.account_name,
-      bankName: d.bankName || d.bank_name,
-      branch: d.branch,
-    };
-    await saveBankDetails(uid, bankDetails);
-    const { rows } = await pool.query('SELECT * FROM settings WHERE user_id = $1', [uid]);
-    res.json(toSettings(rows[0]));
-  } catch (err) {
-    console.error('[settings PATCH bank-details]', err);
     res.status(500).json({ error: 'Server error' });
   }
 });

@@ -3,7 +3,8 @@ import { Helmet } from 'react-helmet';
 import { motion } from 'framer-motion';
 import { Download, RefreshCw, Calendar } from 'lucide-react';
 import { useFinance } from '@/contexts/FinanceContext';
-import { getPrintHtml, downloadReportPdf } from '@/utils/pdfPrint';
+import ReportPreviewModal from '@/components/ReportPreviewModal';
+import { getPrintHtml } from '@/utils/pdfPrint';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -46,6 +47,7 @@ const getDateRange = (option, fromDate, toDate) => {
 const ReportProfitLoss = () => {
   const { incomes, expenses, settings, loadData } = useFinance();
   const { toast } = useToast();
+  const [reportPreview, setReportPreview] = useState({ open: false, html: '', filename: '', title: '' });
 
   const [periodOption, setPeriodOption] = useState('this_month');
   const [fromDate, setFromDate] = useState(() => {
@@ -130,7 +132,7 @@ const ReportProfitLoss = () => {
     toast({ title: 'Export successful', description: 'Profit & Loss report exported to CSV' });
   };
 
-  const handleDownloadPDF = async () => {
+  const handleDownloadPDF = () => {
     if (!range) return;
     let incomeRows = plData.incomeItems
       .map((i) => `<tr><td style="padding:8px; border:1px solid #ccc;">${i.name}</td><td style="padding:8px; border:1px solid #ccc; text-align:right;">${formatAmount(i.amount)}</td></tr>`)
@@ -158,8 +160,7 @@ const ReportProfitLoss = () => {
       </table>
     `;
     const fullHtml = getPrintHtml(innerContent, { logo: settings?.logo, businessName: settings?.businessName });
-    await downloadReportPdf(fullHtml, `profit-loss-${range.start.toISOString().slice(0, 10)}.pdf`);
-    toast({ title: 'PDF downloaded', description: 'Profit & Loss report saved to your device' });
+    setReportPreview({ open: true, html: fullHtml, filename: `profit-loss-${range.start.toISOString().slice(0, 10)}.pdf`, title: 'Profit & Loss Report' });
   };
 
   return (
@@ -349,6 +350,14 @@ const ReportProfitLoss = () => {
           </div>
         </motion.div>
       </div>
+
+      <ReportPreviewModal
+        open={reportPreview.open}
+        onOpenChange={(open) => setReportPreview((p) => ({ ...p, open }))}
+        html={reportPreview.html}
+        filename={reportPreview.filename}
+        reportTitle={reportPreview.title}
+      />
     </>
   );
 };

@@ -3,7 +3,8 @@ import { Helmet } from 'react-helmet';
 import { motion } from 'framer-motion';
 import { Download, RefreshCw, Calendar } from 'lucide-react';
 import { useFinance } from '@/contexts/FinanceContext';
-import { getPrintHtml, downloadReportPdf } from '@/utils/pdfPrint';
+import ReportPreviewModal from '@/components/ReportPreviewModal';
+import { getPrintHtml } from '@/utils/pdfPrint';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -46,6 +47,7 @@ const getDateRange = (option, fromDate, toDate) => {
 const ReportTax = () => {
   const { incomes, expenses, settings, loadData } = useFinance();
   const { toast } = useToast();
+  const [reportPreview, setReportPreview] = useState({ open: false, html: '', filename: '', title: '' });
 
   const [periodOption, setPeriodOption] = useState('this_month');
   const [fromDate, setFromDate] = useState(() => {
@@ -148,7 +150,7 @@ const ReportTax = () => {
     toast({ title: 'Export successful', description: 'Tax report exported to CSV' });
   };
 
-  const handleDownloadPDF = async () => {
+  const handleDownloadPDF = () => {
     if (!range || !taxData) return;
     let incomeRows = taxData.incomeItems
       .map((i) => `<tr><td style="padding:8px; border:1px solid #ccc;">${i.name}</td><td style="padding:8px; border:1px solid #ccc; text-align:right;">${formatAmount(i.amount)}</td><td style="padding:8px; border:1px solid #ccc; text-align:right;">${formatAmount(i.tax)}</td></tr>`)
@@ -180,8 +182,7 @@ const ReportTax = () => {
       </table>
     `;
     const fullHtml = getPrintHtml(innerContent, { logo: settings?.logo, businessName: settings?.businessName });
-    await downloadReportPdf(fullHtml, `tax-report-${range.start.toISOString().slice(0, 10)}.pdf`);
-    toast({ title: 'PDF downloaded', description: 'Tax report saved to your device' });
+    setReportPreview({ open: true, html: fullHtml, filename: `tax-report-${range.start.toISOString().slice(0, 10)}.pdf`, title: 'Tax Report' });
   };
 
   return (
@@ -392,6 +393,14 @@ const ReportTax = () => {
           )}
         </motion.div>
       </div>
+
+      <ReportPreviewModal
+        open={reportPreview.open}
+        onOpenChange={(open) => setReportPreview((p) => ({ ...p, open }))}
+        html={reportPreview.html}
+        filename={reportPreview.filename}
+        reportTitle={reportPreview.title}
+      />
     </>
   );
 };

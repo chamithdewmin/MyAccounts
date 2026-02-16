@@ -18,7 +18,8 @@ import { useFinance } from '@/contexts/FinanceContext';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/components/ui/use-toast';
 import ExportReportDialog from '@/components/ExportReportDialog';
-import { getPrintHtml, downloadReportPdf } from '@/utils/pdfPrint';
+import ReportPreviewModal from '@/components/ReportPreviewModal';
+import { getPrintHtml } from '@/utils/pdfPrint';
 
 const filterByRange = (items, range, dateKey = 'date') => {
   if (!range) return items;
@@ -34,6 +35,7 @@ const ReportExpense = () => {
   const { expenses, settings, loadData } = useFinance();
   const { toast } = useToast();
   const [exportOpen, setExportOpen] = React.useState(false);
+  const [reportPreview, setReportPreview] = React.useState({ open: false, html: '', filename: '', title: '' });
 
   const byCategory = useMemo(() => {
     const map = {};
@@ -59,7 +61,7 @@ const ReportExpense = () => {
     toast({ title: 'Export successful', description: 'Expense report exported to CSV' });
   };
 
-  const handlePDF = async (range) => {
+  const handlePDF = (range) => {
     const filtered = filterByRange(expenses, range);
     const total = filtered.reduce((s, e) => s + e.amount, 0);
     const byCat = filtered.reduce((acc, e) => {
@@ -76,8 +78,7 @@ const ReportExpense = () => {
     table += '</table><h3>Budget vs Actual</h3><p>Actual total: ' + settings.currency + ' ' + total.toLocaleString() + '</p>';
 
     const fullHtml = getPrintHtml(table, { logo: settings?.logo, businessName: settings?.businessName });
-    await downloadReportPdf(fullHtml, `expense-report-${range.start.toISOString().slice(0, 10)}.pdf`);
-    toast({ title: 'PDF downloaded', description: 'Expense report saved to your device' });
+    setReportPreview({ open: true, html: fullHtml, filename: `expense-report-${range.start.toISOString().slice(0, 10)}.pdf`, title: 'Expense Report' });
   };
 
   return (
@@ -166,6 +167,7 @@ const ReportExpense = () => {
       </div>
 
       <ExportReportDialog open={exportOpen} onOpenChange={setExportOpen} onExportCSV={handleExport} onDownloadPDF={handlePDF} reportTitle="Expense" />
+      <ReportPreviewModal open={reportPreview.open} onOpenChange={(open) => setReportPreview((p) => ({ ...p, open }))} html={reportPreview.html} filename={reportPreview.filename} reportTitle={reportPreview.title} />
     </>
   );
 };

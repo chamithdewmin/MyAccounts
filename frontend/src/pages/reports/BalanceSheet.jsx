@@ -3,7 +3,8 @@ import { Helmet } from 'react-helmet';
 import { motion } from 'framer-motion';
 import { Download, RefreshCw, Plus, Trash2, Calendar, AlertTriangle, CheckCircle } from 'lucide-react';
 import { useFinance } from '@/contexts/FinanceContext';
-import { getPrintHtml, downloadReportPdf } from '@/utils/pdfPrint';
+import ReportPreviewModal from '@/components/ReportPreviewModal';
+import { getPrintHtml } from '@/utils/pdfPrint';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -34,6 +35,7 @@ const BalanceSheet = () => {
   });
   const [assetDialogOpen, setAssetDialogOpen] = useState(false);
   const [loanDialogOpen, setLoanDialogOpen] = useState(false);
+  const [reportPreview, setReportPreview] = useState({ open: false, html: '', filename: '', title: '' });
   const [newAsset, setNewAsset] = useState({ name: '', amount: '' });
   const [newLoan, setNewLoan] = useState({ name: '', amount: '' });
 
@@ -167,7 +169,7 @@ const BalanceSheet = () => {
     toast({ title: 'Export successful', description: 'Balance sheet exported to CSV' });
   };
 
-  const handleDownloadPDF = async () => {
+  const handleDownloadPDF = () => {
     const dateLabel = new Date(asAtDate).toLocaleDateString('en-US', {
       day: 'numeric',
       month: 'long',
@@ -198,8 +200,7 @@ const BalanceSheet = () => {
     `;
     const fullHtml = getPrintHtml(innerContent, { logo: settings?.logo, businessName: settings?.businessName });
     const dateStr = asAtDate.replace(/-/g, '');
-    await downloadReportPdf(fullHtml, `balance-sheet-${dateStr}.pdf`);
-    toast({ title: 'PDF downloaded', description: 'Balance sheet saved to your device' });
+    setReportPreview({ open: true, html: fullHtml, filename: `balance-sheet-${dateStr}.pdf`, title: 'Balance Sheet' });
   };
 
   const dateLabel = new Date(asAtDate).toLocaleDateString('en-US', {
@@ -504,6 +505,14 @@ const BalanceSheet = () => {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <ReportPreviewModal
+        open={reportPreview.open}
+        onOpenChange={(open) => setReportPreview((p) => ({ ...p, open }))}
+        html={reportPreview.html}
+        filename={reportPreview.filename}
+        reportTitle={reportPreview.title}
+      />
     </>
   );
 };

@@ -14,9 +14,28 @@ const InvoiceTemplate = ({ invoice, currency = 'LKR', autoAction = null, onAutoA
     });
   };
 
-  const handlePrint = () => {
-    window.print();
+  const runPrint = () => {
+    const el = printAreaRef.current;
+    if (!el) {
+      window.print();
+      return;
+    }
+    const clone = el.cloneNode(true);
+    clone.style.cssText = 'position:fixed;left:0;top:0;width:100%;background:white;color:#000;z-index:999999;padding:2rem;overflow:visible;min-height:100%;';
+    clone.id = 'invoice-print-clone';
+    document.body.appendChild(clone);
+    const style = document.createElement('style');
+    style.id = 'invoice-print-style';
+    style.textContent = '@media print{body>*:not(#invoice-print-clone){display:none!important}#invoice-print-clone{position:static!important;padding:0!important;display:block!important;min-height:auto!important}}';
+    document.head.appendChild(style);
+    requestAnimationFrame(() => {
+      window.print();
+      document.getElementById('invoice-print-clone')?.remove();
+      document.getElementById('invoice-print-style')?.remove();
+    });
   };
+
+  const handlePrint = () => runPrint();
 
   const handleDownloadPdf = async () => {
     const element = printAreaRef.current;
@@ -78,7 +97,7 @@ const InvoiceTemplate = ({ invoice, currency = 'LKR', autoAction = null, onAutoA
           }
         }
       } else if (autoAction === 'print') {
-        window.print();
+        runPrint();
       }
       onAutoActionDone?.();
     };

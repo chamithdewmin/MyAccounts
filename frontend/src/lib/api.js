@@ -56,6 +56,7 @@ export const api = {
   },
   invoices: {
     list: () => request('/invoices'),
+    get: (id) => request(`/invoices/${id}`),
     create: (data) => request('/invoices', { method: 'POST', body: JSON.stringify(data) }),
     updateStatus: (id, status) => request(`/invoices/${id}/status`, { method: 'PATCH', body: JSON.stringify({ status }) }),
     delete: (id) => request(`/invoices/${id}`, { method: 'DELETE' }),

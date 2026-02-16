@@ -3,6 +3,7 @@ import { Helmet } from 'react-helmet';
 import { motion } from 'framer-motion';
 import { Search, Plus, Download, RefreshCw, Pencil, Trash2, Eye, Printer } from 'lucide-react';
 import { useFinance } from '@/contexts/FinanceContext';
+import { api } from '@/lib/api';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
@@ -15,6 +16,7 @@ const Orders = () => {
   const [filteredOrders, setFilteredOrders] = useState([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedOrder, setSelectedOrder] = useState(null);
+  const [viewedInvoice, setViewedInvoice] = useState(null);
   const [invoiceAction, setInvoiceAction] = useState(null); // 'view' | 'download' | 'print'
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const { toast } = useToast();
@@ -150,6 +152,21 @@ const Orders = () => {
     setOrders(invoices);
     setFilteredOrders(invoices);
   }, [invoices]);
+
+  useEffect(() => {
+    if (selectedOrder && (selectedOrder.id || selectedOrder.invoiceNumber)) {
+      setViewedInvoice(null);
+      const hasToken = !!localStorage.getItem('token');
+      const invoiceId = selectedOrder.id || selectedOrder.invoiceNumber;
+      if (hasToken) {
+        api.invoices.get(invoiceId).then((inv) => setViewedInvoice(inv)).catch(() => setViewedInvoice(selectedOrder));
+      } else {
+        setViewedInvoice(selectedOrder);
+      }
+    } else {
+      setViewedInvoice(null);
+    }
+  }, [selectedOrder]);
 
   useEffect(() => {
     if (searchQuery) {
@@ -404,9 +421,9 @@ const Orders = () => {
           <DialogHeader>
             <DialogTitle>Invoice Details</DialogTitle>
           </DialogHeader>
-          {selectedOrder && (
+          {(viewedInvoice || selectedOrder) && (
             <InvoiceTemplate
-              invoice={selectedOrder}
+              invoice={viewedInvoice || selectedOrder}
               currency={settings.currency}
               autoAction={invoiceAction === 'download' || invoiceAction === 'print' ? invoiceAction : null}
               onAutoActionDone={() => setInvoiceAction(null)}

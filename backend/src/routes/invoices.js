@@ -58,6 +58,19 @@ router.get('/', async (req, res) => {
   }
 });
 
+router.get('/:id', async (req, res) => {
+  try {
+    const uid = req.user.id;
+    const { id } = req.params;
+    const { rows } = await pool.query('SELECT * FROM invoices WHERE (id = $1 OR invoice_number = $1) AND user_id = $2', [id, uid]);
+    if (!rows[0]) return res.status(404).json({ error: 'Invoice not found' });
+    res.json(toInvoice(rows[0]));
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
 router.post('/', async (req, res) => {
   try {
     const uid = req.user.id;

@@ -123,7 +123,6 @@ const InvoiceTemplate = ({
             <p className="text-sm text-gray-500">{settings.businessName || 'Company Slogan'}</p>
             <p className="text-sm text-gray-600 mt-1">Invoice # {invoice.invoiceNumber}</p>
             <p className="text-sm text-gray-600">Date: {formatDate(invoice.createdAt)}</p>
-            <p className="font-bold text-lg mt-2" style={{ color: themeColor }}>TOTAL DUE {currency} {invoice.total?.toLocaleString()}</p>
           </div>
           <div className="text-right">
             <h1

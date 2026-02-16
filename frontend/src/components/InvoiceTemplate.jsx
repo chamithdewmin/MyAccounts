@@ -28,7 +28,7 @@ const InvoiceTemplate = ({
       return;
     }
     const clone = el.cloneNode(true);
-    clone.style.cssText = 'position:fixed;left:0;top:0;width:182mm;max-width:182mm;background:white;color:#000;z-index:999999;padding:14mm 16mm;overflow:visible;box-sizing:border-box;';
+    clone.style.cssText = 'position:fixed;left:0;top:0;width:182mm;max-width:182mm;background:white;color:#000;z-index:999999;padding:14mm 10mm;overflow:visible;box-sizing:border-box;';
     clone.id = 'invoice-print-clone';
     document.body.appendChild(clone);
     const style = document.createElement('style');
@@ -37,7 +37,7 @@ const InvoiceTemplate = ({
       @page { size: A4 portrait; margin: 12mm; }
       @media print {
         body>*:not(#invoice-print-clone){display:none!important}
-        #invoice-print-clone{position:static!important;padding:14mm 16mm!important;display:block!important;width:182mm!important;max-width:182mm!important;box-sizing:border-box!important}
+        #invoice-print-clone{position:static!important;padding:14mm 10mm!important;display:block!important;width:182mm!important;max-width:182mm!important;box-sizing:border-box!important}
       }
     `;
     document.head.appendChild(style);
@@ -216,7 +216,7 @@ const InvoiceTemplate = ({
           width: 182mm;
           max-width: 182mm;
           margin: auto;
-          padding: 14mm 16mm;
+          padding: 14mm 10mm;
           box-sizing: border-box;
         }
 
@@ -227,7 +227,7 @@ const InvoiceTemplate = ({
         .invoice-table th,
         .invoice-table td {
           border-bottom: 1px solid #e5e7eb;
-          padding: 8px 12px;
+          padding: 8px 14px;
         }
 
         .invoice-table th {

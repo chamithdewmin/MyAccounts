@@ -211,7 +211,7 @@ const InvoiceTemplate = ({
             </div>
           )}
 
-          <div className="mt-4 p-4 rounded-lg bg-gray-100">
+          <div className="mt-4">
             <h3 className="font-bold text-sm text-gray-900 mb-2">Terms & Conditions / Notes:</h3>
             <p className="text-sm text-gray-600 leading-relaxed">
               {invoice.notes || 'Your terms and conditions text can be placed here. Add any payment terms, delivery conditions, or other notes for this invoice.'}

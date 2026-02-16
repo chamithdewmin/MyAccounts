@@ -7,11 +7,10 @@ import defaultLogo from '@/assets/logo.png';
  * @returns {string} Full HTML for print/PDF
  */
 export function getPrintHtml(innerContent, options = {}) {
-  const { logo, businessName } = options;
+  const { logo } = options;
   const logoSrc = logo || defaultLogo;
-  const logoHtml = `<div style="display:flex; align-items:center; gap:16px; margin-bottom:20px; padding-bottom:16px; border-bottom:2px solid #000;">
+  const logoHtml = `<div style="margin-bottom:20px; padding-bottom:16px; border-bottom:2px solid #000;">
     <img src="${logoSrc}" alt="Logo" style="height:48px; width:auto; object-fit:contain;" onerror="this.style.display='none'" />
-    <span style="font-size:18px; font-weight:bold; color:#000;">${businessName || 'Report'}</span>
   </div>`;
   const footer = '<p style="font-size:10px; color:#666; margin-top:32px; padding-top:16px; border-top:1px solid #ddd;">This document was generated from MyAccounts</p>';
   return `<div style="padding:20px; font-family:sans-serif; color:#000; background:#fff; font-size:14px; line-height:1.4;">${logoHtml}${innerContent}${footer}</div>`;

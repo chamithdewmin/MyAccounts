@@ -21,12 +21,20 @@ const InvoiceTemplate = ({ invoice, currency = 'LKR', autoAction = null, onAutoA
       return;
     }
     const clone = el.cloneNode(true);
-    clone.style.cssText = 'position:fixed;left:0;top:0;width:100%;background:white;color:#000;z-index:999999;padding:2rem;overflow:visible;min-height:100%;';
+    clone.style.cssText = 'position:fixed;left:0;top:0;width:100%;max-width:210mm;background:white;color:#000;z-index:999999;padding:12mm;overflow:visible;min-height:100%;box-sizing:border-box;';
     clone.id = 'invoice-print-clone';
     document.body.appendChild(clone);
     const style = document.createElement('style');
     style.id = 'invoice-print-style';
-    style.textContent = '@media print{body>*:not(#invoice-print-clone){display:none!important}#invoice-print-clone{position:static!important;padding:0!important;display:block!important;min-height:auto!important}}';
+    style.textContent = `
+      @page { size: A4 portrait; margin: 12mm; }
+      @media print {
+        body>*:not(#invoice-print-clone){display:none!important}
+        #invoice-print-clone{position:static!important;padding:0!important;display:block!important;min-height:auto!important;max-width:186mm!important;width:100%!important;box-sizing:border-box!important}
+        #invoice-print-clone table{table-layout:fixed!important;width:100%!important}
+        #invoice-print-clone td,#invoice-print-clone th{word-wrap:break-word;overflow-wrap:break-word}
+      }
+    `;
     document.head.appendChild(style);
     requestAnimationFrame(() => {
       window.print();
@@ -118,7 +126,7 @@ const InvoiceTemplate = ({ invoice, currency = 'LKR', autoAction = null, onAutoA
           Print
         </Button>
       </div>
-      <div ref={printAreaRef} className="print-area bg-white text-black px-8 py-8 space-y-6 font-sans">
+      <div ref={printAreaRef} className="print-area bg-white text-black px-8 py-8 space-y-6 font-sans" style={{ maxWidth: '210mm', boxSizing: 'border-box' }}>
         {/* Header - Company name left, date right */}
         <div className="border-b border-gray-300 pb-4 flex items-start justify-between gap-4">
           <div>
@@ -135,7 +143,7 @@ const InvoiceTemplate = ({ invoice, currency = 'LKR', autoAction = null, onAutoA
         </div>
 
         {/* Invoice To and Invoice Details - two columns */}
-        <div className="grid grid-cols-2 gap-8 pt-2">
+        <div className="grid grid-cols-2 gap-6 pt-2">
           <div>
             <h2 className="font-bold text-base mb-2 text-black">Invoice To:</h2>
             <p className="text-black">{invoice.clientName}</p>
@@ -155,8 +163,14 @@ const InvoiceTemplate = ({ invoice, currency = 'LKR', autoAction = null, onAutoA
         </div>
 
         {/* Items table */}
-        <div className="border-t border-gray-300 pt-4">
-        <table className="w-full">
+        <div className="border-t border-gray-300 pt-4 overflow-hidden">
+        <table className="w-full" style={{ tableLayout: 'fixed' }}>
+          <colgroup>
+            <col style={{ width: '45%' }} />
+            <col style={{ width: '10%' }} />
+            <col style={{ width: '22%' }} />
+            <col style={{ width: '23%' }} />
+          </colgroup>
           <thead>
             <tr className="border-b border-gray-300">
               <th className="text-left py-2 font-bold text-black">Service / Item</th>
@@ -168,8 +182,8 @@ const InvoiceTemplate = ({ invoice, currency = 'LKR', autoAction = null, onAutoA
           <tbody>
             {totalItems.map((item, index) => (
               <tr key={index} className="border-b border-gray-300">
-                <td className="py-3 text-black">
-                  <div className="font-semibold">{item.description}</div>
+                <td className="py-3 text-black break-words">
+                  <div className="font-semibold break-words">{item.description}</div>
                   {item.serviceType && (
                     <div className="text-sm text-gray-600">{item.serviceType}</div>
                   )}
@@ -192,7 +206,7 @@ const InvoiceTemplate = ({ invoice, currency = 'LKR', autoAction = null, onAutoA
 
         {/* Summary - right aligned */}
         <div className="flex justify-end pt-2">
-          <div className="w-64 space-y-2">
+          <div className="min-w-0 max-w-full space-y-2" style={{ width: '180px' }}>
             <div className="flex justify-between text-black">
               <span>Subtotal:</span>
               <span>{currency} {(invoice.subtotal || 0).toLocaleString()}</span>

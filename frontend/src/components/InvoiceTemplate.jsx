@@ -115,7 +115,7 @@ const InvoiceTemplate = ({
             >
               INVOICE
             </p>
-            <div className="mt-2 space-y-0.5">
+            <div className="mt-4 space-y-0.5">
               <p className="text-sm text-gray-600">Invoice # {invoice.invoiceNumber}</p>
               <p className="text-sm text-gray-600">Date: {formatDate(invoice.createdAt)}</p>
             </div>
@@ -208,12 +208,13 @@ const InvoiceTemplate = ({
               </div>
             </div>
           )}
-          {invoice.notes && (
-            <div>
-              <h3 className="font-bold text-sm text-gray-900 mb-2">Terms & Conditions / Notes</h3>
-              <p className="text-sm text-gray-600">{invoice.notes}</p>
-            </div>
-          )}
+
+          <div className="mt-4 p-4 rounded-lg bg-gray-100">
+            <h3 className="font-bold text-sm text-gray-900 mb-2">Terms & Conditions / Notes:</h3>
+            <p className="text-sm text-gray-600 leading-relaxed">
+              {invoice.notes || 'Your terms and conditions text can be placed here. Add any payment terms, delivery conditions, or other notes for this invoice.'}
+            </p>
+          </div>
         </div>
 
         {/* Footer */}

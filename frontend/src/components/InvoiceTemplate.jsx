@@ -2,6 +2,16 @@ import React, { useEffect, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { useFinance } from '@/contexts/FinanceContext';
 import defaultLogo from '@/assets/logo.png';
+import html2pdf from 'html2pdf.js';
+
+const INVOICE_STYLES = `
+.invoice-a4 { width: 182mm; max-width: 182mm; margin: 0; box-sizing: border-box; }
+.invoice-table { border-collapse: collapse; }
+.invoice-table th { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+tr { page-break-inside: avoid; }
+.avoid-break { page-break-inside: avoid; }
+.invoice-badge { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+`;
 
 const InvoiceTemplate = ({
   invoice,
@@ -55,10 +65,70 @@ const InvoiceTemplate = ({
     });
   };
 
-  const handleDownloadPdf = () => {
-    // Use print dialog – choose "Save as PDF" or "Microsoft Print to PDF" for a file.
-    // This matches the on-screen invoice and avoids empty PDFs from html2pdf.
-    runPrint();
+  const handleDownloadPdf = async () => {
+    const element = printAreaRef.current;
+    if (!element) return;
+
+    const filename = `Invoice-${invoice.invoiceNumber || 'invoice'}.pdf`;
+    const win = window.open('', '_blank');
+    if (!win) {
+      runPrint();
+      return;
+    }
+
+    const sheets = Array.from(document.querySelectorAll('link[rel="stylesheet"]'))
+      .map((l) => l.href)
+      .filter(Boolean);
+    const sheetLinks = sheets.map((href) => `<link rel="stylesheet" href="${href}" />`).join('\n');
+    const origin = window.location.origin;
+    let html = element.outerHTML;
+    html = html.replace(/<img([^>]+)src="([^"]+)"/g, (_, attrs, src) => {
+      const abs = src.startsWith('http') ? src : origin + (src.startsWith('/') ? src : '/' + src);
+      return `<img${attrs}src="${abs}"`;
+    });
+    const fullDoc = `<!DOCTYPE html><html><head><base href="${origin}/" />${sheetLinks}<style>${INVOICE_STYLES}body{margin:0;background:#fff}</style></head><body>${html}</body></html>`;
+
+    win.document.write(fullDoc);
+    win.document.close();
+
+    await new Promise((resolve) => {
+      if (win.document.readyState === 'complete') resolve();
+      else win.onload = resolve;
+      setTimeout(resolve, 800);
+    });
+
+    const imgs = win.document.querySelectorAll('img');
+    await Promise.all(
+      Array.from(imgs).map(
+        (img) =>
+          new Promise((r) => {
+            if (img.complete) r();
+            else {
+              img.onload = r;
+              img.onerror = r;
+              setTimeout(r, 2000);
+            }
+          })
+      )
+    );
+    await new Promise((r) => setTimeout(r, 200));
+
+    const target = win.document.querySelector('.invoice-a4') || win.document.body;
+    try {
+      await html2pdf()
+        .set({
+          margin: [12, 14, 12, 14],
+          filename,
+          image: { type: 'png', quality: 1 },
+          html2canvas: { scale: 2, useCORS: true, allowTaint: true, logging: false, backgroundColor: '#ffffff' },
+          jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
+          pagebreak: { mode: ['css', 'legacy'], avoid: ['tr', '.avoid-break'] },
+        })
+        .from(target)
+        .save();
+    } finally {
+      win.close();
+    }
   };
 
   useEffect(() => {

@@ -18,7 +18,7 @@ const InvoiceTemplate = ({
     const day = String(d.getDate()).padStart(2, '0');
     const month = String(d.getMonth() + 1).padStart(2, '0');
     const year = d.getFullYear();
-    return `${day} / ${month} / ${year}`;
+    return `${day}.${month}.${year}`;
   };
 
   const runPrint = () => {
@@ -28,7 +28,7 @@ const InvoiceTemplate = ({
       return;
     }
     const clone = el.cloneNode(true);
-    clone.style.cssText = 'position:fixed;left:0;top:0;width:182mm;max-width:182mm;background:white;color:#000;z-index:999999;padding:14mm 6mm;overflow:visible;box-sizing:border-box;';
+    clone.style.cssText = 'position:fixed;left:0;top:0;width:182mm;max-width:182mm;background:white;color:#000;z-index:999999;padding:0;overflow:visible;box-sizing:border-box;';
     clone.id = 'invoice-print-clone';
     document.body.appendChild(clone);
     const style = document.createElement('style');
@@ -36,7 +36,7 @@ const InvoiceTemplate = ({
     style.textContent = `@page { size: A4 portrait; margin: 12mm; }
       @media print {
         body>*:not(#invoice-print-clone){display:none!important}
-        #invoice-print-clone{position:static!important;padding:14mm 6mm!important;display:block!important;width:182mm!important;max-width:182mm!important;box-sizing:border-box!important}
+        #invoice-print-clone{position:static!important;padding:0!important;display:block!important;width:182mm!important;max-width:182mm!important;box-sizing:border-box!important}
       }`;
     document.head.appendChild(style);
     requestAnimationFrame(() => {
@@ -90,6 +90,7 @@ const InvoiceTemplate = ({
 
   const items = invoice.items || [];
   const themeColor = (settings.invoiceThemeColor || '#F97316').trim() || '#F97316';
+  const themeColorLight = themeColor + '15';
 
   return (
     <div className="space-y-4">
@@ -102,70 +103,84 @@ const InvoiceTemplate = ({
         </Button>
       </div>
 
-      <div ref={printAreaRef} className="invoice-a4 bg-white text-gray-900" data-invoice-theme={themeColor}>
-        {/* Header: Logo */}
-        <div className="mb-6">
-          <img src={settings.logo || defaultLogo} alt="logo" className="h-12 w-auto object-contain" />
-        </div>
-
-        {/* Bill To (left) | INVOICE area (right) - parallel */}
-        <div className="flex justify-between items-start gap-8 mb-6">
-          <div className="flex items-start gap-4 flex-1">
-            <div className="w-0.5 h-16 flex-shrink-0 rounded" style={{ backgroundColor: themeColor }} />
-            <div>
-              <p className="text-xs font-semibold uppercase tracking-wide text-gray-500 mb-1">Bill To</p>
-              <p className="text-base font-bold text-gray-900">{invoice.clientName || '—'}</p>
-              {invoice.clientPhone && (
-                <p className="text-sm text-gray-600">P. {invoice.clientPhone}</p>
-              )}
-              {invoice.clientEmail && (
-                <p className="text-sm text-gray-600">E. {invoice.clientEmail}</p>
-              )}
+      <div ref={printAreaRef} className="invoice-a4 bg-white shadow-2xl overflow-hidden" data-invoice-theme={themeColor}>
+        {/* Header */}
+        <div className="invoice-header px-10 pt-8 pb-6">
+          <div className="flex justify-between items-start">
+            <div className="flex items-center gap-3">
+              <img src={settings.logo || defaultLogo} alt="logo" className="h-10 w-10 object-contain rounded-lg" />
+              <div>
+                <h1 className="text-2xl font-bold text-gray-800">{settings.businessName || 'My Business'}</h1>
+                <p className="text-sm text-gray-500">Invoice</p>
+              </div>
             </div>
-          </div>
-          <div className="text-right flex-shrink-0">
             <div
-              className="inline-flex items-center justify-center rounded px-6 py-3"
-              style={{ backgroundColor: themeColor }}
+              className="invoice-badge text-white px-8 py-4 -mr-10 shadow-lg"
+              style={{
+                backgroundColor: themeColor,
+                clipPath: 'polygon(10% 0%, 100% 0%, 100% 100%, 0% 100%)',
+              }}
             >
-              <p className="text-3xl font-medium text-white tracking-wide">
-                INVOICE
-              </p>
-            </div>
-            <div className="mt-4 space-y-0.5">
-              <p className="text-sm text-gray-600">Invoice # {invoice.invoiceNumber}</p>
-              <p className="text-sm text-gray-600">Date: {formatDate(invoice.createdAt)}</p>
+              <div className="text-2xl font-bold mb-1">INVOICE</div>
+              <div className="text-sm opacity-90">{invoice.invoiceNumber}</div>
             </div>
           </div>
         </div>
 
-        {/* Items table - Qty, Product Description, Price, Total */}
-        <div className="mt-6">
+        {/* Date and Bill To */}
+        <div
+          className="invoice-date-billto px-10 py-6 grid grid-cols-2 gap-8"
+          style={{ background: `linear-gradient(to right, ${themeColorLight}, transparent)` }}
+        >
+          <div className="space-y-4">
+            <div className="flex gap-8">
+              <div>
+                <div className="text-xs text-gray-500 uppercase tracking-wide mb-1">Date of Issue</div>
+                <div className="text-sm font-semibold text-gray-800">{formatDate(invoice.createdAt)}</div>
+              </div>
+              <div>
+                <div className="text-xs text-gray-500 uppercase tracking-wide mb-1">Date of Due</div>
+                <div className="text-sm font-semibold text-gray-800">{formatDate(invoice.dueDate || invoice.createdAt)}</div>
+              </div>
+            </div>
+          </div>
+          <div>
+            <div className="text-xs text-gray-500 uppercase tracking-wide mb-2">Bill To</div>
+            <p className="text-base font-bold text-gray-800 mb-1">{invoice.clientName || '—'}</p>
+            {invoice.clientEmail && <p className="text-sm text-gray-600 mb-0.5">E. {invoice.clientEmail}</p>}
+            {invoice.clientPhone && <p className="text-sm text-gray-600">P. {invoice.clientPhone}</p>}
+          </div>
+        </div>
+
+        {/* Items Table */}
+        <div className="px-10 py-8">
           <table className="w-full invoice-table">
             <thead>
-              <tr style={{ backgroundColor: themeColor, color: 'white' }}>
-                <th className="text-left py-3 px-4 font-semibold">PRODUCT DESCRIPTION</th>
-                <th className="text-center py-3 px-4 font-semibold">QTY</th>
-                <th className="text-right py-3 px-4 font-semibold">PRICE</th>
-                <th className="text-right py-3 px-4 font-semibold">TOTAL</th>
+              <tr style={{ backgroundColor: themeColor, color: 'white', borderBottom: `2px solid ${themeColor}` }}>
+                <th className="text-left py-3 px-3 text-xs font-bold uppercase tracking-wider">No.</th>
+                <th className="text-left py-3 px-3 text-xs font-bold uppercase tracking-wider">Item Description</th>
+                <th className="text-center py-3 px-3 text-xs font-bold uppercase tracking-wider">Qty</th>
+                <th className="text-right py-3 px-3 text-xs font-bold uppercase tracking-wider">Price</th>
+                <th className="text-right py-3 px-3 text-xs font-bold uppercase tracking-wider">Total</th>
               </tr>
             </thead>
             <tbody>
               {items.map((item, i) => (
-                <tr key={i} className={i % 2 === 0 ? 'bg-[#F8F8F8]' : 'bg-white'}>
-                  <td className="py-3 px-4 border-b border-gray-200">
-                    <div className="font-medium text-gray-900">{item.description}</div>
-                    {item.serviceType && (
-                      <div className="text-sm text-gray-500">{item.serviceType}</div>
-                    )}
+                <tr
+                  key={i}
+                  className="border-b border-gray-200"
+                  style={{ background: i % 2 === 0 ? 'transparent' : themeColorLight }}
+                >
+                  <td className="py-4 px-3 text-sm text-gray-600">{i + 1}</td>
+                  <td className="py-4 px-3">
+                    <div className="text-sm font-medium text-gray-800">{item.description}</div>
+                    {item.serviceType && <div className="text-xs text-gray-500">{item.serviceType}</div>}
                   </td>
-                  <td className="py-3 px-4 border-b border-gray-200 text-center">
-                    {item.quantity ?? 1}
-                  </td>
-                  <td className="py-3 px-4 border-b border-gray-200 text-right">
+                  <td className="py-4 px-3 text-sm text-gray-800 text-center">{item.quantity ?? 1}</td>
+                  <td className="py-4 px-3 text-sm text-gray-800 text-right">
                     {currency} {(item.price || 0).toLocaleString()}
                   </td>
-                  <td className="py-3 px-4 border-b border-gray-200 text-right font-semibold">
+                  <td className="py-4 px-3 text-sm font-semibold text-gray-800 text-right">
                     {currency} {((item.price || 0) * (item.quantity ?? 1)).toLocaleString()}
                   </td>
                 </tr>
@@ -174,80 +189,110 @@ const InvoiceTemplate = ({
           </table>
         </div>
 
-        {/* Summary: Subtotal, Tax, Total - right aligned */}
-        <div className="flex justify-end mt-6 avoid-break">
-          <div className="w-[260px] space-y-2">
-            <div className="flex justify-between text-sm">
-              <span className="text-gray-600">Subtotal</span>
-              <span>{currency} {invoice.subtotal?.toLocaleString()}</span>
-            </div>
-            <div className="flex justify-between text-sm">
-              <span className="text-gray-600">Tax Rate</span>
-              <span>{invoice.taxRate || 0}%</span>
-            </div>
+        {/* Totals */}
+        <div className="px-10 pb-8 avoid-break">
+          <div className="flex justify-end">
             <div
-              className="flex justify-between items-center font-bold text-lg py-3 px-4 mt-2 text-white rounded"
+              className="w-80 rounded-lg p-6 shadow-xl text-white"
               style={{ backgroundColor: themeColor }}
             >
-              <span>TOTAL</span>
-              <span>{currency} {invoice.total?.toLocaleString()}</span>
+              <div className="space-y-3">
+                <div className="flex justify-between text-sm">
+                  <span className="opacity-90">Subtotal</span>
+                  <span className="font-semibold">{currency} {invoice.subtotal?.toLocaleString()}</span>
+                </div>
+                <div className="flex justify-between text-sm">
+                  <span className="opacity-90">Tax ({invoice.taxRate || 0}%)</span>
+                  <span className="font-semibold">{currency} {invoice.taxAmount?.toLocaleString()}</span>
+                </div>
+                <div className="border-t border-white/30 pt-3 flex justify-between items-center">
+                  <span className="text-lg font-bold">Total</span>
+                  <span className="text-2xl font-bold">{currency} {invoice.total?.toLocaleString()}</span>
+                </div>
+              </div>
             </div>
           </div>
         </div>
 
-        {/* Bottom section: Payment Method + Terms */}
-        <div className="mt-8 avoid-break">
+        {/* Payment & Terms */}
+        <div className="px-10 py-6 bg-gray-50 grid grid-cols-2 gap-8 avoid-break">
           {invoice.bankDetails && (
-            <div className="mb-4">
-              <h3 className="font-bold text-sm text-gray-900 mb-2">Payment Method</h3>
-              <div className="text-sm text-gray-600 space-y-1">
-                <p><span className="font-medium">Account No:</span> {invoice.bankDetails.accountNumber}</p>
-                <p><span className="font-medium">Name:</span> {invoice.bankDetails.accountName}</p>
-                <p><span className="font-medium">Bank:</span> {invoice.bankDetails.bankName}</p>
+            <div>
+              <div className="flex items-center gap-2 mb-3">
+                <div
+                  className="w-8 h-8 rounded-full flex items-center justify-center"
+                  style={{ backgroundColor: themeColor }}
+                >
+                  <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
+                  </svg>
+                </div>
+                <h3 className="text-sm font-bold text-gray-800 uppercase tracking-wide">Payment Method</h3>
+              </div>
+              <div className="space-y-1 text-sm text-gray-600">
+                <p><span className="text-gray-500">Bank Name:</span> <span className="font-medium text-gray-800">{invoice.bankDetails.bankName}</span></p>
+                <p><span className="text-gray-500">Account Name:</span> <span className="font-medium text-gray-800">{invoice.bankDetails.accountName}</span></p>
+                <p><span className="text-gray-500">Account Number:</span> <span className="font-medium text-gray-800">{invoice.bankDetails.accountNumber}</span></p>
                 {invoice.bankDetails.branch && (
-                  <p><span className="font-medium">Branch:</span> {invoice.bankDetails.branch}</p>
+                  <p><span className="text-gray-500">Branch:</span> <span className="font-medium text-gray-800">{invoice.bankDetails.branch}</span></p>
                 )}
               </div>
             </div>
           )}
-
-          <div className="mt-4">
-            <h3 className="font-bold text-sm text-gray-900 mb-2">Terms & Conditions / Notes:</h3>
-            <p className="text-sm text-gray-600 leading-relaxed">
-              {invoice.notes || 'Your terms and conditions text can be placed here. Add any payment terms, delivery conditions, or other notes for this invoice.'}
+          <div>
+            <div className="flex items-center gap-2 mb-3">
+              <div
+                className="w-8 h-8 rounded-full flex items-center justify-center"
+                style={{ backgroundColor: themeColor }}
+              >
+                <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                </svg>
+              </div>
+              <h3 className="text-sm font-bold text-gray-800 uppercase tracking-wide">Terms & Conditions</h3>
+            </div>
+            <p className="text-xs text-gray-600 leading-relaxed">
+              {invoice.notes || 'Please make payment within the agreed terms. Thank you for your business.'}
             </p>
           </div>
         </div>
 
         {/* Footer */}
-        <div className="mt-10 pt-6 border-t border-gray-200 text-center avoid-break">
-          <p className="text-sm font-semibold text-gray-700 uppercase tracking-wider mb-4">
-            Thank you for your business
-          </p>
-          <div className="flex flex-wrap justify-center gap-x-6 gap-y-1 text-xs text-gray-500">
-            {settings.phone && (
-              <span>P. {settings.phone}</span>
-            )}
-            <span>{settings.businessName || ''}</span>
+        <div className="invoice-footer px-10 py-6 bg-gray-800 text-white avoid-break">
+          <div className="flex justify-between items-center text-sm">
+            <div className="space-y-1">
+              {settings.phone && (
+                <div className="flex items-center gap-2">
+                  <svg className="w-4 h-4 flex-shrink-0" style={{ color: themeColor }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
+                  </svg>
+                  <span>{settings.phone}</span>
+                </div>
+              )}
+              <div className="flex items-center gap-2">
+                <svg className="w-4 h-4 flex-shrink-0" style={{ color: themeColor }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                </svg>
+                <span>{settings.businessName || ''}</span>
+              </div>
+            </div>
+            <div className="text-right">
+              <div className="text-xs text-gray-400">Invoice generated by</div>
+              <div className="text-lg font-bold" style={{ color: themeColor }}>{settings.businessName || 'My Business'}</div>
+            </div>
           </div>
         </div>
-
       </div>
 
       <style jsx global>{`
         .invoice-a4 {
-          width: 182mm;
-          max-width: 182mm;
+          width: 100%;
+          max-width: 56rem;
           margin: auto;
-          padding: 14mm 6mm;
           box-sizing: border-box;
         }
         .invoice-table {
           border-collapse: collapse;
-        }
-        .invoice-table th,
-        .invoice-table td {
-          border-bottom: 1px solid #e5e7eb;
         }
         .invoice-table th {
           -webkit-print-color-adjust: exact;
@@ -259,26 +304,25 @@ const InvoiceTemplate = ({
         .avoid-break {
           page-break-inside: avoid;
         }
+        .invoice-badge {
+          -webkit-print-color-adjust: exact;
+          print-color-adjust: exact;
+        }
+        .invoice-footer [style] {
+          -webkit-print-color-adjust: exact;
+          print-color-adjust: exact;
+        }
         @media print {
-          body {
-            background: white;
-          }
-          .print\\:hidden {
-            display: none !important;
-          }
-          .invoice-a4 {
-            margin: 0;
-            box-shadow: none;
-          }
+          body { background: white; }
+          .print\\:hidden { display: none !important; }
+          .invoice-a4 { box-shadow: none !important; max-width: 182mm; }
           .invoice-a4 [style*="background"],
-          .invoice-a4 [style*="background-color"] {
+          .invoice-a4 [style*="background-color"],
+          .invoice-a4 *[style] {
             -webkit-print-color-adjust: exact;
             print-color-adjust: exact;
           }
-          @page {
-            size: A4;
-            margin: 12mm;
-          }
+          @page { size: A4; margin: 12mm; }
         }
       `}</style>
     </div>

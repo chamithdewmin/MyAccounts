@@ -126,8 +126,14 @@ const InvoiceTemplate = ({
           className="invoice-date-billto px-10 py-6 grid grid-cols-2 gap-8"
           style={{ background: `linear-gradient(to right, ${themeColorLight}, transparent)` }}
         >
+          <div>
+            <div className="text-xs text-gray-500 uppercase tracking-wide mb-2">Bill To</div>
+            <p className="text-base font-bold text-gray-800 mb-1">{invoice.clientName || '—'}</p>
+            {invoice.clientEmail && <p className="text-sm text-gray-600 mb-0.5">E. {invoice.clientEmail}</p>}
+            {invoice.clientPhone && <p className="text-sm text-gray-600">P. {invoice.clientPhone}</p>}
+          </div>
           <div className="space-y-4">
-            <div className="flex gap-8">
+            <div className="flex gap-8 justify-end">
               <div>
                 <div className="text-xs text-gray-500 uppercase tracking-wide mb-1">Date of Issue</div>
                 <div className="text-sm font-semibold text-gray-800">{formatDate(invoice.createdAt)}</div>
@@ -137,12 +143,6 @@ const InvoiceTemplate = ({
                 <div className="text-sm font-semibold text-gray-800">{formatDate(invoice.dueDate || invoice.createdAt)}</div>
               </div>
             </div>
-          </div>
-          <div>
-            <div className="text-xs text-gray-500 uppercase tracking-wide mb-2">Bill To</div>
-            <p className="text-base font-bold text-gray-800 mb-1">{invoice.clientName || '—'}</p>
-            {invoice.clientEmail && <p className="text-sm text-gray-600 mb-0.5">E. {invoice.clientEmail}</p>}
-            {invoice.clientPhone && <p className="text-sm text-gray-600">P. {invoice.clientPhone}</p>}
           </div>
         </div>
 

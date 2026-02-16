@@ -206,9 +206,9 @@ const InvoiceTemplate = ({
 
         {/* Totals */}
         <div className="px-10 pb-8 avoid-break">
-          <div className="flex justify-end">
-            <div className="w-80 p-6" style={{ color: themeColor }}>
-              <div className="space-y-3">
+          <div className="flex justify-end pl-4">
+            <div className="w-80">
+              <div className="space-y-3 text-black">
                 <div className="flex justify-between text-sm">
                   <span>Subtotal</span>
                   <span className="font-semibold">{currency} {invoice.subtotal?.toLocaleString()}</span>
@@ -217,7 +217,10 @@ const InvoiceTemplate = ({
                   <span>Tax ({invoice.taxRate || 0}%)</span>
                   <span className="font-semibold">{currency} {invoice.taxAmount?.toLocaleString()}</span>
                 </div>
-                <div className="pt-3 flex justify-between items-center border-t-2" style={{ borderColor: themeColor }}>
+                <div
+                  className="rounded-lg px-6 py-4 flex justify-between items-center text-white"
+                  style={{ backgroundColor: themeColor }}
+                >
                   <span className="text-lg font-bold">Total</span>
                   <span className="text-2xl font-bold">{currency} {invoice.total?.toLocaleString()}</span>
                 </div>

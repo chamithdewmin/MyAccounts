@@ -119,6 +119,7 @@ async function initDb() {
     `);
     await pool.query('ALTER TABLE settings ADD COLUMN IF NOT EXISTS bank_details_encrypted TEXT');
     await pool.query('ALTER TABLE invoices ADD COLUMN IF NOT EXISTS bank_details JSONB');
+    await pool.query('ALTER TABLE invoices ADD COLUMN IF NOT EXISTS bank_details_encrypted TEXT');
     console.log('Forgot-password and user-delete tables ready.');
   } catch (e) {
     console.warn('Forgot-password setup:', e.message);

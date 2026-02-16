@@ -1,29 +1,51 @@
 import express from 'express';
 import pool from '../config/db.js';
 import { authMiddleware } from '../middleware/auth.js';
+import { encrypt, decrypt } from '../lib/crypto.js';
+
+const parseBankDetails = (encryptedText) => {
+  if (!encryptedText) return null;
+  const raw = decrypt(encryptedText);
+  if (!raw) return null;
+  try {
+    const obj = JSON.parse(raw);
+    return obj && (obj.accountNumber || obj.accountName || obj.bankName) ? obj : null;
+  } catch {
+    return null;
+  }
+};
 
 const router = express.Router();
 router.use(authMiddleware);
 
-const toInvoice = (row) => ({
-  id: row.id,
-  invoiceNumber: row.invoice_number,
-  clientId: row.client_id,
-  clientName: row.client_name || '',
-  clientEmail: row.client_email || '',
-  clientPhone: row.client_phone || '',
-  items: row.items || [],
-  subtotal: parseFloat(row.subtotal),
-  taxRate: parseFloat(row.tax_rate),
-  taxAmount: parseFloat(row.tax_amount),
-  total: parseFloat(row.total),
-  paymentMethod: row.payment_method || 'bank',
-  status: row.status || 'unpaid',
-  dueDate: row.due_date,
-  notes: row.notes || '',
-  bankDetails: row.bank_details || null,
-  createdAt: row.created_at,
-});
+const toInvoice = (row) => {
+  let bankDetails = null;
+  if (row.bank_details_encrypted) {
+    bankDetails = parseBankDetails(row.bank_details_encrypted);
+  }
+  if (!bankDetails && row.bank_details) {
+    bankDetails = row.bank_details;
+  }
+  return {
+    id: row.id,
+    invoiceNumber: row.invoice_number,
+    clientId: row.client_id,
+    clientName: row.client_name || '',
+    clientEmail: row.client_email || '',
+    clientPhone: row.client_phone || '',
+    items: row.items || [],
+    subtotal: parseFloat(row.subtotal),
+    taxRate: parseFloat(row.tax_rate),
+    taxAmount: parseFloat(row.tax_amount),
+    total: parseFloat(row.total),
+    paymentMethod: row.payment_method || 'bank',
+    status: row.status || 'unpaid',
+    dueDate: row.due_date,
+    notes: row.notes || '',
+    bankDetails,
+    createdAt: row.created_at,
+  };
+};
 
 router.get('/', async (req, res) => {
   try {
@@ -46,11 +68,17 @@ router.post('/', async (req, res) => {
     const taxAmount = d.taxAmount != null ? Number(d.taxAmount) : subtotal * (taxRate / 100);
     const total = Number(d.total) || subtotal + taxAmount;
 
-    const bankDetailsJson = d.bankDetails && (d.bankDetails.accountNumber || d.bankDetails.accountName || d.bankDetails.bankName)
-      ? JSON.stringify(d.bankDetails)
+    const bankObj = d.bankDetails && (d.bankDetails.accountNumber || d.bankDetails.accountName || d.bankDetails.bankName)
+      ? {
+          accountNumber: String(d.bankDetails.accountNumber || '').trim(),
+          accountName: String(d.bankDetails.accountName || '').trim(),
+          bankName: String(d.bankDetails.bankName || '').trim(),
+          branch: String(d.bankDetails.branch || '').trim() || null,
+        }
       : null;
+    const bankDetailsEncrypted = bankObj ? encrypt(JSON.stringify(bankObj)) : null;
     await pool.query(
-      `INSERT INTO invoices (id, user_id, invoice_number, client_id, client_name, client_email, client_phone, items, subtotal, tax_rate, tax_amount, total, payment_method, status, due_date, notes, bank_details)
+      `INSERT INTO invoices (id, user_id, invoice_number, client_id, client_name, client_email, client_phone, items, subtotal, tax_rate, tax_amount, total, payment_method, status, due_date, notes, bank_details_encrypted)
        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17)`,
       [
         id,
@@ -69,7 +97,7 @@ router.post('/', async (req, res) => {
         d.status || 'unpaid',
         d.dueDate || null,
         d.notes || '',
-        bankDetailsJson,
+        bankDetailsEncrypted,
       ]
     );
     const { rows } = await pool.query('SELECT * FROM invoices WHERE id = $1', [id]);

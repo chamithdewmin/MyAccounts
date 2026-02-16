@@ -13,12 +13,13 @@ const InvoiceTemplate = ({
   const printAreaRef = useRef(null);
   const { settings } = useFinance();
 
-  const formatDate = (date) =>
-    new Date(date).toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric',
-    });
+  const formatDate = (date) => {
+    const d = new Date(date);
+    const day = String(d.getDate()).padStart(2, '0');
+    const month = String(d.getMonth() + 1).padStart(2, '0');
+    const year = d.getFullYear();
+    return `${day} / ${month} / ${year}`;
+  };
 
   const runPrint = () => {
     const el = printAreaRef.current;
@@ -101,63 +102,72 @@ const InvoiceTemplate = ({
         </Button>
       </div>
 
-      <div ref={printAreaRef} className="invoice-a4 bg-white text-black" data-invoice-theme={themeColor}>
-        <div className="flex justify-between items-start pb-4 border-b border-gray-200">
-          <div>
-            <img src={settings.logo || defaultLogo} alt="logo" className="h-12 mb-2" />
-            <p className="text-sm text-gray-500">{settings.businessName || 'Company Slogan'}</p>
-            <p className="text-sm text-gray-600 mt-1">Invoice # {invoice.invoiceNumber}</p>
-            <p className="text-sm text-gray-600">Date: {formatDate(invoice.createdAt)}</p>
+      <div ref={printAreaRef} className="invoice-a4 bg-white text-gray-900" data-invoice-theme={themeColor}>
+        {/* Header: Logo left, INVOICE right (full-width accent) */}
+        <div className="flex justify-between items-start mb-6">
+          <div className="flex items-center gap-3">
+            <img src={settings.logo || defaultLogo} alt="logo" className="h-12 w-12 object-contain" />
+            <div>
+              <p className="text-lg font-bold text-gray-900">{settings.businessName || 'My Business'}</p>
+              <p className="text-xs text-gray-500 uppercase tracking-wide">Invoice</p>
+            </div>
           </div>
           <div className="text-right">
-            <h1
-              className="inline-flex items-center justify-center text-2xl font-bold text-white rounded pt-1.5 pb-2 px-5 -mt-1"
-              style={{
-                backgroundColor: themeColor,
-                textRendering: 'optimizeLegibility',
-                WebkitFontSmoothing: 'antialiased',
-                letterSpacing: '0.02em',
-              }}
+            <div
+              className="inline-block text-2xl font-bold text-white py-3 px-6 -mr-6 rounded-l"
+              style={{ backgroundColor: themeColor }}
             >
               INVOICE
-            </h1>
-            <h2 className="font-bold mb-2 mt-3 text-sm text-gray-700">Invoice to:</h2>
-            <p className="font-semibold">{invoice.clientName}</p>
-            {invoice.clientEmail && (
-              <p className="text-sm text-gray-600">{invoice.clientEmail}</p>
-            )}
+            </div>
+            <div className="mt-2 space-y-0.5">
+              <p className="text-sm text-gray-600">Invoice # {invoice.invoiceNumber}</p>
+              <p className="text-sm text-gray-600">Date: {formatDate(invoice.createdAt)}</p>
+            </div>
+          </div>
+        </div>
+
+        {/* Bill To section */}
+        <div className="flex items-start gap-4 mb-6">
+          <div className="w-0.5 h-16 flex-shrink-0 rounded" style={{ backgroundColor: themeColor }} />
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-wide text-gray-500 mb-1">Bill To</p>
+            <p className="text-base font-bold text-gray-900">{invoice.clientName || '—'}</p>
             {invoice.clientPhone && (
-              <p className="text-sm text-gray-600">{invoice.clientPhone}</p>
+              <p className="text-sm text-gray-600">P. {invoice.clientPhone}</p>
+            )}
+            {invoice.clientEmail && (
+              <p className="text-sm text-gray-600">E. {invoice.clientEmail}</p>
             )}
           </div>
         </div>
 
+        {/* Items table - Qty, Product Description, Price, Total */}
         <div className="mt-6">
           <table className="w-full invoice-table">
             <thead>
               <tr style={{ backgroundColor: themeColor, color: 'white' }}>
-                <th className="text-left pt-2 pb-3 px-3 align-middle">Item Description</th>
-                <th className="text-right pt-2 pb-3 px-3 align-middle">Unit Price</th>
-                <th className="text-center pt-2 pb-3 px-3 align-middle">Qty</th>
-                <th className="text-right pt-2 pb-3 px-3 align-middle">Total</th>
+                <th className="text-left py-3 px-4 font-semibold">QTY</th>
+                <th className="text-left py-3 px-4 font-semibold">PRODUCT DESCRIPTION</th>
+                <th className="text-right py-3 px-4 font-semibold">PRICE</th>
+                <th className="text-right py-3 px-4 font-semibold">TOTAL</th>
               </tr>
             </thead>
             <tbody>
               {items.map((item, i) => (
-                <tr key={i} className={i % 2 === 0 ? 'bg-gray-50' : 'bg-white'}>
-                  <td className="py-3 px-3 border-b border-gray-200 text-left">
-                    <div className="font-semibold">{item.description}</div>
+                <tr key={i} className={i % 2 === 0 ? 'bg-[#F8F8F8]' : 'bg-white'}>
+                  <td className="py-3 px-4 border-b border-gray-200 text-center">
+                    {item.quantity ?? 1}
+                  </td>
+                  <td className="py-3 px-4 border-b border-gray-200">
+                    <div className="font-medium text-gray-900">{item.description}</div>
                     {item.serviceType && (
                       <div className="text-sm text-gray-500">{item.serviceType}</div>
                     )}
                   </td>
-                  <td className="text-right py-3 px-3 border-b border-gray-200">
+                  <td className="py-3 px-4 border-b border-gray-200 text-right">
                     {currency} {(item.price || 0).toLocaleString()}
                   </td>
-                  <td className="text-center py-3 px-3 border-b border-gray-200">
-                    {item.quantity ?? 1}
-                  </td>
-                  <td className="text-right py-3 px-3 border-b border-gray-200 font-semibold">
+                  <td className="py-3 px-4 border-b border-gray-200 text-right font-semibold">
                     {currency} {((item.price || 0) * (item.quantity ?? 1)).toLocaleString()}
                   </td>
                 </tr>
@@ -166,34 +176,70 @@ const InvoiceTemplate = ({
           </table>
         </div>
 
+        {/* Summary: Subtotal, Tax, Total - right aligned */}
         <div className="flex justify-end mt-6 avoid-break">
-          <div className="w-[240px] space-y-2">
-            <div className="flex justify-between py-1">
-              <span>Sub Total</span>
+          <div className="w-[260px] space-y-2">
+            <div className="flex justify-between text-sm">
+              <span className="text-gray-600">Subtotal</span>
               <span>{currency} {invoice.subtotal?.toLocaleString()}</span>
             </div>
-            <div className="flex justify-between py-1">
-              <span>Tax ({invoice.taxRate || 0}%)</span>
-              <span>{currency} {invoice.taxAmount?.toLocaleString()}</span>
+            <div className="flex justify-between text-sm">
+              <span className="text-gray-600">Tax Rate</span>
+              <span>{invoice.taxRate || 0}%</span>
             </div>
-            <div className="flex justify-between font-bold text-lg py-3 px-3 rounded text-white mt-2" style={{ backgroundColor: themeColor }}>
-              <span>Grand Total</span>
+            <div
+              className="flex justify-between items-center font-bold text-lg py-3 px-4 mt-2 text-white rounded"
+              style={{ backgroundColor: themeColor }}
+            >
+              <span>TOTAL</span>
               <span>{currency} {invoice.total?.toLocaleString()}</span>
             </div>
           </div>
         </div>
 
-        {invoice.bankDetails && (
-          <div className="mt-6 pt-4 border-t border-gray-200 avoid-break">
-            <h3 className="font-bold text-sm mb-2">Bank Transfer</h3>
-            <p>Account: {invoice.bankDetails.accountNumber}</p>
-            <p>Name: {invoice.bankDetails.accountName}</p>
-            <p>Bank: {invoice.bankDetails.bankName}</p>
+        {/* Bottom section: Payment Method + Terms | Signature */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-8 avoid-break">
+          <div>
+            {invoice.bankDetails && (
+              <div className="mb-4">
+                <h3 className="font-bold text-sm text-gray-900 mb-2">Payment Method</h3>
+                <div className="text-sm text-gray-600 space-y-1">
+                  <p><span className="font-medium">Account No:</span> {invoice.bankDetails.accountNumber}</p>
+                  <p><span className="font-medium">Name:</span> {invoice.bankDetails.accountName}</p>
+                  <p><span className="font-medium">Bank:</span> {invoice.bankDetails.bankName}</p>
+                  {invoice.bankDetails.branch && (
+                    <p><span className="font-medium">Branch:</span> {invoice.bankDetails.branch}</p>
+                  )}
+                </div>
+              </div>
+            )}
+            {invoice.notes && (
+              <div>
+                <h3 className="font-bold text-sm text-gray-900 mb-2">Terms & Conditions / Notes</h3>
+                <p className="text-sm text-gray-600">{invoice.notes}</p>
+              </div>
+            )}
           </div>
-        )}
+          <div className="text-right md:text-left">
+            <p className="text-sm font-semibold text-gray-900 mb-1" style={{ fontFamily: 'cursive' }}>
+              Digital Signature
+            </p>
+            <div className="border-b-2 border-gray-400 w-32 h-8 mb-2 inline-block" />
+            <p className="text-xs text-gray-500">Company signature</p>
+          </div>
+        </div>
 
-        <div className="mt-6 pt-4 border-t border-gray-200 text-center text-sm text-gray-600 avoid-break">
-          Thank you for your business!
+        {/* Footer */}
+        <div className="mt-10 pt-6 border-t border-gray-200 text-center avoid-break">
+          <p className="text-sm font-semibold text-gray-700 uppercase tracking-wider mb-4">
+            Thank you for your business
+          </p>
+          <div className="flex flex-wrap justify-center gap-x-6 gap-y-1 text-xs text-gray-500">
+            {settings.phone && (
+              <span>P. {settings.phone}</span>
+            )}
+            <span>{settings.businessName || ''}</span>
+          </div>
         </div>
       </div>
 
@@ -211,10 +257,8 @@ const InvoiceTemplate = ({
         .invoice-table th,
         .invoice-table td {
           border-bottom: 1px solid #e5e7eb;
-          padding: 8px 14px;
         }
         .invoice-table th {
-          font-weight: bold;
           -webkit-print-color-adjust: exact;
           print-color-adjust: exact;
         }

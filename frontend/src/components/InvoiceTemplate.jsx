@@ -21,7 +21,7 @@ const InvoiceTemplate = ({ invoice, currency = 'LKR', autoAction = null, onAutoA
       return;
     }
     const clone = el.cloneNode(true);
-    clone.style.cssText = 'position:fixed;left:0;top:0;width:100%;max-width:210mm;background:white;color:#000;z-index:999999;padding:12mm;overflow:visible;min-height:100%;box-sizing:border-box;';
+    clone.style.cssText = 'position:fixed;left:0;top:0;width:100%;max-width:210mm;background:white;color:#000;z-index:999999;padding:18mm 12mm 12mm 18mm;overflow:visible;min-height:100%;box-sizing:border-box;';
     clone.id = 'invoice-print-clone';
     document.body.appendChild(clone);
     const style = document.createElement('style');
@@ -30,7 +30,7 @@ const InvoiceTemplate = ({ invoice, currency = 'LKR', autoAction = null, onAutoA
       @page { size: A4 portrait; margin: 12mm; }
       @media print {
         body>*:not(#invoice-print-clone){display:none!important}
-        #invoice-print-clone{position:static!important;padding:0!important;display:block!important;min-height:auto!important;max-width:186mm!important;width:100%!important;box-sizing:border-box!important}
+        #invoice-print-clone{position:static!important;padding:18mm 12mm 12mm 18mm!important;display:block!important;min-height:auto!important;max-width:186mm!important;width:100%!important;box-sizing:border-box!important}
         #invoice-print-clone table{table-layout:fixed!important;width:100%!important}
         #invoice-print-clone td,#invoice-print-clone th{word-wrap:break-word;overflow-wrap:break-word}
       }

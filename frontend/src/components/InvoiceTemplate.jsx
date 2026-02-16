@@ -108,7 +108,7 @@ const InvoiceTemplate = ({
           <div>
             <img src={settings.logo || defaultLogo} alt="logo" className="h-12 w-auto object-contain" />
           </div>
-          <div className="text-right mt-6">
+          <div className="text-right mt-10">
             <div
               className="inline-flex items-center justify-center rounded px-6 py-3"
               style={{ backgroundColor: themeColor }}

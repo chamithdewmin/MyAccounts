@@ -126,7 +126,17 @@ const InvoiceTemplate = ({
             <p className="font-bold text-lg mt-2" style={{ color: themeColor }}>TOTAL DUE {currency} {invoice.total?.toLocaleString()}</p>
           </div>
           <div className="text-right">
-            <h1 className="text-2xl font-bold text-white px-4 pt-1.5 pb-2 rounded text-center leading-tight" style={{ backgroundColor: themeColor }}>INVOICE</h1>
+            <h1
+              className="inline-flex items-center justify-center text-2xl font-bold text-white rounded py-2 px-5"
+              style={{
+                backgroundColor: themeColor,
+                textRendering: 'optimizeLegibility',
+                WebkitFontSmoothing: 'antialiased',
+                letterSpacing: '0.02em',
+              }}
+            >
+              INVOICE
+            </h1>
             <h2 className="font-bold mb-2 mt-4 text-sm text-gray-700">Invoice to:</h2>
             <p className="font-semibold">{invoice.clientName}</p>
             {invoice.clientEmail && (

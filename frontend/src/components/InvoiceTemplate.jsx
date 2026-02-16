@@ -113,7 +113,7 @@ const InvoiceTemplate = ({
               className="inline-flex items-center justify-center rounded px-6 py-3"
               style={{ backgroundColor: themeColor }}
             >
-              <p className="text-2xl font-light text-white tracking-wide">
+              <p className="text-3xl font-medium text-white tracking-wide">
                 INVOICE
               </p>
             </div>

@@ -82,14 +82,58 @@ const ReportOverview = () => {
     const totalIncome = filteredIncomes.reduce((s, i) => s + i.amount, 0);
     const totalExpenses = filteredExpenses.reduce((s, e) => s + e.amount, 0);
     const profit = totalIncome - totalExpenses;
+    const taxRate = settings.taxEnabled ? (Number(settings.taxRate) || 0) : 0;
+    const estimatedTax = profit > 0 ? (profit * taxRate) / 100 : 0;
+
+    const periodData = chartData.filter((d) => {
+      const parts = d.date.split(' ');
+      const monthDate = new Date(`${parts[0]} 1, ${parts[1]}`);
+      return monthDate >= range.start && monthDate <= range.end;
+    });
+
+    let monthlyRows = periodData
+      .map((r) => `<tr><td style="padding:8px; border:1px solid #ccc;">${r.date}</td><td style="padding:8px; border:1px solid #ccc; text-align:right;">${settings.currency} ${r.income.toLocaleString()}</td><td style="padding:8px; border:1px solid #ccc; text-align:right;">${settings.currency} ${r.expenses.toLocaleString()}</td><td style="padding:8px; border:1px solid #ccc; text-align:right;">${settings.currency} ${r.profit.toLocaleString()}</td></tr>`)
+      .join('');
+    if (!monthlyRows) monthlyRows = '<tr><td colspan="4" style="padding:8px; border:1px solid #ccc; color:#888;">No monthly data in this period</td></tr>';
 
     const innerContent = `
       <h1>Overview Report</h1>
-      <p>Period: ${range.start.toLocaleDateString()} - ${range.end.toLocaleDateString()}</p>
-      <table style="width:100%; border-collapse: collapse; margin-top: 20px;">
-        <tr><td style="padding:8px; border:1px solid #ccc;"><strong>Total Income</strong></td><td style="padding:8px; border:1px solid #ccc;">${settings.currency} ${totalIncome.toLocaleString()}</td></tr>
-        <tr><td style="padding:8px; border:1px solid #ccc;"><strong>Total Expenses</strong></td><td style="padding:8px; border:1px solid #ccc;">${settings.currency} ${totalExpenses.toLocaleString()}</td></tr>
-        <tr><td style="padding:8px; border:1px solid #ccc;"><strong>Profit</strong></td><td style="padding:8px; border:1px solid #ccc;">${settings.currency} ${profit.toLocaleString()}</td></tr>
+      <p><strong>Period: ${range.start.toLocaleDateString()} – ${range.end.toLocaleDateString()}</strong></p>
+      <div style="display:grid; grid-template-columns: 1fr 1fr 1fr; gap:16px; margin:20px 0;">
+        <div style="border:1px solid #ccc; padding:16px; border-radius:8px; background:#f9fafb;">
+          <p style="font-size:11px; color:#666; margin:0; text-transform:uppercase;">Total Income</p>
+          <p style="font-size:18px; font-weight:bold; margin:8px 0 0;">${settings.currency} ${totalIncome.toLocaleString()}</p>
+        </div>
+        <div style="border:1px solid #ccc; padding:16px; border-radius:8px; background:#f9fafb;">
+          <p style="font-size:11px; color:#666; margin:0; text-transform:uppercase;">Total Expenses</p>
+          <p style="font-size:18px; font-weight:bold; margin:8px 0 0;">${settings.currency} ${totalExpenses.toLocaleString()}</p>
+        </div>
+        <div style="border:1px solid #ccc; padding:16px; border-radius:8px; background:#f9fafb;">
+          <p style="font-size:11px; color:#666; margin:0; text-transform:uppercase;">Profit</p>
+          <p style="font-size:18px; font-weight:bold; margin:8px 0 0; color:${profit >= 0 ? '#16a34a' : '#dc2626'};">${settings.currency} ${profit.toLocaleString()}</p>
+        </div>
+      </div>
+      <div style="display:grid; grid-template-columns: 1fr 1fr; gap:16px; margin-bottom:24px;">
+        <div style="border:1px solid #ccc; padding:16px; border-radius:8px;">
+          <p style="font-size:11px; color:#666; margin:0; text-transform:uppercase;">Estimated Tax (${taxRate}%)</p>
+          <p style="font-size:16px; font-weight:bold; margin:8px 0 0;">${settings.currency} ${estimatedTax.toLocaleString()}</p>
+        </div>
+      </div>
+      <h3 style="margin:24px 0 12px;">Monthly Summary</h3>
+      <table style="width:100%; border-collapse: collapse;">
+        <tr style="background:#f5f5f5;">
+          <th style="padding:8px; border:1px solid #ccc; text-align:left;">Month</th>
+          <th style="padding:8px; border:1px solid #ccc; text-align:right;">Income</th>
+          <th style="padding:8px; border:1px solid #ccc; text-align:right;">Expenses</th>
+          <th style="padding:8px; border:1px solid #ccc; text-align:right;">Profit</th>
+        </tr>
+        ${monthlyRows}
+        <tr style="background:#f5f5f5;">
+          <td style="padding:8px; border:1px solid #ccc;"><strong>Total</strong></td>
+          <td style="padding:8px; border:1px solid #ccc; text-align:right;"><strong>${settings.currency} ${totalIncome.toLocaleString()}</strong></td>
+          <td style="padding:8px; border:1px solid #ccc; text-align:right;"><strong>${settings.currency} ${totalExpenses.toLocaleString()}</strong></td>
+          <td style="padding:8px; border:1px solid #ccc; text-align:right;"><strong>${settings.currency} ${profit.toLocaleString()}</strong></td>
+        </tr>
       </table>
     `;
     const fullHtml = getPrintHtml(innerContent, { logo: settings?.logo, businessName: settings?.businessName });

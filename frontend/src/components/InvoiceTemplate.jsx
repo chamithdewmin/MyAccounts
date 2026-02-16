@@ -102,15 +102,11 @@ const InvoiceTemplate = ({
         </Button>
       </div>
 
-      <div ref={printAreaRef} className="invoice-a4 bg-white text-gray-900" data-invoice-theme={themeColor}>
+      <div ref={printAreaRef} className="invoice-a4 invoice-a4-wrapper bg-white text-gray-900" data-invoice-theme={themeColor}>
         {/* Header: Logo left, INVOICE right (full-width accent) */}
         <div className="flex justify-between items-start mb-6">
-          <div className="flex items-center gap-3">
-            <img src={settings.logo || defaultLogo} alt="logo" className="h-12 w-12 object-contain" />
-            <div>
-              <p className="text-lg font-bold text-gray-900">{settings.businessName || 'My Business'}</p>
-              <p className="text-xs text-gray-500 uppercase tracking-wide">Invoice</p>
-            </div>
+          <div>
+            <img src={settings.logo || defaultLogo} alt="logo" className="h-12 w-auto object-contain" />
           </div>
           <div className="text-right">
             <div
@@ -197,36 +193,27 @@ const InvoiceTemplate = ({
           </div>
         </div>
 
-        {/* Bottom section: Payment Method + Terms | Signature */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-8 avoid-break">
-          <div>
-            {invoice.bankDetails && (
-              <div className="mb-4">
-                <h3 className="font-bold text-sm text-gray-900 mb-2">Payment Method</h3>
-                <div className="text-sm text-gray-600 space-y-1">
-                  <p><span className="font-medium">Account No:</span> {invoice.bankDetails.accountNumber}</p>
-                  <p><span className="font-medium">Name:</span> {invoice.bankDetails.accountName}</p>
-                  <p><span className="font-medium">Bank:</span> {invoice.bankDetails.bankName}</p>
-                  {invoice.bankDetails.branch && (
-                    <p><span className="font-medium">Branch:</span> {invoice.bankDetails.branch}</p>
-                  )}
-                </div>
+        {/* Bottom section: Payment Method + Terms */}
+        <div className="mt-8 avoid-break">
+          {invoice.bankDetails && (
+            <div className="mb-4">
+              <h3 className="font-bold text-sm text-gray-900 mb-2">Payment Method</h3>
+              <div className="text-sm text-gray-600 space-y-1">
+                <p><span className="font-medium">Account No:</span> {invoice.bankDetails.accountNumber}</p>
+                <p><span className="font-medium">Name:</span> {invoice.bankDetails.accountName}</p>
+                <p><span className="font-medium">Bank:</span> {invoice.bankDetails.bankName}</p>
+                {invoice.bankDetails.branch && (
+                  <p><span className="font-medium">Branch:</span> {invoice.bankDetails.branch}</p>
+                )}
               </div>
-            )}
-            {invoice.notes && (
-              <div>
-                <h3 className="font-bold text-sm text-gray-900 mb-2">Terms & Conditions / Notes</h3>
-                <p className="text-sm text-gray-600">{invoice.notes}</p>
-              </div>
-            )}
-          </div>
-          <div className="text-right md:text-left">
-            <p className="text-sm font-semibold text-gray-900 mb-1" style={{ fontFamily: 'cursive' }}>
-              Digital Signature
-            </p>
-            <div className="border-b-2 border-gray-400 w-32 h-8 mb-2 inline-block" />
-            <p className="text-xs text-gray-500">Company signature</p>
-          </div>
+            </div>
+          )}
+          {invoice.notes && (
+            <div>
+              <h3 className="font-bold text-sm text-gray-900 mb-2">Terms & Conditions / Notes</h3>
+              <p className="text-sm text-gray-600">{invoice.notes}</p>
+            </div>
+          )}
         </div>
 
         {/* Footer */}
@@ -241,6 +228,21 @@ const InvoiceTemplate = ({
             <span>{settings.businessName || ''}</span>
           </div>
         </div>
+
+        {/* Geometric accent - bottom right corner */}
+        <svg
+          className="invoice-geometric-accent"
+          viewBox="0 0 100 100"
+          fill="none"
+          xmlns="http://www.w3.org/2000/svg"
+          preserveAspectRatio="xMaxYMax meet"
+        >
+          <path d="M100 100 L100 20 L60 60 L100 100 Z" fill="#374151" />
+          <path d="M100 20 L60 60 L80 20 L100 20 Z" fill={themeColor} />
+          <path d="M60 60 L20 100 L60 100 L100 100 L100 60 Z" fill="#9CA3AF" />
+          <path d="M60 60 L40 80 L60 80 L80 60 Z" fill="#6B7280" />
+          <path d="M80 20 L60 60 L80 60 L100 20 Z" fill="#D1D5DB" />
+        </svg>
       </div>
 
       <style jsx global>{`
@@ -250,6 +252,20 @@ const InvoiceTemplate = ({
           margin: auto;
           padding: 14mm 6mm;
           box-sizing: border-box;
+        }
+        .invoice-a4-wrapper {
+          position: relative;
+          overflow: hidden;
+        }
+        .invoice-geometric-accent {
+          position: absolute;
+          bottom: 0;
+          right: 0;
+          width: 100px;
+          height: 100px;
+          pointer-events: none;
+          -webkit-print-color-adjust: exact;
+          print-color-adjust: exact;
         }
         .invoice-table {
           border-collapse: collapse;

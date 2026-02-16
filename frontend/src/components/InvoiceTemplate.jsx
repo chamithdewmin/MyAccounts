@@ -115,7 +115,7 @@ const InvoiceTemplate = ({
         {/* Header */}
         <div className="invoice-header px-10 pt-8 pb-6">
           <div className="flex justify-between items-start">
-            <img src={settings.logo || defaultLogo} alt="logo" className="h-12 w-auto object-contain" />
+            <img src={settings.logo || defaultLogo} alt="logo" className="h-12 w-auto object-contain -ml-3" />
             <div
               className="invoice-badge text-white px-8 py-4 -mr-10 shadow-lg"
               style={{
@@ -207,20 +207,17 @@ const InvoiceTemplate = ({
         {/* Totals */}
         <div className="px-10 pb-8 avoid-break">
           <div className="flex justify-end">
-            <div
-              className="w-80 rounded-lg p-6 shadow-xl text-white"
-              style={{ backgroundColor: themeColor }}
-            >
+            <div className="w-80 p-6" style={{ color: themeColor }}>
               <div className="space-y-3">
                 <div className="flex justify-between text-sm">
-                  <span className="opacity-90">Subtotal</span>
+                  <span>Subtotal</span>
                   <span className="font-semibold">{currency} {invoice.subtotal?.toLocaleString()}</span>
                 </div>
                 <div className="flex justify-between text-sm">
-                  <span className="opacity-90">Tax ({invoice.taxRate || 0}%)</span>
+                  <span>Tax ({invoice.taxRate || 0}%)</span>
                   <span className="font-semibold">{currency} {invoice.taxAmount?.toLocaleString()}</span>
                 </div>
-                <div className="border-t border-white/30 pt-3 flex justify-between items-center">
+                <div className="pt-3 flex justify-between items-center border-t-2" style={{ borderColor: themeColor }}>
                   <span className="text-lg font-bold">Total</span>
                   <span className="text-2xl font-bold">{currency} {invoice.total?.toLocaleString()}</span>
                 </div>
@@ -267,11 +264,14 @@ const InvoiceTemplate = ({
               <h3 className="text-sm font-bold text-gray-800 uppercase tracking-wide">Terms & Conditions</h3>
             </div>
             <p className="text-xs text-gray-600 leading-relaxed">
-              {invoice.notes || 'Please make payment within the agreed terms. Thank you for your business.'}
+              {invoice.notes || 'Please make payment within the agreed terms.'}
             </p>
           </div>
         </div>
 
+        <div className="py-8 text-center">
+          <p className="text-sm font-semibold text-gray-700">Thank you for your business!</p>
+        </div>
       </div>
 
       <style jsx global>{`

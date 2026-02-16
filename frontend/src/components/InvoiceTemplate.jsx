@@ -103,12 +103,27 @@ const InvoiceTemplate = ({
       </div>
 
       <div ref={printAreaRef} className="invoice-a4 bg-white text-gray-900" data-invoice-theme={themeColor}>
-        {/* Header: Logo left, INVOICE right (full-width accent) */}
-        <div className="flex justify-between items-start mb-6">
-          <div>
-            <img src={settings.logo || defaultLogo} alt="logo" className="h-12 w-auto object-contain" />
+        {/* Header: Logo */}
+        <div className="mb-6">
+          <img src={settings.logo || defaultLogo} alt="logo" className="h-12 w-auto object-contain" />
+        </div>
+
+        {/* Bill To (left) | INVOICE area (right) - parallel */}
+        <div className="flex justify-between items-start gap-8 mb-6">
+          <div className="flex items-start gap-4 flex-1">
+            <div className="w-0.5 h-16 flex-shrink-0 rounded" style={{ backgroundColor: themeColor }} />
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-wide text-gray-500 mb-1">Bill To</p>
+              <p className="text-base font-bold text-gray-900">{invoice.clientName || '—'}</p>
+              {invoice.clientPhone && (
+                <p className="text-sm text-gray-600">P. {invoice.clientPhone}</p>
+              )}
+              {invoice.clientEmail && (
+                <p className="text-sm text-gray-600">E. {invoice.clientEmail}</p>
+              )}
+            </div>
           </div>
-          <div className="text-right mt-10">
+          <div className="text-right flex-shrink-0">
             <div
               className="inline-flex items-center justify-center rounded px-6 py-3"
               style={{ backgroundColor: themeColor }}
@@ -121,21 +136,6 @@ const InvoiceTemplate = ({
               <p className="text-sm text-gray-600">Invoice # {invoice.invoiceNumber}</p>
               <p className="text-sm text-gray-600">Date: {formatDate(invoice.createdAt)}</p>
             </div>
-          </div>
-        </div>
-
-        {/* Bill To section */}
-        <div className="flex items-start gap-4 mb-6">
-          <div className="w-0.5 h-16 flex-shrink-0 rounded" style={{ backgroundColor: themeColor }} />
-          <div>
-            <p className="text-xs font-semibold uppercase tracking-wide text-gray-500 mb-1">Bill To</p>
-            <p className="text-base font-bold text-gray-900">{invoice.clientName || '—'}</p>
-            {invoice.clientPhone && (
-              <p className="text-sm text-gray-600">P. {invoice.clientPhone}</p>
-            )}
-            {invoice.clientEmail && (
-              <p className="text-sm text-gray-600">E. {invoice.clientEmail}</p>
-            )}
           </div>
         </div>
 

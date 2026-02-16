@@ -1,12 +1,11 @@
 import React, { useMemo, useState } from 'react';
 import { Helmet } from 'react-helmet';
 import { motion } from 'framer-motion';
-import { Download, Upload, RefreshCw, Plus, DollarSign, Repeat, PieChart, Pencil, Trash2, MessageSquare } from 'lucide-react';
+import { Download, Upload, RefreshCw, Plus, DollarSign, Repeat, PieChart, Pencil, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/components/ui/use-toast';
 import { useFinance } from '@/contexts/FinanceContext';
-import RemindBySmsModal from '@/components/RemindBySmsModal';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
 
@@ -33,9 +32,6 @@ const Inventory = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingExpense, setEditingExpense] = useState(null);
-  const [remindSmsOpen, setRemindSmsOpen] = useState(false);
-  const [remindSmsItem, setRemindSmsItem] = useState(null);
-
   const exportCSV = () => {
     const headers = ['ID', 'Category', 'Amount', 'Date', 'Recurring', 'Notes'];
     const rows = expenses.map(exp => [
@@ -438,14 +434,6 @@ const Inventory = () => {
                         <div className="flex items-center justify-center gap-2">
                           <button
                             type="button"
-                            onClick={() => { setRemindSmsItem(exp); setRemindSmsOpen(true); }}
-                            className="p-2 hover:bg-secondary rounded-lg transition-colors text-blue-500 hover:text-blue-400"
-                            title="Remind by SMS"
-                          >
-                            <MessageSquare className="w-4 h-4" />
-                          </button>
-                          <button
-                            type="button"
                             onClick={() => openEdit(exp)}
                             className="p-2 hover:bg-secondary rounded-lg transition-colors text-green-500 hover:text-green-400"
                             title="Edit"
@@ -599,14 +587,6 @@ const Inventory = () => {
           </form>
         </DialogContent>
       </Dialog>
-
-      <RemindBySmsModal
-        open={remindSmsOpen}
-        onOpenChange={setRemindSmsOpen}
-        item={remindSmsItem}
-        type="expense"
-        settings={settings}
-      />
     </>
   );
 };

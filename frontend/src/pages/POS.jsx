@@ -1,12 +1,11 @@
 import React, { useMemo, useState } from 'react';
 import { Helmet } from 'react-helmet';
 import { motion } from 'framer-motion';
-import { Plus, Search, DollarSign, Wallet, CreditCard, Download, RefreshCw, Pencil, Trash2, MessageSquare } from 'lucide-react';
+import { Plus, Search, DollarSign, Wallet, CreditCard, Download, RefreshCw, Pencil, Trash2 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/components/ui/use-toast';
 import { useFinance } from '@/contexts/FinanceContext';
-import RemindBySmsModal from '@/components/RemindBySmsModal';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
 
@@ -31,9 +30,6 @@ const POS = () => {
   });
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingIncome, setEditingIncome] = useState(null);
-  const [remindSmsOpen, setRemindSmsOpen] = useState(false);
-  const [remindSmsItem, setRemindSmsItem] = useState(null);
-
   const handleChange = (field, value) => {
     setForm((prev) => ({ ...prev, [field]: value }));
   };
@@ -367,14 +363,6 @@ const POS = () => {
                         <div className="flex items-center justify-center gap-2">
                           <button
                             type="button"
-                            onClick={() => { setRemindSmsItem(income); setRemindSmsOpen(true); }}
-                            className="p-2 hover:bg-secondary rounded-lg transition-colors text-blue-500 hover:text-blue-400"
-                            title="Remind by SMS"
-                          >
-                            <MessageSquare className="w-4 h-4" />
-                          </button>
-                          <button
-                            type="button"
                             onClick={() => openEdit(income)}
                             className="p-2 hover:bg-secondary rounded-lg transition-colors text-green-500 hover:text-green-400"
                             title="Edit"
@@ -500,15 +488,6 @@ const POS = () => {
           </form>
         </DialogContent>
       </Dialog>
-
-      <RemindBySmsModal
-        open={remindSmsOpen}
-        onOpenChange={setRemindSmsOpen}
-        item={remindSmsItem}
-        type="income"
-        settings={settings}
-        clients={clients}
-      />
     </>
   );
 };

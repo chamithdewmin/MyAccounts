@@ -1,5 +1,4 @@
 import defaultLogo from '@/assets/logo.png';
-import html2pdf from 'html2pdf.js';
 
 /**
  * Wraps report/print content with logo (top-left) and "Generated from MyAccounts" footer.
@@ -15,69 +14,76 @@ export function getPrintHtml(innerContent, options = {}) {
     <span style="font-size:18px; font-weight:bold; color:#000;">${businessName || 'Report'}</span>
   </div>`;
   const footer = '<p style="font-size:10px; color:#666; margin-top:32px; padding-top:16px; border-top:1px solid #ddd;">This document was generated from MyAccounts</p>';
-  return `<div style="padding:20px; font-family:sans-serif; color:#000 !important; background:#fff !important; font-size:14px; line-height:1.4;">${logoHtml}${innerContent}${footer}</div>`;
+  return `<div style="padding:20px; font-family:sans-serif; color:#000; background:#fff; font-size:14px; line-height:1.4;">${logoHtml}${innerContent}${footer}</div>`;
 }
 
 /**
- * Downloads report HTML as a PDF file directly (no print dialog).
- * @param {string} html - Full HTML content
+ * Full HTML document for report print/PDF - ensures correct styling and A4 layout.
+ */
+function getReportDocumentHtml(html, filename) {
+  return `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>${filename.replace('.pdf', '')}</title>
+  <style>
+    * { box-sizing: border-box; }
+    body { margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #fff; color: #000; }
+    @page { size: A4; margin: 15mm; }
+    @media print {
+      body { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    }
+  </style>
+</head>
+<body>${html}</body>
+</html>`;
+}
+
+/**
+ * Downloads report as PDF. Opens print dialog with report content - user selects
+ * "Save as PDF" or "Print to PDF" to get the file. This reliably shows the same
+ * report design as on screen.
+ * @param {string} html - Full HTML content (from getPrintHtml)
  * @param {string} filename - e.g. 'balance-sheet-20260206.pdf'
  * @returns {Promise<void>}
  */
 export async function downloadReportPdf(html, filename) {
-  const container = document.createElement('div');
-  container.id = 'report-pdf-temp';
-  container.style.cssText = 'position:fixed;top:0;left:0;width:794px;min-height:400px;background:#fff;color:#000;z-index:2147483647;padding:24px;box-sizing:border-box;font-family:sans-serif;font-size:14px;';
-  container.innerHTML = html;
-  document.body.appendChild(container);
+  const fullDoc = getReportDocumentHtml(html, filename);
+  const printWindow = window.open('', '_blank');
+  if (!printWindow) {
+    throw new Error('Please allow pop-ups to download the report. You can also use Ctrl+P to print this page.');
+  }
 
-  // Force layout
-  container.offsetHeight;
+  printWindow.document.write(fullDoc);
+  printWindow.document.close();
 
-  // Wait for images
-  const imgs = container.querySelectorAll('img');
+  await new Promise((resolve) => {
+    if (printWindow.document.readyState === 'complete') {
+      resolve();
+    } else {
+      printWindow.onload = () => resolve();
+      setTimeout(resolve, 600);
+    }
+  });
+
+  const doc = printWindow.document;
+  const imgs = doc.querySelectorAll('img');
   await Promise.all(Array.from(imgs).map((img) => {
     if (img.complete) return Promise.resolve();
     return new Promise((resolve) => {
       img.onload = resolve;
       img.onerror = resolve;
-      setTimeout(resolve, 3000);
+      setTimeout(resolve, 2500);
     });
   }));
 
-  // Ensure paint before capture
-  await new Promise((r) => requestAnimationFrame(r));
-  await new Promise((r) => requestAnimationFrame(r));
-  await new Promise((r) => setTimeout(r, 500));
+  await new Promise((r) => setTimeout(r, 400));
+  printWindow.focus();
+  printWindow.print();
 
-  const opt = {
-    margin: 10,
-    filename,
-    image: { type: 'jpeg', quality: 0.98 },
-    html2canvas: { scale: 1.5, useCORS: true, allowTaint: true, logging: false, backgroundColor: '#ffffff' },
-    jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
-  };
-
-  try {
-    const blob = await html2pdf().set(opt).from(container).outputPdf('blob');
-    if (blob && blob.size > 500) {
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = filename;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      URL.revokeObjectURL(url);
-    } else {
-      // Fallback: open print dialog with content
-      const w = window.open('', '_blank');
-      w.document.write(`<!DOCTYPE html><html><head><title>Report</title></head><body>${html}</body></html>`);
-      w.document.close();
-      w.print();
-      w.close();
-    }
-  } finally {
-    container.remove();
-  }
+  printWindow.onafterprint = () => printWindow.close();
+  setTimeout(() => {
+    if (!printWindow.closed) printWindow.close();
+  }, 2000);
 }

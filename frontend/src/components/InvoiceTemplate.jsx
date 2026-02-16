@@ -22,7 +22,32 @@ const InvoiceTemplate = ({
 
   // ================= PRINT =================
   const runPrint = () => {
-    window.print();
+    const el = printAreaRef.current;
+    if (!el) {
+      window.print();
+      return;
+    }
+    const clone = el.cloneNode(true);
+    clone.style.cssText = 'position:fixed;left:0;top:0;width:210mm;min-height:297mm;background:white;color:#000;z-index:999999;padding:18mm;overflow:visible;box-sizing:border-box;';
+    clone.id = 'invoice-print-clone';
+    document.body.appendChild(clone);
+    const style = document.createElement('style');
+    style.id = 'invoice-print-style';
+    style.textContent = `
+      @page { size: A4 portrait; margin: 12mm; }
+      @media print {
+        body>*:not(#invoice-print-clone){display:none!important}
+        #invoice-print-clone{position:static!important;padding:18mm!important;display:block!important;width:100%!important;max-width:186mm!important;box-sizing:border-box!important}
+      }
+    `;
+    document.head.appendChild(style);
+    requestAnimationFrame(() => {
+      window.print();
+      setTimeout(() => {
+        document.getElementById('invoice-print-clone')?.remove();
+        document.getElementById('invoice-print-style')?.remove();
+      }, 500);
+    });
   };
 
   // ================= PDF =================

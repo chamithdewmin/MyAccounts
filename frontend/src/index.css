@@ -107,13 +107,15 @@
   body * {
     visibility: hidden;
   }
-  .print-area, .print-area * {
+  .print-area, .print-area *,
+  .invoice-a4, .invoice-a4 * {
     visibility: visible;
   }
-  .print-area {
+  .print-area, .invoice-a4 {
     position: absolute;
     left: 0;
     top: 0;
     width: 100%;
+    max-width: 210mm;
   }
 }

@@ -28,7 +28,7 @@ const InvoiceTemplate = ({
       return;
     }
     const clone = el.cloneNode(true);
-    clone.style.cssText = 'position:fixed;left:0;top:0;width:210mm;min-height:297mm;background:white;color:#000;z-index:999999;padding:18mm;overflow:visible;box-sizing:border-box;';
+    clone.style.cssText = 'position:fixed;left:0;top:0;width:182mm;max-width:182mm;min-height:297mm;background:white;color:#000;z-index:999999;padding:14mm 16mm;overflow:visible;box-sizing:border-box;';
     clone.id = 'invoice-print-clone';
     document.body.appendChild(clone);
     const style = document.createElement('style');
@@ -37,7 +37,7 @@ const InvoiceTemplate = ({
       @page { size: A4 portrait; margin: 12mm; }
       @media print {
         body>*:not(#invoice-print-clone){display:none!important}
-        #invoice-print-clone{position:static!important;padding:18mm!important;display:block!important;width:100%!important;max-width:186mm!important;box-sizing:border-box!important}
+        #invoice-print-clone{position:static!important;padding:14mm 16mm!important;display:block!important;width:182mm!important;max-width:182mm!important;box-sizing:border-box!important}
       }
     `;
     document.head.appendChild(style);
@@ -58,7 +58,7 @@ const InvoiceTemplate = ({
     const filename = `Invoice-${invoice.invoiceNumber || 'invoice'}.pdf`;
 
     const opt = {
-      margin: [12, 12, 12, 12],
+      margin: [12, 14, 12, 14],
       filename,
       image: { type: 'jpeg', quality: 1 },
       html2canvas: {
@@ -209,10 +209,11 @@ const InvoiceTemplate = ({
       {/* ================= PRINT CSS ================= */}
       <style jsx global>{`
         .invoice-a4 {
-          width: 210mm;
+          width: 182mm;
+          max-width: 182mm;
           min-height: 297mm;
           margin: auto;
-          padding: 18mm;
+          padding: 14mm 16mm;
           box-sizing: border-box;
         }
 

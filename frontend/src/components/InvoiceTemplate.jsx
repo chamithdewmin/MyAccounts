@@ -276,8 +276,8 @@ const InvoiceTemplate = ({
 
       <style jsx global>{`
         .invoice-a4 {
-          width: 100%;
-          max-width: 56rem;
+          width: 182mm;
+          max-width: 182mm;
           margin: auto;
           box-sizing: border-box;
         }
@@ -301,7 +301,7 @@ const InvoiceTemplate = ({
         @media print {
           body { background: white; }
           .print\\:hidden { display: none !important; }
-          .invoice-a4 { box-shadow: none !important; max-width: 182mm; }
+          .invoice-a4 { box-shadow: none !important; width: 182mm !important; max-width: 182mm !important; }
           .invoice-a4 [style*="background"],
           .invoice-a4 [style*="background-color"],
           .invoice-a4 *[style] {

@@ -1,8 +1,8 @@
-import React, { useRef } from 'react';
+import React, { useRef, useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Printer, Download } from 'lucide-react';
-import { downloadReportPdf } from '@/utils/pdfPrint';
+import html2pdf from 'html2pdf.js';
 
 /**
  * Modal that shows report preview with Print and Download PDF buttons (like invoice popup).
@@ -45,11 +45,25 @@ const ReportPreviewModal = ({ open, onOpenChange, html, filename, reportTitle = 
     });
   };
 
+  const [downloading, setDownloading] = useState(false);
+
   const handleDownloadPdf = async () => {
+    const el = contentRef.current;
+    if (!el) return;
+    setDownloading(true);
     try {
-      await downloadReportPdf(html, filename);
+      const opt = {
+        margin: [12, 12, 12, 12],
+        filename,
+        image: { type: 'jpeg', quality: 0.98 },
+        html2canvas: { scale: 2, useCORS: true, allowTaint: true, logging: false },
+        jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
+      };
+      await html2pdf().set(opt).from(el).save();
     } catch (err) {
       console.error('Report PDF download failed:', err);
+    } finally {
+      setDownloading(false);
     }
   };
 
@@ -65,9 +79,9 @@ const ReportPreviewModal = ({ open, onOpenChange, html, filename, reportTitle = 
               <Printer className="h-4 w-4 mr-2" />
               Print
             </Button>
-            <Button size="sm" onClick={handleDownloadPdf}>
+            <Button size="sm" onClick={handleDownloadPdf} disabled={downloading}>
               <Download className="h-4 w-4 mr-2" />
-              Download PDF
+              {downloading ? 'Downloading...' : 'Download PDF'}
             </Button>
           </div>
           <div

@@ -122,7 +122,7 @@ const InvoiceTemplate = ({
             <p className="font-bold text-lg mt-2" style={{ color: themeColor }}>TOTAL DUE {currency} {invoice.total?.toLocaleString()}</p>
           </div>
           <div className="text-right">
-            <h1 className="text-2xl font-bold text-white px-4 py-2 rounded" style={{ backgroundColor: themeColor }}>INVOICE</h1>
+            <h1 className="text-2xl font-bold text-white px-4 py-2 rounded text-center" style={{ backgroundColor: themeColor }}>INVOICE</h1>
             <h2 className="font-bold mb-2 mt-4 text-sm text-gray-700">Invoice to:</h2>
             <p className="font-semibold">{invoice.clientName}</p>
             {invoice.clientEmail && (
@@ -140,7 +140,7 @@ const InvoiceTemplate = ({
             <thead>
               <tr style={{ backgroundColor: themeColor, color: 'white' }}>
                 <th className="text-left py-3 px-3">Item Description</th>
-                <th className="text-center py-3 px-3">Unit Price</th>
+                <th className="text-right py-3 px-3">Unit Price</th>
                 <th className="text-center py-3 px-3">Qty</th>
                 <th className="text-right py-3 px-3">Total</th>
               </tr>
@@ -148,7 +148,7 @@ const InvoiceTemplate = ({
             <tbody>
               {items.map((item, i) => (
                 <tr key={i} className={i % 2 === 0 ? 'bg-gray-50' : 'bg-white'}>
-                  <td className="py-3 px-3 border-b border-gray-200">
+                  <td className="py-3 px-3 border-b border-gray-200 text-left">
                     <div className="font-semibold">{item.description}</div>
                     {item.serviceType && (
                       <div className="text-sm text-gray-500">
@@ -156,7 +156,7 @@ const InvoiceTemplate = ({
                       </div>
                     )}
                   </td>
-                  <td className="text-center py-3 px-3 border-b border-gray-200">
+                  <td className="text-right py-3 px-3 border-b border-gray-200">
                     {currency} {(item.price || 0).toLocaleString()}
                   </td>
                   <td className="text-center py-3 px-3 border-b border-gray-200">
@@ -224,11 +224,10 @@ const InvoiceTemplate = ({
         .invoice-table th,
         .invoice-table td {
           border-bottom: 1px solid #e5e7eb;
-          padding: 8px;
+          padding: 8px 12px;
         }
 
         .invoice-table th {
-          text-align: left;
           font-weight: bold;
           -webkit-print-color-adjust: exact;
           print-color-adjust: exact;

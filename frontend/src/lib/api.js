@@ -35,6 +35,8 @@ export const api = {
     forgotPassword: (phone) => request('/auth/forgot-password', { method: 'POST', body: JSON.stringify({ phone }) }),
     verifyOtp: (phone, otp) => request('/auth/verify-otp', { method: 'POST', body: JSON.stringify({ phone, otp }) }),
     resetPassword: (resetToken, newPassword) => request('/auth/reset-password', { method: 'POST', body: JSON.stringify({ resetToken, newPassword }) }),
+    sendResetDataOtp: () => request('/auth/send-reset-data-otp', { method: 'POST' }),
+    confirmResetData: (otp) => request('/auth/confirm-reset-data', { method: 'POST', body: JSON.stringify({ otp }) }),
   },
   clients: {
     list: () => request('/clients'),

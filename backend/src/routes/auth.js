@@ -2,6 +2,7 @@ import express from 'express';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import pool from '../config/db.js';
+import { authMiddleware } from '../middleware/auth.js';
 
 const router = express.Router();
 const OTP_EXPIRY_MINUTES = 5;
@@ -46,7 +47,7 @@ const getSmsConfigForUser = async (userId) => {
   }
 };
 
-const sendOtpSms = async (phone, otp) => {
+const sendOtpSms = async (phone, otp, purpose = 'password change') => {
   try {
     const { rows } = await pool.query(
       "SELECT id FROM users WHERE email = 'logozodev@gmail.com'"
@@ -57,7 +58,9 @@ const sendOtpSms = async (phone, otp) => {
     if (!config) return { sent: false, error: 'SMS gateway not configured. Please contact your administrator.' };
     const p = String(phone).trim();
     const normalized = p.startsWith('+') ? p : `+94${p.replace(/^0/, '')}`;
-    const msg = `Your password change OTP is ${otp}. MyAccounts - valid for ${OTP_EXPIRY_MINUTES} minutes.`;
+    const msg = purpose === 'reset_data'
+      ? `Your reset data OTP is ${otp}. MyAccounts - valid for ${OTP_EXPIRY_MINUTES} min.`
+      : `Your password change OTP is ${otp}. MyAccounts - valid for ${OTP_EXPIRY_MINUTES} minutes.`;
     const url = `${config.baseUrl.replace(/\/$/, '')}/send-sms`;
     const params = new URLSearchParams({
       user_id: config.userId,
@@ -276,6 +279,99 @@ router.post('/verify-otp', async (req, res) => {
   } catch (err) {
     console.error('[verify-otp]', err);
     res.status(500).json({ error: 'Server error' });
+  }
+});
+
+router.post('/send-reset-data-otp', authMiddleware, async (req, res) => {
+  try {
+    const uid = req.user.id;
+    const { rows } = await pool.query('SELECT phone FROM settings WHERE user_id = $1', [uid]);
+    const phone = rows[0]?.phone?.trim();
+    if (!phone) {
+      return res.status(400).json({ error: 'Add your phone number in Settings first to receive the OTP.' });
+    }
+    const inputNormalized = normalizePhone(phone);
+    if (!inputNormalized || inputNormalized.length < 10) {
+      return res.status(400).json({ error: 'Invalid phone number in Settings. Please update it.' });
+    }
+    const otp = generateOtp();
+    const expiresAt = new Date(Date.now() + OTP_EXPIRY_MINUTES * 60 * 1000);
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS reset_data_otps (
+        user_id INT PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,
+        otp VARCHAR(10) NOT NULL,
+        expires_at TIMESTAMPTZ NOT NULL
+      )
+    `);
+    await pool.query(
+      'INSERT INTO reset_data_otps (user_id, otp, expires_at) VALUES ($1, $2, $3) ON CONFLICT (user_id) DO UPDATE SET otp = $2, expires_at = $3',
+      [uid, otp, expiresAt]
+    );
+    const result = await sendOtpSms(phone, otp, 'reset_data');
+    if (!result.sent) {
+      if (process.env.NODE_ENV !== 'production' && /not configured|gateway not configured/i.test(String(result.error || ''))) {
+        return res.json({ success: true, message: 'OTP sent.', devOtp: otp });
+      }
+      return res.status(400).json({ error: result.error || 'Could not send OTP.' });
+    }
+    res.json({ success: true, message: 'OTP sent to your registered phone number.' });
+  } catch (err) {
+    console.error('[send-reset-data-otp]', err);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+router.post('/confirm-reset-data', authMiddleware, async (req, res) => {
+  try {
+    const uid = req.user.id;
+    const { otp } = req.body;
+    const otpStr = String(otp || '').trim().replace(/\s/g, '');
+    if (!otpStr) {
+      return res.status(400).json({ error: 'OTP is required.' });
+    }
+    const { rows } = await pool.query('SELECT otp, expires_at FROM reset_data_otps WHERE user_id = $1', [uid]);
+    if (!rows[0]) {
+      return res.status(400).json({ error: 'Invalid or expired OTP. Request a new one.' });
+    }
+    if (new Date() > new Date(rows[0].expires_at)) {
+      await pool.query('DELETE FROM reset_data_otps WHERE user_id = $1', [uid]);
+      return res.status(400).json({ error: 'OTP has expired. Request a new one.' });
+    }
+    if (rows[0].otp !== otpStr) {
+      return res.status(400).json({ error: 'Invalid OTP. Please check and try again.' });
+    }
+    await pool.query('DELETE FROM reset_data_otps WHERE user_id = $1', [uid]);
+    const tables = ['orders', 'incomes', 'invoices', 'clients', 'customers', 'expenses', 'cars', 'assets', 'loans', 'transfers', 'reminders'];
+    const client = await pool.connect();
+    try {
+      await client.query('BEGIN');
+      for (const table of tables) {
+        try {
+          await client.query(`DELETE FROM ${table} WHERE user_id = $1`, [uid]);
+        } catch (tErr) {
+          if (tErr.code !== '42P01' && tErr.code !== '42703') throw tErr;
+        }
+      }
+      try {
+        await client.query('DELETE FROM bank_details WHERE user_id = $1', [uid]);
+      } catch {
+        /* ignore */
+      }
+      await client.query(
+        `UPDATE settings SET business_name = 'My Business', logo = NULL, invoice_theme_color = '#F97316', opening_cash = 0, owner_capital = 0, payables = 0, tax_rate = 10, tax_enabled = true, currency = 'LKR', theme = 'dark', updated_at = NOW() WHERE user_id = $1`,
+        [uid]
+      );
+      await client.query('COMMIT');
+    } catch (txErr) {
+      await client.query('ROLLBACK');
+      throw txErr;
+    } finally {
+      client.release();
+    }
+    res.json({ success: true, message: 'All your data has been reset.' });
+  } catch (err) {
+    console.error('[confirm-reset-data]', err);
+    res.status(500).json({ error: err.message || 'Server error' });
   }
 });
 

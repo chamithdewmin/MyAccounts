@@ -226,7 +226,7 @@ const InvoiceTemplate = ({
           </div>
           <div>
             <div className="text-xs font-bold text-gray-700 uppercase tracking-wide mb-2">Terms & Conditions</div>
-            <p className="text-sm text-gray-600 leading-relaxed">{invoice.terms || 'Payment is due on receipt. Work remains property of LogozoDev until full payment. One round of revisions included. Contact hello@logozodev.com for any queries.'}</p>
+            <p className="text-sm text-gray-600 leading-relaxed">{invoice.terms || 'Payment is due on receipt. Work remains property of LogozoDev until full payment. One round of revisions included.'}</p>
           </div>
         </div>
 

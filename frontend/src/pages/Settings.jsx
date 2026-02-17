@@ -292,6 +292,7 @@ const Settings = () => {
             <Button
               type="button"
               size="sm"
+              className="mt-4"
               disabled={!bankFormChanged || bankSaving}
               onClick={async () => {
                 const an = String(bankForm.accountNumber || '').trim();

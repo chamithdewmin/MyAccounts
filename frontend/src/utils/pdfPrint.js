@@ -1,5 +1,3 @@
-import defaultLogo from '@/assets/logo.png';
-
 /**
  * Wraps report/print content with logo (top-left) and "Generated from MyAccounts" footer.
  * @param {string} innerContent - The main HTML content
@@ -8,10 +6,11 @@ import defaultLogo from '@/assets/logo.png';
  */
 export function getPrintHtml(innerContent, options = {}) {
   const { logo } = options;
-  const logoSrc = logo || defaultLogo;
-  const logoHtml = `<div style="margin-bottom:20px; padding-bottom:16px; border-bottom:2px solid #000;">
-    <img src="${logoSrc}" alt="Logo" style="height:48px; width:auto; object-fit:contain;" onerror="this.style.display='none'" />
-  </div>`;
+  const logoHtml = logo
+    ? `<div style="margin-bottom:20px; padding-bottom:16px; border-bottom:2px solid #000;">
+    <img src="${logo}" alt="Logo" style="height:48px; width:auto; object-fit:contain;" onerror="this.style.display='none'" />
+  </div>`
+    : '';
   const footer = '<p style="font-size:10px; color:#666; margin-top:32px; padding-top:16px; border-top:1px solid #ddd;">This document was generated from MyAccounts</p>';
   return `<div style="padding:20px; font-family:sans-serif; color:#000; background:#fff; font-size:14px; line-height:1.4;">${logoHtml}${innerContent}${footer}</div>`;
 }

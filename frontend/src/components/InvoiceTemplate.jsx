@@ -1,7 +1,6 @@
 import React, { useEffect, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { useFinance } from '@/contexts/FinanceContext';
-import defaultLogo from '@/assets/logo.png';
 import html2pdf from 'html2pdf.js';
 
 const InvoiceTemplate = ({
@@ -114,14 +113,16 @@ const InvoiceTemplate = ({
         {/* Header: Logo (upload area) + Company info left | INVOICE + Balance right */}
         <div className="invoice-header px-10 pt-8 pb-6 flex justify-between items-start gap-8">
           <div className="flex flex-col gap-3">
-            {/* Logo only - no red box, from Settings > Invoice Logo upload */}
-            <div className="invoice-logo-area h-14 flex items-center">
-              <img
-                src={settings?.logo || defaultLogo}
-                alt="Logo"
-                className="h-14 w-auto max-w-[140px] object-contain"
-              />
-            </div>
+            {/* Logo only - from Settings > Invoice Logo upload (no default text logo) */}
+            {settings?.logo && (
+              <div className="invoice-logo-area h-14 flex items-center">
+                <img
+                  src={settings.logo}
+                  alt="Logo"
+                  className="h-14 w-auto max-w-[140px] object-contain"
+                />
+              </div>
+            )}
             <div className="text-sm text-gray-800 space-y-0.5">
               <p className="font-medium">{settings?.businessName || 'My Business'}</p>
               {settings?.address && <p>{settings.address}</p>}
@@ -130,11 +131,11 @@ const InvoiceTemplate = ({
             </div>
           </div>
           <div className="text-right">
-            <div className="text-2xl font-bold text-gray-900 mb-1">INVOICE</div>
-            <div className="text-sm text-gray-600">{invoice.invoiceNumber}</div>
+            <div className="text-2xl font-bold text-black mb-1">INVOICE</div>
+            <div className="text-sm text-black">{invoice.invoiceNumber}</div>
             <div className="mt-2 pt-2 border-t border-gray-200">
-              <div className="text-xs text-gray-500">Balance Due</div>
-              <div className="text-lg font-bold text-gray-900">
+              <div className="text-xs text-black">Balance Due</div>
+              <div className="text-lg font-bold text-black">
                 {currency} {(invoice.status === 'paid' ? 0 : invoice.total || 0).toLocaleString()}
               </div>
             </div>
@@ -179,17 +180,17 @@ const InvoiceTemplate = ({
             </thead>
             <tbody>
               {items.map((item, i) => (
-                <tr key={i} className="border-b border-gray-200">
-                  <td className="py-4 px-3 text-sm text-gray-600">{i + 1}</td>
+                <tr key={i} className="border-b border-gray-200 text-black">
+                  <td className="py-4 px-3 text-sm">{i + 1}</td>
                   <td className="py-4 px-3">
-                    <div className="text-sm text-gray-800">{item.description}</div>
-                    {item.sku && <div className="text-xs text-gray-500">SKU: {item.sku}</div>}
+                    <div className="text-sm">{item.description}</div>
+                    {item.sku && <div className="text-xs text-gray-600">SKU: {item.sku}</div>}
                   </td>
-                  <td className="py-4 px-3 text-sm text-gray-800 text-center">{item.quantity ?? 1}</td>
-                  <td className="py-4 px-3 text-sm text-gray-800 text-right">
+                  <td className="py-4 px-3 text-sm text-center">{item.quantity ?? 1}</td>
+                  <td className="py-4 px-3 text-sm text-right">
                     {(item.price || 0).toLocaleString()}
                   </td>
-                  <td className="py-4 px-3 text-sm font-medium text-gray-800 text-right">
+                  <td className="py-4 px-3 text-sm font-medium text-right">
                     {((item.price || 0) * (item.quantity ?? 1)).toLocaleString()}
                   </td>
                 </tr>
@@ -198,12 +199,12 @@ const InvoiceTemplate = ({
           </table>
         </div>
 
-        {/* Summary: Sub Total, Total, Payment Made, Balance Due */}
+        {/* Summary: Sub Total, Total, Payment Made, Balance Due - black text */}
         <div className="px-10 pb-6 avoid-break">
           <div className="flex justify-end pl-4">
-            <div className="w-80 space-y-2 text-sm">
+            <div className="w-80 space-y-2 text-sm text-black">
               <div className="flex justify-between">
-                <span className="text-gray-600">Sub Total</span>
+                <span>Sub Total</span>
                 <span className="font-medium">{invoice.subtotal?.toLocaleString()}</span>
               </div>
               <div className="flex justify-between text-base font-bold">
@@ -211,7 +212,7 @@ const InvoiceTemplate = ({
                 <span>{currency} {invoice.total?.toLocaleString()}</span>
               </div>
               {invoice.status === 'paid' && (
-                <div className="flex justify-between text-gray-600">
+                <div className="flex justify-between">
                   <span>Payment Made</span>
                   <span>(-) {invoice.total?.toLocaleString()}</span>
                 </div>

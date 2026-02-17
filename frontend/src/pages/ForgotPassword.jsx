@@ -8,7 +8,6 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { AlertCircle, CheckCircle, Eye, EyeOff } from 'lucide-react';
 import loginBackground from '@/assets/login-background.webp';
-import loginLogo from '@/assets/login logo.png';
 import { APP_VERSION } from '@/constants';
 
 const STEPS = { PHONE: 1, OTP: 2, PASSWORD: 3 };
@@ -114,7 +113,7 @@ const ForgotPassword = () => {
         >
           <div className="bg-[#1e1e1e] rounded-3xl shadow-xl p-8 sm:p-10">
             <div className="flex justify-center mb-6">
-              <img src={loginLogo} alt="MyAccounts" className="h-10 object-contain" />
+              <span className="text-2xl font-semibold text-[#D3D3D3]">MyAccounts</span>
             </div>
             <h2 className="text-xl font-bold text-[#D3D3D3] mb-2 text-center">Forgot Password</h2>
             <p className="text-sm text-[#a0a0a0] text-center mb-6">

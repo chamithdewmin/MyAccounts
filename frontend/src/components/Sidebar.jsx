@@ -20,8 +20,6 @@ import {
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/contexts/AuthContext';
 import { useFinance } from '@/contexts/FinanceContext';
-import sidebarLogo from '@/assets/side bar logo.png';
-import sidebarLogoLight from '@/assets/side-bar-light.png';
 
 const reportItems = [
   { to: '/reports/overview', label: 'Overview Reports' },
@@ -108,7 +106,6 @@ const Sidebar = ({ isOpen, onClose }) => {
   const canManageUsers = user?.email === ADMIN_EMAIL;
   const isReportsActive = location.pathname.startsWith('/reports');
   const [reportsExpanded, setReportsExpanded] = useState(isReportsActive);
-  const logoSrc = settings.theme === 'light' ? sidebarLogoLight : sidebarLogo;
 
   useEffect(() => {
     if (isReportsActive) setReportsExpanded(true);
@@ -137,7 +134,7 @@ const Sidebar = ({ isOpen, onClose }) => {
         <div className="flex flex-col h-full">
           <div className="flex items-center justify-between p-6 border-b border-secondary">
             <div className="flex items-center">
-              <img src={logoSrc} alt="MyAccounts" className="h-8 object-contain" />
+              <span className="text-lg font-semibold text-foreground">MyAccounts</span>
             </div>
             <button
               onClick={onClose}

@@ -136,8 +136,10 @@ const Sidebar = ({ isOpen, onClose }) => {
       >
         <div className="flex flex-col h-full">
           <div className="flex items-center justify-between p-6 border-b border-secondary">
-            <div className="flex items-center">
+            <div className="flex flex-col gap-1">
               <img src={logoSrc} alt="MyAccounts" className="h-8 object-contain" />
+              <a href="mailto:hello@logozodev.com" className="text-xs text-muted-foreground hover:text-foreground">hello@logozodev.com</a>
+              <a href="tel:0741525537" className="text-xs text-muted-foreground hover:text-foreground">074 1525 537</a>
             </div>
             <button
               onClick={onClose}

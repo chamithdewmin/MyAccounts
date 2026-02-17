@@ -113,8 +113,10 @@ const ForgotPassword = () => {
           className="w-full max-w-md"
         >
           <div className="bg-[#1e1e1e] rounded-3xl shadow-xl p-8 sm:p-10">
-            <div className="flex justify-center mb-6">
+            <div className="flex flex-col items-center mb-6">
               <img src={loginLogo} alt="MyAccounts" className="h-10 object-contain" />
+              <a href="mailto:hello@logozodev.com" className="text-xs text-[#a0a0a0] mt-2 hover:text-[#D3D3D3]">hello@logozodev.com</a>
+              <a href="tel:0741525537" className="text-xs text-[#a0a0a0] hover:text-[#D3D3D3]">074 1525 537</a>
             </div>
             <h2 className="text-xl font-bold text-[#D3D3D3] mb-2 text-center">Forgot Password</h2>
             <p className="text-sm text-[#a0a0a0] text-center mb-6">

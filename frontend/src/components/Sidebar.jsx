@@ -43,9 +43,9 @@ const SIDEBAR_SECTIONS = [
   {
     title: 'SALES',
     items: [
-      { to: '/clients', icon: Users, label: 'Clients' },
-      { to: '/invoices', icon: FileText, label: 'Invoices' },
       { to: '/income', icon: CreditCard, label: 'Payments' },
+      { to: '/invoices', icon: FileText, label: 'Invoices' },
+      { to: '/clients', icon: Users, label: 'Clients' },
     ],
   },
   {

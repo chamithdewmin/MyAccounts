@@ -124,9 +124,9 @@ const InvoiceTemplate = ({
               </div>
             )}
             <div className="text-sm text-black space-y-0.5">
+              <p className="font-medium">LogozoDev</p>
               <p><a href="mailto:hello@logozodev.com" className="text-black no-underline">hello@logozodev.com</a></p>
               <p>074 1525 537</p>
-              <p className="font-medium">{settings?.businessName || 'My Business'}</p>
               {settings?.address && <p>{settings.address}</p>}
               {settings?.address && <p>{settings.address}</p>}
               {settings?.phone && <p>{settings.phone}</p>}

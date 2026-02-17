@@ -136,12 +136,6 @@ const InvoiceTemplate = ({
           <div className="text-right">
             <div className="text-2xl font-bold text-black mb-1">INVOICE</div>
             <div className="text-sm text-black">{invoice.invoiceNumber}</div>
-            <div className="mt-2 pt-2 border-t border-gray-200">
-              <div className="text-xs text-black">Balance Due</div>
-              <div className="text-lg font-bold text-black">
-                {currency} {(invoice.status === 'paid' ? 0 : invoice.total || 0).toLocaleString()}
-              </div>
-            </div>
           </div>
         </div>
 
@@ -220,10 +214,6 @@ const InvoiceTemplate = ({
                   <span>(-) {invoice.total?.toLocaleString()}</span>
                 </div>
               )}
-              <div className="flex justify-between font-bold pt-1">
-                <span>Balance Due</span>
-                <span>{currency} {(invoice.status === 'paid' ? 0 : invoice.total || 0).toLocaleString()}</span>
-              </div>
             </div>
           </div>
         </div>
@@ -236,7 +226,7 @@ const InvoiceTemplate = ({
           </div>
           <div>
             <div className="text-xs font-bold text-gray-700 uppercase tracking-wide mb-2">Terms & Conditions</div>
-            <p className="text-sm text-gray-600">{invoice.terms || ''}</p>
+            <p className="text-sm text-gray-600 leading-relaxed">{invoice.terms || 'Payment is due on receipt. Work remains property of LogozoDev until full payment. One round of revisions included. Contact hello@logozodev.com for any queries.'}</p>
           </div>
         </div>
 

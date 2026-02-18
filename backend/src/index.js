@@ -20,6 +20,7 @@ import smsRoutes from './routes/sms.js';
 import transfersRoutes from './routes/transfers.js';
 import remindersRoutes from './routes/reminders.js';
 import bankDetailsRoutes from './routes/bankDetails.js';
+import aiRoutes from './routes/ai.js';
 import pool from './config/db.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -176,6 +177,7 @@ app.use('/api/users', usersRoutes);
 app.use('/api/sms', smsRoutes);
 app.use('/api/transfers', transfersRoutes);
 app.use('/api/reminders', remindersRoutes);
+app.use('/api/ai', aiRoutes);
 
 const HOST = '0.0.0.0'; // Required for Docker: listen on all interfaces
 

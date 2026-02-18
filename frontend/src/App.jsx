@@ -21,6 +21,7 @@ import Settings from './pages/Settings';
 import Users from './pages/Users';
 import SMS from './pages/SMS';
 import Reminders from './pages/Reminders';
+import AIInsights from './pages/AIInsights';
 import Layout from './components/Layout';
 
 function App() {
@@ -51,6 +52,7 @@ function App() {
       <Route path="/" element={isAuthenticated ? <Layout /> : <Navigate to="/login" replace />}>
         <Route index element={<Navigate to="/dashboard" />} />
         <Route path="dashboard" element={<Dashboard />} />
+        <Route path="ai-insights" element={<AIInsights />} />
         <Route path="income" element={<POS />} />
         <Route path="expenses" element={<Inventory />} />
         <Route path="invoices" element={<Orders />} />

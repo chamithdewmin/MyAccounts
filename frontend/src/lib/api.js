@@ -119,6 +119,11 @@ export const api = {
     create: (data) => request('/reminders', { method: 'POST', body: JSON.stringify(data) }),
     delete: (id) => request(`/reminders/${id}`, { method: 'DELETE' }),
   },
+  ai: {
+    getSummary: () => request('/ai/summary'),
+    getSuggestions: () => request('/ai/suggestions', { method: 'POST', body: JSON.stringify({}) }),
+    ask: (question) => request('/ai/ask', { method: 'POST', body: JSON.stringify({ question: question.trim() }) }),
+  },
 };
 
 export const useApi = () => !!import.meta.env.VITE_API_URL || window.location.origin.includes('myaccounts.logozodev.com');

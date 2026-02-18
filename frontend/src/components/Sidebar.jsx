@@ -16,6 +16,7 @@ import {
   X,
   ChevronDown,
   CreditCard,
+  Sparkles,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/contexts/AuthContext';
@@ -38,6 +39,7 @@ const SIDEBAR_SECTIONS = [
     title: null, // Dashboard - no section
     items: [
       { to: '/dashboard', icon: LayoutDashboard, label: 'Dashboard' },
+      { to: '/ai-insights', icon: Sparkles, label: 'AI Insights' },
     ],
   },
   {

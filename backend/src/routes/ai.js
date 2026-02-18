@@ -366,7 +366,7 @@ async function getFinancialSummary(uid) {
     pool.query('SELECT amount, date, payment_method, category FROM expenses WHERE user_id = $1', [uid]),
     pool.query('SELECT total, status, subtotal, tax_amount FROM invoices WHERE user_id = $1', [uid]),
     pool.query('SELECT from_account, to_account, amount FROM transfers WHERE user_id = $1', [uid]),
-    pool.query('SELECT opening_cash, tax_rate, tax_enabled FROM settings WHERE user_id = $1', [uid]),
+    pool.query('SELECT opening_cash, tax_rate, tax_enabled, business_name FROM settings WHERE user_id = $1', [uid]),
   ]);
 
   const incomes = incomesRows.rows || [];
@@ -411,6 +411,10 @@ async function getFinancialSummary(uid) {
     expenseByCategory[cat] = (expenseByCategory[cat] || 0) + parseFloat(e.amount || 0);
   });
 
+  const businessName = settings.business_name || null;
+  // Extract first name from business name if available, or use "there" as fallback
+  const userName = businessName ? businessName.split(' ')[0] : null;
+
   return {
     currency: 'LKR',
     cashInHand,
@@ -429,6 +433,7 @@ async function getFinancialSummary(uid) {
     numberOfExpenses: expenses.length,
     unpaidInvoicesCount: invoices.filter((i) => String(i.status || '').toLowerCase() !== 'paid').length,
     expenseBreakdown: expenseByCategory,
+    userName, // First name or null for personalization
   };
 }
 
@@ -529,7 +534,7 @@ Give 3-5 actionable suggestions. Each should:
 • Be 1-2 sentences maximum
 • Use their currency (e.g. LKR)
 
-OUTPUT: Plain text, each suggestion on a new line or as a short bullet list. Be encouraging and make them feel confident about their next steps.`;
+OUTPUT: Plain text, each suggestion on a new line or as a short bullet list. Be encouraging and make them feel confident about their next steps.${summary.userName ? ` Occasionally use their name "${summary.userName}" naturally in 1-2 suggestions to personalize (e.g. "${summary.userName}, you should..."). Don't overuse it.` : ''}`;
 
     const userContent = `Financial summary (JSON):\n${JSON.stringify(summary, null, 2)}\n\nBased on this, what are my best next moves?`;
 
@@ -588,6 +593,8 @@ WHEN ANSWERING:
 
 COMPREHENSIVE FEATURE GUIDE:
 ${APP_FEATURES_GUIDE}
+
+PERSONALIZATION:${summary.userName ? ` The user's name is "${summary.userName}". Occasionally use their name naturally in responses (e.g. "${summary.userName}, here's how...", "Great question, ${summary.userName}!"). Don't overuse it - use it 1-2 times per response maximum, and only when it feels natural.` : ' Use a friendly, personal tone without using names.'}
 
 Remember: You're training users to become experts. Make them feel confident and show them why MyAccounts is the best choice for managing their business finances.`;
 

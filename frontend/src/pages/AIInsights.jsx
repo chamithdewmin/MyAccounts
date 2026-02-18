@@ -19,9 +19,19 @@ const AIInsights = () => {
   const currency = settings?.currency || 'LKR';
   const isLoading = suggestionsLoading || askLoading;
 
+  // Auto-scroll to bottom when messages change or when loading starts
   useEffect(() => {
-    threadRef.current?.scrollTo({ top: threadRef.current.scrollHeight, behavior: 'smooth' });
-  }, [messages]);
+    if (threadRef.current) {
+      const scrollToBottom = () => {
+        threadRef.current.scrollTo({ top: threadRef.current.scrollHeight, behavior: 'smooth' });
+      };
+      // Scroll immediately
+      scrollToBottom();
+      // Also scroll after a short delay to catch async updates
+      const timeout = setTimeout(scrollToBottom, 100);
+      return () => clearTimeout(timeout);
+    }
+  }, [messages, askLoading, suggestionsLoading]);
 
   const fetchSuggestions = async () => {
     setSuggestionsLoading(true);
@@ -29,6 +39,10 @@ const AIInsights = () => {
       const data = await api.ai.getSuggestions();
       const text = data.suggestions || '';
       setMessages((prev) => [...prev, { type: 'suggestion', content: text }]);
+      // Scroll after suggestions are added
+      setTimeout(() => {
+        threadRef.current?.scrollTo({ top: threadRef.current.scrollHeight, behavior: 'smooth' });
+      }, 100);
     } catch (err) {
       toast({
         title: 'Could not get suggestions',
@@ -46,10 +60,18 @@ const AIInsights = () => {
     if (!q || isLoading) return;
     setAskLoading(true);
     setQuestion('');
+    // Scroll to bottom immediately when question is submitted
+    setTimeout(() => {
+      threadRef.current?.scrollTo({ top: threadRef.current.scrollHeight, behavior: 'smooth' });
+    }, 50);
     try {
       const data = await api.ai.ask(q);
       const ans = data.answer || '';
       setMessages((prev) => [...prev, { type: 'qa', question: q, answer: ans }]);
+      // Scroll again after answer is added
+      setTimeout(() => {
+        threadRef.current?.scrollTo({ top: threadRef.current.scrollHeight, behavior: 'smooth' });
+      }, 100);
     } catch (err) {
       toast({
         title: 'Could not get answer',

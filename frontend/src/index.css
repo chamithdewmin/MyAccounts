@@ -4,8 +4,8 @@
 
 @layer base {
   :root {
-    /* Light theme: clean white, soft grays, orange accent */
-    --background: 0 0% 100%;
+    /* Light theme: clean white, visible borders/outlines for cards and sections */
+    --background: 0 0% 98%;
     --foreground: 222 47% 11%;
 
     --card: 0 0% 100%;
@@ -14,10 +14,11 @@
     --primary: 20 100% 50%; /* warm orange */
     --primary-foreground: 0 0% 100%;
 
-    --secondary: 210 40% 96%;
+    /* Slightly darker so border-secondary and bg-secondary are visible vs white */
+    --secondary: 214 20% 90%;
     --secondary-foreground: 222 47% 11%;
 
-    --muted: 210 40% 96%;
+    --muted: 214 20% 92%;
     --muted-foreground: 215 15% 35%;
 
     --accent: 20 100% 50%;
@@ -26,8 +27,9 @@
     --destructive: 0 72% 51%;
     --destructive-foreground: 0 0% 100%;
 
-    --border: 214 32% 91%;
-    --input: 214 32% 91%;
+    /* Visible borders for cards, inputs, dividers */
+    --border: 214 20% 86%;
+    --input: 214 20% 88%;
     --ring: 222 84% 56%;
   }
 
@@ -63,28 +65,44 @@
     @apply border-border;
   }
 
-  /* Global scrollbar - black theme */
+  /* Scrollbar: light theme (default) */
   * {
     scrollbar-width: thin;
-    scrollbar-color: #333 #111;
+    scrollbar-color: hsl(214 20% 75%) hsl(214 20% 94%);
   }
   *::-webkit-scrollbar {
     width: 10px;
     height: 10px;
   }
   *::-webkit-scrollbar-track {
-    background: #111;
+    background: hsl(214 20% 94%);
   }
   *::-webkit-scrollbar-thumb {
-    background: #333;
+    background: hsl(214 20% 75%);
     border-radius: 5px;
   }
   *::-webkit-scrollbar-thumb:hover {
-    background: #444;
+    background: hsl(214 20% 65%);
   }
   *::-webkit-scrollbar-button {
-    background: #111;
     display: none;
+  }
+
+  /* Scrollbar: dark theme */
+  .dark * {
+    scrollbar-color: #333 #111;
+  }
+  .dark *::-webkit-scrollbar-track {
+    background: #111;
+  }
+  .dark *::-webkit-scrollbar-thumb {
+    background: #333;
+  }
+  .dark *::-webkit-scrollbar-thumb:hover {
+    background: #444;
+  }
+  .dark *::-webkit-scrollbar-button {
+    background: #111;
   }
   body {
     @apply bg-background text-foreground;

@@ -184,13 +184,24 @@ const Dashboard = () => {
             <h2 className="text-xl font-bold mb-4">Income vs Expenses</h2>
             <ResponsiveContainer width="100%" height={300}>
               <BarChart data={incomeVsExpenseData}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#1f2933" />
-                <XAxis dataKey="name" stroke="#bfc9d1" />
-                <YAxis stroke="#bfc9d1" />
+                <CartesianGrid
+                  strokeDasharray="3 3"
+                  stroke={settings?.theme === 'light' ? 'hsl(214, 20%, 86%)' : '#1f2933'}
+                />
+                <XAxis
+                  dataKey="name"
+                  stroke={settings?.theme === 'light' ? 'hsl(215, 15%, 35%)' : '#bfc9d1'}
+                />
+                <YAxis
+                  stroke={settings?.theme === 'light' ? 'hsl(215, 15%, 35%)' : '#bfc9d1'}
+                />
                 <Tooltip
                   contentStyle={{
-                    backgroundColor: '#111316',
-                    border: '1px solid #1f2933',
+                    backgroundColor: settings?.theme === 'light' ? 'hsl(0, 0%, 100%)' : '#111316',
+                    border:
+                      settings?.theme === 'light'
+                        ? '1px solid hsl(214, 20%, 86%)'
+                        : '1px solid #1f2933',
                     borderRadius: '0.5rem',
                   }}
                 />

@@ -170,7 +170,7 @@ const InvoiceTemplate = ({
             <thead>
               <tr className="invoice-thead" style={{ backgroundColor: themeColor, color: 'white' }}>
                 <th className="text-left py-3 px-3 text-xs font-bold uppercase">#</th>
-                <th className="text-left py-3 px-3 text-xs font-bold uppercase">Item & Description</th>
+                <th className="text-left py-3 px-3 text-xs font-bold uppercase">Description</th>
                 <th className="text-center py-3 px-3 text-xs font-bold uppercase">Qty</th>
                 <th className="text-right py-3 px-3 text-xs font-bold uppercase">Rate</th>
                 <th className="text-right py-3 px-3 text-xs font-bold uppercase">Amount</th>

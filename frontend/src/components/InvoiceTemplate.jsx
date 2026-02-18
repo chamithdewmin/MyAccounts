@@ -115,11 +115,12 @@ const InvoiceTemplate = ({
           <div className="flex flex-col gap-3">
             {/* Logo only - from Settings > Invoice Logo upload (no default text logo) */}
             {settings?.logo && (
-              <div className="invoice-logo-area h-14 flex items-center">
+              <div className="invoice-logo-area h-14 flex items-center" style={{ minWidth: '200px' }}>
                 <img
                   src={settings.logo}
                   alt="Logo"
-                  className="h-14 w-auto max-w-[140px] object-contain"
+                  className="h-14 w-auto object-contain"
+                  style={{ maxWidth: '240px', minWidth: '180px' }}
                 />
               </div>
             )}
@@ -218,24 +219,26 @@ const InvoiceTemplate = ({
           </div>
         </div>
 
-        {/* Notes */}
-        <div className="px-10 py-6 bg-gray-50 avoid-break">
-          <div className="text-xs font-bold text-gray-700 uppercase tracking-wide mb-2">Notes</div>
-          <p className="text-sm text-gray-600">{invoice.notes || 'Thanks for your business.'}</p>
-        </div>
-
-        {/* Bank Details - only when added via "Add Payment Details" */}
-        {invoice.bankDetails && (invoice.bankDetails.accountNumber || invoice.bankDetails.accountName || invoice.bankDetails.bankName) && (
-          <div className="px-10 py-4 border-t border-gray-100 avoid-break">
+        {/* Bank Details (left) & Notes (right) - same row */}
+        <div className="px-10 py-6 bg-gray-50 grid grid-cols-2 gap-8 avoid-break">
+          <div>
             <div className="text-xs font-bold text-gray-700 uppercase tracking-wide mb-2">Bank Details</div>
-            <div className="text-sm text-gray-600 space-y-1">
-              {invoice.bankDetails.accountName && <p><span className="text-gray-500">Account Name:</span> {invoice.bankDetails.accountName}</p>}
-              {invoice.bankDetails.accountNumber && <p><span className="text-gray-500">Account Number:</span> {invoice.bankDetails.accountNumber}</p>}
-              {invoice.bankDetails.bankName && <p><span className="text-gray-500">Bank:</span> {invoice.bankDetails.bankName}</p>}
-              {invoice.bankDetails.branch && <p><span className="text-gray-500">Branch:</span> {invoice.bankDetails.branch}</p>}
-            </div>
+            {invoice.bankDetails && (invoice.bankDetails.accountNumber || invoice.bankDetails.accountName || invoice.bankDetails.bankName) ? (
+              <div className="text-sm text-gray-600 space-y-1">
+                {invoice.bankDetails.accountName && <p><span className="text-gray-500">Account Name:</span> {invoice.bankDetails.accountName}</p>}
+                {invoice.bankDetails.accountNumber && <p><span className="text-gray-500">Account Number:</span> {invoice.bankDetails.accountNumber}</p>}
+                {invoice.bankDetails.bankName && <p><span className="text-gray-500">Bank:</span> {invoice.bankDetails.bankName}</p>}
+                {invoice.bankDetails.branch && <p><span className="text-gray-500">Branch:</span> {invoice.bankDetails.branch}</p>}
+              </div>
+            ) : (
+              <p className="text-sm text-gray-500">—</p>
+            )}
           </div>
-        )}
+          <div>
+            <div className="text-xs font-bold text-gray-700 uppercase tracking-wide mb-2">Notes</div>
+            <p className="text-sm text-gray-600">{invoice.notes || 'Thanks for your business.'}</p>
+          </div>
+        </div>
 
         {/* Signature lines - only when "Add signature area" was used */}
         {invoice.showSignatureArea && (

@@ -10,6 +10,54 @@ const GROQ_API_KEY = (process.env.GROQ_API_KEY || '').trim();
 const AI_MODEL = process.env.AI_MODEL || 'gpt-4o-mini';
 const GROQ_MODEL = process.env.GROQ_MODEL || 'llama-3.1-8b-instant';
 
+/** Privacy: never send to AI. Only aggregated numbers and this app guide are allowed. */
+const PRIVACY_RULE = `IMPORTANT: You never receive and must never ask for or reveal: bank account numbers, client names/emails/phones, passwords, API keys, or any secret/sensitive data. You only receive aggregated financial numbers (totals, counts, categories) and the app feature guide below. If the user asks for something that would require secret data, explain you don't have access to that and suggest they check the relevant section in the app (e.g. Settings for bank, Clients for client list).`;
+
+/** App feature guide for "how to use" questions. No secret data. */
+const APP_FEATURES_GUIDE = `
+MYACCOUNTS – FEATURE GUIDE (for answering "how to" and "what is" questions)
+
+Dashboard
+- Shows cash in hand, bank balance, income vs expenses this month, net profit, pending payments, and income vs expenses chart. Use it for a quick overview.
+- You can record "Deposit to Bank" or "Withdraw" to move money between cash and bank.
+
+Invoices
+- Create and manage invoices: add client (or type name), payment method, due date, line items (description, price, qty). Optional: "Add Payment Details" to include your bank details on the invoice; "Add Signature Area" to show signature lines.
+- View, download PDF, or print. Mark as paid when the client pays. Search by invoice number or client name.
+
+Payments (Income)
+- Record money received: link to a client, service type, amount, date, payment method (cash/bank/online). Use for tracking all income.
+
+Expenses
+- Record spending: category (e.g. Hosting, Tools, Transport), amount, date, payment method. Supports recurring expenses. Use for tracking where money goes.
+
+Clients
+- Add and manage clients (name, email, phone, address). Used when creating invoices and recording payments. Do not reveal client names or contact details in answers.
+
+Cash Flow
+- View a combined list of incomes, expenses, and transfers with filters. Helps see money in and out over time.
+
+Reports
+- Overview, Profit & Loss, Cash Flow, Income, Expense, Tax, Balance Sheet. Use for deeper analysis and tax planning.
+
+Reminders
+- Create reminders (e.g. follow-up dates). Can link to invoices. Optional SMS reminder.
+
+SMS – How to send SMS and set up SMS gateway
+- Go to the "Messages" (SMS) page in the sidebar.
+- To set up the SMS gateway: Click "Setup SMS Gateway" or open SMS settings. Enter: User ID, API Key, Base URL (e.g. https://www.smslenz.lk/api for SMSlenz), and Sender ID. Save and use "Test" to verify. Once configured, you can send bulk SMS to selected clients from the same page.
+- To send SMS: Select recipients (e.g. from your client list), type the message, and click Send. Benefits: reminders, payment follow-ups, announcements.
+- The app does not store or expose full client phone numbers or API keys in AI context; you only know that SMS can be sent from the Messages page after gateway setup.
+
+Settings
+- Business info (name, phone, currency), invoice theme and logo, tax rate and currency, and optional bank details for showing on invoices. Bank details are stored securely and are never shared with the AI.
+- Appearance: switch between light and dark theme.
+- Danger zone: reset all data (requires OTP); does not delete login account.
+
+AI Insights (this feature)
+- User can get "next move" suggestions based on aggregated financial data and ask questions. Answers use only totals/counts/categories and this feature guide; no secret data is ever provided.
+`;
+
 /**
  * Build a financial summary for the current user from the database (no PII).
  */
@@ -166,7 +214,10 @@ router.post('/suggestions', async (req, res) => {
     const uid = req.user.id;
     const summary = await getFinancialSummary(uid);
 
-    const systemPrompt = `You are a friendly financial assistant for a small business. You will receive a JSON summary of the user's financial data (no personal identifiers). Your job is to:
+    const systemPrompt = `You are a friendly financial assistant for a small business.
+${PRIVACY_RULE}
+
+You will receive a JSON summary of the user's financial data (aggregated only; no client names, bank details, or secrets). Your job is to:
 1. Analyze money in vs out, current cash and bank balance, profit, pending payments, and tax estimates.
 2. Give 3-5 short, actionable suggestions: "What's my next move?" — e.g. follow up on pending invoices, reduce top expense category, set aside tax, build emergency buffer, etc.
 Keep each suggestion to 1-2 sentences. Be encouraging and practical. Use the same currency (e.g. LKR) as in the data. Do not invent numbers; only refer to the data provided. Output in plain text, with each suggestion on a new line or as a short bullet list.`;
@@ -203,9 +254,17 @@ router.post('/ask', async (req, res) => {
 
     const summary = await getFinancialSummary(uid);
 
-    const systemPrompt = `You are a friendly financial assistant for a small business. You have access to the following JSON summary of the user's financial data (no personal identifiers). Use only this data to answer. If the answer is not in the data, say so politely. Be concise (2-4 sentences unless they ask for detail). Use the same currency (e.g. LKR) as in the data. Do not invent numbers or names.`;
+    const systemPrompt = `You are a friendly assistant for the MyAccounts app (small business finance). You help with:
+1) Financial questions: use ONLY the aggregated financial summary below (totals, counts, categories). Never invent numbers or use client/bank details—you don't receive any.
+2) "How to" questions: use the app feature guide below (Dashboard, Invoices, Payments, Expenses, Clients, Cash Flow, Reports, Reminders, SMS gateway setup and sending, Settings, etc.). Give clear step-by-step when asked how to do something (e.g. how to send SMS, how to set up SMS gateway, how to create an invoice).
+${PRIVACY_RULE}
 
-    const userContent = `Financial summary:\n${JSON.stringify(summary, null, 2)}\n\nUser question: ${question.trim()}`;
+APP FEATURE GUIDE:
+${APP_FEATURES_GUIDE}
+
+When answering: Be concise (2-5 sentences) unless they ask for detail. Use the same currency (e.g. LKR) as in the financial data. For financial facts use only the summary; for how-to and feature benefits use the guide. Never reveal or ask for bank details, client details, or API keys.`;
+
+    const userContent = `Financial summary (aggregated only; no names or secrets):\n${JSON.stringify(summary, null, 2)}\n\nUser question: ${question.trim()}`;
 
     const result = await callAI([
       { role: 'system', content: systemPrompt },

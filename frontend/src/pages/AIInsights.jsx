@@ -1,6 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { Helmet } from 'react-helmet';
-import { Sparkles, MessageCircle, Loader2, ChevronRight, Wallet, TrendingUp, AlertTriangle } from 'lucide-react';
+import { Sparkles, Loader2, Wallet, TrendingUp, AlertTriangle } from 'lucide-react';
 import { useFinance } from '@/contexts/FinanceContext';
 import { api } from '@/lib/api';
 import { Button } from '@/components/ui/button';
@@ -10,28 +10,31 @@ import { useToast } from '@/components/ui/use-toast';
 const AIInsights = () => {
   const { totals, settings } = useFinance();
   const { toast } = useToast();
-  const [suggestions, setSuggestions] = useState(null);
   const [suggestionsLoading, setSuggestionsLoading] = useState(false);
   const [question, setQuestion] = useState('');
-  const [answer, setAnswer] = useState(null);
   const [askLoading, setAskLoading] = useState(false);
-  const [history, setHistory] = useState([]);
+  const [messages, setMessages] = useState([]);
+  const threadRef = useRef(null);
 
   const currency = settings?.currency || 'LKR';
+  const isLoading = suggestionsLoading || askLoading;
+
+  useEffect(() => {
+    threadRef.current?.scrollTo({ top: threadRef.current.scrollHeight, behavior: 'smooth' });
+  }, [messages]);
 
   const fetchSuggestions = async () => {
     setSuggestionsLoading(true);
-    setSuggestions(null);
     try {
       const data = await api.ai.getSuggestions();
-      setSuggestions(data.suggestions || '');
+      const text = data.suggestions || '';
+      setMessages((prev) => [...prev, { type: 'suggestion', content: text }]);
     } catch (err) {
       toast({
         title: 'Could not get suggestions',
-        description: err?.message || 'Check that OPENAI_API_KEY is set in the server.',
+        description: err?.message || 'Check your AI API key in the server.',
         variant: 'destructive',
       });
-      setSuggestions(null);
     } finally {
       setSuggestionsLoading(false);
     }
@@ -40,21 +43,19 @@ const AIInsights = () => {
   const handleAsk = async (e) => {
     e.preventDefault();
     const q = question.trim();
-    if (!q) return;
+    if (!q || isLoading) return;
     setAskLoading(true);
-    setAnswer(null);
+    setQuestion('');
     try {
       const data = await api.ai.ask(q);
       const ans = data.answer || '';
-      setAnswer(ans);
-      setHistory((prev) => [...prev.slice(-9), { question: q, answer: ans }]);
+      setMessages((prev) => [...prev, { type: 'qa', question: q, answer: ans }]);
     } catch (err) {
       toast({
         title: 'Could not get answer',
-        description: err?.message || 'Check that OPENAI_API_KEY is set in the server.',
+        description: err?.message || 'Check your AI API key in the server.',
         variant: 'destructive',
       });
-      setAnswer(null);
     } finally {
       setAskLoading(false);
     }
@@ -74,7 +75,7 @@ const AIInsights = () => {
             AI Insights
           </h1>
           <p className="text-muted-foreground mt-1">
-            Analyze your money in & out, get next-move suggestions, and ask questions about your finances.
+            Get next-move suggestions and ask anything about your money. All answers use only your data.
           </p>
         </div>
 
@@ -118,73 +119,75 @@ const AIInsights = () => {
           </div>
         </div>
 
-        {/* AI Suggestions */}
-        <div className="bg-card rounded-lg border border-secondary p-6">
-          <h2 className="text-xl font-bold mb-2 flex items-center gap-2">
-            <ChevronRight className="w-5 h-5 text-primary" />
-            What&apos;s my next move?
-          </h2>
-          <p className="text-sm text-muted-foreground mb-4">
-            Get AI suggestions based on your current cash, income, expenses, and pending invoices.
-          </p>
-          <Button onClick={fetchSuggestions} disabled={suggestionsLoading}>
-            {suggestionsLoading ? (
-              <>
-                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                Analyzing...
-              </>
-            ) : (
-              <>
-                <Sparkles className="w-4 h-4 mr-2" />
-                Get AI suggestions
-              </>
-            )}
-          </Button>
-          {suggestions && (
-            <div className="mt-4 p-4 rounded-lg bg-secondary/50 border border-secondary text-sm whitespace-pre-wrap">
-              {suggestions}
+        {/* Combined: Suggestions + Ask in one large panel */}
+        <div className="bg-card rounded-xl border border-secondary overflow-hidden flex flex-col min-h-[560px]">
+          <div className="p-6 pb-4 border-b border-secondary">
+            <div className="flex flex-wrap items-center gap-3">
+              <Button onClick={fetchSuggestions} disabled={isLoading} size="lg">
+                {suggestionsLoading ? (
+                  <>
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    Analyzing...
+                  </>
+                ) : (
+                  <>
+                    <Sparkles className="w-4 h-4 mr-2" />
+                    Get AI suggestions
+                  </>
+                )}
+              </Button>
+              <span className="text-sm text-muted-foreground">
+                or ask a question below — e.g. &quot;What should I do with pending invoices?&quot;
+              </span>
             </div>
-          )}
-        </div>
+          </div>
 
-        {/* Ask AI */}
-        <div className="bg-card rounded-lg border border-secondary p-6">
-          <h2 className="text-xl font-bold mb-2 flex items-center gap-2">
-            <MessageCircle className="w-5 h-5 text-primary" />
-            Ask AI anything
-          </h2>
-          <p className="text-sm text-muted-foreground mb-4">
-            Ask questions about your money in, money out, profit, tax, or what to do next. Answers are based only on your data.
-          </p>
-          <form onSubmit={handleAsk} className="flex gap-2 flex-wrap">
-            <Input
-              placeholder="e.g. Why did my expenses go up this month? What should I do with pending invoices?"
-              value={question}
-              onChange={(e) => setQuestion(e.target.value)}
-              className="flex-1 min-w-[200px]"
-              disabled={askLoading}
-            />
-            <Button type="submit" disabled={askLoading || !question.trim()}>
-              {askLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Ask'}
-            </Button>
-          </form>
-          {answer !== null && (
-            <div className="mt-4 p-4 rounded-lg bg-secondary/50 border border-secondary">
-              <p className="text-xs font-medium text-muted-foreground mb-2">Answer</p>
-              <p className="text-sm whitespace-pre-wrap">{answer}</p>
-            </div>
-          )}
-          {history.length > 0 && (
-            <div className="mt-6 space-y-3">
-              <p className="text-xs font-medium text-muted-foreground">Previous Q&A</p>
-              {history.slice(-3).reverse().map((item, i) => (
-                <div key={i} className="p-3 rounded-lg border border-secondary bg-background/50 space-y-1">
-                  <p className="text-sm font-medium text-foreground">Q: {item.question}</p>
-                  <p className="text-sm text-muted-foreground whitespace-pre-wrap">A: {item.answer}</p>
+          <div
+            ref={threadRef}
+            className="flex-1 overflow-y-auto p-6 space-y-5 min-h-[280px]"
+          >
+            {messages.length === 0 && (
+              <div className="flex flex-col items-center justify-center py-16 text-center text-muted-foreground">
+                <Sparkles className="w-12 h-12 mb-4 opacity-50" />
+                <p className="text-base">Click &quot;Get AI suggestions&quot; for next moves, or type a question.</p>
+                <p className="text-sm mt-1">Answers are based only on your financial data.</p>
+              </div>
+            )}
+            {messages.map((msg, i) =>
+              msg.type === 'suggestion' ? (
+                <div key={i} className="rounded-xl bg-primary/5 border border-primary/20 p-5">
+                  <p className="text-xs font-semibold text-primary uppercase tracking-wide mb-3">Suggestions</p>
+                  <p className="text-[15px] leading-relaxed whitespace-pre-wrap">{msg.content}</p>
                 </div>
-              ))}
-            </div>
-          )}
+              ) : (
+                <div key={i} className="rounded-xl bg-secondary/30 border border-secondary p-5 space-y-3">
+                  <p className="text-sm font-medium text-foreground">Q: {msg.question}</p>
+                  <p className="text-[15px] text-muted-foreground leading-relaxed whitespace-pre-wrap">A: {msg.answer}</p>
+                </div>
+              )
+            )}
+            {askLoading && (
+              <div className="flex items-center gap-2 text-muted-foreground">
+                <Loader2 className="w-4 h-4 animate-spin" />
+                <span className="text-sm">Thinking...</span>
+              </div>
+            )}
+          </div>
+
+          <div className="p-6 pt-4 border-t border-secondary bg-background/30">
+            <form onSubmit={handleAsk} className="flex gap-3">
+              <Input
+                placeholder="Ask about your money in, expenses, profit, tax, or next steps..."
+                value={question}
+                onChange={(e) => setQuestion(e.target.value)}
+                className="flex-1 min-h-[48px] text-base px-4"
+                disabled={askLoading}
+              />
+              <Button type="submit" disabled={askLoading || !question.trim()} size="lg" className="min-h-[48px] px-6">
+                {askLoading ? <Loader2 className="w-5 h-5 animate-spin" /> : 'Ask'}
+              </Button>
+            </form>
+          </div>
         </div>
       </div>
     </>

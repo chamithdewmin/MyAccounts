@@ -5,8 +5,10 @@ import { authMiddleware } from '../middleware/auth.js';
 const router = express.Router();
 router.use(authMiddleware);
 
-const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
+const OPENAI_API_KEY = (process.env.OPENAI_API_KEY || '').trim();
+const GROQ_API_KEY = (process.env.GROQ_API_KEY || '').trim();
 const AI_MODEL = process.env.AI_MODEL || 'gpt-4o-mini';
+const GROQ_MODEL = process.env.GROQ_MODEL || 'llama-3.1-8b-instant';
 
 /**
  * Build a financial summary for the current user from the database (no PII).
@@ -98,27 +100,59 @@ async function getFinancialSummary(uid) {
   };
 }
 
-async function callOpenAI(messages) {
-  if (!OPENAI_API_KEY) {
-    return { error: 'OPENAI_API_KEY is not set. Add it in Settings or .env to enable AI features.' };
+async function callAI(messages) {
+  const useGroq = !!GROQ_API_KEY;
+  const apiKey = useGroq ? GROQ_API_KEY : OPENAI_API_KEY;
+  const baseUrl = useGroq ? 'https://api.groq.com/openai/v1' : 'https://api.openai.com/v1';
+  const model = useGroq ? GROQ_MODEL : AI_MODEL;
+
+  if (!apiKey) {
+    return {
+      error:
+        'No AI API key set. Add GROQ_API_KEY (or OPENAI_API_KEY) in backend .env and restart the server. Get a free key at https://console.groq.com',
+    };
   }
-  const res = await fetch('https://api.openai.com/v1/chat/completions', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      Authorization: `Bearer ${OPENAI_API_KEY}`,
-    },
-    body: JSON.stringify({
-      model: AI_MODEL,
-      messages,
-      max_tokens: 800,
-      temperature: 0.6,
-    }),
-  });
+
+  let res;
+  try {
+    res = await fetch(`${baseUrl}/chat/completions`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${apiKey}`,
+      },
+      body: JSON.stringify({
+        model,
+        messages,
+        max_tokens: 800,
+        temperature: 0.6,
+      }),
+    });
+  } catch (err) {
+    console.error('[AI] Network error:', err.message);
+    return { error: `Network error: ${err.message}. Check if the server can reach the internet.` };
+  }
+
   const data = await res.json().catch(() => ({}));
-  if (data.error) {
-    return { error: data.error.message || 'AI request failed' };
+
+  if (!res.ok) {
+    const msg = data.error?.message || data.message || data.error || `HTTP ${res.status}`;
+    console.error('[AI] API error:', res.status, msg);
+    if (res.status === 401) {
+      return { error: 'Invalid API key. Check GROQ_API_KEY in .env and that the key is active at https://console.groq.com' };
+    }
+    if (res.status === 404) {
+      return { error: `Model "${model}" not found. Try GROQ_MODEL=llama-3.1-8b-instant in .env` };
+    }
+    return { error: typeof msg === 'string' ? msg : JSON.stringify(msg) };
   }
+
+  if (data.error) {
+    const msg = data.error.message || data.error.code || 'AI request failed';
+    console.error('[AI] Provider error:', msg);
+    return { error: msg };
+  }
+
   const text = data.choices?.[0]?.message?.content?.trim();
   return { text: text || 'No response from AI.' };
 }
@@ -139,7 +173,7 @@ Keep each suggestion to 1-2 sentences. Be encouraging and practical. Use the sam
 
     const userContent = `Financial summary (JSON):\n${JSON.stringify(summary, null, 2)}\n\nBased on this, what are my best next moves?`;
 
-    const result = await callOpenAI([
+    const result = await callAI([
       { role: 'system', content: systemPrompt },
       { role: 'user', content: userContent },
     ]);
@@ -173,7 +207,7 @@ router.post('/ask', async (req, res) => {
 
     const userContent = `Financial summary:\n${JSON.stringify(summary, null, 2)}\n\nUser question: ${question.trim()}`;
 
-    const result = await callOpenAI([
+    const result = await callAI([
       { role: 'system', content: systemPrompt },
       { role: 'user', content: userContent },
     ]);

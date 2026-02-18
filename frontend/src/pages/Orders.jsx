@@ -32,6 +32,7 @@ const Orders = () => {
     dueDate: '',
     notes: '',
     bankDetails: null,
+    showSignatureArea: false,
     items: [
       { description: '', price: '', quantity: 1 },
     ],
@@ -126,6 +127,7 @@ const Orders = () => {
         dueDate: dueDateIso,
         notes: form.notes,
         bankDetails: form.bankDetails,
+        showSignatureArea: form.showSignatureArea,
       });
 
       toast({
@@ -142,6 +144,7 @@ const Orders = () => {
         dueDate: '',
         notes: '',
         bankDetails: null,
+        showSignatureArea: false,
         items: [
           { description: '', price: '', quantity: 1 },
         ],
@@ -499,6 +502,16 @@ const Orders = () => {
                     )}
                   </div>
                 )}
+                <div className="mt-2">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => handleChange('showSignatureArea', !form.showSignatureArea)}
+                  >
+                    {form.showSignatureArea ? '✓ Signature area added (click to remove)' : 'Add Signature Area'}
+                  </Button>
+                </div>
                 <div className="space-y-2 mt-2">
                   <Label className="text-sm font-medium">Due Date</Label>
                   <Input

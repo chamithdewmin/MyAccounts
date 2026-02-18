@@ -73,6 +73,7 @@ const toInvoice = (row) => {
     dueDate: row.due_date,
     notes: row.notes || '',
     bankDetails,
+    showSignatureArea: Boolean(row.show_signature_area),
     createdAt: row.created_at,
   };
 };
@@ -134,9 +135,10 @@ router.post('/', async (req, res) => {
         }
       : null;
     const bankDetailsEncrypted = bankObj ? encrypt(JSON.stringify(bankObj)) : null;
+    const showSignatureArea = Boolean(d.showSignatureArea);
     await pool.query(
-      `INSERT INTO invoices (id, user_id, invoice_number, client_id, client_name, client_email, client_phone, items, subtotal, tax_rate, tax_amount, total, payment_method, status, due_date, notes, bank_details_encrypted)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17)`,
+      `INSERT INTO invoices (id, user_id, invoice_number, client_id, client_name, client_email, client_phone, items, subtotal, tax_rate, tax_amount, total, payment_method, status, due_date, notes, bank_details_encrypted, show_signature_area)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18)`,
       [
         id,
         uid,
@@ -155,6 +157,7 @@ router.post('/', async (req, res) => {
         dueDateVal,
         d.notes || '',
         bankDetailsEncrypted,
+        showSignatureArea,
       ]
     );
     const { rows } = await pool.query('SELECT * FROM invoices WHERE id = $1', [id]);

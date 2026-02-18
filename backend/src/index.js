@@ -117,6 +117,7 @@ async function initDb() {
     await pool.query('ALTER TABLE invoices ADD COLUMN IF NOT EXISTS user_id INT REFERENCES users(id)');
     await pool.query('ALTER TABLE invoices ADD COLUMN IF NOT EXISTS bank_details JSONB');
     await pool.query('ALTER TABLE invoices ADD COLUMN IF NOT EXISTS bank_details_encrypted TEXT');
+    await pool.query('ALTER TABLE invoices ADD COLUMN IF NOT EXISTS show_signature_area BOOLEAN DEFAULT false');
     await pool.query('ALTER TABLE settings ADD COLUMN IF NOT EXISTS bank_details_encrypted TEXT');
     await pool.query("ALTER TABLE settings ADD COLUMN IF NOT EXISTS invoice_theme_color VARCHAR(20) DEFAULT '#F97316'");
     console.log('Invoice and settings columns ready.');

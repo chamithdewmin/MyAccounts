@@ -149,27 +149,27 @@ const AIInsights = () => {
             {messages.length === 0 && (
               <div className="flex flex-col items-center justify-center py-16 text-center text-muted-foreground">
                 <Sparkles className="w-12 h-12 mb-4 opacity-50" />
-                <p className="text-base">Click &quot;Get AI suggestions&quot; for next moves, or type a question.</p>
-                <p className="text-sm mt-1">Answers are based only on your financial data.</p>
+                <p className="text-lg">Click &quot;Get AI suggestions&quot; for next moves, or type a question.</p>
+                <p className="text-base mt-1">Answers are based only on your financial data.</p>
               </div>
             )}
             {messages.map((msg, i) =>
               msg.type === 'suggestion' ? (
-                <div key={i} className="rounded-xl bg-primary/5 border border-primary/20 p-5">
-                  <p className="text-xs font-semibold text-primary uppercase tracking-wide mb-3">Suggestions</p>
-                  <p className="text-[15px] leading-relaxed whitespace-pre-wrap">{msg.content}</p>
+                <div key={i} className="rounded-xl bg-primary/5 border border-primary/20 p-6">
+                  <p className="text-sm font-semibold text-primary uppercase tracking-wide mb-3">Suggestions</p>
+                  <p className="text-base leading-7 whitespace-pre-wrap">{msg.content}</p>
                 </div>
               ) : (
-                <div key={i} className="rounded-xl bg-secondary/30 border border-secondary p-5 space-y-3">
-                  <p className="text-sm font-medium text-foreground">Q: {msg.question}</p>
-                  <p className="text-[15px] text-muted-foreground leading-relaxed whitespace-pre-wrap">A: {msg.answer}</p>
+                <div key={i} className="rounded-xl bg-secondary/30 border border-secondary p-6 space-y-4">
+                  <p className="text-base font-medium text-foreground">Q: {msg.question}</p>
+                  <p className="text-base text-muted-foreground leading-7 whitespace-pre-wrap">A: {msg.answer}</p>
                 </div>
               )
             )}
             {askLoading && (
               <div className="flex items-center gap-2 text-muted-foreground">
-                <Loader2 className="w-4 h-4 animate-spin" />
-                <span className="text-sm">Thinking...</span>
+                <Loader2 className="w-5 h-5 animate-spin" />
+                <span className="text-base">Thinking...</span>
               </div>
             )}
           </div>

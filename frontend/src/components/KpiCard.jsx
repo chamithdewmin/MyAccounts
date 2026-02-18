@@ -36,21 +36,21 @@ const KpiCard = ({ title, value, icon: Icon, trend, trendUp }) => {
       animate={{ opacity: 1, y: 0 }}
       whileHover={{ y: -4, boxShadow: '0 10px 30px rgba(255, 106, 0, 0.2)' }}
       transition={{ duration: 0.2 }}
-      className="bg-card rounded-lg p-6 border border-secondary"
+      className="bg-card rounded-lg p-4 sm:p-6 border border-secondary min-w-0"
     >
-      <div className="flex items-center justify-between mb-4">
-        <div className="w-12 h-12 bg-primary/10 rounded-lg flex items-center justify-center">
-          <Icon className="w-6 h-6 text-primary" />
+      <div className="flex items-center justify-between mb-3 sm:mb-4">
+        <div className="w-10 h-10 sm:w-12 sm:h-12 bg-primary/10 rounded-lg flex items-center justify-center shrink-0">
+          <Icon className="w-5 h-5 sm:w-6 sm:h-6 text-primary" />
         </div>
         {trend && (
-          <div className={`flex items-center gap-1 text-sm ${trendUp ? 'text-green-500' : 'text-red-500'}`}>
+          <div className={`flex items-center gap-1 text-xs sm:text-sm ${trendUp ? 'text-green-500' : 'text-red-500'}`}>
             {trendUp ? <TrendingUp className="w-4 h-4" /> : <TrendingDown className="w-4 h-4" />}
             <span>{Math.abs(trend)}%</span>
           </div>
         )}
       </div>
-      <h3 className="text-2xl font-bold mb-1">{displayValue}</h3>
-      <p className="text-sm text-muted-foreground">{title}</p>
+      <h3 className="text-xl sm:text-2xl font-bold mb-1 truncate">{displayValue}</h3>
+      <p className="text-xs sm:text-sm text-muted-foreground line-clamp-2">{title}</p>
     </motion.div>
   );
 };

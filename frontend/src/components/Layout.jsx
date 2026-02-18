@@ -7,11 +7,11 @@ const Layout = () => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background overflow-x-hidden min-w-0">
       <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
-      <div className="lg:pl-64">
+      <div className="lg:pl-64 min-w-0 w-full">
         <Topbar onMenuClick={() => setSidebarOpen(true)} />
-        <main className="p-4 lg:p-6">
+        <main className="p-3 sm:p-4 lg:p-6 min-w-0 max-w-full">
           <Outlet />
         </main>
       </div>

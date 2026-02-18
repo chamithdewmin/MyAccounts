@@ -216,17 +216,19 @@ const Orders = () => {
         <meta name="description" content="Create, track, and manage invoices" />
       </Helmet>
 
-      <div className="space-y-6">
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-3xl font-bold">Invoices</h1>
-            <p className="text-muted-foreground">
+      <div className="space-y-4 sm:space-y-6 min-w-0">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <div className="min-w-0">
+            <h1 className="text-2xl sm:text-3xl font-bold">Invoices</h1>
+            <p className="text-muted-foreground text-sm sm:text-base">
               Create and manage invoices, due dates, and payment status.
             </p>
           </div>
-          <div className="flex gap-3">
+          <div className="flex flex-wrap gap-2 sm:gap-3">
             <Button
               variant="outline"
+              size="sm"
+              className="min-h-[44px] sm:min-h-0"
               onClick={() => {
                 loadData();
                 toast({
@@ -266,24 +268,24 @@ const Orders = () => {
               <Download className="w-4 h-4 mr-2" />
               Export CSV
             </Button>
-            <Button onClick={() => setIsCreateOpen(true)}>
+            <Button onClick={() => setIsCreateOpen(true)} className="min-h-[44px] sm:min-h-0">
               <Plus className="w-4 h-4 mr-2" />
               Create Invoice
             </Button>
           </div>
         </div>
 
-        <div className="relative">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+        <div className="relative min-w-0">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
           <Input
-            placeholder="Search by invoice number or client name..."
+            placeholder="Search invoices..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="pl-10"
+            className="pl-10 min-h-[44px]"
           />
         </div>
 
-        <div className="flex items-center justify-between text-sm text-muted-foreground">
+        <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between text-sm text-muted-foreground">
           <span>Total invoices: {filteredOrders.length}</span>
           <span>
             Pending payments: <span className="font-semibold text-primary">
@@ -292,19 +294,19 @@ const Orders = () => {
           </span>
         </div>
 
-        <div className="bg-card rounded-lg border border-secondary overflow-hidden">
-          <div className="overflow-x-auto">
-            <table className="w-full">
+        <div className="bg-card rounded-lg border border-secondary overflow-hidden min-w-0">
+          <div className="overflow-x-auto -mx-3 sm:mx-0">
+            <table className="w-full min-w-[640px]">
               <thead className="bg-secondary">
                 <tr>
-                  <th className="px-4 py-3 text-left text-sm font-semibold">Invoice #</th>
-                  <th className="px-4 py-3 text-left text-sm font-semibold">Client</th>
-                  <th className="px-4 py-3 text-left text-sm font-semibold">Date</th>
-                  <th className="px-4 py-3 text-left text-sm font-semibold">Items</th>
-                  <th className="px-4 py-3 text-left text-sm font-semibold">Total</th>
-                  <th className="px-4 py-3 text-left text-sm font-semibold">Payment</th>
-                  <th className="px-4 py-3 text-left text-sm font-semibold">Status</th>
-                  <th className="px-4 py-3 text-center text-sm font-semibold uppercase">Actions</th>
+                  <th className="px-3 sm:px-4 py-2 sm:py-3 text-left text-xs sm:text-sm font-semibold">Invoice #</th>
+                  <th className="px-3 sm:px-4 py-2 sm:py-3 text-left text-xs sm:text-sm font-semibold">Client</th>
+                  <th className="px-3 sm:px-4 py-2 sm:py-3 text-left text-xs sm:text-sm font-semibold">Date</th>
+                  <th className="px-3 sm:px-4 py-2 sm:py-3 text-left text-xs sm:text-sm font-semibold">Items</th>
+                  <th className="px-3 sm:px-4 py-2 sm:py-3 text-left text-xs sm:text-sm font-semibold">Total</th>
+                  <th className="px-3 sm:px-4 py-2 sm:py-3 text-left text-xs sm:text-sm font-semibold">Payment</th>
+                  <th className="px-3 sm:px-4 py-2 sm:py-3 text-left text-xs sm:text-sm font-semibold">Status</th>
+                  <th className="px-3 sm:px-4 py-2 sm:py-3 text-center text-xs sm:text-sm font-semibold uppercase">Actions</th>
                 </tr>
               </thead>
               <tbody>
@@ -428,7 +430,7 @@ const Orders = () => {
           }
         }}
       >
-        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto" aria-describedby={undefined}>
+        <DialogContent className="w-[95vw] max-w-4xl max-h-[90vh] overflow-y-auto mx-2 sm:mx-auto" aria-describedby={undefined}>
           <DialogHeader>
             <DialogTitle>Invoice Details</DialogTitle>
           </DialogHeader>
@@ -445,7 +447,7 @@ const Orders = () => {
 
       {/* Create invoice */}
       <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
-        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto" aria-describedby={undefined}>
+        <DialogContent className="w-[95vw] max-w-2xl max-h-[90vh] overflow-y-auto mx-2 sm:mx-auto" aria-describedby={undefined}>
           <DialogHeader>
             <DialogTitle>Create Invoice</DialogTitle>
           </DialogHeader>

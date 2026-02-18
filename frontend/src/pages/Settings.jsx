@@ -90,10 +90,10 @@ const Settings = () => {
         <meta name="description" content="Organize and manage business settings, invoices, tax, bank, and preferences" />
       </Helmet>
 
-      <div className="space-y-6 max-w-5xl mx-auto">
+      <div className="space-y-4 sm:space-y-6 max-w-5xl mx-auto min-w-0 px-0 sm:px-2">
         <div>
-          <h1 className="text-3xl font-bold">Settings</h1>
-          <p className="text-muted-foreground">Organize and manage your business settings.</p>
+          <h1 className="text-2xl sm:text-3xl font-bold">Settings</h1>
+          <p className="text-muted-foreground text-sm sm:text-base">Organize and manage your business settings.</p>
         </div>
 
         <motion.div
@@ -102,10 +102,10 @@ const Settings = () => {
           className="space-y-6"
         >
           {/* 1. Business Profile */}
-          <div className="bg-card rounded-lg p-6 border border-secondary">
+          <div className="bg-card rounded-lg p-4 sm:p-6 border border-secondary">
             <div className="flex items-center gap-2 mb-4">
-              <Building2 className="w-5 h-5 text-primary" />
-              <h2 className="text-lg font-semibold">Business Profile</h2>
+              <Building2 className="w-5 h-5 text-primary shrink-0" />
+              <h2 className="text-base sm:text-lg font-semibold">Business Profile</h2>
             </div>
             <p className="text-sm text-muted-foreground mb-4">Your core business information used across invoices and reports.</p>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">

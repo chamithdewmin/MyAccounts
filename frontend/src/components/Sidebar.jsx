@@ -85,7 +85,7 @@ const SectionHeader = ({ title }) => (
 const NavItem = ({ item, onClose }) => {
   const linkClass = ({ isActive }) =>
     cn(
-      'flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200',
+      'flex items-center gap-3 px-4 py-3 min-h-[44px] rounded-lg transition-all duration-200 touch-manipulation',
       isActive
         ? 'bg-primary text-white shadow-lg hover:bg-primary'
         : 'text-secondary-foreground hover:bg-secondary hover:translate-x-1'
@@ -132,24 +132,26 @@ const Sidebar = ({ isOpen, onClose }) => {
 
       <aside
         className={cn(
-          'fixed top-0 left-0 z-50 h-screen w-64 bg-card border-r border-secondary transition-transform duration-300 lg:translate-x-0',
+          'fixed top-0 left-0 z-50 h-screen w-64 max-w-[85vw] bg-card border-r border-secondary transition-transform duration-300 lg:translate-x-0 pt-[env(safe-area-inset-top)]',
           isOpen ? 'translate-x-0' : '-translate-x-full'
         )}
       >
-        <div className="flex flex-col h-full">
-          <div className="flex items-center justify-between p-6 border-b border-secondary">
-            <div className="flex items-center">
+        <div className="flex flex-col h-full min-h-0">
+          <div className="flex items-center justify-between p-4 sm:p-6 border-b border-secondary shrink-0">
+            <div className="flex items-center min-w-0">
               <img src={logoSrc} alt="MyAccounts" className="h-8 object-contain" />
             </div>
             <button
+              type="button"
               onClick={onClose}
-              className="lg:hidden p-1 hover:bg-secondary rounded-md transition-colors"
+              aria-label="Close menu"
+              className="lg:hidden p-2.5 min-w-[44px] min-h-[44px] flex items-center justify-center hover:bg-secondary rounded-md transition-colors touch-manipulation"
             >
               <X className="w-5 h-5" />
             </button>
           </div>
 
-          <nav className="flex-1 p-4 space-y-0.5 overflow-y-auto">
+          <nav className="flex-1 p-3 sm:p-4 space-y-0.5 overflow-y-auto overflow-x-hidden min-h-0">
             {SIDEBAR_SECTIONS.map((section) => (
               <div key={section.title || 'main'} className="space-y-0.5">
                 {section.title && <SectionHeader title={section.title} />}
@@ -162,7 +164,7 @@ const Sidebar = ({ isOpen, onClose }) => {
                           type="button"
                           onClick={() => setReportsExpanded((p) => !p)}
                           className={cn(
-                            'w-full flex items-center justify-between gap-3 px-4 py-3 rounded-lg transition-all duration-200',
+                            'w-full flex items-center justify-between gap-3 px-4 py-3 min-h-[44px] rounded-lg transition-all duration-200 touch-manipulation',
                             isReportsActive
                               ? 'bg-primary text-white shadow-lg hover:bg-primary'
                               : 'text-secondary-foreground hover:bg-secondary hover:translate-x-1'

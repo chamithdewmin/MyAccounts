@@ -119,9 +119,9 @@ const AIInsights = () => {
           </div>
         </div>
 
-        {/* Combined: Suggestions + Ask in one large panel */}
-        <div className="bg-card rounded-xl border border-secondary overflow-hidden flex flex-col min-h-[560px]">
-          <div className="p-6 pb-4 border-b border-secondary">
+        {/* Combined: Suggestions + Ask — only the chat area scrolls; input bar stays fixed at bottom */}
+        <div className="bg-card rounded-xl border border-secondary overflow-hidden flex flex-col min-h-[480px] max-h-[calc(100vh-12rem)] h-[calc(100vh-12rem)]">
+          <div className="flex-shrink-0 p-6 pb-4 border-b border-secondary">
             <div className="flex flex-wrap items-center gap-3">
               <Button onClick={fetchSuggestions} disabled={isLoading} size="lg">
                 {suggestionsLoading ? (
@@ -144,7 +144,7 @@ const AIInsights = () => {
 
           <div
             ref={threadRef}
-            className="flex-1 overflow-y-auto p-6 space-y-5 min-h-[280px]"
+            className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden p-6 space-y-5"
           >
             {messages.length === 0 && (
               <div className="flex flex-col items-center justify-center py-16 text-center text-muted-foreground">
@@ -174,7 +174,7 @@ const AIInsights = () => {
             )}
           </div>
 
-          <div className="p-6 pt-4 border-t border-secondary bg-background/30">
+          <div className="flex-shrink-0 p-6 pt-4 border-t border-secondary bg-background/30">
             <form onSubmit={handleAsk} className="flex gap-3">
               <Input
                 placeholder="Ask about your money in, expenses, profit, tax, or next steps..."

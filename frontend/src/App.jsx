@@ -18,6 +18,7 @@ import ReportProfitLoss from './pages/reports/ReportProfitLoss';
 import ReportCashFlow from './pages/reports/ReportCashFlow';
 import CashFlow from './pages/CashFlow';
 import Settings from './pages/Settings';
+import Profile from './pages/Profile';
 import Users from './pages/Users';
 import SMS from './pages/SMS';
 import Reminders from './pages/Reminders';
@@ -69,6 +70,7 @@ function App() {
         <Route path="users" element={user?.email === 'logozodev@gmail.com' ? <Users /> : <Navigate to="/dashboard" replace />} />
         <Route path="sms" element={<SMS />} />
         <Route path="reminders" element={<Reminders />} />
+        <Route path="profile" element={<Profile />} />
         <Route path="settings" element={<Settings />} />
       </Route>
     </Routes>

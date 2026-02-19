@@ -20,6 +20,7 @@ const getDefaultSettings = () => ({
   taxEnabled: true,
   theme: 'dark',
   logo: null, // data URL for logo image
+  profileAvatar: null, // data URL for user profile avatar
   invoiceThemeColor: '#F97316', // Orange - used for invoice bands, headers, totals
   openingCash: 0, // Opening cash balance at business start
   ownerCapital: 0, // Owner deposits / initial investment

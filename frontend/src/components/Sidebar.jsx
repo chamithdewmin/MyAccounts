@@ -46,7 +46,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { AvatarLabelGroup, AvatarWithStatus, AvatarFallback } from '@/components/ui/avatar';
+import { AvatarLabelGroup, AvatarWithStatus, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 
 const reportSubItems = [
   { to: '/reports/overview', label: 'Overview Reports' },
@@ -248,12 +248,14 @@ export default function Sidebar() {
                 )}>
                   {collapsed ? (
                     <AvatarWithStatus online className="h-8 w-8">
+                      {settings?.profileAvatar && <AvatarImage src={settings.profileAvatar} alt="Profile" />}
                       <AvatarFallback>{(user?.name || 'U').charAt(0).toUpperCase()}</AvatarFallback>
                     </AvatarWithStatus>
                   ) : (
                     <>
                       <AvatarLabelGroup
                         size="sm"
+                        src={settings?.profileAvatar}
                         title={user?.name || 'User'}
                         subtitle={user?.email}
                         online
@@ -269,7 +271,7 @@ export default function Sidebar() {
                     <p className="text-xs text-muted-foreground truncate">{user?.email}</p>
                   </div>
                   <DropdownMenuItem
-                    onClick={() => { setOpen(false); navigate('/settings'); }}
+                    onClick={() => { setOpen(false); navigate('/profile'); }}
                     className="rounded-md px-3 py-2.5 cursor-pointer focus:bg-secondary flex items-center gap-2"
                   >
                     <User className="w-4 h-4 shrink-0" />

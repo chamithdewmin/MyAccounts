@@ -148,7 +148,8 @@ export const CreditCard = ({
                 width: `${scaledWidth}px`,
                 height: `${scaledHeight}px`,
                 display: 'flex',
-                justifyContent: 'flex-start',
+                justifyContent: 'center',
+                alignItems: 'center',
             }}
             className={cx("relative", className)}
         >
@@ -159,8 +160,11 @@ export const CreditCard = ({
                     perspective: "1000px",
                     cursor: "pointer",
                     userSelect: "none",
-                    width: "100%",
-                    height: "100%",
+                    width: `${scaledWidth}px`,
+                    height: `${scaledHeight}px`,
+                    display: 'flex',
+                    justifyContent: 'center',
+                    alignItems: 'center',
                 }}
             >
                 <div

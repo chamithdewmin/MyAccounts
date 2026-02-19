@@ -377,7 +377,7 @@ const Dashboard = () => {
               </p>
 
               {/* Credit Card */}
-              <div style={{ marginBottom: 12, display: 'flex', justifyContent: 'flex-start' }}>
+              <div style={{ marginBottom: 12, width: '100%', display: 'flex', justifyContent: 'flex-start', alignItems: 'center', paddingLeft: 8 }}>
                 <CreditCard
                   type="orange"
                   company={settings.businessName || 'My Business'}

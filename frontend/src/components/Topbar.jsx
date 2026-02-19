@@ -8,8 +8,9 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import { SidebarTrigger } from '@/components/ui/sidebar';
 
-const Topbar = ({ onMenuClick }) => {
+const Topbar = () => {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState('');
@@ -24,14 +25,9 @@ const Topbar = ({ onMenuClick }) => {
       <div className="flex items-center justify-between gap-2 px-3 py-2 sm:px-4 sm:py-3 lg:px-6 min-w-0">
         {/* Left: menu + search */}
         <div className="flex items-center gap-2 sm:gap-4 flex-1 min-w-0">
-          <button
-            type="button"
-            onClick={onMenuClick}
-            aria-label="Open menu"
-            className="lg:hidden p-2.5 min-w-[44px] min-h-[44px] flex items-center justify-center hover:bg-secondary rounded-lg transition-colors touch-manipulation"
-          >
+          <SidebarTrigger>
             <Menu className="w-5 h-5 shrink-0" />
-          </button>
+          </SidebarTrigger>
           <div className="relative flex-1 min-w-0 max-w-md">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
             <input

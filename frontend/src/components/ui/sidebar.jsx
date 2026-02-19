@@ -1,0 +1,209 @@
+import React, { createContext, useContext, useState } from 'react';
+import { cn } from '@/lib/utils';
+
+const SidebarContext = createContext(null);
+
+export function useSidebar() {
+  const ctx = useContext(SidebarContext);
+  if (!ctx) throw new Error('Sidebar components must be used within SidebarProvider');
+  return ctx;
+}
+
+export function SidebarProvider({ children, defaultCollapsed = false }) {
+  const [open, setOpen] = useState(false);
+  const [collapsed, setCollapsed] = useState(defaultCollapsed);
+  const toggleCollapsed = () => setCollapsed((p) => !p);
+  return (
+    <SidebarContext.Provider
+      value={{
+        open,
+        setOpen,
+        collapsed,
+        setCollapsed,
+        toggleCollapsed,
+      }}
+    >
+      <div
+        className="group/sidebar-wrapper flex min-h-screen w-full bg-background"
+        data-state={collapsed ? 'collapsed' : 'expanded'}
+      >
+        {children}
+      </div>
+    </SidebarContext.Provider>
+  );
+}
+
+export const Sidebar = React.forwardRef(
+  ({ children, collapsible = 'off', className, ...props }, ref) => {
+    const { open, collapsed } = useSidebar();
+    const isIconOnly = collapsible === 'icon' && collapsed;
+    return (
+      <aside
+        ref={ref}
+        data-collapsible={collapsible}
+        data-state={isIconOnly ? 'collapsed' : 'expanded'}
+        className={cn(
+          'fixed top-0 left-0 z-50 flex h-screen flex-col border-r border-secondary bg-card transition-[width] duration-300 ease-sidebar pt-[env(safe-area-inset-top)]',
+          open ? 'translate-x-0' : '-translate-x-full lg:translate-x-0',
+          isIconOnly ? 'w-[52px]' : 'w-64 max-w-[85vw]',
+          className
+        )}
+        {...props}
+      >
+        {children}
+      </aside>
+    );
+  }
+);
+Sidebar.displayName = 'Sidebar';
+
+export function SidebarHeader({ className, ...props }) {
+  return (
+    <div
+      className={cn(
+        'flex shrink-0 items-center gap-2 border-b border-secondary px-3 py-3 sm:px-4',
+        className
+      )}
+      {...props}
+    />
+  );
+}
+
+export function SidebarContent({ className, ...props }) {
+  const { collapsed } = useSidebar();
+  return (
+    <div
+      className={cn(
+        'flex flex-1 flex-col gap-2 overflow-y-auto overflow-x-hidden px-2 py-3 sm:px-3 min-h-0',
+        'group-data-[state=collapsed]/sidebar-wrapper:[&_.sidebar-label]:hidden',
+        className
+      )}
+      data-state={collapsed ? 'collapsed' : 'expanded'}
+      {...props}
+    />
+  );
+}
+
+export function SidebarFooter({ className, ...props }) {
+  return (
+    <div
+      className={cn('shrink-0 border-t border-secondary px-2 py-2', className)}
+      {...props}
+    />
+  );
+}
+
+export function SidebarRail() {
+  const { toggleCollapsed, collapsed } = useSidebar();
+  return (
+    <button
+      type="button"
+      onClick={toggleCollapsed}
+      aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+      className="absolute -right-3 top-1/2 z-10 hidden h-6 w-6 -translate-y-1/2 items-center justify-center rounded-full border border-secondary bg-card shadow transition-colors hover:bg-secondary lg:flex"
+    >
+      <span
+        className={cn(
+          'h-2 w-0.5 rounded-full bg-muted-foreground transition-transform',
+          collapsed ? 'rotate-0' : 'rotate-180'
+        )}
+      />
+    </button>
+  );
+}
+
+export function SidebarInset({ className, ...props }) {
+  return (
+    <main
+      className={cn(
+        'flex flex-1 flex-col min-w-0 transition-[margin] duration-300 ease-sidebar',
+        'lg:ml-64 group-data-[state=collapsed]/sidebar-wrapper:lg:ml-[52px]',
+        className
+      )}
+      {...props}
+    />
+  );
+}
+
+export function SidebarTrigger({ className, ...props }) {
+  const { setOpen } = useSidebar();
+  return (
+    <button
+      type="button"
+      onClick={() => setOpen((p) => !p)}
+      aria-label="Toggle sidebar"
+      className={cn(
+        'lg:hidden p-2.5 min-w-[44px] min-h-[44px] flex items-center justify-center hover:bg-secondary rounded-lg transition-colors touch-manipulation',
+        className
+      )}
+      {...props}
+    />
+  );
+}
+
+export function SidebarGroup({ className, ...props }) {
+  return <div className={cn('space-y-0.5', className)} {...props} />;
+}
+
+export function SidebarGroupLabel({ className, ...props }) {
+  return (
+    <div
+      className={cn(
+        'sidebar-label px-2 py-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground',
+        className
+      )}
+      {...props}
+    />
+  );
+}
+
+export function SidebarMenu({ className, ...props }) {
+  return <div className={cn('flex flex-col gap-0.5', className)} {...props} />;
+}
+
+export function SidebarMenuItem({ className, ...props }) {
+  return <div className={cn('relative', className)} {...props} />;
+}
+
+export const SidebarMenuButton = React.forwardRef(
+  ({ className, asChild = false, isActive, children, ...props }, ref) => {
+    const comp = asChild ? 'span' : 'button';
+    const base = cn(
+      'flex w-full items-center gap-3 rounded-2xl px-3 py-3 min-h-[44px] transition-all duration-300 ease-sidebar touch-manipulation text-left',
+      isActive
+        ? 'bg-sidebar-active-bg text-sidebar-active-accent shadow-lg [&>svg]:text-sidebar-active-accent'
+        : 'text-secondary-foreground hover:bg-secondary hover:translate-x-0.5',
+      className
+    );
+    return React.createElement(comp, { ref, className: base, ...props }, children);
+  }
+);
+SidebarMenuButton.displayName = 'SidebarMenuButton';
+
+export function SidebarMenuSub({ className, ...props }) {
+  return (
+    <div
+      className={cn('sidebar-label ml-2 border-l border-secondary pl-2 space-y-0.5', className)}
+      {...props}
+    />
+  );
+}
+
+export function SidebarMenuSubItem({ className, ...props }) {
+  return <div className={cn('relative', className)} {...props} />;
+}
+
+export const SidebarMenuSubButton = React.forwardRef(
+  ({ className, asChild = false, isActive, ...props }, ref) => {
+    const comp = asChild ? 'span' : 'button';
+    const base = cn(
+      'flex w-full items-center gap-3 rounded-2xl px-3 py-2 text-sm transition-all duration-300 ease-sidebar',
+      isActive
+        ? 'bg-sidebar-active-bg text-sidebar-active-accent [&>svg]:text-sidebar-active-accent'
+        : 'text-muted-foreground hover:bg-secondary hover:text-foreground',
+      className
+    );
+    return React.createElement(comp, { ref, className: base, ...props });
+  }
+);
+SidebarMenuSubButton.displayName = 'SidebarMenuSubButton';

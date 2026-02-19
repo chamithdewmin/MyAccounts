@@ -3,7 +3,6 @@ import { NavLink, useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   LayoutDashboard,
-  Wallet,
   Receipt,
   FileText,
   Users,
@@ -23,6 +22,20 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useFinance } from '@/contexts/FinanceContext';
 import sidebarLogo from '@/assets/side bar logo.png';
 import sidebarLogoLight from '@/assets/side-bar-light.png';
+import {
+  Sidebar as SidebarRoot,
+  SidebarHeader,
+  SidebarContent,
+  SidebarFooter,
+  SidebarRail,
+  SidebarGroup,
+  SidebarGroupLabel,
+  SidebarMenu,
+  SidebarMenuItem,
+  SidebarMenuSub,
+  SidebarMenuSubItem,
+  useSidebar,
+} from '@/components/ui/sidebar';
 
 const reportItems = [
   { to: '/reports/overview', label: 'Overview Reports' },
@@ -36,7 +49,7 @@ const ADMIN_EMAIL = 'logozodev@gmail.com';
 
 const SIDEBAR_SECTIONS = [
   {
-    title: null, // Dashboard - no section
+    title: null,
     items: [
       { to: '/dashboard', icon: LayoutDashboard, label: 'Dashboard' },
       { to: '/ai-insights', icon: Sparkles, label: 'AI Insights' },
@@ -74,154 +87,159 @@ const SIDEBAR_SECTIONS = [
   },
 ];
 
-const SectionHeader = ({ title }) => (
-  <div className="px-4 py-2 mt-2 first:mt-0">
-    <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-      {title}
-    </span>
-  </div>
-);
-
-const NavItem = ({ item, onClose }) => {
-  const linkClass = ({ isActive }) =>
-    cn(
-      'flex items-center gap-3 px-4 py-3 min-h-[44px] rounded-2xl transition-all duration-300 ease-sidebar touch-manipulation',
-      isActive
-        ? 'bg-sidebar-active-bg text-sidebar-active-accent shadow-lg hover:bg-sidebar-active-bg [&>svg]:text-sidebar-active-accent'
-        : 'text-secondary-foreground hover:bg-secondary hover:translate-x-0.5 [&>svg]:transition-colors [&>svg]:duration-300 [&>svg]:ease-sidebar'
-    );
-
+function NavItem({ item }) {
+  const { setOpen } = useSidebar();
   return (
-    <NavLink
-      to={item.to}
-      onClick={onClose}
-      className={linkClass}
-    >
-      <item.icon className="w-5 h-5 shrink-0" />
-      <span className="font-medium">{item.label}</span>
-    </NavLink>
+    <SidebarMenuItem>
+      <NavLink
+        to={item.to}
+        onClick={() => setOpen(false)}
+        className={({ isActive }) =>
+          cn(
+            'flex w-full items-center gap-3 rounded-2xl px-3 py-3 min-h-[44px] transition-all duration-300 ease-sidebar touch-manipulation',
+            isActive
+              ? 'bg-sidebar-active-bg text-sidebar-active-accent shadow-lg [&>svg]:text-sidebar-active-accent'
+              : 'text-secondary-foreground hover:bg-secondary hover:translate-x-0.5',
+            'sidebar-label'
+          )
+        }
+      >
+        <item.icon className="w-5 h-5 shrink-0" />
+        <span className="font-medium">{item.label}</span>
+      </NavLink>
+    </SidebarMenuItem>
   );
-};
+}
 
-const Sidebar = ({ isOpen, onClose }) => {
+function ReportsNav() {
   const location = useLocation();
-  const { user } = useAuth();
-  const { settings } = useFinance();
-  const canManageUsers = user?.email === ADMIN_EMAIL;
+  const { setOpen } = useSidebar();
   const isReportsActive = location.pathname.startsWith('/reports');
-  const [reportsExpanded, setReportsExpanded] = useState(isReportsActive);
-  const logoSrc = settings?.theme === 'light' ? sidebarLogoLight : sidebarLogo;
+  const [expanded, setExpanded] = useState(isReportsActive);
 
   useEffect(() => {
-    if (isReportsActive) setReportsExpanded(true);
+    if (isReportsActive) setExpanded(true);
   }, [isReportsActive]);
+
+  return (
+    <SidebarMenuItem>
+      <div className="space-y-0.5">
+        <button
+          type="button"
+          onClick={() => setExpanded((p) => !p)}
+          className={cn(
+            'flex w-full items-center justify-between gap-3 rounded-2xl px-3 py-3 min-h-[44px] transition-all duration-300 ease-sidebar touch-manipulation text-left',
+            isReportsActive
+              ? 'bg-sidebar-active-bg text-sidebar-active-accent shadow-lg [&_svg]:text-sidebar-active-accent'
+              : 'text-secondary-foreground hover:bg-secondary hover:translate-x-0.5'
+          )}
+        >
+          <div className="flex items-center gap-3">
+            <BarChart3 className="w-5 h-5 shrink-0" />
+            <span className="sidebar-label font-medium">Reports</span>
+          </div>
+          <ChevronDown
+            className={cn('w-4 h-4 shrink-0 transition-transform', expanded && 'rotate-180')}
+          />
+        </button>
+        <AnimatePresence>
+          {expanded && (
+            <motion.div
+              initial={{ height: 0, opacity: 0 }}
+              animate={{ height: 'auto', opacity: 1 }}
+              exit={{ height: 0, opacity: 0 }}
+              transition={{ duration: 0.2 }}
+              className="overflow-hidden"
+            >
+              <SidebarMenuSub>
+                {reportItems.map((sub) => (
+                  <SidebarMenuSubItem key={sub.to}>
+                    <NavLink
+                      to={sub.to}
+                      onClick={() => setOpen(false)}
+                      className={({ isActive }) =>
+                        cn(
+                          'flex w-full items-center gap-3 rounded-2xl px-3 py-2 text-sm transition-all duration-300 ease-sidebar sidebar-label',
+                          isActive
+                            ? 'bg-sidebar-active-bg text-sidebar-active-accent [&>svg]:text-sidebar-active-accent'
+                            : 'text-muted-foreground hover:bg-secondary hover:text-foreground'
+                        )
+                      }
+                    >
+                      <FileText className="w-4 h-4 shrink-0" />
+                      <span>{sub.label}</span>
+                    </NavLink>
+                  </SidebarMenuSubItem>
+                ))}
+              </SidebarMenuSub>
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </div>
+    </SidebarMenuItem>
+  );
+}
+
+export default function Sidebar() {
+  const { user } = useAuth();
+  const { settings } = useFinance();
+  const { open, setOpen } = useSidebar();
+  const canManageUsers = user?.email === ADMIN_EMAIL;
+  const logoSrc = settings?.theme === 'light' ? sidebarLogoLight : sidebarLogo;
 
   return (
     <>
       <AnimatePresence>
-        {isOpen && (
+        {open && (
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            onClick={onClose}
+            onClick={() => setOpen(false)}
             className="fixed inset-0 bg-black/50 z-40 lg:hidden"
+            aria-hidden
           />
         )}
       </AnimatePresence>
 
-      <aside
-        className={cn(
-          'fixed top-0 left-0 z-50 h-screen w-64 max-w-[85vw] bg-card border-r border-secondary transition-transform duration-300 lg:translate-x-0 pt-[env(safe-area-inset-top)]',
-          isOpen ? 'translate-x-0' : '-translate-x-full'
-        )}
-      >
-        <div className="flex flex-col h-full min-h-0">
-          <div className="flex items-center justify-between p-4 sm:p-6 border-b border-secondary shrink-0">
-            <div className="flex items-center min-w-0">
-              <img src={logoSrc} alt="MyAccounts" className="h-8 object-contain" />
-            </div>
-            <button
-              type="button"
-              onClick={onClose}
-              aria-label="Close menu"
-              className="lg:hidden p-2.5 min-w-[44px] min-h-[44px] flex items-center justify-center hover:bg-secondary rounded-md transition-colors touch-manipulation"
-            >
-              <X className="w-5 h-5" />
-            </button>
+      <SidebarRoot collapsible="icon">
+        <SidebarHeader>
+          <div className="flex items-center min-w-0 flex-1">
+            <img src={logoSrc} alt="MyAccounts" className="h-8 object-contain" />
           </div>
+          <button
+            type="button"
+            onClick={() => setOpen(false)}
+            aria-label="Close menu"
+            className="lg:hidden p-2.5 min-w-[44px] min-h-[44px] flex items-center justify-center hover:bg-secondary rounded-md transition-colors touch-manipulation"
+          >
+            <X className="w-5 h-5" />
+          </button>
+        </SidebarHeader>
 
-          <nav className="flex-1 p-3 sm:p-4 space-y-0.5 overflow-y-auto overflow-x-hidden min-h-0">
-            {SIDEBAR_SECTIONS.map((section) => (
-              <div key={section.title || 'main'} className="space-y-0.5">
-                {section.title && <SectionHeader title={section.title} />}
+        <SidebarContent>
+          {SIDEBAR_SECTIONS.map((section) => (
+            <SidebarGroup key={section.title || 'main'}>
+              {section.title && (
+                <SidebarGroupLabel>{section.title}</SidebarGroupLabel>
+              )}
+              <SidebarMenu>
                 {section.items.map((item) => {
                   if (item.adminOnly && !canManageUsers) return null;
                   if (item.type === 'reports') {
-                    return (
-                      <div key="reports" className="space-y-0.5">
-                        <button
-                          type="button"
-                          onClick={() => setReportsExpanded((p) => !p)}
-                          className={cn(
-                            'w-full flex items-center justify-between gap-3 px-4 py-3 min-h-[44px] rounded-2xl transition-all duration-300 ease-sidebar touch-manipulation',
-                            isReportsActive
-                              ? 'bg-sidebar-active-bg text-sidebar-active-accent shadow-lg hover:bg-sidebar-active-bg [&_svg]:text-sidebar-active-accent'
-                              : 'text-secondary-foreground hover:bg-secondary hover:translate-x-0.5'
-                          )}
-                        >
-                          <div className="flex items-center gap-3">
-                            <item.icon className="w-5 h-5" />
-                            <span className="font-medium">{item.label}</span>
-                          </div>
-                          <ChevronDown
-                            className={cn('w-4 h-4 transition-transform', reportsExpanded && 'rotate-180')}
-                          />
-                        </button>
-                        <AnimatePresence>
-                          {reportsExpanded && (
-                            <motion.div
-                              initial={{ height: 0, opacity: 0 }}
-                              animate={{ height: 'auto', opacity: 1 }}
-                              exit={{ height: 0, opacity: 0 }}
-                              transition={{ duration: 0.2 }}
-                              className="overflow-hidden"
-                            >
-                              <div className="pl-4 ml-4 border-l border-secondary space-y-0.5">
-                                {item.children.map((sub) => (
-                                  <NavLink
-                                    key={sub.to}
-                                    to={sub.to}
-                                    onClick={onClose}
-                                    className={({ isActive }) =>
-                                      cn(
-                                        'flex items-center gap-3 px-3 py-2 rounded-2xl transition-all duration-300 ease-sidebar text-sm',
-                                        isActive
-                                          ? 'bg-sidebar-active-bg text-sidebar-active-accent [&>svg]:text-sidebar-active-accent'
-                                          : 'text-muted-foreground hover:bg-secondary hover:text-foreground'
-                                      )
-                                    }
-                                  >
-                                    <FileText className="w-4 h-4 flex-shrink-0" />
-                                    <span>{sub.label}</span>
-                                  </NavLink>
-                                ))}
-                              </div>
-                            </motion.div>
-                          )}
-                        </AnimatePresence>
-                      </div>
-                    );
+                    return <ReportsNav key="reports" />;
                   }
-                  return <NavItem key={item.to} item={item} onClose={onClose} />;
+                  return <NavItem key={item.to} item={item} />;
                 })}
-              </div>
-            ))}
-          </nav>
-        </div>
-      </aside>
+              </SidebarMenu>
+            </SidebarGroup>
+          ))}
+        </SidebarContent>
+
+        <SidebarFooter />
+
+        <SidebarRail />
+      </SidebarRoot>
     </>
   );
-};
-
-export default Sidebar;
+}

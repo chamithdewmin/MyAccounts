@@ -417,11 +417,37 @@ export default function FinanceDashboard() {
     };
   }, [incomes, expenses]);
 
-  // Calculate percentage for pending payments (as percentage of total income)
-  const pendingPaymentsPercentage = useMemo(() => {
-    if (totalIncome === 0) return "0.00";
-    return ((pendingPayments / totalIncome) * 100).toFixed(2);
-  }, [pendingPayments, totalIncome]);
+  // Calculate percentages for all stat cards
+  const statPercentages = useMemo(() => {
+    const totalFinancialActivity = totalIncome + totalOutcome;
+    
+    // Total Income: percentage of total financial activity
+    const incomePercentage = totalFinancialActivity > 0
+      ? ((totalIncome / totalFinancialActivity) * 100).toFixed(2)
+      : "0.00";
+    
+    // Total Outcome: percentage of total financial activity
+    const outcomePercentage = totalFinancialActivity > 0
+      ? ((totalOutcome / totalFinancialActivity) * 100).toFixed(2)
+      : "0.00";
+    
+    // Net Profit: profit margin as percentage of total income
+    const profitPercentage = totalIncome > 0
+      ? ((monthlyProfit / totalIncome) * 100).toFixed(2)
+      : "0.00";
+    
+    // Pending Payments: percentage of total income
+    const pendingPaymentsPercentage = totalIncome > 0
+      ? ((pendingPayments / totalIncome) * 100).toFixed(2)
+      : "0.00";
+    
+    return {
+      income: incomePercentage,
+      outcome: outcomePercentage,
+      profit: profitPercentage,
+      pending: pendingPaymentsPercentage,
+    };
+  }, [totalIncome, totalOutcome, monthlyProfit, pendingPayments]);
 
   const s = {
     page: {
@@ -471,24 +497,24 @@ export default function FinanceDashboard() {
           iconBg="rgba(59,130,246,0.2)" 
           label="Total Income" 
           value={formatCurrency(totalIncome)} 
-          badge={monthlyChange.income !== "0.00" ? `${parseFloat(monthlyChange.income) > 0 ? '+' : ''}${monthlyChange.income}%` : null}
-          badgeColor={parseFloat(monthlyChange.income) >= 0 ? "green" : "red"} 
+          badge={statPercentages.income !== "0.00" ? `${statPercentages.income}%` : null}
+          badgeColor="green"
         />
         <StatCard 
           icon="↗" 
           iconBg="rgba(239,68,68,0.15)" 
           label="Total Outcome" 
           value={formatCurrency(totalOutcome)} 
-          badge={monthlyChange.expense !== "0.00" ? `${parseFloat(monthlyChange.expense) > 0 ? '+' : ''}${monthlyChange.expense}%` : null}
-          badgeColor={parseFloat(monthlyChange.expense) <= 0 ? "green" : "red"} 
+          badge={statPercentages.outcome !== "0.00" ? `${statPercentages.outcome}%` : null}
+          badgeColor="red"
         />
         <StatCard 
           icon={<UpwardTrendIcon />} 
           iconBg="rgba(34,197,94,0.15)" 
           label="Net Profit (This Month)" 
           value={formatCurrency(monthlyProfit)} 
-          badge={monthlyChange.profit !== "0.00" ? `${parseFloat(monthlyChange.profit) > 0 ? '+' : ''}${monthlyChange.profit}%` : null}
-          badgeColor={parseFloat(monthlyChange.profit) >= 0 ? "green" : "red"} 
+          badge={statPercentages.profit !== "0.00" ? `${statPercentages.profit}%` : null}
+          badgeColor={parseFloat(statPercentages.profit) >= 0 ? "green" : "red"}
         />
         <StatCard 
           icon={
@@ -505,7 +531,7 @@ export default function FinanceDashboard() {
           iconBg="rgba(234,179,8,0.2)" 
           label="Pending Payments" 
           value={formatCurrency(pendingPayments)} 
-          badge={pendingPaymentsPercentage !== "0.00" ? `${pendingPaymentsPercentage}%` : null}
+          badge={statPercentages.pending !== "0.00" ? `${statPercentages.pending}%` : null}
           badgeColor="red"
         />
       </div>

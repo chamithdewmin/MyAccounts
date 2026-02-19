@@ -86,11 +86,11 @@ function NavItem({ item }) {
         onClick={() => setOpen(false)}
         className={({ isActive }) =>
           cn(
-            'flex w-full items-center gap-3 rounded-2xl px-3 py-3 min-h-[44px] transition-all duration-300 ease-sidebar touch-manipulation',
+            'flex w-full items-center gap-3 rounded-md px-3 py-2.5 min-h-10 transition-[background-color,color] duration-100 ease-linear touch-manipulation outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2',
             collapsed && 'justify-center px-2',
             isActive
-              ? 'bg-sidebar-active-bg text-sidebar-active-accent shadow-lg [&>svg]:text-sidebar-active-accent'
-              : 'text-secondary-foreground hover:bg-secondary hover:translate-x-0.5'
+              ? 'bg-sidebar-active-bg text-sidebar-active-accent [&>svg]:text-sidebar-active-accent'
+              : 'text-foreground hover:bg-secondary'
           )
         }
       >
@@ -121,11 +121,11 @@ function ExpandableNavItem({ item }) {
           type="button"
           onClick={() => setExpanded((p) => !p)}
           className={cn(
-            'flex w-full items-center justify-between gap-3 rounded-2xl px-3 py-3 min-h-[44px] transition-all duration-300 ease-sidebar touch-manipulation text-left',
+            'flex w-full items-center justify-between gap-3 rounded-md px-3 py-2.5 min-h-10 transition-[background-color,color] duration-100 ease-linear touch-manipulation text-left outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2',
             collapsed && 'justify-center px-2',
             isActive
-              ? 'bg-sidebar-active-bg text-sidebar-active-accent shadow-lg [&_svg]:text-sidebar-active-accent'
-              : 'text-secondary-foreground hover:bg-secondary hover:translate-x-0.5'
+              ? 'bg-sidebar-active-bg text-sidebar-active-accent [&_svg]:text-sidebar-active-accent'
+              : 'text-foreground hover:bg-secondary'
           )}
         >
           <div className="flex items-center gap-3 min-w-0">
@@ -153,7 +153,7 @@ function ExpandableNavItem({ item }) {
                       onClick={() => setOpen(false)}
                       className={({ isActive: subActive }) =>
                         cn(
-                          'flex w-full items-center gap-3 rounded-2xl px-3 py-2 text-sm transition-all duration-300 ease-sidebar sidebar-label',
+                          'flex w-full items-center gap-3 rounded-md pl-9 pr-3 py-2 text-sm transition-[background-color,color] duration-100 ease-linear sidebar-label',
                           subActive
                             ? 'bg-sidebar-active-bg text-sidebar-active-accent [&>svg]:text-sidebar-active-accent'
                             : 'text-muted-foreground hover:bg-secondary hover:text-foreground'

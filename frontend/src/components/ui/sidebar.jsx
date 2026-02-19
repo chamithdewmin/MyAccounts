@@ -43,9 +43,9 @@ export const Sidebar = React.forwardRef(
         data-collapsible={collapsible}
         data-state={isIconOnly ? 'collapsed' : 'expanded'}
         className={cn(
-          'fixed top-0 left-0 z-50 flex h-screen flex-col border-r border-secondary bg-card transition-[width] duration-300 ease-sidebar pt-[env(safe-area-inset-top)]',
+          'fixed top-0 left-0 z-50 flex h-screen flex-col border-r border-border bg-card transition-[width] duration-300 ease-sidebar pt-[env(safe-area-inset-top)]',
           open ? 'translate-x-0' : '-translate-x-full lg:translate-x-0',
-          isIconOnly ? 'w-[52px]' : 'w-64 max-w-[85vw]',
+          isIconOnly ? 'w-[52px]' : 'w-[292px] max-w-[85vw]',
           className
         )}
         {...props}
@@ -61,7 +61,7 @@ export function SidebarHeader({ className, ...props }) {
   return (
     <div
       className={cn(
-        'flex shrink-0 items-center gap-2 border-b border-secondary px-3 py-3 sm:px-4',
+        'flex shrink-0 items-center gap-2 border-b border-border px-4 py-4',
         className
       )}
       {...props}
@@ -74,7 +74,7 @@ export function SidebarContent({ className, ...props }) {
   return (
     <div
       className={cn(
-        'flex flex-1 flex-col gap-2 overflow-y-auto overflow-x-hidden px-2 py-3 sm:px-3 min-h-0',
+        'flex flex-1 flex-col gap-0.5 overflow-y-auto overflow-x-hidden px-3 py-4 min-h-0',
         'group-data-[state=collapsed]/sidebar-wrapper:[&_.sidebar-label]:hidden',
         className
       )}
@@ -87,7 +87,7 @@ export function SidebarContent({ className, ...props }) {
 export function SidebarFooter({ className, ...props }) {
   return (
     <div
-      className={cn('shrink-0 border-t border-secondary px-2 py-2', className)}
+      className={cn('shrink-0 border-t border-border px-3 py-3', className)}
       {...props}
     />
   );
@@ -117,7 +117,7 @@ export function SidebarInset({ className, ...props }) {
     <main
       className={cn(
         'flex flex-1 flex-col min-w-0 transition-[margin] duration-300 ease-sidebar',
-        'lg:ml-64 group-data-[state=collapsed]/sidebar-wrapper:lg:ml-[52px]',
+        'lg:ml-[292px] group-data-[state=collapsed]/sidebar-wrapper:lg:ml-[52px]',
         className
       )}
       {...props}
@@ -142,7 +142,7 @@ export function SidebarTrigger({ className, ...props }) {
 }
 
 export function SidebarDivider({ className, ...props }) {
-  return <div className={cn('my-2 border-t border-secondary', className)} {...props} />;
+  return <div className={cn('my-1 border-t border-border', className)} {...props} />;
 }
 
 export function SidebarGroup({ className, ...props }) {
@@ -187,7 +187,7 @@ SidebarMenuButton.displayName = 'SidebarMenuButton';
 export function SidebarMenuSub({ className, ...props }) {
   return (
     <div
-      className={cn('sidebar-label ml-2 border-l border-secondary pl-2 space-y-0.5', className)}
+      className={cn('sidebar-label ml-2 border-l border-border pl-2 space-y-0.5', className)}
       {...props}
     />
   );

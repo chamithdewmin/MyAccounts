@@ -243,7 +243,7 @@ const Profile = () => {
       <div className="space-y-4 sm:space-y-6 max-w-5xl mx-auto min-w-0 px-0 sm:px-2">
         <div>
           <h1 className="text-2xl sm:text-3xl font-bold flex items-center gap-2">
-            <User className="w-6 h-6 sm:w-7 sm:h-7" />
+            <User className="w-6 h-6 sm:w-7 sm:h-7 text-black dark:text-white stroke-2" />
             Account
           </h1>
           <p className="text-muted-foreground text-sm sm:text-base mt-1">
@@ -410,7 +410,7 @@ const Profile = () => {
             {/* Business Profile Section */}
             <div className="mb-6">
               <div className="flex items-center gap-2 mb-4">
-                <Building2 className="w-5 h-5 text-primary shrink-0" />
+                <Building2 className="w-5 h-5 text-black dark:text-white shrink-0 stroke-2" />
                 <h2 className="text-base sm:text-lg font-semibold">Business Profile</h2>
               </div>
               <p className="text-sm text-muted-foreground mb-4">Your core business information used across invoices and reports.</p>
@@ -444,7 +444,7 @@ const Profile = () => {
             {/* Bank Account Section */}
             <div className="mb-6">
               <div className="flex items-center gap-2 mb-4">
-                <Landmark className="w-5 h-5 text-primary shrink-0" />
+                <Landmark className="w-5 h-5 text-black dark:text-white shrink-0 stroke-2" />
                 <h2 className="text-base sm:text-lg font-semibold">Bank Account</h2>
               </div>
               <p className="text-sm text-muted-foreground mb-4">For Bank Transfer invoices. Account details are encrypted.</p>
@@ -491,7 +491,7 @@ const Profile = () => {
             {/* Opening Balances Section */}
             <div className="mb-6">
               <div className="flex items-center gap-2 mb-4">
-                <Wallet className="w-5 h-5 text-primary shrink-0" />
+                <Wallet className="w-5 h-5 text-black dark:text-white shrink-0 stroke-2" />
                 <h2 className="text-base sm:text-lg font-semibold">Opening Balances</h2>
               </div>
               <p className="text-sm text-muted-foreground mb-4">

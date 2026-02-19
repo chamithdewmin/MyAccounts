@@ -243,7 +243,7 @@ const POS = () => {
               <p className="text-xs text-muted-foreground">This month</p>
             </div>
             <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
-              <DollarSign className="w-5 h-5 text-primary" />
+              <DollarSign className="w-5 h-5 text-black dark:text-white stroke-2" />
             </div>
           </motion.div>
           <motion.div
@@ -262,7 +262,7 @@ const POS = () => {
               <p className="text-xs text-muted-foreground">Payments received in cash</p>
             </div>
             <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
-              <Wallet className="w-5 h-5 text-primary" />
+              <Wallet className="w-5 h-5 text-black dark:text-white stroke-2" />
             </div>
           </motion.div>
           <motion.div
@@ -281,7 +281,7 @@ const POS = () => {
               <p className="text-xs text-muted-foreground">Bank & online payments</p>
             </div>
             <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
-              <CreditCard className="w-5 h-5 text-primary" />
+              <CreditCard className="w-5 h-5 text-black dark:text-white stroke-2" />
             </div>
           </motion.div>
         </div>

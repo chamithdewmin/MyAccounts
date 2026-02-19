@@ -281,7 +281,7 @@ const Inventory = () => {
               <p className="text-xs text-muted-foreground">This month</p>
             </div>
             <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
-              <DollarSign className="w-5 h-5 text-primary" />
+              <DollarSign className="w-5 h-5 text-black dark:text-white stroke-2" />
             </div>
           </motion.div>
           <motion.div
@@ -300,7 +300,7 @@ const Inventory = () => {
               <p className="text-xs text-muted-foreground">Essential subscriptions & tools</p>
             </div>
             <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
-              <Repeat className="w-5 h-5 text-primary" />
+              <Repeat className="w-5 h-5 text-black dark:text-white stroke-2" />
             </div>
           </motion.div>
           <motion.div
@@ -319,7 +319,7 @@ const Inventory = () => {
               <p className="text-xs text-muted-foreground">Single purchases</p>
             </div>
             <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
-              <PieChart className="w-5 h-5 text-primary" />
+              <PieChart className="w-5 h-5 text-black dark:text-white stroke-2" />
             </div>
           </motion.div>
         </div>

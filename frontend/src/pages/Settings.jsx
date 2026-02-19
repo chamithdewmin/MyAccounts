@@ -86,7 +86,7 @@ const Settings = () => {
           {/* 1. Appearance */}
           <div className="bg-card rounded-lg p-6 border border-secondary">
             <div className="flex items-center gap-2 mb-4">
-              <Palette className="w-5 h-5 text-primary" />
+              <Palette className="w-5 h-5 text-black dark:text-white stroke-2" />
               <h2 className="text-lg font-semibold">Appearance</h2>
             </div>
             <p className="text-sm text-muted-foreground mb-4">Interface preferences.</p>
@@ -125,7 +125,7 @@ const Settings = () => {
           {/* 2. Format Settings */}
           <div className="bg-card rounded-lg p-6 border border-secondary">
             <div className="flex items-center gap-2 mb-4">
-              <Calendar className="w-5 h-5 text-primary" />
+              <Calendar className="w-5 h-5 text-black dark:text-white stroke-2" />
               <h2 className="text-lg font-semibold">Format Settings</h2>
             </div>
             <p className="text-sm text-muted-foreground mb-4">Customize date and number formats.</p>
@@ -175,7 +175,7 @@ const Settings = () => {
           {/* 3. Tax & Currency */}
           <div className="bg-card rounded-lg p-6 border border-secondary">
             <div className="flex items-center gap-2 mb-4">
-              <Percent className="w-5 h-5 text-primary" />
+              <Percent className="w-5 h-5 text-black dark:text-white stroke-2" />
               <h2 className="text-lg font-semibold">Tax & Currency</h2>
             </div>
             <p className="text-sm text-muted-foreground mb-4">Configure taxes and currency for invoices and reports.</p>
@@ -241,7 +241,7 @@ const Settings = () => {
           {/* 4. Invoice & Branding */}
           <div className="bg-card rounded-lg p-6 border border-secondary">
             <div className="flex items-center gap-2 mb-4">
-              <Receipt className="w-5 h-5 text-primary" />
+              <Receipt className="w-5 h-5 text-black dark:text-white stroke-2" />
               <h2 className="text-lg font-semibold">Invoice & Branding</h2>
             </div>
             <p className="text-sm text-muted-foreground mb-4">Customize how your invoices look to clients.</p>
@@ -322,14 +322,14 @@ const Settings = () => {
           {/* 5. General Settings */}
           <div className="bg-card rounded-lg p-6 border border-secondary">
             <div className="flex items-center gap-2 mb-4">
-              <Zap className="w-5 h-5 text-primary" />
+              <Zap className="w-5 h-5 text-black dark:text-white stroke-2" />
               <h2 className="text-lg font-semibold">General Settings</h2>
             </div>
             <p className="text-sm text-muted-foreground mb-4">Common preferences and behaviors.</p>
             <div className="space-y-3 mb-4">
               <div className="rounded-lg border border-secondary bg-secondary/30 px-4 py-3 flex items-center justify-between">
                 <div className="flex items-center gap-3">
-                  <Zap className="w-4 h-4 text-muted-foreground" />
+                  <Zap className="w-4 h-4 text-black dark:text-white stroke-2" />
                   <div>
                     <p className="text-sm font-medium">Auto-Save</p>
                     <p className="text-xs text-muted-foreground">Automatically save changes as you type</p>
@@ -353,7 +353,7 @@ const Settings = () => {
               </div>
               <div className="rounded-lg border border-secondary bg-secondary/30 px-4 py-3 flex items-center justify-between">
                 <div className="flex items-center gap-3">
-                  <DollarSign className="w-4 h-4 text-muted-foreground" />
+                  <DollarSign className="w-4 h-4 text-black dark:text-white stroke-2" />
                   <div>
                     <p className="text-sm font-medium">Show Currency Symbol</p>
                     <p className="text-xs text-muted-foreground">Display currency symbol in amounts</p>
@@ -377,7 +377,7 @@ const Settings = () => {
               </div>
               <div className="rounded-lg border border-secondary bg-secondary/30 px-4 py-3 flex items-center justify-between">
                 <div className="flex items-center gap-3">
-                  <FileText className="w-4 h-4 text-muted-foreground" />
+                  <FileText className="w-4 h-4 text-black dark:text-white stroke-2" />
                   <div>
                     <p className="text-sm font-medium">Invoice Auto-Numbering</p>
                     <p className="text-xs text-muted-foreground">Automatically generate invoice numbers</p>
@@ -401,7 +401,7 @@ const Settings = () => {
               </div>
               <div className="rounded-lg border border-secondary bg-secondary/30 px-4 py-3 flex items-center justify-between">
                 <div className="flex items-center gap-3">
-                  <Download className="w-4 h-4 text-muted-foreground" />
+                  <Download className="w-4 h-4 text-black dark:text-white stroke-2" />
                   <div>
                     <p className="text-sm font-medium">Auto Export</p>
                     <p className="text-xs text-muted-foreground">Automatically export data periodically</p>
@@ -440,14 +440,14 @@ const Settings = () => {
           {/* 6. Notifications */}
           <div className="bg-card rounded-lg p-6 border border-secondary">
             <div className="flex items-center gap-2 mb-4">
-              <Bell className="w-5 h-5 text-primary" />
+              <Bell className="w-5 h-5 text-black dark:text-white stroke-2" />
               <h2 className="text-lg font-semibold">Notifications</h2>
             </div>
             <p className="text-sm text-muted-foreground mb-4">Manage how you receive updates and alerts.</p>
             <div className="space-y-3 mb-4">
               <div className="rounded-lg border border-secondary bg-secondary/30 px-4 py-3 flex items-center justify-between">
                 <div className="flex items-center gap-3">
-                  <Mail className="w-4 h-4 text-muted-foreground" />
+                  <Mail className="w-4 h-4 text-black dark:text-white stroke-2" />
                   <div>
                     <p className="text-sm font-medium">Email Notifications</p>
                     <p className="text-xs text-muted-foreground">Receive updates via email</p>
@@ -471,7 +471,7 @@ const Settings = () => {
               </div>
               <div className="rounded-lg border border-secondary bg-secondary/30 px-4 py-3 flex items-center justify-between">
                 <div className="flex items-center gap-3">
-                  <Smartphone className="w-4 h-4 text-muted-foreground" />
+                  <Smartphone className="w-4 h-4 text-black dark:text-white stroke-2" />
                   <div>
                     <p className="text-sm font-medium">SMS Notifications</p>
                     <p className="text-xs text-muted-foreground">Receive updates via SMS</p>

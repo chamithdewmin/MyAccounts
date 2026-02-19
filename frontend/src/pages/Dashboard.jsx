@@ -99,7 +99,7 @@ const Dashboard = () => {
           >
             <div className="flex items-center gap-3 mb-3 sm:mb-4">
               <div className="w-10 h-10 sm:w-12 sm:h-12 bg-primary/10 rounded-lg flex items-center justify-center shrink-0">
-                <Wallet className="w-5 h-5 sm:w-6 sm:h-6 text-primary" />
+                <Wallet className="w-5 h-5 sm:w-6 sm:h-6 text-black dark:text-white stroke-2" />
               </div>
               <span className="text-xs sm:text-sm font-medium text-muted-foreground truncate">Cash in Hand / Bank Balance</span>
             </div>
@@ -137,7 +137,7 @@ const Dashboard = () => {
           >
             <div className="flex items-center gap-3 mb-3 sm:mb-4">
               <div className="w-10 h-10 sm:w-12 sm:h-12 bg-primary/10 rounded-lg flex items-center justify-center shrink-0">
-                <DollarSign className="w-5 h-5 sm:w-6 sm:h-6 text-primary" />
+                <DollarSign className="w-5 h-5 sm:w-6 sm:h-6 text-black dark:text-white stroke-2" />
               </div>
               <span className="text-xs sm:text-sm font-medium text-muted-foreground truncate">Income & Expenses (This Month)</span>
             </div>

@@ -7,6 +7,7 @@ import {
   Receipt,
   FileText,
   Users,
+  User,
   UserPlus,
   MessageSquare,
   Bell,
@@ -262,28 +263,24 @@ export default function Sidebar() {
                     </>
                   )}
                 </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" side="top" className="w-[--radix-dropdown-menu-trigger-width] min-w-56 p-2">
+                <DropdownMenuContent align="end" side="top" className="w-56 p-2">
+                  <div className="px-3 py-2 mb-1 border-b border-border">
+                    <p className="text-sm font-semibold text-foreground">My Account</p>
+                    <p className="text-xs text-muted-foreground truncate">{user?.email}</p>
+                  </div>
                   <DropdownMenuItem
-                    onClick={handleLogout}
-                    className="rounded-md px-3 py-2.5 cursor-pointer focus:bg-secondary"
+                    onClick={() => { setOpen(false); navigate('/settings'); }}
+                    className="rounded-md px-3 py-2.5 cursor-pointer focus:bg-secondary flex items-center gap-2"
                   >
-                    <LogOut className="w-4 h-4 mr-2 shrink-0" aria-hidden />
-                    Log out
+                    <User className="w-4 h-4 shrink-0" />
+                    Profile
                   </DropdownMenuItem>
                   <DropdownMenuItem
-                    className="mt-2 rounded-md bg-secondary/50 px-3 py-2.5 cursor-pointer focus:bg-secondary/70 focus:outline-none"
-                    onSelect={(e) => e.preventDefault()}
+                    onClick={handleLogout}
+                    className="rounded-md px-3 py-2.5 cursor-pointer focus:bg-secondary flex items-center gap-2"
                   >
-                    <div className="flex items-center gap-2 w-full min-w-0">
-                      <AvatarLabelGroup
-                        size="sm"
-                        title={user?.name || 'User'}
-                        subtitle={user?.email}
-                        online
-                        className="min-w-0 flex-1"
-                      />
-                      <ChevronsUpDown className="w-4 h-4 shrink-0 text-muted-foreground" aria-hidden />
-                    </div>
+                    <LogOut className="w-4 h-4 shrink-0" />
+                    Log out
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>

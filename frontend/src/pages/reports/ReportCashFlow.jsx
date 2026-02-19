@@ -1,5 +1,6 @@
 import { useState, useMemo } from "react";
 import { AreaChart, Area, BarChart, Bar, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from "recharts";
+import { useFinance } from "@/contexts/FinanceContext";
 
 const C = { bg:"#0c0e14",bg2:"#0f1117",card:"#13161e",border:"#1e2433",border2:"#2a3347",text:"#fff",text2:"#d1d9e6",muted:"#8b9ab0",faint:"#4a5568",green:"#22c55e",red:"#ef4444",blue:"#3b82f6",cyan:"#22d3ee",yellow:"#eab308" };
 
@@ -21,23 +22,6 @@ const I={
   Refresh:    ()=><Svg d="M3 12a9 9 0 019-9 9.75 9.75 0 016.74 2.74L21 8M21 12a9 9 0 01-9 9 9.75 9.75 0 01-6.74-2.74L3 16M3 12h6m12 0h-6" />,
 };
 
-const cfData=[
-  {date:"Feb 13",inflow:30000,outflow:0,balance:30000},
-  {date:"Feb 14",inflow:0,outflow:1100,balance:28900},
-  {date:"Feb 15",inflow:0,outflow:5000,balance:23900},
-  {date:"Feb 16",inflow:0,outflow:0,balance:23900},
-  {date:"Feb 17",inflow:0,outflow:0,balance:23900},
-  {date:"Feb 18",inflow:2000,outflow:7563,balance:18337},
-];
-const initTx=[
-  {id:1,date:"Feb 18",source:"Prime Wheels",category:"Graphic Job",amount:2000,type:"in",status:"Received"},
-  {id:2,date:"Feb 18",source:"Normal call reload",category:"Reload",amount:-100,type:"out",status:"Paid"},
-  {id:3,date:"Feb 18",source:"Cursor (Tool)",category:"Software",amount:-6463,type:"out",status:"Paid"},
-  {id:4,date:"Feb 18",source:"Betax VIP",category:"Invoice",amount:-1000,type:"out",status:"Overdue"},
-  {id:5,date:"Feb 15",source:"Domin (iphonecenter.lk)",category:"Hosting",amount:-5000,type:"out",status:"Paid"},
-  {id:6,date:"Feb 14",source:"Wi-Fi",category:"Internet",amount:-1100,type:"out",status:"Paid"},
-  {id:7,date:"Feb 13",source:"Shanan Yoshitha",category:"Advance Payment",amount:30000,type:"in",status:"Received"},
-];
 const sMap={Received:{bg:"rgba(34,197,94,0.15)",c:"#22c55e"},Paid:{bg:"rgba(59,130,246,0.15)",c:"#3b82f6"},Overdue:{bg:"rgba(239,68,68,0.15)",c:"#ef4444"},Pending:{bg:"rgba(234,179,8,0.15)",c:"#eab308"}};
 
 const Tip=({active,payload,label})=>{
@@ -68,7 +52,7 @@ const Card=({title,subtitle,children,right})=>(
 );
 
 export default function CashFlowReport(){
-  const [tx,setTx]=useState(initTx);
+  const { incomes, expenses, invoices, totals, loadData } = useFinance();
   const [search,setSearch]=useState("");
   const [fType,setFType]=useState("all");
   const [fStatus,setFStatus]=useState("all");
@@ -76,9 +60,86 @@ export default function CashFlowReport(){
   const [form,setForm]=useState({source:"",category:"",amount:"",status:"Received"});
   const [delId,setDelId]=useState(null);
 
-  const totalIn=tx.filter(t=>t.type==="in").reduce((s,t)=>s+t.amount,0);
-  const totalOut=Math.abs(tx.filter(t=>t.type==="out").reduce((s,t)=>s+t.amount,0));
-  const net=totalIn-totalOut;
+  // Calculate cash flow data (last 14 days)
+  const cfData = useMemo(() => {
+    const now = new Date();
+    const data = [];
+    let runningBalance = totals.cashInHand || 0;
+    for (let i = 13; i >= 0; i--) {
+      const date = new Date(now);
+      date.setDate(now.getDate() - i);
+      date.setHours(0, 0, 0, 0);
+      const dateEnd = new Date(date);
+      dateEnd.setHours(23, 59, 59, 999);
+      let inflow = 0;
+      let outflow = 0;
+      incomes.forEach(income => {
+        const incomeDate = new Date(income.date);
+        if (incomeDate >= date && incomeDate <= dateEnd) inflow += income.amount || 0;
+      });
+      expenses.forEach(expense => {
+        const expenseDate = new Date(expense.date);
+        if (expenseDate >= date && expenseDate <= dateEnd) outflow += expense.amount || 0;
+      });
+      runningBalance = runningBalance - outflow + inflow;
+      data.push({
+        date: date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
+        inflow,
+        outflow,
+        balance: runningBalance
+      });
+    }
+    return data;
+  }, [incomes, expenses, totals.cashInHand]);
+
+  // Build transactions list from database
+  const tx = useMemo(() => {
+    const allTx = [];
+    incomes.forEach(income => {
+      const date = new Date(income.date);
+      allTx.push({
+        id: income.id,
+        date: date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
+        source: income.clientName || 'Unknown',
+        category: income.serviceType || 'Income',
+        amount: income.amount || 0,
+        type: 'in',
+        status: 'Received',
+        sortDate: date
+      });
+    });
+    expenses.forEach(expense => {
+      const date = new Date(expense.date);
+      allTx.push({
+        id: expense.id,
+        date: date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
+        source: expense.category || 'Expense',
+        category: expense.category || 'Expense',
+        amount: -(expense.amount || 0),
+        type: 'out',
+        status: 'Paid',
+        sortDate: date
+      });
+    });
+    invoices.filter(inv => inv.status !== 'paid').forEach(invoice => {
+      const date = new Date(invoice.dueDate || invoice.createdAt);
+      allTx.push({
+        id: invoice.id || invoice.invoiceNumber,
+        date: date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
+        source: invoice.clientName || 'Unknown',
+        category: 'Invoice',
+        amount: -(invoice.total || 0),
+        type: 'out',
+        status: 'Overdue',
+        sortDate: date
+      });
+    });
+    return allTx.sort((a, b) => b.sortDate - a.sortDate);
+  }, [incomes, expenses, invoices]);
+
+  const totalIn = useMemo(() => tx.filter(t => t.type === "in").reduce((s, t) => s + t.amount, 0), [tx]);
+  const totalOut = useMemo(() => Math.abs(tx.filter(t => t.type === "out").reduce((s, t) => s + t.amount, 0)), [tx]);
+  const net = useMemo(() => totalIn - totalOut, [totalIn, totalOut]);
 
   const filtered=useMemo(()=>{
     let l=[...tx];
@@ -88,12 +149,18 @@ export default function CashFlowReport(){
     return l;
   },[tx,search,fType,fStatus]);
 
-  const handleDel=(id)=>{setDelId(id);setTimeout(()=>{setTx(p=>p.filter(t=>t.id!==id));setDelId(null);},350);};
+  const handleDel=(id)=>{
+    setDelId(id);
+    setTimeout(()=>{
+      loadData();
+      setDelId(null);
+    },350);
+  };
   const handleAdd=()=>{
     if(!form.source||!form.amount)return;
-    const isIn=modal==="in";
-    setTx(p=>[{id:Date.now(),date:"Feb 19",source:form.source,category:form.category,amount:isIn?+form.amount:-Math.abs(+form.amount),type:modal,status:form.status},...p]);
-    setForm({source:"",category:"",amount:"",status:"Received"});setModal(null);
+    loadData();
+    setForm({source:"",category:"",amount:"",status:"Received"});
+    setModal(null);
   };
 
   const selSty={background:C.card,border:`1px solid ${C.border2}`,borderRadius:9,padding:"8px 12px",color:C.text2,fontSize:13,outline:"none",cursor:"pointer"};
@@ -105,11 +172,7 @@ export default function CashFlowReport(){
       <div style={{padding:"26px 32px",display:"flex",flexDirection:"column",gap:18,animation:"fi .3s ease"}}>
 
         {/* TOOLBAR */}
-        <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",gap:10}}>
-          <div style={{display:"flex",gap:10}}>
-            <button onClick={()=>setModal("in")}  style={{display:"flex",alignItems:"center",gap:7,background:"linear-gradient(135deg,#16a34a,#15803d)",color:"#fff",border:"none",borderRadius:10,padding:"9px 18px",fontSize:13,fontWeight:700,cursor:"pointer",boxShadow:"0 4px 14px rgba(22,163,74,0.3)"}}><I.PlusCircle/><span>Add Inflow</span></button>
-            <button onClick={()=>setModal("out")} style={{display:"flex",alignItems:"center",gap:7,background:"linear-gradient(135deg,#ef4444,#dc2626)",color:"#fff",border:"none",borderRadius:10,padding:"9px 18px",fontSize:13,fontWeight:700,cursor:"pointer",boxShadow:"0 4px 14px rgba(239,68,68,0.3)"}}><I.MinusCircle/><span>Add Outflow</span></button>
-          </div>
+        <div style={{display:"flex",justifyContent:"flex-end",alignItems:"center",gap:10}}>
           <div style={{display:"flex",gap:10,alignItems:"center"}}>
             <button onClick={()=>window.location.reload()} style={{display:"flex",alignItems:"center",gap:8,background:"#1c1e24",border:"1px solid #303338",borderRadius:8,padding:"9px 16px",color:"#fff",fontSize:13,fontWeight:600,cursor:"pointer",fontFamily:"inherit"}}><I.Refresh/><span>Refresh</span></button>
             <button onClick={()=>{}} style={{display:"flex",alignItems:"center",gap:8,background:"#1c1e24",border:"1px solid #303338",borderRadius:8,padding:"9px 16px",color:"#fff",fontSize:13,fontWeight:600,cursor:"pointer",fontFamily:"inherit"}}><I.Download/><span>Export CSV</span></button>
@@ -122,7 +185,7 @@ export default function CashFlowReport(){
           <Stat label="Total Money In"  value={`LKR ${totalIn.toLocaleString()}`}  color={C.green} Icon={I.ArrowUp}   sub={`${tx.filter(t=>t.type==="in").length} transactions`}/>
           <Stat label="Total Money Out" value={`LKR ${totalOut.toLocaleString()}`} color={C.red}   Icon={I.ArrowDown} sub={`${tx.filter(t=>t.type==="out").length} transactions`}/>
           <Stat label="Net Cash Flow"   value={`LKR ${net.toLocaleString()}`}      color={net>=0?C.green:C.red} Icon={I.BarChart}/>
-          <Stat label="Current Balance" value={`LKR ${net.toLocaleString()}`}      color={C.blue}  Icon={I.Wallet}    sub="As of Feb 18"/>
+          <Stat label="Current Balance" value={`LKR ${(totals.cashInHand || 0).toLocaleString()}`}      color={C.blue}  Icon={I.Wallet}    sub={`As of ${new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}`}/>
         </div>
 
         {/* AREA + LINE */}

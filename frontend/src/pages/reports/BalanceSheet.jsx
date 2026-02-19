@@ -1,5 +1,6 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { BarChart, Bar, AreaChart, Area, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from "recharts";
+import { useFinance } from "@/contexts/FinanceContext";
 
 const C = { bg:"#0c0e14",bg2:"#0f1117",card:"#13161e",border:"#1e2433",border2:"#2a3347",text:"#fff",text2:"#d1d9e6",muted:"#8b9ab0",faint:"#4a5568",green:"#22c55e",red:"#ef4444",blue:"#3b82f6",cyan:"#22d3ee",yellow:"#eab308",purple:"#a78bfa",orange:"#f97316" };
 
@@ -23,26 +24,6 @@ const I={
   Refresh:     ()=><Svg d="M3 12a9 9 0 019-9 9.75 9.75 0 016.74 2.74L21 8M21 12a9 9 0 01-9 9 9.75 9.75 0 01-6.74-2.74L3 16M3 12h6m12 0h-6" />,
 };
 
-const monthly=[
-  {period:"Aug",assets:280000,liabilities:120000,equity:160000},
-  {period:"Sep",assets:310000,liabilities:115000,equity:195000},
-  {period:"Oct",assets:295000,liabilities:130000,equity:165000},
-  {period:"Nov",assets:340000,liabilities:108000,equity:232000},
-  {period:"Dec",assets:390000,liabilities:100000,equity:290000},
-  {period:"Jan",assets:365000,liabilities:112000,equity:253000},
-  {period:"Feb",assets:380000,liabilities:105000,equity:275000},
-];
-const assetItems=[
-  {name:"Cash & Bank",value:19337,color:C.green,Icon:()=><Svg d="M12 1v22M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6" s={14}/>,type:"Current"},
-  {name:"Receivables",value:32000,color:C.cyan,Icon:()=><Svg d="M4 2v20l2-1 2 1 2-1 2 1 2-1 2 1 2-1 2 1V2l-2 1-2-1-2 1-2-1-2 1-2-1-2 1-2-1z" s={14}/>,type:"Current"},
-  {name:"Equipment",value:280000,color:C.blue,Icon:()=><Svg d="M2 3h20v14H2V3z" s={14}/>,type:"Non-Current"},
-  {name:"Other Assets",value:48663,color:C.purple,Icon:()=><Svg d="M16.5 9.4l-9-5.19M21 16V8a2 2 0 00-1-1.73l-7-4a2 2 0 00-2 0l-7 4A2 2 0 003 8v8a2 2 0 001 1.73l7 4a2 2 0 002 0l7-4A2 2 0 0021 16z" s={14}/>,type:"Non-Current"},
-];
-const liabItems=[
-  {name:"Accounts Payable",value:45000,color:C.red,due:"30 Days"},
-  {name:"Tax Payable",value:27520,color:C.yellow,due:"Q4 2025"},
-  {name:"Other Liabilities",value:32480,color:C.orange,due:"Ongoing"},
-];
 
 const Tip=({active,payload,label})=>{
   if(!active||!payload?.length)return null;
@@ -78,13 +59,85 @@ const DonutLegend=({items})=>(
 );
 
 export default function BalanceSheet(){
+  const { assets, loans, invoices, totals, settings } = useFinance();
   const [view,setView]=useState("overview");
-  const totalAssets=assetItems.reduce((s,a)=>s+a.value,0);
-  const totalLiab=liabItems.reduce((s,l)=>s+l.value,0);
-  const equity=totalAssets-totalLiab;
-  const debtRatio=((totalLiab/totalAssets)*100).toFixed(1);
-  const currentRatio=(19337/totalLiab).toFixed(2);
-  const healthy=parseFloat(debtRatio)<40;
+
+  // Calculate monthly balance sheet data
+  const monthly = useMemo(() => {
+    const months = [];
+    const now = new Date();
+    for (let i = 6; i >= 0; i--) {
+      const date = new Date(now.getFullYear(), now.getMonth() - i, 1);
+      const periodLabel = date.toLocaleDateString('en-US', { month: 'short' });
+      let monthAssets = 0;
+      let monthLiab = 0;
+      assets.forEach(asset => {
+        const assetDate = new Date(asset.date);
+        if (assetDate <= date) monthAssets += asset.amount || 0;
+      });
+      loans.forEach(loan => {
+        const loanDate = new Date(loan.date);
+        if (loanDate <= date) monthLiab += loan.amount || 0;
+      });
+      // Add cash and bank balances (simplified - using current totals)
+      if (i === 0) {
+        monthAssets += (totals.cashInHand || 0) + (totals.bankBalance || 0);
+      }
+      const equity = monthAssets - monthLiab;
+      months.push({ period: periodLabel, assets: monthAssets, liabilities: monthLiab, equity });
+    }
+    return months;
+  }, [assets, loans, totals]);
+
+  // Calculate asset items
+  const assetItems = useMemo(() => {
+    const items = [];
+    const cashBank = (totals.cashInHand || 0) + (totals.bankBalance || 0);
+    if (cashBank > 0) {
+      items.push({ name: "Cash & Bank", value: cashBank, color: C.green, Icon: () => <Svg d="M12 1v22M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6" s={14} />, type: "Current" });
+    }
+    const receivables = invoices.filter(inv => inv.status !== 'paid').reduce((s, inv) => s + (inv.total || 0), 0);
+    if (receivables > 0) {
+      items.push({ name: "Receivables", value: receivables, color: C.cyan, Icon: () => <Svg d="M4 2v20l2-1 2 1 2-1 2 1 2-1 2 1 2-1 2 1V2l-2 1-2-1-2 1-2-1-2 1-2-1-2 1-2-1z" s={14} />, type: "Current" });
+    }
+    const equipment = assets.filter(a => a.name && (a.name.toLowerCase().includes('equipment') || a.name.toLowerCase().includes('machine'))).reduce((s, a) => s + (a.amount || 0), 0);
+    const otherAssets = assets.filter(a => !a.name || (!a.name.toLowerCase().includes('equipment') && !a.name.toLowerCase().includes('machine'))).reduce((s, a) => s + (a.amount || 0), 0);
+    if (equipment > 0) {
+      items.push({ name: "Equipment", value: equipment, color: C.blue, Icon: () => <Svg d="M2 3h20v14H2V3z" s={14} />, type: "Non-Current" });
+    }
+    if (otherAssets > 0) {
+      items.push({ name: "Other Assets", value: otherAssets, color: C.purple, Icon: () => <Svg d="M16.5 9.4l-9-5.19M21 16V8a2 2 0 00-1-1.73l-7-4a2 2 0 00-2 0l-7 4A2 2 0 003 8v8a2 2 0 001 1.73l7 4a2 2 0 002 0l7-4A2 2 0 0021 16z" s={14} />, type: "Non-Current" });
+    }
+    return items.length > 0 ? items : [{ name: "Cash & Bank", value: cashBank || 0, color: C.green, Icon: () => <Svg d="M12 1v22M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6" s={14} />, type: "Current" }];
+  }, [assets, invoices, totals]);
+
+  // Calculate liability items
+  const liabItems = useMemo(() => {
+    const items = [];
+    const unpaidInvoices = invoices.filter(inv => inv.status !== 'paid').reduce((s, inv) => s + (inv.total || 0), 0);
+    if (unpaidInvoices > 0) {
+      items.push({ name: "Accounts Payable", value: unpaidInvoices, color: C.red, due: "30 Days" });
+    }
+    if (settings.taxEnabled && totals.estimatedTaxYearly > 0) {
+      const paidTax = totals.estimatedTaxYearly * 0.7; // Estimate 70% paid
+      const pendingTax = totals.estimatedTaxYearly - paidTax;
+      if (pendingTax > 0) {
+        items.push({ name: "Tax Payable", value: pendingTax, color: C.yellow, due: "Q4 " + new Date().getFullYear() });
+      }
+    }
+    const totalLoans = loans.reduce((s, l) => s + (l.amount || 0), 0);
+    if (totalLoans > 0) {
+      items.push({ name: "Loans", value: totalLoans, color: C.orange, due: "Ongoing" });
+    }
+    return items.length > 0 ? items : [];
+  }, [loans, invoices, settings, totals]);
+
+  const totalAssets = useMemo(() => assetItems.reduce((s, a) => s + a.value, 0), [assetItems]);
+  const totalLiab = useMemo(() => liabItems.reduce((s, l) => s + l.value, 0), [liabItems]);
+  const equity = useMemo(() => totalAssets - totalLiab, [totalAssets, totalLiab]);
+  const debtRatio = useMemo(() => totalAssets > 0 ? ((totalLiab / totalAssets) * 100).toFixed(1) : '0.0', [totalLiab, totalAssets]);
+  const currentRatio = useMemo(() => totalLiab > 0 ? (((totals.cashInHand || 0) / totalLiab).toFixed(2)) : '0.00', [totals, totalLiab]);
+  const healthy = useMemo(() => parseFloat(debtRatio) < 40, [debtRatio]);
 
   return(
     <div style={{minHeight:"100vh",background:C.bg,fontFamily:"'DM Sans',-apple-system,sans-serif",color:C.text}}>
@@ -93,12 +146,7 @@ export default function BalanceSheet(){
       <div style={{padding:"26px 32px",display:"flex",flexDirection:"column",gap:18,animation:"fi .3s ease"}}>
 
         {/* TOOLBAR */}
-        <div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}>
-          <div style={{display:"flex",gap:8}}>
-            {[{v:"overview",Icon:I.Eye,label:"Overview"},{v:"detailed",Icon:I.List,label:"Detailed"}].map(({v,Icon,label})=>(
-              <button key={v} onClick={()=>setView(v)} style={{display:"flex",alignItems:"center",gap:7,background:view===v?C.blue:"transparent",color:view===v?"#fff":C.muted,border:`1px solid ${view===v?C.blue:C.border2}`,borderRadius:9,padding:"8px 16px",fontSize:13,fontWeight:700,cursor:"pointer"}}><Icon/><span>{label}</span></button>
-            ))}
-          </div>
+        <div style={{display:"flex",justifyContent:"flex-end",alignItems:"center"}}>
           <div style={{display:"flex",gap:10,alignItems:"center"}}>
             <button onClick={()=>window.location.reload()} style={{display:"flex",alignItems:"center",gap:8,background:"#1c1e24",border:"1px solid #303338",borderRadius:8,padding:"9px 16px",color:"#fff",fontSize:13,fontWeight:600,cursor:"pointer",fontFamily:"inherit"}}><I.Refresh/><span>Refresh</span></button>
             <button onClick={()=>{}} style={{display:"flex",alignItems:"center",gap:8,background:"#1c1e24",border:"1px solid #303338",borderRadius:8,padding:"9px 16px",color:"#fff",fontSize:13,fontWeight:600,cursor:"pointer",fontFamily:"inherit"}}><I.Download/><span>Export CSV</span></button>

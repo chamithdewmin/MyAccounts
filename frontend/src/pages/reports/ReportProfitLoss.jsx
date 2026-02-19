@@ -1,5 +1,6 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { BarChart, Bar, LineChart, Line, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from "recharts";
+import { useFinance } from "@/contexts/FinanceContext";
 
 // ── COLORS ────────────────────────────────────────────────────────────────────
 const C = { bg:"#0c0e14",bg2:"#0f1117",card:"#13161e",border:"#1e2433",border2:"#2a3347",text:"#fff",text2:"#d1d9e6",muted:"#8b9ab0",faint:"#4a5568",green:"#22c55e",red:"#ef4444",blue:"#3b82f6",cyan:"#22d3ee",yellow:"#eab308",purple:"#a78bfa" };
@@ -19,27 +20,6 @@ const I = {
 };
 
 // ── DATA ──────────────────────────────────────────────────────────────────────
-const monthly = [
-  {month:"Aug",income:45000,expenses:28000,profit:17000},
-  {month:"Sep",income:52000,expenses:31000,profit:21000},
-  {month:"Oct",income:38000,expenses:35000,profit:3000},
-  {month:"Nov",income:61000,expenses:29000,profit:32000},
-  {month:"Dec",income:74000,expenses:42000,profit:32000},
-  {month:"Jan",income:58000,expenses:38000,profit:20000},
-  {month:"Feb",income:32000,expenses:12663,profit:19337},
-];
-const expCats = [
-  {name:"Tools & Software",value:7563,color:C.blue},
-  {name:"Rent / Hosting",value:5000,color:C.purple},
-  {name:"Wi-Fi & Comms",value:1100,color:C.cyan},
-  {name:"Reload & Misc",value:100,color:C.yellow},
-];
-const incSrc = [
-  {name:"Graphic Design",value:18000,color:C.green},
-  {name:"System Dev",value:30000,color:C.blue},
-  {name:"Consulting",value:8000,color:C.cyan},
-  {name:"Other",value:4000,color:C.purple},
-];
 
 // ── SHARED COMPONENTS ─────────────────────────────────────────────────────────
 const Tip = ({active,payload,label})=>{
@@ -79,12 +59,68 @@ const Legend2 = ({items})=>(
 );
 
 export default function ProfitLoss(){
+  const { incomes, expenses, totals } = useFinance();
   const [period,setPeriod]=useState("7M");
-  const totalIncome=monthly.reduce((s,m)=>s+m.income,0);
-  const totalExp=monthly.reduce((s,m)=>s+m.expenses,0);
-  const netProfit=totalIncome-totalExp;
-  const margin=((netProfit/totalIncome)*100).toFixed(1);
-  const best=monthly.reduce((a,b)=>a.profit>b.profit?a:b);
+
+  // Calculate monthly data (last 7 months)
+  const monthly = useMemo(() => {
+    const months = [];
+    const now = new Date();
+    for (let i = 6; i >= 0; i--) {
+      const date = new Date(now.getFullYear(), now.getMonth() - i, 1);
+      const monthLabel = date.toLocaleDateString('en-US', { month: 'short' });
+      let monthIncome = 0;
+      let monthExpense = 0;
+      incomes.forEach(income => {
+        const incomeDate = new Date(income.date);
+        if (incomeDate.getFullYear() === date.getFullYear() && incomeDate.getMonth() === date.getMonth()) {
+          monthIncome += income.amount || 0;
+        }
+      });
+      expenses.forEach(expense => {
+        const expenseDate = new Date(expense.date);
+        if (expenseDate.getFullYear() === date.getFullYear() && expenseDate.getMonth() === date.getMonth()) {
+          monthExpense += expense.amount || 0;
+        }
+      });
+      months.push({ month: monthLabel, income: monthIncome, expenses: monthExpense, profit: monthIncome - monthExpense });
+    }
+    return months;
+  }, [incomes, expenses]);
+
+  // Expense categories
+  const expCats = useMemo(() => {
+    const catMap = {};
+    const colors = [C.blue, C.purple, C.cyan, C.yellow, C.orange, C.red];
+    expenses.forEach(expense => {
+      const cat = expense.category || 'Other';
+      if (!catMap[cat]) {
+        catMap[cat] = { name: cat, value: 0, color: colors[Object.keys(catMap).length % colors.length] };
+      }
+      catMap[cat].value += expense.amount || 0;
+    });
+    return Object.values(catMap).sort((a, b) => b.value - a.value).slice(0, 4);
+  }, [expenses]);
+
+  // Income sources
+  const incSrc = useMemo(() => {
+    const sourceMap = {};
+    const colors = [C.green, C.blue, C.cyan, C.purple, C.orange, C.yellow];
+    incomes.forEach(income => {
+      const source = income.serviceType || 'Other';
+      if (!sourceMap[source]) {
+        sourceMap[source] = { name: source, value: 0, color: colors[Object.keys(sourceMap).length % colors.length] };
+      }
+      sourceMap[source].value += income.amount || 0;
+    });
+    return Object.values(sourceMap).sort((a, b) => b.value - a.value).slice(0, 4);
+  }, [incomes]);
+
+  const totalIncome = useMemo(() => monthly.reduce((s, m) => s + m.income, 0), [monthly]);
+  const totalExp = useMemo(() => monthly.reduce((s, m) => s + m.expenses, 0), [monthly]);
+  const netProfit = useMemo(() => totalIncome - totalExp, [totalIncome, totalExp]);
+  const margin = useMemo(() => totalIncome > 0 ? ((netProfit / totalIncome) * 100).toFixed(1) : '0.0', [netProfit, totalIncome]);
+  const best = useMemo(() => monthly.reduce((a, b) => a.profit > b.profit ? a : b, monthly[0] || { month: 'N/A', income: 0, profit: 0 }), [monthly]);
 
   return(
     <div style={{minHeight:"100vh",background:C.bg,fontFamily:"'DM Sans',-apple-system,sans-serif",color:C.text}}>
@@ -92,10 +128,7 @@ export default function ProfitLoss(){
       <div style={{padding:"26px 32px",display:"flex",flexDirection:"column",gap:18,animation:"fi .3s ease"}}>
 
         {/* TOOLBAR */}
-        <div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}>
-          <div style={{display:"flex",gap:6}}>
-            {["3M","6M","7M","YTD"].map(p=><button key={p} onClick={()=>setPeriod(p)} style={{background:period===p?C.blue:"transparent",color:period===p?"#fff":C.muted,border:`1px solid ${period===p?C.blue:C.border2}`,borderRadius:8,padding:"6px 14px",fontSize:12,fontWeight:700,cursor:"pointer"}}>{p}</button>)}
-          </div>
+        <div style={{display:"flex",justifyContent:"flex-end",alignItems:"center"}}>
           <div style={{display:"flex",gap:10,alignItems:"center"}}>
             <button onClick={()=>window.location.reload()} style={{display:"flex",alignItems:"center",gap:8,background:"#1c1e24",border:"1px solid #303338",borderRadius:8,padding:"9px 16px",color:"#fff",fontSize:13,fontWeight:600,cursor:"pointer",fontFamily:"inherit"}}><I.Refresh/><span>Refresh</span></button>
             <button onClick={()=>{}} style={{display:"flex",alignItems:"center",gap:8,background:"#1c1e24",border:"1px solid #303338",borderRadius:8,padding:"9px 16px",color:"#fff",fontSize:13,fontWeight:600,cursor:"pointer",fontFamily:"inherit"}}><I.Download/><span>Export CSV</span></button>

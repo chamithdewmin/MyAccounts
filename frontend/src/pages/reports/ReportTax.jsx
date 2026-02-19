@@ -1,5 +1,6 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from "recharts";
+import { useFinance } from "@/contexts/FinanceContext";
 
 const C = { bg:"#0c0e14",bg2:"#0f1117",card:"#13161e",border:"#1e2433",border2:"#2a3347",text:"#fff",text2:"#d1d9e6",muted:"#8b9ab0",faint:"#4a5568",green:"#22c55e",red:"#ef4444",blue:"#3b82f6",cyan:"#22d3ee",yellow:"#eab308",purple:"#a78bfa",orange:"#f97316" };
 
@@ -17,23 +18,6 @@ const I={
   Refresh:      ()=><Svg d="M3 12a9 9 0 019-9 9.75 9.75 0 016.74 2.74L21 8M21 12a9 9 0 01-9 9 9.75 9.75 0 01-6.74-2.74L3 16M3 12h6m12 0h-6" />,
 };
 
-const quarterly=[
-  {quarter:"Q1 2025",gross:135000,taxable:108000,deductions:27000,taxOwed:21600,status:"Filed",paid:true},
-  {quarter:"Q2 2025",gross:148000,taxable:118400,deductions:29600,taxOwed:23680,status:"Filed",paid:true},
-  {quarter:"Q3 2025",gross:125000,taxable:100000,deductions:25000,taxOwed:20000,status:"Filed",paid:true},
-  {quarter:"Q4 2025",gross:172000,taxable:137600,deductions:34400,taxOwed:27520,status:"Pending",paid:false},
-];
-const incSplit=[
-  {name:"Taxable Income",value:464000,color:C.red},
-  {name:"Non-Taxable",value:116000,color:C.green},
-  {name:"Deductions",value:116000,color:C.blue},
-];
-const categories=[
-  {name:"Service Income",taxable:true,value:180000,color:C.orange},
-  {name:"Product Sales",taxable:true,value:130000,color:C.yellow},
-  {name:"Consulting",taxable:true,value:154000,color:C.blue},
-  {name:"Grants / Gifts",taxable:false,value:116000,color:C.green},
-];
 
 const Tip=({active,payload,label})=>{
   if(!active||!payload?.length)return null;
@@ -65,13 +49,82 @@ const StatusBadge=({paid,status})=>{
 };
 
 export default function TaxReports(){
+  const { incomes, expenses, settings, totals } = useFinance();
   const [activeQ,setActiveQ]=useState(null);
-  const totalGross=quarterly.reduce((s,q)=>s+q.gross,0);
-  const totalTax=quarterly.reduce((s,q)=>s+q.taxOwed,0);
-  const totalDed=quarterly.reduce((s,q)=>s+q.deductions,0);
-  const paidTax=quarterly.filter(q=>q.paid).reduce((s,q)=>s+q.taxOwed,0);
-  const pendingTax=totalTax-paidTax;
-  const rate=((totalTax/totalGross)*100).toFixed(1);
+
+  // Calculate quarterly data
+  const quarterly = useMemo(() => {
+    if (!settings.taxEnabled) return [];
+    const now = new Date();
+    const currentYear = now.getFullYear();
+    const quarters = [];
+    for (let q = 1; q <= 4; q++) {
+      const quarterStart = new Date(currentYear, (q - 1) * 3, 1);
+      const quarterEnd = new Date(currentYear, q * 3, 0, 23, 59, 59, 999);
+      let gross = 0;
+      let totalExpenses = 0;
+      incomes.forEach(income => {
+        const incomeDate = new Date(income.date);
+        if (incomeDate >= quarterStart && incomeDate <= quarterEnd) {
+          gross += income.amount || 0;
+        }
+      });
+      expenses.forEach(expense => {
+        const expenseDate = new Date(expense.date);
+        if (expenseDate >= quarterStart && expenseDate <= quarterEnd) {
+          totalExpenses += expense.amount || 0;
+        }
+      });
+      const deductions = totalExpenses;
+      const taxable = Math.max(0, gross - deductions);
+      const taxOwed = taxable * ((settings.taxRate || 0) / 100);
+      const isCurrentQ = q === Math.ceil((now.getMonth() + 1) / 3);
+      quarters.push({
+        quarter: `Q${q} ${currentYear}`,
+        gross,
+        taxable,
+        deductions,
+        taxOwed,
+        status: isCurrentQ ? "Pending" : "Filed",
+        paid: !isCurrentQ
+      });
+    }
+    return quarters;
+  }, [incomes, expenses, settings]);
+
+  // Income split
+  const incSplit = useMemo(() => {
+    const totalIncome = incomes.reduce((s, i) => s + (i.amount || 0), 0);
+    const totalExp = expenses.reduce((s, e) => s + (e.amount || 0), 0);
+    const taxable = Math.max(0, totalIncome - totalExp);
+    const nonTaxable = 0; // Assuming all income is taxable unless specified
+    return [
+      { name: "Taxable Income", value: taxable, color: C.red },
+      { name: "Non-Taxable", value: nonTaxable, color: C.green },
+      { name: "Deductions", value: totalExp, color: C.blue },
+    ];
+  }, [incomes, expenses]);
+
+  // Income categories
+  const categories = useMemo(() => {
+    const catMap = {};
+    const colors = [C.orange, C.yellow, C.blue, C.green, C.purple, C.cyan];
+    incomes.forEach(income => {
+      const cat = income.serviceType || 'Other';
+      if (!catMap[cat]) {
+        catMap[cat] = { name: cat, taxable: true, value: 0, color: colors[Object.keys(catMap).length % colors.length] };
+      }
+      catMap[cat].value += income.amount || 0;
+    });
+    return Object.values(catMap).sort((a, b) => b.value - a.value).slice(0, 4);
+  }, [incomes]);
+
+  const totalGross = useMemo(() => quarterly.reduce((s, q) => s + q.gross, 0), [quarterly]);
+  const totalTax = useMemo(() => quarterly.reduce((s, q) => s + q.taxOwed, 0), [quarterly]);
+  const totalDed = useMemo(() => quarterly.reduce((s, q) => s + q.deductions, 0), [quarterly]);
+  const paidTax = useMemo(() => quarterly.filter(q => q.paid).reduce((s, q) => s + q.taxOwed, 0), [quarterly]);
+  const pendingTax = useMemo(() => totalTax - paidTax, [totalTax, paidTax]);
+  const rate = useMemo(() => totalGross > 0 ? ((totalTax / totalGross) * 100).toFixed(1) : '0.0', [totalTax, totalGross]);
 
   return(
     <div style={{minHeight:"100vh",background:C.bg,fontFamily:"'DM Sans',-apple-system,sans-serif",color:C.text}}>
@@ -80,11 +133,7 @@ export default function TaxReports(){
       <div style={{padding:"26px 32px",display:"flex",flexDirection:"column",gap:18,animation:"fi .3s ease"}}>
 
         {/* TOOLBAR */}
-        <div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}>
-          <div style={{display:"flex",alignItems:"center",gap:12,padding:"12px 16px",background:"rgba(239,68,68,0.08)",border:"1px solid rgba(239,68,68,0.2)",borderRadius:12}}>
-            <div style={{width:32,height:32,borderRadius:8,background:"rgba(239,68,68,0.15)",display:"flex",alignItems:"center",justifyContent:"center"}}><I.AlertTriangle/></div>
-            <div><p style={{color:C.muted,fontSize:10,margin:0,textTransform:"uppercase",letterSpacing:"0.07em",fontWeight:700}}>Pending Tax</p><p style={{color:C.red,fontSize:14,fontWeight:800,margin:"2px 0 0"}}>LKR {pendingTax.toLocaleString()}</p></div>
-          </div>
+        <div style={{display:"flex",justifyContent:"flex-end",alignItems:"center"}}>
           <div style={{display:"flex",gap:10,alignItems:"center"}}>
             <button onClick={()=>window.location.reload()} style={{display:"flex",alignItems:"center",gap:8,background:"#1c1e24",border:"1px solid #303338",borderRadius:8,padding:"9px 16px",color:"#fff",fontSize:13,fontWeight:600,cursor:"pointer",fontFamily:"inherit"}}><I.Refresh/><span>Refresh</span></button>
             <button onClick={()=>{}} style={{display:"flex",alignItems:"center",gap:8,background:"#1c1e24",border:"1px solid #303338",borderRadius:8,padding:"9px 16px",color:"#fff",fontSize:13,fontWeight:600,cursor:"pointer",fontFamily:"inherit"}}><I.Download/><span>Export CSV</span></button>

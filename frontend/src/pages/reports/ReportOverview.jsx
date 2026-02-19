@@ -1,9 +1,10 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import {
   AreaChart, Area, BarChart, Bar, LineChart, Line,
   PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid,
   Tooltip, ResponsiveContainer, Legend
 } from "recharts";
+import { useFinance } from "@/contexts/FinanceContext";
 
 // ─── COLORS ──────────────────────────────────────────────────────────────────
 const C = {
@@ -51,78 +52,7 @@ const I = {
   Download:      () => <Svg d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3" />,
 };
 
-// ─── DATA (pulled from all 4 reports) ────────────────────────────────────────
-const plMonthly = [
-  { month:"Aug", income:45000, expenses:28000, profit:17000 },
-  { month:"Sep", income:52000, expenses:31000, profit:21000 },
-  { month:"Oct", income:38000, expenses:35000, profit:3000  },
-  { month:"Nov", income:61000, expenses:29000, profit:32000 },
-  { month:"Dec", income:74000, expenses:42000, profit:32000 },
-  { month:"Jan", income:58000, expenses:38000, profit:20000 },
-  { month:"Feb", income:32000, expenses:12663, profit:19337 },
-];
-const cfData = [
-  { date:"Feb 13", inflow:30000, outflow:0,    balance:30000 },
-  { date:"Feb 14", inflow:0,     outflow:1100,  balance:28900 },
-  { date:"Feb 15", inflow:0,     outflow:5000,  balance:23900 },
-  { date:"Feb 16", inflow:0,     outflow:0,     balance:23900 },
-  { date:"Feb 17", inflow:0,     outflow:0,     balance:23900 },
-  { date:"Feb 18", inflow:2000,  outflow:7563,  balance:18337 },
-];
-const bsMonthly = [
-  { period:"Aug", assets:280000, liabilities:120000, equity:160000 },
-  { period:"Sep", assets:310000, liabilities:115000, equity:195000 },
-  { period:"Oct", assets:295000, liabilities:130000, equity:165000 },
-  { period:"Nov", assets:340000, liabilities:108000, equity:232000 },
-  { period:"Dec", assets:390000, liabilities:100000, equity:290000 },
-  { period:"Jan", assets:365000, liabilities:112000, equity:253000 },
-  { period:"Feb", assets:380000, liabilities:105000, equity:275000 },
-];
-const incomeSources = [
-  { name:"System Dev",     value:30000, color:C.blue   },
-  { name:"Graphic Design", value:18000, color:C.green  },
-  { name:"Consulting",     value:8000,  color:C.cyan   },
-  { name:"Other",          value:4000,  color:C.purple },
-];
-const recentTx = [
-  { source:"Shanan Yoshitha",         amount:30000,  type:"in",  status:"Received", date:"Feb 13", category:"Advance Payment" },
-  { source:"Prime Wheels",            amount:2000,   type:"in",  status:"Received", date:"Feb 18", category:"Graphic Job" },
-  { source:"Cursor (Tool)",           amount:-6463,  type:"out", status:"Paid",     date:"Feb 18", category:"Software" },
-  { source:"Domin (iphonecenter.lk)", amount:-5000,  type:"out", status:"Paid",     date:"Feb 15", category:"Hosting" },
-  { source:"Betax VIP",              amount:-1000,  type:"out", status:"Overdue",  date:"Feb 18", category:"Invoice" },
-  { source:"Wi-Fi",                   amount:-1100,  type:"out", status:"Paid",     date:"Feb 14", category:"Internet" },
-];
-
-// ─── METRICS ─────────────────────────────────────────────────────────────────
-const totalIncome   = plMonthly.reduce((s,m) => s + m.income, 0);
-const totalExpenses = plMonthly.reduce((s,m) => s + m.expenses, 0);
-const netProfit     = totalIncome - totalExpenses;
-const profitMargin  = ((netProfit / totalIncome) * 100).toFixed(1);
-const totalAssets   = 380000;
-const totalLiab     = 105000;
-const equity        = totalAssets - totalLiab;
-const debtRatio     = ((totalLiab / totalAssets) * 100).toFixed(1);
-const cashBalance   = 18337;
-const totalTax      = 92800;
-const paidTax       = 65280;
-const pendingTax    = totalTax - paidTax;
-const bestMonth     = plMonthly.reduce((a,b) => a.profit > b.profit ? a : b);
-const worstMonth    = plMonthly.reduce((a,b) => a.profit < b.profit ? a : b);
-const healthScore   = Math.min(100, Math.round(
-  (parseFloat(profitMargin) / 50) * 30 +
-  ((1 - totalLiab / totalAssets) * 25) +
-  (cashBalance > 10000 ? 25 : 10) + 20
-));
-
-// ─── INSIGHTS config ─────────────────────────────────────────────────────────
-const insights = [
-  { Icon: I.TrendingUp,    color: C.green,  bg:"rgba(34,197,94,0.08)",   border:"rgba(34,197,94,0.2)",   tag:"P&L",           title:"Strong Revenue Growth",      desc:`Revenue peaked at LKR 74,000 in Dec. 7-month total of LKR ${totalIncome.toLocaleString()} shows consistent client acquisition.` },
-  { Icon: I.AlertTriangle, color: C.yellow, bg:"rgba(234,179,8,0.08)",   border:"rgba(234,179,8,0.2)",   tag:"P&L",           title:"October Profit Dip",         desc:"Oct had lowest profit (LKR 3,000) due to high expenses. Monitor costs in low-revenue months." },
-  { Icon: I.Wallet,        color: C.blue,   bg:"rgba(59,130,246,0.08)",  border:"rgba(59,130,246,0.2)",  tag:"Cash Flow",     title:"Healthy Cash Position",      desc:`Current cash balance of LKR ${cashBalance.toLocaleString()} is positive. Largest inflow was LKR 30,000.` },
-  { Icon: I.AlertCircle,   color: C.red,    bg:"rgba(239,68,68,0.08)",   border:"rgba(239,68,68,0.2)",   tag:"Cash Flow",     title:"Overdue Payment Alert",      desc:"Betax VIP invoice of LKR 1,000 is overdue. Follow up to avoid bad debt." },
-  { Icon: I.ShieldCheck,   color: C.purple, bg:"rgba(167,139,250,0.08)", border:"rgba(167,139,250,0.2)", tag:"Balance Sheet", title:"Low Debt — Financially Stable", desc:`Debt ratio is ${debtRatio}% — well below the 50% danger zone. Equity of LKR ${equity.toLocaleString()} is growing.` },
-  { Icon: I.Clock,         color: C.orange, bg:"rgba(249,115,22,0.08)",  border:"rgba(249,115,22,0.2)",  tag:"Tax Reports",   title:"Q4 Tax Filing Pending",      desc:`LKR ${pendingTax.toLocaleString()} in Q4 tax is still pending. Total annual liability is LKR ${totalTax.toLocaleString()}.` },
-];
+// ─── DATA CALCULATION HELPERS ─────────────────────────────────────────────────
 
 // ─── STATUS MAP ───────────────────────────────────────────────────────────────
 const sMap = {
@@ -212,7 +142,187 @@ const MiniRow = ({ label, value, color, Icon, sub }) => (
 
 // ─── MAIN COMPONENT ───────────────────────────────────────────────────────────
 export default function OverviewReports() {
+  const { incomes, expenses, assets, loans, invoices, settings, totals } = useFinance();
   const [activeInsight, setActiveInsight] = useState(null);
+
+  // Calculate monthly P&L data (last 7 months)
+  const plMonthly = useMemo(() => {
+    const months = [];
+    const now = new Date();
+    for (let i = 6; i >= 0; i--) {
+      const date = new Date(now.getFullYear(), now.getMonth() - i, 1);
+      const monthLabel = date.toLocaleDateString('en-US', { month: 'short' });
+      let monthIncome = 0;
+      let monthExpense = 0;
+      incomes.forEach(income => {
+        const incomeDate = new Date(income.date);
+        if (incomeDate.getFullYear() === date.getFullYear() && incomeDate.getMonth() === date.getMonth()) {
+          monthIncome += income.amount || 0;
+        }
+      });
+      expenses.forEach(expense => {
+        const expenseDate = new Date(expense.date);
+        if (expenseDate.getFullYear() === date.getFullYear() && expenseDate.getMonth() === date.getMonth()) {
+          monthExpense += expense.amount || 0;
+        }
+      });
+      months.push({ month: monthLabel, income: monthIncome, expenses: monthExpense, profit: monthIncome - monthExpense });
+    }
+    return months;
+  }, [incomes, expenses]);
+
+  // Calculate cash flow data (last 14 days)
+  const cfData = useMemo(() => {
+    const now = new Date();
+    const data = [];
+    let runningBalance = totals.cashInHand || 0;
+    for (let i = 13; i >= 0; i--) {
+      const date = new Date(now);
+      date.setDate(now.getDate() - i);
+      date.setHours(0, 0, 0, 0);
+      const dateEnd = new Date(date);
+      dateEnd.setHours(23, 59, 59, 999);
+      let inflow = 0;
+      let outflow = 0;
+      incomes.forEach(income => {
+        const incomeDate = new Date(income.date);
+        if (incomeDate >= date && incomeDate <= dateEnd) inflow += income.amount || 0;
+      });
+      expenses.forEach(expense => {
+        const expenseDate = new Date(expense.date);
+        if (expenseDate >= date && expenseDate <= dateEnd) outflow += expense.amount || 0;
+      });
+      runningBalance = runningBalance - outflow + inflow;
+      data.push({
+        date: date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
+        inflow,
+        outflow,
+        balance: runningBalance
+      });
+    }
+    return data;
+  }, [incomes, expenses, totals.cashInHand]);
+
+  // Calculate balance sheet monthly data
+  const bsMonthly = useMemo(() => {
+    const months = [];
+    const now = new Date();
+    for (let i = 6; i >= 0; i--) {
+      const date = new Date(now.getFullYear(), now.getMonth() - i, 1);
+      const periodLabel = date.toLocaleDateString('en-US', { month: 'short' });
+      let monthAssets = 0;
+      let monthLiab = 0;
+      assets.forEach(asset => {
+        const assetDate = new Date(asset.date);
+        if (assetDate <= date) monthAssets += asset.amount || 0;
+      });
+      loans.forEach(loan => {
+        const loanDate = new Date(loan.date);
+        if (loanDate <= date) monthLiab += loan.amount || 0;
+      });
+      const equity = monthAssets - monthLiab;
+      months.push({ period: periodLabel, assets: monthAssets, liabilities: monthLiab, equity });
+    }
+    return months;
+  }, [assets, loans]);
+
+  // Calculate income sources breakdown
+  const incomeSources = useMemo(() => {
+    const sourceMap = {};
+    const colors = [C.blue, C.green, C.cyan, C.purple, C.orange, C.yellow];
+    incomes.forEach(income => {
+      const source = income.serviceType || 'Other';
+      if (!sourceMap[source]) {
+        sourceMap[source] = { name: source, value: 0, color: colors[Object.keys(sourceMap).length % colors.length] };
+      }
+      sourceMap[source].value += income.amount || 0;
+    });
+    return Object.values(sourceMap).sort((a, b) => b.value - a.value).slice(0, 4);
+  }, [incomes]);
+
+  // Recent transactions (last 6 transactions)
+  const recentTx = useMemo(() => {
+    const allTx = [];
+    incomes.slice(0, 10).forEach(income => {
+      const date = new Date(income.date);
+      allTx.push({
+        source: income.clientName || 'Unknown',
+        amount: income.amount || 0,
+        type: 'in',
+        status: 'Received',
+        date: date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
+        category: income.serviceType || 'Income',
+        sortDate: date
+      });
+    });
+    expenses.slice(0, 10).forEach(expense => {
+      const date = new Date(expense.date);
+      allTx.push({
+        source: expense.category || 'Expense',
+        amount: -(expense.amount || 0),
+        type: 'out',
+        status: 'Paid',
+        date: date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
+        category: expense.category || 'Expense',
+        sortDate: date
+      });
+    });
+    invoices.filter(inv => inv.status !== 'paid').forEach(invoice => {
+      const date = new Date(invoice.dueDate || invoice.createdAt);
+      allTx.push({
+        source: invoice.clientName || 'Unknown',
+        amount: -(invoice.total || 0),
+        type: 'out',
+        status: 'Overdue',
+        date: date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
+        category: 'Invoice',
+        sortDate: date
+      });
+    });
+    return allTx.sort((a, b) => b.sortDate - a.sortDate).slice(0, 6);
+  }, [incomes, expenses, invoices]);
+
+  // Calculate metrics
+  const totalIncome = useMemo(() => plMonthly.reduce((s, m) => s + m.income, 0), [plMonthly]);
+  const totalExpenses = useMemo(() => plMonthly.reduce((s, m) => s + m.expenses, 0), [plMonthly]);
+  const netProfit = useMemo(() => totalIncome - totalExpenses, [totalIncome, totalExpenses]);
+  const profitMargin = useMemo(() => totalIncome > 0 ? ((netProfit / totalIncome) * 100).toFixed(1) : '0.0', [netProfit, totalIncome]);
+  const totalAssets = useMemo(() => assets.reduce((s, a) => s + (a.amount || 0), 0) + (totals.cashInHand || 0) + (totals.bankBalance || 0), [assets, totals]);
+  const totalLiab = useMemo(() => loans.reduce((s, l) => s + (l.amount || 0), 0), [loans]);
+  const equity = useMemo(() => totalAssets - totalLiab, [totalAssets, totalLiab]);
+  const debtRatio = useMemo(() => totalAssets > 0 ? ((totalLiab / totalAssets) * 100).toFixed(1) : '0.0', [totalLiab, totalAssets]);
+  const cashBalance = useMemo(() => totals.cashInHand || 0, [totals]);
+  const totalTax = useMemo(() => {
+    if (!settings.taxEnabled) return 0;
+    return plMonthly.reduce((sum, m) => {
+      const profit = m.income - m.expenses;
+      return sum + (profit > 0 ? (profit * (settings.taxRate || 0) / 100) : 0);
+    }, 0);
+  }, [plMonthly, settings]);
+  const paidTax = useMemo(() => Math.max(0, totalTax * 0.7), [totalTax]); // Estimate 70% paid
+  const pendingTax = useMemo(() => totalTax - paidTax, [totalTax, paidTax]);
+  const bestMonth = useMemo(() => plMonthly.reduce((a, b) => a.profit > b.profit ? a : b, plMonthly[0] || { month: 'N/A', profit: 0 }), [plMonthly]);
+  const worstMonth = useMemo(() => plMonthly.reduce((a, b) => a.profit < b.profit ? a : b, plMonthly[0] || { month: 'N/A', profit: 0 }), [plMonthly]);
+  const healthScore = useMemo(() => {
+    const marginScore = parseFloat(profitMargin) > 0 ? Math.min(30, (parseFloat(profitMargin) / 50) * 30) : 0;
+    const debtScore = totalAssets > 0 ? Math.min(25, ((1 - totalLiab / totalAssets) * 25)) : 0;
+    const cashScore = cashBalance > 10000 ? 25 : cashBalance > 5000 ? 15 : 10;
+    return Math.min(100, Math.round(marginScore + debtScore + cashScore + 20));
+  }, [profitMargin, totalAssets, totalLiab, cashBalance]);
+
+  // Insights
+  const insights = useMemo(() => {
+    const maxIncomeMonth = plMonthly.reduce((a, b) => a.income > b.income ? a : b, plMonthly[0] || {});
+    const largestInflow = incomes.length > 0 ? Math.max(...incomes.map(i => i.amount || 0)) : 0;
+    return [
+      { Icon: I.TrendingUp, color: C.green, bg: "rgba(34,197,94,0.08)", border: "rgba(34,197,94,0.2)", tag: "P&L", title: "Revenue Overview", desc: `Total revenue of LKR ${totalIncome.toLocaleString()} across ${plMonthly.length} months. ${maxIncomeMonth.month} had the highest income.` },
+      { Icon: I.AlertTriangle, color: C.yellow, bg: "rgba(234,179,8,0.08)", border: "rgba(234,179,8,0.2)", tag: "P&L", title: "Profit Analysis", desc: worstMonth.profit < 0 ? `${worstMonth.month} had a loss of LKR ${Math.abs(worstMonth.profit).toLocaleString()}. Monitor expenses closely.` : `Lowest profit month was ${worstMonth.month} with LKR ${worstMonth.profit.toLocaleString()}.` },
+      { Icon: I.Wallet, color: C.blue, bg: "rgba(59,130,246,0.08)", border: "rgba(59,130,246,0.2)", tag: "Cash Flow", title: "Cash Position", desc: `Current cash balance is LKR ${cashBalance.toLocaleString()}. ${largestInflow > 0 ? `Largest single inflow was LKR ${largestInflow.toLocaleString()}.` : 'Monitor cash flow regularly.'}` },
+      { Icon: I.AlertCircle, color: C.red, bg: "rgba(239,68,68,0.08)", border: "rgba(239,68,68,0.2)", tag: "Cash Flow", title: "Payment Status", desc: invoices.filter(i => i.status !== 'paid').length > 0 ? `${invoices.filter(i => i.status !== 'paid').length} unpaid invoices totaling LKR ${invoices.filter(i => i.status !== 'paid').reduce((s, i) => s + (i.total || 0), 0).toLocaleString()}.` : 'All invoices are paid.' },
+      { Icon: I.ShieldCheck, color: C.purple, bg: "rgba(167,139,250,0.08)", border: "rgba(167,139,250,0.2)", tag: "Balance Sheet", title: "Financial Stability", desc: `Debt ratio is ${debtRatio}%. Equity stands at LKR ${equity.toLocaleString()}. ${parseFloat(debtRatio) < 40 ? 'Healthy financial position.' : 'Consider reducing debt.'}` },
+      { Icon: I.Clock, color: C.orange, bg: "rgba(249,115,22,0.08)", border: "rgba(249,115,22,0.2)", tag: "Tax Reports", title: "Tax Status", desc: settings.taxEnabled ? `Estimated tax liability: LKR ${totalTax.toLocaleString()}. ${pendingTax > 0 ? `LKR ${pendingTax.toLocaleString()} pending.` : 'All tax obligations met.'}` : 'Tax calculations disabled in settings.' },
+    ];
+  }, [plMonthly, totalIncome, worstMonth, cashBalance, incomes, invoices, debtRatio, equity, settings, totalTax, pendingTax]);
 
   return (
     <div style={{ minHeight:"100vh", background:C.bg, fontFamily:"'DM Sans',-apple-system,sans-serif", color:C.text }}>
@@ -232,26 +342,15 @@ export default function OverviewReports() {
         {/* PAGE HEADER */}
         <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-start" }}>
           <div>
-            <p style={{ color:C.muted, fontSize:11, fontWeight:700, letterSpacing:"0.1em", textTransform:"uppercase", margin:"0 0 6px" }}>Feb 2026 · Fiscal Year 2025–2026</p>
+            <p style={{ color:C.muted, fontSize:11, fontWeight:700, letterSpacing:"0.1em", textTransform:"uppercase", margin:"0 0 6px" }}>
+              {new Date().toLocaleDateString('en-US', { month: 'short', year: 'numeric' })} · Fiscal Year {new Date().getFullYear()}
+            </p>
             <h1 style={{ color:C.text, fontSize:28, fontWeight:900, margin:0, letterSpacing:"-0.03em" }}>Business Overview</h1>
             <p style={{ color:C.muted, fontSize:14, margin:"6px 0 0" }}>Unified snapshot across P&L, Cash Flow, Balance Sheet &amp; Tax reports.</p>
           </div>
-          <div style={{ display:"flex", gap:8, alignItems:"center" }}>
-            {/* Report source tags */}
-            <div style={{ display:"flex", gap:8, flexWrap:"wrap", justifyContent:"flex-end" }}>
-              {[
-                { label:"P&L",           Icon:I.BarChart2,  color:C.green  },
-                { label:"Cash Flow",     Icon:I.Activity,   color:C.blue   },
-                { label:"Balance Sheet", Icon:I.Scale,      color:C.purple },
-                { label:"Tax Reports",   Icon:I.Receipt,    color:C.yellow },
-              ].map(({ label, Icon, color }, i) => (
-                <div key={i} style={{ background:`${color}12`, border:`1px solid ${color}30`, borderRadius:20, padding:"6px 14px", display:"flex", alignItems:"center", gap:7 }}>
-                  <Icon /><span style={{ color, fontSize:12, fontWeight:700 }}>{label}</span>
-                </div>
-              ))}
-            </div>
+          <div style={{ display:"flex", gap:10, alignItems:"center", justifyContent:"flex-end" }}>
             {/* Action buttons */}
-            <div style={{ display:"flex", gap:10, alignItems:"center", marginLeft:16 }}>
+            <div style={{ display:"flex", gap:10, alignItems:"center" }}>
               <button
                 onClick={() => window.location.reload()}
                 style={{

@@ -803,7 +803,7 @@ export default function FinanceDashboard() {
                         <div style={{ display: "flex", gap: 20 }}>
                           <div>
                             <p style={{ color: "#8b9ab0", fontSize: 11, margin: "0 0 2px", textTransform: "uppercase", letterSpacing: "0.07em" }}>My Cash</p>
-                            <p style={{ color: "#fff", fontSize: 15, fontWeight: 700, margin: 0 }}>Cash in Hand Balance</p>
+                            <p style={{ color: "#fff", fontSize: 15, fontWeight: 700, margin: 0 }}>Cash in Hand</p>
                           </div>
                         </div>
                         <button style={{
@@ -819,12 +819,12 @@ export default function FinanceDashboard() {
                       <>
                         <div style={{ display: "flex", gap: 20 }}>
                           <div>
-                            <p style={{ color: "#8b9ab0", fontSize: 11, margin: "0 0 2px", textTransform: "uppercase", letterSpacing: "0.07em" }}>Card Type</p>
+                            <p style={{ color: "#8b9ab0", fontSize: 11, margin: "0 0 2px", textTransform: "uppercase", letterSpacing: "0.07em" }}>My card</p>
                             <p style={{ color: "#fff", fontSize: 15, fontWeight: 700, margin: 0 }}>Mastercard</p>
                           </div>
                           <div>
-                            <p style={{ color: "#8b9ab0", fontSize: 11, margin: "0 0 2px", textTransform: "uppercase", letterSpacing: "0.07em" }}>Expires</p>
-                            <p style={{ color: "#fff", fontSize: 15, fontWeight: 700, margin: 0 }}>{card.expiry}</p>
+                            <p style={{ color: "#8b9ab0", fontSize: 11, margin: "0 0 2px", textTransform: "uppercase", letterSpacing: "0.07em" }}>Bank Balance</p>
+                            <p style={{ color: "#fff", fontSize: 15, fontWeight: 700, margin: 0 }}>{formatCurrency(bankBalance)}</p>
                           </div>
                         </div>
                         <button style={{

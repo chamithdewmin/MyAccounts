@@ -3,7 +3,7 @@ import { Helmet } from 'react-helmet';
 import { motion } from 'framer-motion';
 import { ArrowDown, ArrowUp, Home, Code, Utensils, CreditCard as CreditCardIcon } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
-import CreditCard from '@/components/shared-assets/credit-card/credit-card';
+import { CreditCard } from '@/components/shared-assets/credit-card/credit-card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';

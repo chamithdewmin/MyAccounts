@@ -33,6 +33,17 @@ const getDefaultSettings = () => ({
     'Office & Utilities',
     'Other',
   ],
+  // Notification settings (off by default)
+  emailNotifications: false,
+  smsNotifications: false,
+  // General settings
+  autoSave: false,
+  showCurrencySymbol: true, // Commonly used, on by default
+  invoiceAutoNumbering: false,
+  autoExport: false,
+  // Format settings
+  dateFormat: 'DD/MM/YYYY',
+  numberFormat: '1,234.56',
 });
 
 export const FinanceProvider = ({ children }) => {

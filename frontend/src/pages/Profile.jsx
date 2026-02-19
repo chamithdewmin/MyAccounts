@@ -170,7 +170,12 @@ const Profile = () => {
     (s.businessName || '').trim() !== (settings?.businessName || '').trim() ||
     (s.phone || '').trim() !== (settings?.phone || '').trim();
 
-  const hasBusinessChanges = businessProfileChanged || bankFormChanged;
+  const openingBalancesChanged =
+    (s.openingCash ?? 0) !== (settings?.openingCash ?? 0) ||
+    (s.ownerCapital ?? 0) !== (settings?.ownerCapital ?? 0) ||
+    (s.payables ?? 0) !== (settings?.payables ?? 0);
+
+  const hasBusinessChanges = businessProfileChanged || bankFormChanged || openingBalancesChanged;
 
   const handleSaveBusinessAndBank = async () => {
     setSavingBusiness(true);
@@ -180,6 +185,15 @@ const Profile = () => {
         await updateSettings({
           businessName: s.businessName?.trim() || 'My Business',
           phone: s.phone?.trim() || '',
+        });
+      }
+
+      // Save opening balances
+      if (openingBalancesChanged) {
+        await updateSettings({
+          openingCash: s.openingCash ?? 0,
+          ownerCapital: s.ownerCapital ?? 0,
+          payables: s.payables ?? 0,
         });
       }
 
@@ -200,7 +214,7 @@ const Profile = () => {
 
       toast({
         title: 'Saved',
-        description: 'Business profile and bank details have been saved successfully.',
+        description: 'Business profile, bank details, and opening balances have been saved successfully.',
       });
     } catch (err) {
       toast({
@@ -391,7 +405,7 @@ const Profile = () => {
             </div>
           </div>
 
-          {/* 2. Business Profile & Bank Account */}
+          {/* 2. Business Profile, Bank Account & Opening Balances */}
           <div className="bg-card rounded-lg p-4 sm:p-6 border border-border">
             {/* Business Profile Section */}
             <div className="mb-6">
@@ -428,7 +442,7 @@ const Profile = () => {
             </div>
 
             {/* Bank Account Section */}
-            <div>
+            <div className="mb-6">
               <div className="flex items-center gap-2 mb-4">
                 <Landmark className="w-5 h-5 text-primary shrink-0" />
                 <h2 className="text-base sm:text-lg font-semibold">Bank Account</h2>
@@ -474,8 +488,57 @@ const Profile = () => {
               </div>
             </div>
 
-            {/* Combined Save Button */}
-            <div className="mt-6 pt-6 border-t border-border">
+            {/* Opening Balances Section */}
+            <div className="mb-6">
+              <div className="flex items-center gap-2 mb-4">
+                <Wallet className="w-5 h-5 text-primary shrink-0" />
+                <h2 className="text-base sm:text-lg font-semibold">Opening Balances</h2>
+              </div>
+              <p className="text-sm text-muted-foreground mb-4">
+                Starting figures for Balance Sheet. Set when you first use the system.
+              </p>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="opening-cash">Opening Cash</Label>
+                  <Input
+                    id="opening-cash"
+                    type="number"
+                    value={s.openingCash ?? 0}
+                    onChange={(e) => {
+                      setLocal((prev) => ({ ...prev, openingCash: Number(e.target.value || 0) }));
+                    }}
+                  />
+                  <p className="text-xs text-muted-foreground">Cash at business start</p>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="owner-capital">Owner Capital</Label>
+                  <Input
+                    id="owner-capital"
+                    type="number"
+                    value={s.ownerCapital ?? 0}
+                    onChange={(e) => {
+                      setLocal((prev) => ({ ...prev, ownerCapital: Number(e.target.value || 0) }));
+                    }}
+                  />
+                  <p className="text-xs text-muted-foreground">Owner deposits / investment</p>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="payables">Payables</Label>
+                  <Input
+                    id="payables"
+                    type="number"
+                    value={s.payables ?? 0}
+                    onChange={(e) => {
+                      setLocal((prev) => ({ ...prev, payables: Number(e.target.value || 0) }));
+                    }}
+                  />
+                  <p className="text-xs text-muted-foreground">Unpaid bills at start</p>
+                </div>
+              </div>
+            </div>
+
+            {/* Single Save Button for All Sections */}
+            <div className="pt-6 border-t border-border">
               <Button
                 type="button"
                 size="sm"
@@ -486,58 +549,6 @@ const Profile = () => {
                 <Save className="h-4 w-4" />
                 {savingBusiness ? 'Saving...' : 'Save Business Details'}
               </Button>
-            </div>
-          </div>
-
-          {/* 4. Opening Balances */}
-          <div className="bg-card rounded-lg p-4 sm:p-6 border border-border">
-            <div className="flex items-center gap-2 mb-4">
-              <Wallet className="w-5 h-5 text-primary shrink-0" />
-              <h2 className="text-base sm:text-lg font-semibold">Opening Balances</h2>
-            </div>
-            <p className="text-sm text-muted-foreground mb-4">
-              Starting figures for Balance Sheet. Set when you first use the system.
-            </p>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="opening-cash">Opening Cash</Label>
-                <Input
-                  id="opening-cash"
-                  type="number"
-                  value={s.openingCash ?? 0}
-                  onChange={(e) => {
-                    setLocal((prev) => ({ ...prev, openingCash: Number(e.target.value || 0) }));
-                    debouncedSave({ openingCash: Number(e.target.value || 0) });
-                  }}
-                />
-                <p className="text-xs text-muted-foreground">Cash at business start</p>
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="owner-capital">Owner Capital</Label>
-                <Input
-                  id="owner-capital"
-                  type="number"
-                  value={s.ownerCapital ?? 0}
-                  onChange={(e) => {
-                    setLocal((prev) => ({ ...prev, ownerCapital: Number(e.target.value || 0) }));
-                    debouncedSave({ ownerCapital: Number(e.target.value || 0) });
-                  }}
-                />
-                <p className="text-xs text-muted-foreground">Owner deposits / investment</p>
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="payables">Payables</Label>
-                <Input
-                  id="payables"
-                  type="number"
-                  value={s.payables ?? 0}
-                  onChange={(e) => {
-                    setLocal((prev) => ({ ...prev, payables: Number(e.target.value || 0) }));
-                    debouncedSave({ payables: Number(e.target.value || 0) });
-                  }}
-                />
-                <p className="text-xs text-muted-foreground">Unpaid bills at start</p>
-              </div>
             </div>
           </div>
 

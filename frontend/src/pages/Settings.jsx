@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { Helmet } from 'react-helmet';
 import { motion } from 'framer-motion';
-import { Save, Palette, Trash2, Percent, Receipt } from 'lucide-react';
+import { Save, Palette, Trash2, Percent, Receipt, Bell, Mail, Smartphone, Zap, DollarSign, Calendar, FileText, Download } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
@@ -56,6 +56,8 @@ const Settings = () => {
 
   const mainFields = [
     'theme', 'currency', 'taxRate', 'taxEnabled', 'logo', 'invoiceThemeColor',
+    'emailNotifications', 'smsNotifications', 'autoSave', 'showCurrencySymbol',
+    'dateFormat', 'numberFormat', 'invoiceAutoNumbering', 'autoExport',
   ];
   const hasMainSettingsChanges = mainFields.some(
     (k) => String(s[k] ?? '') !== String((settings ?? {})[k] ?? '')
@@ -218,7 +220,212 @@ const Settings = () => {
             </div>
           </div>
 
-          {/* 3. App Preferences */}
+          {/* 3. Notifications */}
+          <div className="bg-card rounded-lg p-6 border border-secondary">
+            <div className="flex items-center gap-2 mb-4">
+              <Bell className="w-5 h-5 text-primary" />
+              <h2 className="text-lg font-semibold">Notifications</h2>
+            </div>
+            <p className="text-sm text-muted-foreground mb-4">Manage how you receive updates and alerts.</p>
+            <div className="space-y-3">
+              <div className="rounded-lg border border-secondary bg-secondary/30 px-4 py-3 flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <Mail className="w-4 h-4 text-muted-foreground" />
+                  <div>
+                    <p className="text-sm font-medium">Email Notifications</p>
+                    <p className="text-xs text-muted-foreground">Receive updates via email</p>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  role="switch"
+                  aria-checked={s.emailNotifications ?? false}
+                  onClick={() => saveNow({ emailNotifications: !(s.emailNotifications ?? false) })}
+                  className={cn(
+                    'relative inline-flex h-7 w-14 items-center rounded-full border transition-colors',
+                    (s.emailNotifications ?? false) ? 'bg-primary border-primary' : 'bg-muted border-secondary',
+                  )}
+                >
+                  <span className={cn(
+                    'inline-block h-5 w-5 transform rounded-full bg-white shadow transition-transform',
+                    (s.emailNotifications ?? false) ? 'translate-x-7' : 'translate-x-1',
+                  )} />
+                </button>
+              </div>
+              <div className="rounded-lg border border-secondary bg-secondary/30 px-4 py-3 flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <Smartphone className="w-4 h-4 text-muted-foreground" />
+                  <div>
+                    <p className="text-sm font-medium">SMS Notifications</p>
+                    <p className="text-xs text-muted-foreground">Receive updates via SMS</p>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  role="switch"
+                  aria-checked={s.smsNotifications ?? false}
+                  onClick={() => saveNow({ smsNotifications: !(s.smsNotifications ?? false) })}
+                  className={cn(
+                    'relative inline-flex h-7 w-14 items-center rounded-full border transition-colors',
+                    (s.smsNotifications ?? false) ? 'bg-primary border-primary' : 'bg-muted border-secondary',
+                  )}
+                >
+                  <span className={cn(
+                    'inline-block h-5 w-5 transform rounded-full bg-white shadow transition-transform',
+                    (s.smsNotifications ?? false) ? 'translate-x-7' : 'translate-x-1',
+                  )} />
+                </button>
+              </div>
+            </div>
+          </div>
+
+          {/* 4. General Settings */}
+          <div className="bg-card rounded-lg p-6 border border-secondary">
+            <div className="flex items-center gap-2 mb-4">
+              <Zap className="w-5 h-5 text-primary" />
+              <h2 className="text-lg font-semibold">General Settings</h2>
+            </div>
+            <p className="text-sm text-muted-foreground mb-4">Common preferences and behaviors.</p>
+            <div className="space-y-3">
+              <div className="rounded-lg border border-secondary bg-secondary/30 px-4 py-3 flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <Zap className="w-4 h-4 text-muted-foreground" />
+                  <div>
+                    <p className="text-sm font-medium">Auto-Save</p>
+                    <p className="text-xs text-muted-foreground">Automatically save changes as you type</p>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  role="switch"
+                  aria-checked={s.autoSave ?? false}
+                  onClick={() => saveNow({ autoSave: !(s.autoSave ?? false) })}
+                  className={cn(
+                    'relative inline-flex h-7 w-14 items-center rounded-full border transition-colors',
+                    (s.autoSave ?? false) ? 'bg-primary border-primary' : 'bg-muted border-secondary',
+                  )}
+                >
+                  <span className={cn(
+                    'inline-block h-5 w-5 transform rounded-full bg-white shadow transition-transform',
+                    (s.autoSave ?? false) ? 'translate-x-7' : 'translate-x-1',
+                  )} />
+                </button>
+              </div>
+              <div className="rounded-lg border border-secondary bg-secondary/30 px-4 py-3 flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <DollarSign className="w-4 h-4 text-muted-foreground" />
+                  <div>
+                    <p className="text-sm font-medium">Show Currency Symbol</p>
+                    <p className="text-xs text-muted-foreground">Display currency symbol in amounts</p>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  role="switch"
+                  aria-checked={s.showCurrencySymbol ?? true}
+                  onClick={() => saveNow({ showCurrencySymbol: !(s.showCurrencySymbol ?? true) })}
+                  className={cn(
+                    'relative inline-flex h-7 w-14 items-center rounded-full border transition-colors',
+                    (s.showCurrencySymbol ?? true) ? 'bg-primary border-primary' : 'bg-muted border-secondary',
+                  )}
+                >
+                  <span className={cn(
+                    'inline-block h-5 w-5 transform rounded-full bg-white shadow transition-transform',
+                    (s.showCurrencySymbol ?? true) ? 'translate-x-7' : 'translate-x-1',
+                  )} />
+                </button>
+              </div>
+              <div className="rounded-lg border border-secondary bg-secondary/30 px-4 py-3 flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <FileText className="w-4 h-4 text-muted-foreground" />
+                  <div>
+                    <p className="text-sm font-medium">Invoice Auto-Numbering</p>
+                    <p className="text-xs text-muted-foreground">Automatically generate invoice numbers</p>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  role="switch"
+                  aria-checked={s.invoiceAutoNumbering ?? false}
+                  onClick={() => saveNow({ invoiceAutoNumbering: !(s.invoiceAutoNumbering ?? false) })}
+                  className={cn(
+                    'relative inline-flex h-7 w-14 items-center rounded-full border transition-colors',
+                    (s.invoiceAutoNumbering ?? false) ? 'bg-primary border-primary' : 'bg-muted border-secondary',
+                  )}
+                >
+                  <span className={cn(
+                    'inline-block h-5 w-5 transform rounded-full bg-white shadow transition-transform',
+                    (s.invoiceAutoNumbering ?? false) ? 'translate-x-7' : 'translate-x-1',
+                  )} />
+                </button>
+              </div>
+              <div className="rounded-lg border border-secondary bg-secondary/30 px-4 py-3 flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <Download className="w-4 h-4 text-muted-foreground" />
+                  <div>
+                    <p className="text-sm font-medium">Auto Export</p>
+                    <p className="text-xs text-muted-foreground">Automatically export data periodically</p>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  role="switch"
+                  aria-checked={s.autoExport ?? false}
+                  onClick={() => saveNow({ autoExport: !(s.autoExport ?? false) })}
+                  className={cn(
+                    'relative inline-flex h-7 w-14 items-center rounded-full border transition-colors',
+                    (s.autoExport ?? false) ? 'bg-primary border-primary' : 'bg-muted border-secondary',
+                  )}
+                >
+                  <span className={cn(
+                    'inline-block h-5 w-5 transform rounded-full bg-white shadow transition-transform',
+                    (s.autoExport ?? false) ? 'translate-x-7' : 'translate-x-1',
+                  )} />
+                </button>
+              </div>
+            </div>
+          </div>
+
+          {/* 5. Format Settings */}
+          <div className="bg-card rounded-lg p-6 border border-secondary">
+            <div className="flex items-center gap-2 mb-4">
+              <Calendar className="w-5 h-5 text-primary" />
+              <h2 className="text-lg font-semibold">Format Settings</h2>
+            </div>
+            <p className="text-sm text-muted-foreground mb-4">Customize date and number formats.</p>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="date-format">Date Format</Label>
+                <select
+                  id="date-format"
+                  className="w-full px-3 py-2 bg-secondary border border-secondary rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
+                  value={s.dateFormat || 'DD/MM/YYYY'}
+                  onChange={(e) => debouncedSave({ dateFormat: e.target.value })}
+                >
+                  <option value="DD/MM/YYYY">DD/MM/YYYY (e.g., 19/02/2026)</option>
+                  <option value="MM/DD/YYYY">MM/DD/YYYY (e.g., 02/19/2026)</option>
+                  <option value="YYYY-MM-DD">YYYY-MM-DD (e.g., 2026-02-19)</option>
+                  <option value="DD-MM-YYYY">DD-MM-YYYY (e.g., 19-02-2026)</option>
+                </select>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="number-format">Number Format</Label>
+                <select
+                  id="number-format"
+                  className="w-full px-3 py-2 bg-secondary border border-secondary rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
+                  value={s.numberFormat || '1,234.56'}
+                  onChange={(e) => debouncedSave({ numberFormat: e.target.value })}
+                >
+                  <option value="1,234.56">1,234.56 (Comma thousands, dot decimal)</option>
+                  <option value="1.234,56">1.234,56 (Dot thousands, comma decimal)</option>
+                  <option value="1 234.56">1 234.56 (Space thousands, dot decimal)</option>
+                  <option value="1234.56">1234.56 (No separator)</option>
+                </select>
+              </div>
+            </div>
+          </div>
+
+          {/* 6. App Preferences */}
           <div className="bg-card rounded-lg p-6 border border-secondary">
             <div className="flex items-center gap-2 mb-4">
               <Palette className="w-5 h-5 text-primary" />

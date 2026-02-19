@@ -1,41 +1,10 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import {
   BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer,
   Cell, PieChart, Pie
 } from "recharts";
-
-// ─── DATA ────────────────────────────────────────────────────────────────────
-const analyticsData = [
-  { month: "Jan", income: 32000, outcome: 18000 },
-  { month: "Feb", income: 29000, outcome: 15000 },
-  { month: "Mar", income: 27000, outcome: 22000 },
-  { month: "Apr", income: 35000, outcome: 20000 },
-  { month: "May", income: 41000, outcome: 28000 },
-  { month: "Jun", income: 33000, outcome: 19000 },
-  { month: "Jul", income: 56456, outcome: 24000 },
-  { month: "Aug", income: 28000, outcome: 17000 },
-];
-
-const activityData = [
-  { day: "Mo", earning: 2800, spent: 1200 },
-  { day: "Tu", earning: 1900, spent: 800 },
-  { day: "We", earning: 2400, spent: 1800 },
-  { day: "Th", earning: 3000, spent: 1400 },
-  { day: "Fr", earning: 2200, spent: 900 },
-  { day: "Sa", earning: 1500, spent: 600 },
-  { day: "Su", earning: 1800, spent: 750 },
-];
-
-const payments = [
-  { icon: "💳", label: "Account", spent: 3241, total: 10000, color: "#3b82f6" },
-  { icon: "💻", label: "Software", spent: 241, total: 1250, color: "#22d3ee" },
-  { icon: "🏠", label: "Rent House", spent: 1541, total: 52000, color: "#60a5fa" },
-  { icon: "🍔", label: "Food", spent: 141, total: 1000, color: "#3b82f6" },
-];
-
-const totalIncome = 632000;
-const totalOutcome = 280000;
-const netProfit = totalIncome - totalOutcome;
+import { useFinance } from "@/contexts/FinanceContext";
+import { useAuth } from "@/contexts/AuthContext";
 
 // ─── MASTERCARD ───────────────────────────────────────────────────────────────
 const MastercardIcon = () => (
@@ -46,14 +15,14 @@ const MastercardIcon = () => (
 );
 
 // ─── CUSTOM TOOLTIP ───────────────────────────────────────────────────────────
-const CustomTooltip = ({ active, payload, label }) => {
+const CustomTooltip = ({ active, payload, label, currency = "" }) => {
   if (active && payload && payload.length) {
     return (
       <div style={{ background: "#1e2433", border: "1px solid #2a3347", borderRadius: 10, padding: "10px 14px" }}>
-        <p style={{ color: "#fff", fontWeight: 700, marginBottom: 4, fontSize: 13 }}>{label} 2024</p>
+        <p style={{ color: "#fff", fontWeight: 700, marginBottom: 4, fontSize: 13 }}>{label}</p>
         {payload.map((p, i) => (
           <p key={i} style={{ color: p.color, fontSize: 12, margin: "2px 0" }}>
-            ${p.value.toLocaleString()}
+            {currency} {p.value.toLocaleString()}
           </p>
         ))}
       </div>
@@ -83,11 +52,13 @@ const StatCard = ({ icon, iconBg, label, value, badge, badgeColor }) => (
     <div>
       <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
         <p style={{ color: "#8b9ab0", fontSize: 12, margin: 0, fontWeight: 500 }}>{label}</p>
-        <span style={{
-          background: badgeColor === "green" ? "rgba(34,197,94,0.15)" : "rgba(239,68,68,0.15)",
-          color: badgeColor === "green" ? "#22c55e" : "#ef4444",
-          fontSize: 10, fontWeight: 700, padding: "2px 6px", borderRadius: 6,
-        }}>{badge}</span>
+        {badge && (
+          <span style={{
+            background: badgeColor === "green" ? "rgba(34,197,94,0.15)" : "rgba(239,68,68,0.15)",
+            color: badgeColor === "green" ? "#22c55e" : "#ef4444",
+            fontSize: 10, fontWeight: 700, padding: "2px 6px", borderRadius: 6,
+          }}>{badge}</span>
+        )}
       </div>
       <p style={{ color: "#fff", fontSize: 22, fontWeight: 800, margin: "4px 0 0", letterSpacing: "-0.03em" }}>{value}</p>
     </div>
@@ -96,7 +67,248 @@ const StatCard = ({ icon, iconBg, label, value, badge, badgeColor }) => (
 
 // ─── MAIN DASHBOARD ───────────────────────────────────────────────────────────
 export default function FinanceDashboard() {
+  const { incomes, expenses, totals, settings } = useFinance();
+  const { user } = useAuth();
   const [activeBar, setActiveBar] = useState(null);
+
+  // Get current year for display
+  const currentYear = new Date().getFullYear();
+
+  // Calculate monthly analytics for last 8 months
+  const analyticsData = useMemo(() => {
+    const months = [];
+    const now = new Date();
+    
+    for (let i = 7; i >= 0; i--) {
+      const date = new Date(now.getFullYear(), now.getMonth() - i, 1);
+      const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+      const monthLabel = date.toLocaleDateString('en-US', { month: 'short' });
+      
+      let monthIncome = 0;
+      let monthExpense = 0;
+      
+      incomes.forEach(income => {
+        const incomeDate = new Date(income.date);
+        if (incomeDate.getFullYear() === date.getFullYear() && incomeDate.getMonth() === date.getMonth()) {
+          monthIncome += income.amount || 0;
+        }
+      });
+      
+      expenses.forEach(expense => {
+        const expenseDate = new Date(expense.date);
+        if (expenseDate.getFullYear() === date.getFullYear() && expenseDate.getMonth() === date.getMonth()) {
+          monthExpense += expense.amount || 0;
+        }
+      });
+      
+      months.push({
+        month: monthLabel,
+        income: monthIncome,
+        outcome: monthExpense,
+      });
+    }
+    
+    return months;
+  }, [incomes, expenses]);
+
+  // Calculate weekly activity (current week)
+  const activityData = useMemo(() => {
+    const now = new Date();
+    const dayOfWeek = now.getDay();
+    const startOfWeek = new Date(now);
+    startOfWeek.setDate(now.getDate() - dayOfWeek + (dayOfWeek === 0 ? -6 : 1)); // Monday
+    startOfWeek.setHours(0, 0, 0, 0);
+    
+    const days = ['Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa', 'Su'];
+    const weekData = [];
+    
+    for (let i = 0; i < 7; i++) {
+      const dayStart = new Date(startOfWeek);
+      dayStart.setDate(startOfWeek.getDate() + i);
+      dayStart.setHours(0, 0, 0, 0);
+      
+      const dayEnd = new Date(dayStart);
+      dayEnd.setHours(23, 59, 59, 999);
+      
+      let earning = 0;
+      let spent = 0;
+      
+      incomes.forEach(income => {
+        const incomeDate = new Date(income.date);
+        incomeDate.setHours(0, 0, 0, 0);
+        if (incomeDate >= dayStart && incomeDate <= dayEnd) {
+          earning += income.amount || 0;
+        }
+      });
+      
+      expenses.forEach(expense => {
+        const expenseDate = new Date(expense.date);
+        expenseDate.setHours(0, 0, 0, 0);
+        if (expenseDate >= dayStart && expenseDate <= dayEnd) {
+          spent += expense.amount || 0;
+        }
+      });
+      
+      weekData.push({
+        day: days[i],
+        earning,
+        spent,
+      });
+    }
+    
+    return weekData;
+  }, [incomes, expenses]);
+
+  // Calculate expense categories for payments
+  const payments = useMemo(() => {
+    const categoryMap = {};
+    const categoryIcons = {
+      'Hosting': '💻',
+      'Tools & Subscriptions': '🔧',
+      'Advertising & Marketing': '📢',
+      'Transport': '🚗',
+      'Office & Utilities': '🏠',
+      'Food': '🍔',
+      'Other': '💳',
+    };
+    const colors = ["#3b82f6", "#22d3ee", "#60a5fa", "#8b5cf6", "#ec4899", "#f59e0b", "#10b981"];
+    
+    expenses.forEach(expense => {
+      const category = expense.category || 'Other';
+      if (!categoryMap[category]) {
+        categoryMap[category] = { spent: 0, total: 0 };
+      }
+      categoryMap[category].spent += expense.amount || 0;
+    });
+    
+    // Calculate total (spent + remaining budget estimate)
+    Object.keys(categoryMap).forEach(category => {
+      // Estimate total as 150% of spent for visualization
+      categoryMap[category].total = categoryMap[category].spent * 1.5;
+    });
+    
+    return Object.entries(categoryMap)
+      .map(([category, data], index) => ({
+        icon: categoryIcons[category] || '💳',
+        label: category,
+        spent: data.spent,
+        total: data.total,
+        color: colors[index % colors.length],
+      }))
+      .sort((a, b) => b.spent - a.spent)
+      .slice(0, 4); // Top 4 categories
+  }, [expenses]);
+
+  // Calculate activity percentages for gauge
+  const activityPercentages = useMemo(() => {
+    const now = new Date();
+    const thisMonth = now.getMonth();
+    const thisYear = now.getFullYear();
+    
+    const monthlyIncome = incomes
+      .filter(i => {
+        const d = new Date(i.date);
+        return d.getMonth() === thisMonth && d.getFullYear() === thisYear;
+      })
+      .reduce((sum, i) => sum + (i.amount || 0), 0);
+    
+    const monthlyExpenses = expenses
+      .filter(e => {
+        const d = new Date(e.date);
+        return d.getMonth() === thisMonth && d.getFullYear() === thisYear;
+      })
+      .reduce((sum, e) => sum + (e.amount || 0), 0);
+    
+    const total = monthlyIncome + monthlyExpenses;
+    if (total === 0) return { dailyPayment: 0, hobby: 0, total: 0 };
+    
+    const dailyPaymentPercent = total > 0 ? Math.round((monthlyIncome / total) * 100) : 0;
+    const hobbyPercent = total > 0 ? Math.round((monthlyExpenses / total) * 100) : 0;
+    
+    return {
+      dailyPayment: dailyPaymentPercent,
+      hobby: hobbyPercent,
+      total: dailyPaymentPercent + hobbyPercent,
+    };
+  }, [incomes, expenses]);
+
+  // Format currency
+  const formatCurrency = (amount) => {
+    return `${settings.currency || ''} ${(amount || 0).toLocaleString()}`;
+  };
+
+  // Get greeting
+  const getGreeting = () => {
+    const hour = new Date().getHours();
+    if (hour < 12) return "Good morning";
+    if (hour < 18) return "Good afternoon";
+    return "Good evening";
+  };
+
+  const userName = user?.name || "there";
+  const netProfit = totals.yearlyProfit || 0;
+  const totalIncome = totals.yearlyIncome || 0;
+  const totalOutcome = totals.yearlyExpenses || 0;
+  const bankBalance = totals.bankBalance || 0;
+  const cashBalance = totals.cashInHand || 0;
+  const cardBalance = bankBalance + cashBalance;
+
+  // Calculate percentage changes (simplified - comparing this month to last month)
+  const monthlyChange = useMemo(() => {
+    const now = new Date();
+    const thisMonth = now.getMonth();
+    const thisYear = now.getFullYear();
+    const lastMonth = thisMonth === 0 ? 11 : thisMonth - 1;
+    const lastMonthYear = thisMonth === 0 ? thisYear - 1 : thisYear;
+    
+    const thisMonthIncome = incomes
+      .filter(i => {
+        const d = new Date(i.date);
+        return d.getMonth() === thisMonth && d.getFullYear() === thisYear;
+      })
+      .reduce((sum, i) => sum + (i.amount || 0), 0);
+    
+    const lastMonthIncome = incomes
+      .filter(i => {
+        const d = new Date(i.date);
+        return d.getMonth() === lastMonth && d.getFullYear() === lastMonthYear;
+      })
+      .reduce((sum, i) => sum + (i.amount || 0), 0);
+    
+    const thisMonthExpense = expenses
+      .filter(e => {
+        const d = new Date(e.date);
+        return d.getMonth() === thisMonth && d.getFullYear() === thisYear;
+      })
+      .reduce((sum, e) => sum + (e.amount || 0), 0);
+    
+    const lastMonthExpense = expenses
+      .filter(e => {
+        const d = new Date(e.date);
+        return d.getMonth() === lastMonth && d.getFullYear() === lastMonthYear;
+      })
+      .reduce((sum, e) => sum + (e.amount || 0), 0);
+    
+    const incomeChange = lastMonthIncome > 0 
+      ? (((thisMonthIncome - lastMonthIncome) / lastMonthIncome) * 100).toFixed(2)
+      : "0.00";
+    
+    const expenseChange = lastMonthExpense > 0
+      ? (((thisMonthExpense - lastMonthExpense) / lastMonthExpense) * 100).toFixed(2)
+      : "0.00";
+    
+    const profitChange = (thisMonthIncome - thisMonthExpense) - (lastMonthIncome - lastMonthExpense);
+    const lastProfit = lastMonthIncome - lastMonthExpense;
+    const profitChangePercent = lastProfit !== 0
+      ? ((profitChange / Math.abs(lastProfit)) * 100).toFixed(2)
+      : "0.00";
+    
+    return {
+      income: incomeChange,
+      expense: expenseChange,
+      profit: profitChangePercent,
+    };
+  }, [incomes, expenses]);
 
   const s = {
     page: {
@@ -133,7 +345,7 @@ export default function FinanceDashboard() {
       <div className="dashboard-container" style={s.page}>
       {/* HEADER */}
       <div style={{ marginBottom: 6 }}>
-        <p style={{ color: "#8b9ab0", fontSize: 13, margin: 0 }}>Good morning, Alex 👋</p>
+        <p style={{ color: "#8b9ab0", fontSize: 13, margin: 0 }}>{getGreeting()}, {userName} 👋</p>
         <h1 style={{ color: "#fff", fontSize: 20, fontWeight: 800, margin: "2px 0 20px", letterSpacing: "-0.02em" }}>
           Here's what's happening with your finances today.
         </h1>
@@ -141,9 +353,30 @@ export default function FinanceDashboard() {
 
       {/* TOP STAT CARDS */}
       <div style={{ display: "flex", gap: 16, marginBottom: 16, flexWrap: "wrap" }}>
-        <StatCard icon="↙" iconBg="rgba(59,130,246,0.2)" label="Total Income" value="$632,000" badge="+3.23%" badgeColor="green" />
-        <StatCard icon="↗" iconBg="rgba(239,68,68,0.15)" label="Total Outcome" value="$280,000" badge="-0.68%" badgeColor="red" />
-        <StatCard icon="📈" iconBg="rgba(34,197,94,0.15)" label="Net Profit" value={`$${netProfit.toLocaleString()}`} badge="+12.5%" badgeColor="green" />
+        <StatCard 
+          icon="↙" 
+          iconBg="rgba(59,130,246,0.2)" 
+          label="Total Income" 
+          value={formatCurrency(totalIncome)} 
+          badge={monthlyChange.income !== "0.00" ? `${parseFloat(monthlyChange.income) > 0 ? '+' : ''}${monthlyChange.income}%` : null}
+          badgeColor={parseFloat(monthlyChange.income) >= 0 ? "green" : "red"} 
+        />
+        <StatCard 
+          icon="↗" 
+          iconBg="rgba(239,68,68,0.15)" 
+          label="Total Outcome" 
+          value={formatCurrency(totalOutcome)} 
+          badge={monthlyChange.expense !== "0.00" ? `${parseFloat(monthlyChange.expense) > 0 ? '+' : ''}${monthlyChange.expense}%` : null}
+          badgeColor={parseFloat(monthlyChange.expense) <= 0 ? "green" : "red"} 
+        />
+        <StatCard 
+          icon="📈" 
+          iconBg="rgba(34,197,94,0.15)" 
+          label="Net Profit" 
+          value={formatCurrency(netProfit)} 
+          badge={monthlyChange.profit !== "0.00" ? `${parseFloat(monthlyChange.profit) > 0 ? '+' : ''}${monthlyChange.profit}%` : null}
+          badgeColor={parseFloat(monthlyChange.profit) >= 0 ? "green" : "red"} 
+        />
       </div>
 
       {/* MAIN GRID */}
@@ -164,14 +397,14 @@ export default function FinanceDashboard() {
                   <div style={{ width: 8, height: 8, borderRadius: "50%", background: "#22d3ee" }} />
                   <span style={{ color: "#8b9ab0", fontSize: 12 }}>Outcome</span>
                 </div>
-                <div style={{ background: "#1e2433", borderRadius: 8, padding: "4px 12px", fontSize: 12, color: "#8b9ab0" }}>2024 ▾</div>
+                <div style={{ background: "#1e2433", borderRadius: 8, padding: "4px 12px", fontSize: 12, color: "#8b9ab0" }}>{currentYear} ▾</div>
               </div>
             </div>
             <ResponsiveContainer width="100%" height={220}>
               <BarChart data={analyticsData} barGap={4} barCategoryGap={20}>
                 <XAxis dataKey="month" axisLine={false} tickLine={false} tick={{ fill: "#8b9ab0", fontSize: 12 }} />
-                <YAxis axisLine={false} tickLine={false} tick={{ fill: "#8b9ab0", fontSize: 11 }} tickFormatter={v => `${v / 1000}K`} />
-                <Tooltip content={<CustomTooltip />} cursor={{ fill: "rgba(255,255,255,0.03)" }} />
+                <YAxis axisLine={false} tickLine={false} tick={{ fill: "#8b9ab0", fontSize: 11 }} tickFormatter={v => `${(v / 1000).toFixed(0)}K`} />
+                <Tooltip content={<CustomTooltip currency={settings.currency || ''} />} cursor={{ fill: "rgba(255,255,255,0.03)" }} />
                 <Bar dataKey="income" radius={[6, 6, 0, 0]} fill="#3b82f6" />
                 <Bar dataKey="outcome" radius={[6, 6, 0, 0]} fill="#22d3ee" opacity={0.7} />
               </BarChart>
@@ -198,8 +431,8 @@ export default function FinanceDashboard() {
               <ResponsiveContainer width="100%" height={160}>
                 <BarChart data={activityData} barGap={2} barCategoryGap={14}>
                   <XAxis dataKey="day" axisLine={false} tickLine={false} tick={{ fill: "#8b9ab0", fontSize: 11 }} />
-                  <YAxis axisLine={false} tickLine={false} tick={{ fill: "#8b9ab0", fontSize: 10 }} tickFormatter={v => `$${v / 1000}k`} width={30} />
-                  <Tooltip content={<CustomTooltip />} cursor={{ fill: "rgba(255,255,255,0.03)" }} />
+                  <YAxis axisLine={false} tickLine={false} tick={{ fill: "#8b9ab0", fontSize: 10 }} tickFormatter={v => `${settings.currency || ''}${(v / 1000).toFixed(0)}k`} width={30} />
+                  <Tooltip content={<CustomTooltip currency={settings.currency || ''} />} cursor={{ fill: "rgba(255,255,255,0.03)" }} />
                   <Bar dataKey="earning" radius={[4, 4, 0, 0]} fill="#3b82f6" />
                   <Bar dataKey="spent" radius={[4, 4, 0, 0]} fill="#22d3ee" opacity={0.7} />
                 </BarChart>
@@ -210,7 +443,7 @@ export default function FinanceDashboard() {
             <div style={s.card}>
               <h3 style={{ color: "#fff", fontSize: 14, fontWeight: 700, margin: "0 0 14px" }}>Payment</h3>
               <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
-                {payments.map((p, i) => (
+                {payments.length > 0 ? payments.map((p, i) => (
                   <div key={i}>
                     <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 5 }}>
                       <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
@@ -218,14 +451,16 @@ export default function FinanceDashboard() {
                         <span style={{ color: "#d1d9e6", fontSize: 13, fontWeight: 500 }}>{p.label}</span>
                       </div>
                       <span style={{ color: "#8b9ab0", fontSize: 11 }}>
-                        <span style={{ color: "#fff", fontWeight: 600 }}>${p.spent.toLocaleString()}</span>/${p.total.toLocaleString()}
+                        <span style={{ color: "#fff", fontWeight: 600 }}>{formatCurrency(p.spent)}</span>/{formatCurrency(p.total)}
                       </span>
                     </div>
                     <div style={{ height: 3, background: "#1e2433", borderRadius: 99 }}>
-                      <div style={{ height: 3, background: p.color, borderRadius: 99, width: `${(p.spent / p.total) * 100}%` }} />
+                      <div style={{ height: 3, background: p.color, borderRadius: 99, width: `${Math.min((p.spent / p.total) * 100, 100)}%` }} />
                     </div>
                   </div>
-                ))}
+                )) : (
+                  <p style={{ color: "#8b9ab0", fontSize: 12, textAlign: "center", margin: "20px 0" }}>No expense data available</p>
+                )}
               </div>
             </div>
           </div>
@@ -238,7 +473,7 @@ export default function FinanceDashboard() {
           <div style={s.card}>
             <h2 style={{ color: "#fff", fontSize: 16, fontWeight: 700, margin: "0 0 4px" }}>My Card</h2>
             <p style={{ color: "#8b9ab0", fontSize: 12, margin: "0 0 2px" }}>Card Balance</p>
-            <p style={{ color: "#fff", fontSize: 22, fontWeight: 800, margin: "0 0 14px", letterSpacing: "-0.02em" }}>$15,595.015</p>
+            <p style={{ color: "#fff", fontSize: 22, fontWeight: 800, margin: "0 0 14px", letterSpacing: "-0.02em" }}>{formatCurrency(cardBalance)}</p>
 
             {/* Credit Card */}
             <div style={{
@@ -255,13 +490,17 @@ export default function FinanceDashboard() {
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", position: "relative", zIndex: 1 }}>
                 <div>
                   <p style={{ color: "rgba(255,255,255,0.6)", fontSize: 10, margin: 0, letterSpacing: "0.08em", textTransform: "uppercase" }}>Current Balance</p>
-                  <p style={{ color: "#fff", fontSize: 22, fontWeight: 800, margin: "4px 0 0", letterSpacing: "-0.02em" }}>$5,750,20</p>
+                  <p style={{ color: "#fff", fontSize: 22, fontWeight: 800, margin: "4px 0 0", letterSpacing: "-0.02em" }}>{formatCurrency(bankBalance)}</p>
                 </div>
                 <MastercardIcon />
               </div>
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", marginTop: 22, position: "relative", zIndex: 1 }}>
-                <p style={{ color: "rgba(255,255,255,0.75)", fontSize: 12, fontFamily: "monospace", letterSpacing: "0.15em", margin: 0 }}>5282 3456 7890 1289</p>
-                <p style={{ color: "rgba(255,255,255,0.75)", fontSize: 12, margin: 0 }}>09/25</p>
+                <p style={{ color: "rgba(255,255,255,0.75)", fontSize: 12, fontFamily: "monospace", letterSpacing: "0.15em", margin: 0 }}>
+                  {settings.bankDetails?.accountNumber?.replace(/(.{4})/g, '$1 ').trim() || '**** **** **** ****'}
+                </p>
+                <p style={{ color: "rgba(255,255,255,0.75)", fontSize: 12, margin: 0 }}>
+                  {new Date().toLocaleDateString('en-US', { month: '2-digit', year: '2-digit' })}
+                </p>
               </div>
             </div>
 
@@ -291,27 +530,39 @@ export default function FinanceDashboard() {
             </div>
             <div style={{ display: "flex", justifyContent: "center" }}>
               <PieChart width={200} height={120}>
-                <Pie data={[{ value: 75 }, { value: 25 }]} cx={100} cy={110} startAngle={180} endAngle={0} innerRadius={65} outerRadius={92} dataKey="value" strokeWidth={0}>
+                <Pie 
+                  data={[{ value: activityPercentages.dailyPayment || 0 }, { value: activityPercentages.hobby || 0 }]} 
+                  cx={100} 
+                  cy={110} 
+                  startAngle={180} 
+                  endAngle={0} 
+                  innerRadius={65} 
+                  outerRadius={92} 
+                  dataKey="value" 
+                  strokeWidth={0}
+                >
                   <Cell fill="#3b82f6" />
                   <Cell fill="#22d3ee" opacity={0.25} />
                 </Pie>
               </PieChart>
             </div>
-            <p style={{ color: "#fff", fontWeight: 800, fontSize: 22, textAlign: "center", margin: "-20px 0 12px", letterSpacing: "-0.02em" }}>75%</p>
+            <p style={{ color: "#fff", fontWeight: 800, fontSize: 22, textAlign: "center", margin: "-20px 0 12px", letterSpacing: "-0.02em" }}>
+              {activityPercentages.total || 0}%
+            </p>
             <div style={{ display: "flex", justifyContent: "space-around" }}>
               <div style={{ textAlign: "center" }}>
                 <div style={{ display: "flex", alignItems: "center", gap: 6, justifyContent: "center" }}>
                   <div style={{ width: 8, height: 8, borderRadius: "50%", background: "#3b82f6" }} />
-                  <span style={{ color: "#8b9ab0", fontSize: 12 }}>Daily payment</span>
+                  <span style={{ color: "#8b9ab0", fontSize: 12 }}>Income</span>
                 </div>
-                <p style={{ color: "#fff", fontWeight: 700, fontSize: 16, margin: "4px 0 0" }}>55%</p>
+                <p style={{ color: "#fff", fontWeight: 700, fontSize: 16, margin: "4px 0 0" }}>{activityPercentages.dailyPayment || 0}%</p>
               </div>
               <div style={{ textAlign: "center" }}>
                 <div style={{ display: "flex", alignItems: "center", gap: 6, justifyContent: "center" }}>
                   <div style={{ width: 8, height: 8, borderRadius: "50%", background: "#22d3ee" }} />
-                  <span style={{ color: "#8b9ab0", fontSize: 12 }}>Hobby</span>
+                  <span style={{ color: "#8b9ab0", fontSize: 12 }}>Expenses</span>
                 </div>
-                <p style={{ color: "#fff", fontWeight: 700, fontSize: 16, margin: "4px 0 0" }}>20%</p>
+                <p style={{ color: "#fff", fontWeight: 700, fontSize: 16, margin: "4px 0 0" }}>{activityPercentages.hobby || 0}%</p>
               </div>
             </div>
           </div>

@@ -48,32 +48,60 @@ const toSettings = (row) => {
   return base;
 };
 
-router.get('/', async (req, res) => {
-  try {
-    const uid = req.user.id;
-    const { rows } = await pool.query('SELECT * FROM settings WHERE user_id = $1', [uid]);
-    if (!rows[0]) {
-      await pool.query(
-        `INSERT INTO settings (user_id, business_name) VALUES ($1, 'My Business')`,
-        [uid]
-      );
-      const { rows: r } = await pool.query('SELECT * FROM settings WHERE user_id = $1', [uid]);
-      return res.json(toSettings(r[0]));
-    }
-    const settings = toSettings(rows[0]);
-    res.json(settings);
-  } catch (err) {
-    console.error('[settings GET]', err.message, err.stack);
-    res.status(500).json({ error: 'Server error', details: process.env.NODE_ENV === 'development' ? err.message : undefined });
-  }
-});
-
 const hasPhoneColumn = async () => {
   const { rows } = await pool.query(
     `SELECT 1 FROM information_schema.columns WHERE table_name = 'settings' AND column_name = 'phone'`
   );
   return rows.length > 0;
 };
+
+router.get('/', async (req, res) => {
+  try {
+    const uid = req.user.id;
+    const hasPhone = await hasPhoneColumn();
+    
+    // Build SELECT query to explicitly include phone if column exists
+    let selectQuery = 'SELECT * FROM settings WHERE user_id = $1';
+    const { rows } = await pool.query(selectQuery, [uid]);
+    
+    if (!rows[0]) {
+      // Insert default settings
+      if (hasPhone) {
+        await pool.query(
+          `INSERT INTO settings (user_id, business_name, phone) VALUES ($1, 'My Business', '')`,
+          [uid]
+        );
+      } else {
+        await pool.query(
+          `INSERT INTO settings (user_id, business_name) VALUES ($1, 'My Business')`,
+          [uid]
+        );
+      }
+      const { rows: r } = await pool.query(selectQuery, [uid]);
+      const row = r[0];
+      // Ensure phone is always included in response
+      if (!hasPhone) {
+        row.phone = '';
+      }
+      return res.json(toSettings(row));
+    }
+    
+    // Ensure phone is always included in response, even if column doesn't exist
+    const row = rows[0];
+    if (!hasPhone) {
+      row.phone = '';
+    } else if (row.phone == null) {
+      // If column exists but value is null, set to empty string
+      row.phone = '';
+    }
+    
+    const settings = toSettings(row);
+    res.json(settings);
+  } catch (err) {
+    console.error('[settings GET]', err.message, err.stack);
+    res.status(500).json({ error: 'Server error', details: process.env.NODE_ENV === 'development' ? err.message : undefined });
+  }
+});
 
 const hasProfileAvatarColumn = async () => {
   const { rows } = await pool.query(

@@ -42,18 +42,34 @@ const Profile = () => {
   useEffect(() => {
     if (!settings) return;
     // Ensure phone number is properly loaded (handle both null and empty string)
-    const phoneValue = settings.phone !== null && settings.phone !== undefined ? settings.phone : '';
-    setLocal((prev) => ({
-      ...prev,
-      ...settings,
-      profileAvatar: settings.profileAvatar || null,
-      phone: phoneValue,
-      businessName: settings.businessName || prev.businessName || 'My Business',
-      openingCash: settings.openingCash ?? 0,
-      ownerCapital: settings.ownerCapital ?? 0,
-      payables: settings.payables ?? 0,
-    }));
-  }, [settings]);
+    // Convert to string explicitly to handle any type issues
+    const phoneValue = settings.phone != null ? String(settings.phone) : '';
+    
+    setLocal((prev) => {
+      // Only update fields that come from settings, preserve user input for other fields
+      return {
+        ...prev,
+        // User info from auth context (don't overwrite if user is typing)
+        firstName: user?.name?.split(' ')[0] || prev.firstName || '',
+        lastName: user?.name?.split(' ').slice(1).join(' ') || prev.lastName || '',
+        email: user?.email || prev.email || '',
+        // Settings from database - always sync these
+        profileAvatar: settings.profileAvatar ?? null,
+        phone: phoneValue, // Explicitly set phone value
+        businessName: settings.businessName || 'My Business',
+        openingCash: settings.openingCash ?? 0,
+        ownerCapital: settings.ownerCapital ?? 0,
+        payables: settings.payables ?? 0,
+        currency: settings.currency || 'LKR',
+        taxRate: settings.taxRate ?? 10,
+        taxEnabled: settings.taxEnabled ?? true,
+        theme: settings.theme || 'dark',
+        logo: settings.logo ?? null,
+        invoiceThemeColor: settings.invoiceThemeColor || '#F97316',
+        expenseCategories: settings.expenseCategories || [],
+      };
+    });
+  }, [settings, user]);
 
   useEffect(() => {
     const b = settings?.bankDetails;

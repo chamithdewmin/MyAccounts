@@ -7,7 +7,19 @@ router.use(authMiddleware);
 
 const toSettings = (row) => {
   // Parse additional settings from JSONB if exists
-  const additionalSettings = row.settings_json && typeof row.settings_json === 'object' ? row.settings_json : {};
+  let additionalSettings = {};
+  if (row.settings_json) {
+    try {
+      if (typeof row.settings_json === 'string') {
+        additionalSettings = JSON.parse(row.settings_json);
+      } else if (typeof row.settings_json === 'object') {
+        additionalSettings = row.settings_json;
+      }
+    } catch (e) {
+      // If parsing fails, use empty object
+      additionalSettings = {};
+    }
+  }
   
   const base = {
     businessName: row.business_name || 'My Business',
@@ -48,10 +60,11 @@ router.get('/', async (req, res) => {
       const { rows: r } = await pool.query('SELECT * FROM settings WHERE user_id = $1', [uid]);
       return res.json(toSettings(r[0]));
     }
-    res.json(toSettings(rows[0]));
+    const settings = toSettings(rows[0]);
+    res.json(settings);
   } catch (err) {
-    console.error('[settings GET]', err);
-    res.status(500).json({ error: 'Server error' });
+    console.error('[settings GET]', err.message, err.stack);
+    res.status(500).json({ error: 'Server error', details: process.env.NODE_ENV === 'development' ? err.message : undefined });
   }
 });
 
@@ -100,45 +113,43 @@ router.put('/', async (req, res) => {
 
     const invoiceThemeColor = (d.invoiceThemeColor || '#F97316').toString().trim().slice(0, 20);
     if (usePhone) {
-      let params;
-      let updateQuery = `UPDATE settings SET
-          business_name = COALESCE($1, business_name),
-          phone = COALESCE($2, phone),
-          currency = COALESCE($3, currency),
-          tax_rate = COALESCE($4, tax_rate),
-          tax_enabled = COALESCE($5, tax_enabled),
-          theme = COALESCE($6, theme),
-          logo = COALESCE($7, logo),`;
-      let paramIndex = 8;
-      if (useProfileAvatar) {
-        updateQuery += ` profile_avatar = COALESCE($${paramIndex}, profile_avatar),`;
-        paramIndex++;
-      }
-      updateQuery += ` invoice_theme_color = COALESCE($${paramIndex}, invoice_theme_color),`;
-      paramIndex++;
-      updateQuery += ` opening_cash = COALESCE($${paramIndex}, opening_cash),`;
-      paramIndex++;
-      updateQuery += ` owner_capital = COALESCE($${paramIndex}, owner_capital),`;
-      paramIndex++;
-      updateQuery += ` payables = COALESCE($${paramIndex}, payables),`;
-      paramIndex++;
-      updateQuery += ` expense_categories = COALESCE($${paramIndex}, expense_categories),`;
-      paramIndex++;
-      if (useSettingsJson) {
-        updateQuery += ` settings_json = COALESCE($${paramIndex}, settings_json),`;
-        paramIndex++;
-      }
-      updateQuery += ` updated_at = NOW()
-         WHERE user_id = $${paramIndex}`;
+      // Build params array and query parts dynamically
+      const params = [];
+      const updates = [];
+      let paramIndex = 1;
       
-      const params = [
-        d.businessName, d.phone != null ? d.phone : '', d.currency, d.taxRate != null ? d.taxRate : null, d.taxEnabled,
-        d.theme, d.logo,
-      ];
-      if (useProfileAvatar) params.push(d.profileAvatar);
-      params.push(invoiceThemeColor, d.openingCash, d.ownerCapital, d.payables, expenseCategoriesJson);
-      if (useSettingsJson) params.push(settingsJson);
+      const addUpdate = (value, field) => {
+        params.push(value);
+        updates.push(`${field} = COALESCE($${paramIndex}, ${field})`);
+        paramIndex++;
+      };
+      
+      addUpdate(d.businessName, 'business_name');
+      addUpdate(d.phone != null ? d.phone : '', 'phone');
+      addUpdate(d.currency, 'currency');
+      addUpdate(d.taxRate != null ? d.taxRate : null, 'tax_rate');
+      addUpdate(d.taxEnabled, 'tax_enabled');
+      addUpdate(d.theme, 'theme');
+      addUpdate(d.logo, 'logo');
+      
+      if (useProfileAvatar) {
+        addUpdate(d.profileAvatar, 'profile_avatar');
+      }
+      
+      addUpdate(invoiceThemeColor, 'invoice_theme_color');
+      addUpdate(d.openingCash, 'opening_cash');
+      addUpdate(d.ownerCapital, 'owner_capital');
+      addUpdate(d.payables, 'payables');
+      addUpdate(expenseCategoriesJson, 'expense_categories');
+      
+      if (useSettingsJson) {
+        addUpdate(settingsJson, 'settings_json');
+      }
+      
       params.push(uid);
+      const userIdParam = paramIndex;
+      
+      const updateQuery = `UPDATE settings SET ${updates.join(', ')}, updated_at = NOW() WHERE user_id = $${userIdParam}`;
       const { rowCount } = await pool.query(updateQuery, params);
       if (rowCount === 0) {
         let insertFields = ['user_id', 'business_name', 'phone', 'currency', 'tax_rate', 'tax_enabled', 'theme', 'logo'];
@@ -171,44 +182,41 @@ router.put('/', async (req, res) => {
       }
     } else {
       // No phone column
-      let updateQuery = `UPDATE settings SET
-          business_name = COALESCE($1, business_name),
-          currency = COALESCE($2, currency),
-          tax_rate = COALESCE($3, tax_rate),
-          tax_enabled = COALESCE($4, tax_enabled),
-          theme = COALESCE($5, theme),
-          logo = COALESCE($6, logo),`;
-      let paramIndex = 7;
+      const params = [];
+      const updates = [];
+      let paramIndex = 1;
+      
+      const addUpdate = (value, field) => {
+        params.push(value);
+        updates.push(`${field} = COALESCE($${paramIndex}, ${field})`);
+        paramIndex++;
+      };
+      
+      addUpdate(d.businessName, 'business_name');
+      addUpdate(d.currency, 'currency');
+      addUpdate(d.taxRate != null ? d.taxRate : null, 'tax_rate');
+      addUpdate(d.taxEnabled, 'tax_enabled');
+      addUpdate(d.theme, 'theme');
+      addUpdate(d.logo, 'logo');
+      
       if (useProfileAvatar) {
-        updateQuery += ` profile_avatar = COALESCE($${paramIndex}, profile_avatar),`;
-        paramIndex++;
+        addUpdate(d.profileAvatar, 'profile_avatar');
       }
-      updateQuery += ` invoice_theme_color = COALESCE($${paramIndex}, invoice_theme_color),`;
-      paramIndex++;
-      updateQuery += ` opening_cash = COALESCE($${paramIndex}, opening_cash),`;
-      paramIndex++;
-      updateQuery += ` owner_capital = COALESCE($${paramIndex}, owner_capital),`;
-      paramIndex++;
-      updateQuery += ` payables = COALESCE($${paramIndex}, payables),`;
-      paramIndex++;
-      updateQuery += ` expense_categories = COALESCE($${paramIndex}, expense_categories),`;
-      paramIndex++;
+      
+      addUpdate(invoiceThemeColor, 'invoice_theme_color');
+      addUpdate(d.openingCash, 'opening_cash');
+      addUpdate(d.ownerCapital, 'owner_capital');
+      addUpdate(d.payables, 'payables');
+      addUpdate(expenseCategoriesJson, 'expense_categories');
+      
       if (useSettingsJson) {
-        updateQuery += ` settings_json = COALESCE($${paramIndex}, settings_json),`;
-        paramIndex++;
+        addUpdate(settingsJson, 'settings_json');
       }
-      updateQuery += ` updated_at = NOW()
-         WHERE user_id = $${paramIndex}`;
       
-      const params = [
-        d.businessName, d.currency, d.taxRate != null ? d.taxRate : null, d.taxEnabled,
-        d.theme, d.logo,
-      ];
-      if (useProfileAvatar) params.push(d.profileAvatar);
-      params.push(invoiceThemeColor, d.openingCash, d.ownerCapital, d.payables, expenseCategoriesJson);
-      if (useSettingsJson) params.push(settingsJson);
       params.push(uid);
+      const userIdParam = paramIndex;
       
+      const updateQuery = `UPDATE settings SET ${updates.join(', ')}, updated_at = NOW() WHERE user_id = $${userIdParam}`;
       const { rowCount } = await pool.query(updateQuery, params);
       if (rowCount === 0) {
         let insertFields = ['user_id', 'business_name', 'currency', 'tax_rate', 'tax_enabled', 'theme', 'logo'];
@@ -241,10 +249,14 @@ router.put('/', async (req, res) => {
       }
     }
     const { rows } = await pool.query('SELECT * FROM settings WHERE user_id = $1', [uid]);
-    res.json(toSettings(rows[0]));
+    if (!rows[0]) {
+      return res.status(404).json({ error: 'Settings not found' });
+    }
+    const settings = toSettings(rows[0]);
+    res.json(settings);
   } catch (err) {
-    console.error('[settings PUT]', err);
-    res.status(500).json({ error: 'Server error' });
+    console.error('[settings PUT]', err.message, err.stack);
+    res.status(500).json({ error: 'Server error', details: process.env.NODE_ENV === 'development' ? err.message : undefined });
   }
 });
 

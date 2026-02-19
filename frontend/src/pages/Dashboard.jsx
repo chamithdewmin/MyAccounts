@@ -32,38 +32,54 @@ const CustomTooltip = ({ active, payload, label, currency = "" }) => {
 };
 
 // ─── STAT CARD ────────────────────────────────────────────────────────────────
-const StatCard = ({ icon, iconBg, label, value, badge, badgeColor }) => (
-  <div style={{
-    background: "#13161e",
-    borderRadius: 16,
-    padding: "18px 20px",
-    display: "flex",
-    alignItems: "center",
-    gap: 16,
-    flex: 1,
-    border: "1px solid #1e2433",
-  }}>
+const StatCard = ({ icon, iconBg, label, value, badge, badgeColor }) => {
+  const isPositive = badgeColor === "green";
+  const badgeBg = isPositive 
+    ? "rgba(34,197,94,0.2)" 
+    : "rgba(239,68,68,0.2)";
+  const badgeTextColor = isPositive ? "#22c55e" : "#ef4444";
+  const badgeGlow = isPositive
+    ? "0 0 8px rgba(34,197,94,0.4), 0 0 4px rgba(34,197,94,0.2)"
+    : "0 0 8px rgba(239,68,68,0.4), 0 0 4px rgba(239,68,68,0.2)";
+
+  return (
     <div style={{
-      width: 44, height: 44, borderRadius: 12,
-      background: iconBg,
-      display: "flex", alignItems: "center", justifyContent: "center",
-      fontSize: 18, flexShrink: 0,
-    }}>{icon}</div>
-    <div>
-      <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-        <p style={{ color: "#8b9ab0", fontSize: 12, margin: 0, fontWeight: 500 }}>{label}</p>
-        {badge && (
-          <span style={{
-            background: badgeColor === "green" ? "rgba(34,197,94,0.15)" : "rgba(239,68,68,0.15)",
-            color: badgeColor === "green" ? "#22c55e" : "#ef4444",
-            fontSize: 10, fontWeight: 700, padding: "2px 6px", borderRadius: 6,
-          }}>{badge}</span>
-        )}
+      background: "#13161e",
+      borderRadius: 16,
+      padding: "18px 20px",
+      display: "flex",
+      alignItems: "center",
+      gap: 16,
+      flex: 1,
+      border: "1px solid #1e2433",
+    }}>
+      <div style={{
+        width: 44, height: 44, borderRadius: 12,
+        background: iconBg,
+        display: "flex", alignItems: "center", justifyContent: "center",
+        fontSize: 18, flexShrink: 0,
+      }}>{icon}</div>
+      <div>
+        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+          <p style={{ color: "#8b9ab0", fontSize: 12, margin: 0, fontWeight: 500 }}>{label}</p>
+          {badge && (
+            <span style={{
+              background: badgeBg,
+              color: badgeTextColor,
+              fontSize: 11,
+              fontWeight: 700,
+              padding: "4px 10px",
+              borderRadius: 20,
+              boxShadow: badgeGlow,
+              fontFamily: "'Inter', sans-serif",
+            }}>{badge}</span>
+          )}
+        </div>
+        <p style={{ color: "#fff", fontSize: 22, fontWeight: 800, margin: "4px 0 0", letterSpacing: "-0.03em" }}>{value}</p>
       </div>
-      <p style={{ color: "#fff", fontSize: 22, fontWeight: 800, margin: "4px 0 0", letterSpacing: "-0.03em" }}>{value}</p>
     </div>
-  </div>
-);
+  );
+};
 
 // ─── MAIN DASHBOARD ───────────────────────────────────────────────────────────
 export default function FinanceDashboard() {
@@ -159,8 +175,14 @@ export default function FinanceDashboard() {
     return weekData;
   }, [incomes, expenses]);
 
-  // Calculate expense categories for payments
+  // Calculate expense categories for payments with percentage changes
   const payments = useMemo(() => {
+    const now = new Date();
+    const thisMonth = now.getMonth();
+    const thisYear = now.getFullYear();
+    const lastMonth = thisMonth === 0 ? 11 : thisMonth - 1;
+    const lastMonthYear = thisMonth === 0 ? thisYear - 1 : thisYear;
+    
     const categoryMap = {};
     const categoryIcons = {
       'Hosting': '💻',
@@ -173,28 +195,46 @@ export default function FinanceDashboard() {
     };
     const colors = ["#3b82f6", "#22d3ee", "#60a5fa", "#8b5cf6", "#ec4899", "#f59e0b", "#10b981"];
     
+    // Calculate this month's spending by category
     expenses.forEach(expense => {
+      const expenseDate = new Date(expense.date);
       const category = expense.category || 'Other';
-      if (!categoryMap[category]) {
-        categoryMap[category] = { spent: 0, total: 0 };
+      
+      if (expenseDate.getMonth() === thisMonth && expenseDate.getFullYear() === thisYear) {
+        if (!categoryMap[category]) {
+          categoryMap[category] = { spent: 0, lastMonthSpent: 0, total: 0 };
+        }
+        categoryMap[category].spent += expense.amount || 0;
       }
-      categoryMap[category].spent += expense.amount || 0;
+      
+      // Calculate last month's spending for comparison
+      if (expenseDate.getMonth() === lastMonth && expenseDate.getFullYear() === lastMonthYear) {
+        if (!categoryMap[category]) {
+          categoryMap[category] = { spent: 0, lastMonthSpent: 0, total: 0 };
+        }
+        categoryMap[category].lastMonthSpent += expense.amount || 0;
+      }
     });
     
-    // Calculate total (spent + remaining budget estimate)
-    Object.keys(categoryMap).forEach(category => {
-      // Estimate total as 150% of spent for visualization
-      categoryMap[category].total = categoryMap[category].spent * 1.5;
-    });
-    
+    // Calculate percentage changes and totals
     return Object.entries(categoryMap)
-      .map(([category, data], index) => ({
-        icon: categoryIcons[category] || '💳',
-        label: category,
-        spent: data.spent,
-        total: data.total,
-        color: colors[index % colors.length],
-      }))
+      .map(([category, data]) => {
+        const change = data.lastMonthSpent > 0
+          ? (((data.spent - data.lastMonthSpent) / data.lastMonthSpent) * 100)
+          : (data.spent > 0 ? 100 : 0);
+        
+        // Estimate total as 150% of spent for visualization
+        const total = data.spent * 1.5;
+        
+        return {
+          icon: categoryIcons[category] || '💳',
+          label: category,
+          spent: data.spent,
+          total: total,
+          color: colors[Object.keys(categoryMap).indexOf(category) % colors.length],
+          percentageChange: change,
+        };
+      })
       .sort((a, b) => b.spent - a.spent)
       .slice(0, 4); // Top 4 categories
   }, [expenses]);
@@ -246,12 +286,34 @@ export default function FinanceDashboard() {
   };
 
   const userName = user?.name || "there";
-  const netProfit = totals.yearlyProfit || 0;
   const totalIncome = totals.yearlyIncome || 0;
   const totalOutcome = totals.yearlyExpenses || 0;
   const bankBalance = totals.bankBalance || 0;
   const cashBalance = totals.cashInHand || 0;
   const cardBalance = bankBalance + cashBalance;
+
+  // Calculate monthly profit (this month)
+  const monthlyProfit = useMemo(() => {
+    const now = new Date();
+    const thisMonth = now.getMonth();
+    const thisYear = now.getFullYear();
+    
+    const monthlyIncome = incomes
+      .filter(i => {
+        const d = new Date(i.date);
+        return d.getMonth() === thisMonth && d.getFullYear() === thisYear;
+      })
+      .reduce((sum, i) => sum + (i.amount || 0), 0);
+    
+    const monthlyExpenses = expenses
+      .filter(e => {
+        const d = new Date(e.date);
+        return d.getMonth() === thisMonth && d.getFullYear() === thisYear;
+      })
+      .reduce((sum, e) => sum + (e.amount || 0), 0);
+    
+    return monthlyIncome - monthlyExpenses;
+  }, [incomes, expenses]);
 
   // Calculate percentage changes (simplified - comparing this month to last month)
   const monthlyChange = useMemo(() => {
@@ -370,10 +432,10 @@ export default function FinanceDashboard() {
           badgeColor={parseFloat(monthlyChange.expense) <= 0 ? "green" : "red"} 
         />
         <StatCard 
-          icon="📈" 
+          icon="📊" 
           iconBg="rgba(34,197,94,0.15)" 
-          label="Net Profit" 
-          value={formatCurrency(netProfit)} 
+          label="Net Profit (This Month)" 
+          value={formatCurrency(monthlyProfit)} 
           badge={monthlyChange.profit !== "0.00" ? `${parseFloat(monthlyChange.profit) > 0 ? '+' : ''}${monthlyChange.profit}%` : null}
           badgeColor={parseFloat(monthlyChange.profit) >= 0 ? "green" : "red"} 
         />
@@ -443,22 +505,51 @@ export default function FinanceDashboard() {
             <div style={s.card}>
               <h3 style={{ color: "#fff", fontSize: 14, fontWeight: 700, margin: "0 0 14px" }}>Payment</h3>
               <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
-                {payments.length > 0 ? payments.map((p, i) => (
-                  <div key={i}>
-                    <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 5 }}>
-                      <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                        <div style={{ width: 32, height: 32, borderRadius: 8, background: "#1e2433", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 14 }}>{p.icon}</div>
-                        <span style={{ color: "#d1d9e6", fontSize: 13, fontWeight: 500 }}>{p.label}</span>
+                {payments.length > 0 ? payments.map((p, i) => {
+                  const isPositive = p.percentageChange >= 0;
+                  const badgeBg = isPositive 
+                    ? "rgba(34,197,94,0.2)" 
+                    : "rgba(239,68,68,0.2)";
+                  const badgeTextColor = isPositive ? "#22c55e" : "#ef4444";
+                  const badgeGlow = isPositive
+                    ? "0 0 8px rgba(34,197,94,0.4), 0 0 4px rgba(34,197,94,0.2)"
+                    : "0 0 8px rgba(239,68,68,0.4), 0 0 4px rgba(239,68,68,0.2)";
+                  const percentageText = p.percentageChange !== undefined && !isNaN(p.percentageChange)
+                    ? `${isPositive ? '+' : ''}${p.percentageChange.toFixed(2)}%`
+                    : null;
+
+                  return (
+                    <div key={i}>
+                      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 5 }}>
+                        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                          <div style={{ width: 32, height: 32, borderRadius: 8, background: "#1e2433", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 14 }}>{p.icon}</div>
+                          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                            <span style={{ color: "#d1d9e6", fontSize: 13, fontWeight: 500 }}>{p.label}</span>
+                            {percentageText && (
+                              <span style={{
+                                background: badgeBg,
+                                color: badgeTextColor,
+                                fontSize: 10,
+                                fontWeight: 700,
+                                padding: "3px 8px",
+                                borderRadius: 20,
+                                boxShadow: badgeGlow,
+                                fontFamily: "'Inter', sans-serif",
+                                whiteSpace: "nowrap",
+                              }}>{percentageText}</span>
+                            )}
+                          </div>
+                        </div>
+                        <span style={{ color: "#8b9ab0", fontSize: 11 }}>
+                          <span style={{ color: "#fff", fontWeight: 600 }}>{formatCurrency(p.spent)}</span>/{formatCurrency(p.total)}
+                        </span>
                       </div>
-                      <span style={{ color: "#8b9ab0", fontSize: 11 }}>
-                        <span style={{ color: "#fff", fontWeight: 600 }}>{formatCurrency(p.spent)}</span>/{formatCurrency(p.total)}
-                      </span>
+                      <div style={{ height: 3, background: "#1e2433", borderRadius: 99 }}>
+                        <div style={{ height: 3, background: p.color, borderRadius: 99, width: `${Math.min((p.spent / p.total) * 100, 100)}%` }} />
+                      </div>
                     </div>
-                    <div style={{ height: 3, background: "#1e2433", borderRadius: 99 }}>
-                      <div style={{ height: 3, background: p.color, borderRadius: 99, width: `${Math.min((p.spent / p.total) * 100, 100)}%` }} />
-                    </div>
-                  </div>
-                )) : (
+                  );
+                }) : (
                   <p style={{ color: "#8b9ab0", fontSize: 12, textAlign: "center", margin: "20px 0" }}>No expense data available</p>
                 )}
               </div>

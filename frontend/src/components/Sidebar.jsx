@@ -262,11 +262,24 @@ export default function Sidebar() {
                     </>
                   )}
                 </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" side="top" className="w-56">
-                  <DropdownMenuItem onClick={handleLogout}>
-                    <LogOut className="w-4 h-4 mr-2" />
+                <DropdownMenuContent align="end" side="top" className="w-[--radix-dropdown-menu-trigger-width] min-w-56 p-2">
+                  <DropdownMenuItem
+                    onClick={handleLogout}
+                    className="rounded-md px-3 py-2.5 cursor-pointer focus:bg-secondary"
+                  >
+                    <LogOut className="w-4 h-4 mr-2 shrink-0" />
                     Log out
                   </DropdownMenuItem>
+                  <div className="mt-2 rounded-md bg-secondary/50 px-3 py-2.5 flex items-center gap-2">
+                    <AvatarLabelGroup
+                      size="sm"
+                      title={user?.name || 'User'}
+                      subtitle={user?.email}
+                      online
+                      className="min-w-0 flex-1"
+                    />
+                    <ChevronsUpDown className="h-4 w-4 shrink-0 text-muted-foreground" />
+                  </div>
                 </DropdownMenuContent>
               </DropdownMenu>
             </div>

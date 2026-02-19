@@ -35,7 +35,7 @@ const Profile = () => {
     ...settings,
   }));
   const [bankForm, setBankForm] = useState({ accountNumber: '', accountName: '', bankName: '', branch: '' });
-  const [bankSaving, setBankSaving] = useState(false);
+  const [savingBusiness, setSavingBusiness] = useState(false);
   const [showCurrentPassword, setShowCurrentPassword] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -169,6 +169,53 @@ const Profile = () => {
     (bankForm.accountName || '').trim() !== (savedBank.accountName || '').trim() ||
     (bankForm.bankName || '').trim() !== (savedBank.bankName || '').trim() ||
     (bankForm.branch || '').trim() !== (savedBank.branch || '').trim();
+
+  const businessProfileChanged =
+    (s.businessName || '').trim() !== (settings?.businessName || '').trim() ||
+    (s.phone || '').trim() !== (settings?.phone || '').trim();
+
+  const hasBusinessChanges = businessProfileChanged || bankFormChanged;
+
+  const handleSaveBusinessAndBank = async () => {
+    setSavingBusiness(true);
+    try {
+      // Save business profile
+      if (businessProfileChanged) {
+        await updateSettings({
+          businessName: s.businessName?.trim() || 'My Business',
+          phone: s.phone?.trim() || '',
+        });
+      }
+
+      // Save bank details
+      if (bankFormChanged) {
+        const an = String(bankForm.accountNumber || '').trim();
+        const aname = String(bankForm.accountName || '').trim();
+        const bname = String(bankForm.bankName || '').trim();
+        if (an && aname && bname) {
+          await saveBankDetails({
+            accountNumber: an,
+            accountName: aname,
+            bankName: bname,
+            branch: bankForm.branch?.trim() || null,
+          });
+        }
+      }
+
+      toast({
+        title: 'Saved',
+        description: 'Business profile and bank details have been saved successfully.',
+      });
+    } catch (err) {
+      toast({
+        title: 'Error',
+        description: err.message || 'Failed to save business details.',
+        variant: 'destructive',
+      });
+    } finally {
+      setSavingBusiness(false);
+    }
+  };
 
   const hasPersonalChanges =
     local.firstName !== (user?.name?.split(' ')[0] || '') ||
@@ -347,113 +394,102 @@ const Profile = () => {
             </div>
           </div>
 
-          {/* 2. Business Profile */}
+          {/* 2. Business Profile & Bank Account */}
           <div className="bg-card rounded-lg p-4 sm:p-6 border border-border">
-            <div className="flex items-center gap-2 mb-4">
-              <Building2 className="w-5 h-5 text-primary shrink-0" />
-              <h2 className="text-base sm:text-lg font-semibold">Business Profile</h2>
-            </div>
-            <p className="text-sm text-muted-foreground mb-4">Your core business information used across invoices and reports.</p>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="company-name">Company Name</Label>
-                <Input
-                  id="company-name"
-                  value={s.businessName}
-                  onChange={(e) => {
-                    setLocal((prev) => ({ ...prev, businessName: e.target.value }));
-                    debouncedSave({ businessName: e.target.value });
-                  }}
-                  placeholder="My Business"
-                />
+            {/* Business Profile Section */}
+            <div className="mb-6">
+              <div className="flex items-center gap-2 mb-4">
+                <Building2 className="w-5 h-5 text-primary shrink-0" />
+                <h2 className="text-base sm:text-lg font-semibold">Business Profile</h2>
               </div>
-              <div className="space-y-2">
-                <Label htmlFor="phone-number">Phone Number</Label>
-                <Input
-                  id="phone-number"
-                  type="tel"
-                  value={s.phone ?? ''}
-                  onChange={(e) => {
-                    setLocal((prev) => ({ ...prev, phone: e.target.value }));
-                    debouncedSave({ phone: e.target.value });
-                  }}
-                  placeholder="+94761234567 or 0761234567"
-                />
+              <p className="text-sm text-muted-foreground mb-4">Your core business information used across invoices and reports.</p>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="company-name">Company Name</Label>
+                  <Input
+                    id="company-name"
+                    value={s.businessName}
+                    onChange={(e) => {
+                      setLocal((prev) => ({ ...prev, businessName: e.target.value }));
+                    }}
+                    placeholder="My Business"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="phone-number">Phone Number</Label>
+                  <Input
+                    id="phone-number"
+                    type="tel"
+                    value={s.phone ?? ''}
+                    onChange={(e) => {
+                      setLocal((prev) => ({ ...prev, phone: e.target.value }));
+                    }}
+                    placeholder="+94761234567 or 0761234567"
+                  />
+                </div>
               </div>
             </div>
-          </div>
 
-          {/* 3. Bank Account */}
-          <div className="bg-card rounded-lg p-4 sm:p-6 border border-border">
-            <div className="flex items-center gap-2 mb-4">
-              <Landmark className="w-5 h-5 text-primary shrink-0" />
-              <h2 className="text-base sm:text-lg font-semibold">Bank Account</h2>
+            {/* Bank Account Section */}
+            <div>
+              <div className="flex items-center gap-2 mb-4">
+                <Landmark className="w-5 h-5 text-primary shrink-0" />
+                <h2 className="text-base sm:text-lg font-semibold">Bank Account</h2>
+              </div>
+              <p className="text-sm text-muted-foreground mb-4">For Bank Transfer invoices. Account details are encrypted.</p>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="bank-account-number">Account Number *</Label>
+                  <Input
+                    id="bank-account-number"
+                    value={bankForm.accountNumber}
+                    onChange={(e) => setBankForm((p) => ({ ...p, accountNumber: e.target.value }))}
+                    placeholder="1234567890"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="bank-account-name">Account Name *</Label>
+                  <Input
+                    id="bank-account-name"
+                    value={bankForm.accountName}
+                    onChange={(e) => setBankForm((p) => ({ ...p, accountName: e.target.value }))}
+                    placeholder="Your Business Name"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="bank-name">Bank Name *</Label>
+                  <Input
+                    id="bank-name"
+                    value={bankForm.bankName}
+                    onChange={(e) => setBankForm((p) => ({ ...p, bankName: e.target.value }))}
+                    placeholder="Commercial Bank"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="bank-branch">Branch (optional)</Label>
+                  <Input
+                    id="bank-branch"
+                    value={bankForm.branch}
+                    onChange={(e) => setBankForm((p) => ({ ...p, branch: e.target.value }))}
+                    placeholder="Colombo Main"
+                  />
+                </div>
+              </div>
             </div>
-            <p className="text-sm text-muted-foreground mb-4">For Bank Transfer invoices. Account details are encrypted.</p>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="bank-account-number">Account Number *</Label>
-                <Input
-                  id="bank-account-number"
-                  value={bankForm.accountNumber}
-                  onChange={(e) => setBankForm((p) => ({ ...p, accountNumber: e.target.value }))}
-                  placeholder="1234567890"
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="bank-account-name">Account Name *</Label>
-                <Input
-                  id="bank-account-name"
-                  value={bankForm.accountName}
-                  onChange={(e) => setBankForm((p) => ({ ...p, accountName: e.target.value }))}
-                  placeholder="Your Business Name"
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="bank-name">Bank Name *</Label>
-                <Input
-                  id="bank-name"
-                  value={bankForm.bankName}
-                  onChange={(e) => setBankForm((p) => ({ ...p, bankName: e.target.value }))}
-                  placeholder="Commercial Bank"
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="bank-branch">Branch (optional)</Label>
-                <Input
-                  id="bank-branch"
-                  value={bankForm.branch}
-                  onChange={(e) => setBankForm((p) => ({ ...p, branch: e.target.value }))}
-                  placeholder="Colombo Main"
-                />
-              </div>
+
+            {/* Combined Save Button */}
+            <div className="mt-6 pt-6 border-t border-border">
+              <Button
+                type="button"
+                size="sm"
+                disabled={!hasBusinessChanges || savingBusiness}
+                onClick={handleSaveBusinessAndBank}
+                className="gap-2"
+              >
+                <Save className="h-4 w-4" />
+                {savingBusiness ? 'Saving...' : 'Save Business Details'}
+              </Button>
             </div>
-            <Button
-              type="button"
-              size="sm"
-              className="mt-4"
-              disabled={!bankFormChanged || bankSaving}
-              onClick={async () => {
-                const an = String(bankForm.accountNumber || '').trim();
-                const aname = String(bankForm.accountName || '').trim();
-                const bname = String(bankForm.bankName || '').trim();
-                if (!an || !aname || !bname) {
-                  toast({ title: 'Required fields', description: 'Please fill all required bank fields.', variant: 'destructive' });
-                  return;
-                }
-                setBankSaving(true);
-                try {
-                  await saveBankDetails({ accountNumber: an, accountName: aname, bankName: bname, branch: bankForm.branch?.trim() || null });
-                  toast({ title: 'Bank details saved', description: 'Your bank account information has been updated.' });
-                } catch (err) {
-                  toast({ title: 'Error', description: err.message || 'Failed to save bank details.', variant: 'destructive' });
-                } finally {
-                  setBankSaving(false);
-                }
-              }}
-            >
-              {bankSaving ? 'Saving...' : 'Save Bank Details'}
-            </Button>
           </div>
 
           {/* 4. Tax & Currency */}

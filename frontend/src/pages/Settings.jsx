@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { Helmet } from 'react-helmet';
 import { motion } from 'framer-motion';
-import { Save, Palette, Trash2 } from 'lucide-react';
+import { Save, Palette, Trash2, Percent, Receipt } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
@@ -55,7 +55,7 @@ const Settings = () => {
   const s = local;
 
   const mainFields = [
-    'theme',
+    'theme', 'currency', 'taxRate', 'taxEnabled', 'logo', 'invoiceThemeColor',
   ];
   const hasMainSettingsChanges = mainFields.some(
     (k) => String(s[k] ?? '') !== String((settings ?? {})[k] ?? '')
@@ -79,7 +79,146 @@ const Settings = () => {
           animate={{ opacity: 1, y: 0 }}
           className="space-y-6"
         >
-          {/* 1. App Preferences */}
+          {/* 1. Tax & Currency */}
+          <div className="bg-card rounded-lg p-6 border border-secondary">
+            <div className="flex items-center gap-2 mb-4">
+              <Percent className="w-5 h-5 text-primary" />
+              <h2 className="text-lg font-semibold">Tax & Currency</h2>
+            </div>
+            <p className="text-sm text-muted-foreground mb-4">Configure taxes and currency for invoices and reports.</p>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="currency">Currency</Label>
+                <select
+                  id="currency"
+                  className="w-full px-3 py-2 bg-secondary border border-secondary rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
+                  value={s.currency || 'LKR'}
+                  onChange={(e) => debouncedSave({ currency: e.target.value })}
+                >
+                  <option value="LKR">LKR (රු)</option>
+                  <option value="USD">USD ($)</option>
+                  <option value="EUR">EUR (€)</option>
+                  <option value="GBP">GBP (£)</option>
+                </select>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="tax-rate">Tax Rate (%)</Label>
+                <Input
+                  id="tax-rate"
+                  type="number"
+                  value={s.taxRate ?? 10}
+                  onChange={(e) => debouncedSave({ taxRate: Number(e.target.value || 0) })}
+                />
+              </div>
+              <div className="md:col-span-2 rounded-lg border border-secondary bg-secondary/30 px-4 py-3 flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium">Tax Estimation</p>
+                  <p className="text-xs text-muted-foreground">Enable simple tax estimation in reports</p>
+                </div>
+                <button
+                  type="button"
+                  role="switch"
+                  aria-checked={s.taxEnabled}
+                  onClick={() => saveNow({ taxEnabled: !s.taxEnabled })}
+                  className={cn(
+                    'relative inline-flex h-7 w-14 items-center rounded-full border transition-colors',
+                    s.taxEnabled ? 'bg-primary border-primary' : 'bg-muted border-secondary',
+                  )}
+                >
+                  <span className={cn(
+                    'inline-block h-5 w-5 transform rounded-full bg-white shadow transition-transform',
+                    s.taxEnabled ? 'translate-x-7' : 'translate-x-1',
+                  )} />
+                </button>
+              </div>
+            </div>
+          </div>
+
+          {/* 2. Invoice & Branding */}
+          <div className="bg-card rounded-lg p-6 border border-secondary">
+            <div className="flex items-center gap-2 mb-4">
+              <Receipt className="w-5 h-5 text-primary" />
+              <h2 className="text-lg font-semibold">Invoice & Branding</h2>
+            </div>
+            <p className="text-sm text-muted-foreground mb-4">Customize how your invoices look to clients.</p>
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="logo-upload">Invoice Logo</Label>
+                <p className="text-xs text-muted-foreground">Optional logo on invoice header. Square images ~80×80 work best.</p>
+                <div className="flex items-center gap-4">
+                  <input
+                    id="logo-upload"
+                    type="file"
+                    accept="image/*"
+                    onChange={async (e) => {
+                      const file = e.target.files?.[0];
+                      if (!file) return;
+                      const reader = new FileReader();
+                      reader.onload = async () => {
+                        try {
+                          await updateSettings({ logo: reader.result });
+                          setLocal((prev) => ({ ...prev, logo: reader.result }));
+                          toast({ title: 'Logo updated', description: 'Invoice logo has been saved.' });
+                        } catch (err) {
+                          toast({ title: 'Upload failed', description: err.message || 'Failed to save logo.', variant: 'destructive' });
+                        }
+                      };
+                      reader.onerror = () => {
+                        toast({ title: 'Upload failed', description: 'Failed to read image file.', variant: 'destructive' });
+                      };
+                      reader.readAsDataURL(file);
+                    }}
+                    className="block w-full text-sm text-muted-foreground
+                      file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0
+                      file:text-sm file:font-semibold file:bg-secondary file:text-foreground hover:file:bg-secondary/80"
+                  />
+                  {s.logo && (
+                    <div className="flex items-center gap-2">
+                      <img src={s.logo} alt="Logo" className="h-10 w-10 rounded border border-secondary object-contain bg-white" />
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={async () => {
+                          try {
+                            await updateSettings({ logo: null });
+                            setLocal((prev) => ({ ...prev, logo: null }));
+                            toast({ title: 'Logo removed', description: 'Invoice logo has been removed.' });
+                          } catch (err) {
+                            toast({ title: 'Error', description: err.message || 'Failed to remove logo.', variant: 'destructive' });
+                          }
+                        }}
+                      >
+                        Remove
+                      </Button>
+                    </div>
+                  )}
+                </div>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="invoice-theme-color">Invoice Theme Color</Label>
+                <p className="text-xs text-muted-foreground">Color for headers, totals, and accents on invoices.</p>
+                <div className="flex items-center gap-3">
+                  <input
+                    id="invoice-theme-color"
+                    type="color"
+                    value={s.invoiceThemeColor || '#F97316'}
+                    onChange={(e) => debouncedSave({ invoiceThemeColor: e.target.value })}
+                    className="h-10 w-14 cursor-pointer rounded border border-secondary bg-transparent p-0"
+                  />
+                  <Input
+                    type="text"
+                    value={s.invoiceThemeColor || '#F97316'}
+                    onChange={(e) => debouncedSave({ invoiceThemeColor: e.target.value })}
+                    placeholder="#F97316"
+                    className="font-mono w-28"
+                  />
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* 3. App Preferences */}
           <div className="bg-card rounded-lg p-6 border border-secondary">
             <div className="flex items-center gap-2 mb-4">
               <Palette className="w-5 h-5 text-primary" />

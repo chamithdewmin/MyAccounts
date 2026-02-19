@@ -43,26 +43,26 @@ const CardFace = ({ card }) => (
     {/* Top row */}
     <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", position: "relative", zIndex: 2 }}>
       <div>
-        <p style={{ color: "rgba(255,255,255,0.6)", fontSize: 10, fontWeight: 600, letterSpacing: "0.12em", textTransform: "uppercase", margin: 0 }}>
+        <p style={{ color: "rgba(255,255,255,0.6)", fontSize: 11, fontWeight: 600, letterSpacing: "0.12em", textTransform: "uppercase", margin: 0 }}>
           {card.label}
         </p>
-        <p style={{ color: "#fff", fontSize: 26, fontWeight: 800, margin: "6px 0 0", letterSpacing: "-0.02em", lineHeight: 1 }}>
+        <p style={{ color: "#fff", fontSize: 28, fontWeight: 800, margin: "6px 0 0", letterSpacing: "-0.02em", lineHeight: 1 }}>
           {card.amount}
         </p>
       </div>
       {card.showMastercard ? <MastercardIcon /> : (
-        <div style={{ fontSize: 26 }}>{card.emoji}</div>
+        <div style={{ fontSize: 28 }}>{card.emoji}</div>
       )}
     </div>
 
     {/* Bottom row */}
     <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", position: "relative", zIndex: 2 }}>
-      <p style={{ color: "rgba(255,255,255,0.7)", fontSize: 12, fontFamily: "monospace", letterSpacing: "0.14em", margin: 0 }}>
+      <p style={{ color: "rgba(255,255,255,0.7)", fontSize: 13, fontFamily: "monospace", letterSpacing: "0.14em", margin: 0 }}>
         {card.number}
       </p>
       <p style={{
         color: "rgba(255,255,255,0.8)",
-        fontSize: 13, fontWeight: 600, margin: 0,
+        fontSize: 14, fontWeight: 600, margin: 0,
       }}>
         {card.expiry}
       </p>

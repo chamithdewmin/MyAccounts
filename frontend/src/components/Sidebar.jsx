@@ -247,21 +247,21 @@ export default function Sidebar() {
                   collapsed && 'flex-1 justify-center'
                 )}>
                   {collapsed ? (
-                    <AvatarWithStatus online className="h-8 w-8">
+                    <AvatarWithStatus online className="h-10 w-10">
                       {settings?.profileAvatar && <AvatarImage src={settings.profileAvatar} alt="Profile" />}
-                      <AvatarFallback>{(user?.name || 'U').charAt(0).toUpperCase()}</AvatarFallback>
+                      <AvatarFallback className="text-base">{(user?.name || 'U').charAt(0).toUpperCase()}</AvatarFallback>
                     </AvatarWithStatus>
                   ) : (
                     <>
                       <AvatarLabelGroup
-                        size="sm"
+                        size="md"
                         src={settings?.profileAvatar}
                         title={user?.name || 'User'}
                         subtitle={user?.email}
                         online
                         className="min-w-0 flex-1"
                       />
-                      <ChevronsUpDown className="h-4 w-4 shrink-0 text-muted-foreground" />
+                      <ChevronsUpDown className="h-5 w-5 shrink-0 text-muted-foreground" />
                     </>
                   )}
                 </DropdownMenuTrigger>

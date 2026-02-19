@@ -27,7 +27,7 @@ const AvatarFallback = React.forwardRef(({ className, ...props }, ref) => (
   <AvatarPrimitive.Fallback
     ref={ref}
     className={cn(
-      'flex h-full w-full items-center justify-center rounded-full bg-primary text-primary-foreground',
+      'flex h-full w-full items-center justify-center rounded-full bg-primary text-primary-foreground text-sm font-semibold',
       className
     )}
     {...props}
@@ -42,7 +42,7 @@ function AvatarWithStatus({ online, className, children, ...props }) {
       {children}
       {online && (
         <span
-          className="absolute bottom-0.5 right-0.5 h-2.5 w-2.5 rounded-full border-2 border-card bg-emerald-500"
+          className="absolute bottom-0 right-0 h-3 w-3 rounded-full border-2 border-card bg-emerald-500"
           aria-hidden
         />
       )}
@@ -62,11 +62,11 @@ function AvatarLabelGroup({
   ...props
 }) {
   const sizeClasses = {
-    sm: 'h-8 w-8',
-    md: 'h-10 w-10',
-    lg: 'h-12 w-12',
+    sm: 'h-9 w-9',
+    md: 'h-11 w-11',
+    lg: 'h-14 w-14',
   };
-  const textSize = size === 'sm' ? 'text-xs' : size === 'lg' ? 'text-base' : 'text-sm';
+  const textSize = size === 'sm' ? 'text-sm' : size === 'lg' ? 'text-lg' : 'text-base';
 
   return (
     <div className={cn('flex items-center gap-3 min-w-0', className)} {...props}>
@@ -83,7 +83,7 @@ function AvatarLabelGroup({
           </span>
         )}
         {subtitle && (
-          <span className={cn('text-muted-foreground truncate w-full text-left', size === 'sm' ? 'text-xs' : 'text-sm')}>
+          <span className={cn('text-muted-foreground truncate w-full text-left', size === 'sm' ? 'text-xs' : size === 'lg' ? 'text-base' : 'text-sm')}>
             {subtitle}
           </span>
         )}

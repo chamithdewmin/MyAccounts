@@ -1,6 +1,32 @@
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { cx, sortCx } from "@/utils/cx";
 import { MastercardIcon, MastercardIconWhite, PaypassIcon } from "./icons";
+
+const MastercardIconComponent = () => (
+  <div className="flex items-center">
+    <div
+      style={{
+        width: 32,
+        height: 32,
+        borderRadius: "50%",
+        background: "#EB001B",
+        opacity: 0.95,
+        marginRight: -12,
+        zIndex: 1,
+      }}
+    />
+    <div
+      style={{
+        width: 32,
+        height: 32,
+        borderRadius: "50%",
+        background: "#F79E1B",
+        opacity: 0.95,
+        zIndex: 0,
+      }}
+    />
+  </div>
+);
 
 const styles = sortCx({
     // Normal
@@ -39,13 +65,6 @@ const styles = sortCx({
         paypassIcon: "text-white",
         cardTypeRoot: "bg-white/10",
     },
-    "orange": {
-        root: "bg-[#F97316] before:pointer-events-none before:absolute before:inset-0 before:z-1 before:rounded-[inherit] before:ring-1 before:ring-white/20 before:ring-inset",
-        company: "text-white",
-        footerText: "text-white",
-        paypassIcon: "text-white",
-        cardTypeRoot: "bg-white/10",
-    },
     "gray-light": {
         root: "bg-gray-100 before:pointer-events-none before:absolute before:inset-0 before:z-1 before:rounded-[inherit] before:mask-linear-135 before:mask-linear-to-white/20 before:ring-1 before:ring-black/10 before:ring-inset",
         company: "text-gray-700",
@@ -53,54 +72,8 @@ const styles = sortCx({
         paypassIcon: "text-gray-400",
         cardTypeRoot: "bg-white",
     },
-
-    // Strip
-    "transparent-strip": {
-        root: "bg-linear-to-br from-white/30 to-transparent backdrop-blur-[6px] before:pointer-events-none before:absolute before:inset-0 before:z-1 before:rounded-[inherit] before:mask-linear-135 before:mask-linear-to-white/20 before:ring-1 before:ring-white/30 before:ring-inset",
-        company: "text-white",
-        footerText: "text-white",
-        paypassIcon: "text-white",
-        cardTypeRoot: "bg-white/10",
-    },
-    "gray-strip": {
-        root: "bg-gray-100 before:pointer-events-none before:absolute before:inset-0 before:z-1 before:rounded-[inherit] before:mask-linear-135 before:mask-linear-to-white/20 before:ring-1 before:ring-white/30 before:ring-inset",
-        company: "text-gray-700",
-        footerText: "text-white",
-        paypassIcon: "text-gray-400",
-        cardTypeRoot: "bg-white/10",
-    },
-    "gradient-strip": {
-        root: "bg-linear-to-b from-[#A5C0EE] to-[#FBC5EC] before:pointer-events-none before:absolute before:inset-0 before:z-1 before:rounded-[inherit] before:mask-linear-135 before:mask-linear-to-white/20 before:ring-1 before:ring-white/30 before:ring-inset",
-        company: "text-white",
-        footerText: "text-white",
-        paypassIcon: "text-white",
-        cardTypeRoot: "bg-white/10",
-    },
-    "salmon-strip": {
-        root: "bg-[#F4D9D0] before:pointer-events-none before:absolute before:inset-0 before:z-1 before:rounded-[inherit] before:mask-linear-135 before:mask-linear-to-white/20 before:ring-1 before:ring-white/30 before:ring-inset",
-        company: "text-gray-700",
-        footerText: "text-white",
-        paypassIcon: "text-white",
-        cardTypeRoot: "bg-white/10",
-    },
-
-    // Vertical strip
-    "gray-strip-vertical": {
-        root: "bg-linear-to-br from-white/30 to-transparent before:pointer-events-none before:absolute before:inset-0 before:z-1 before:rounded-[inherit] before:mask-linear-135 before:mask-linear-to-white/20 before:ring-1 before:ring-white/30 before:ring-inset",
-        company: "text-white",
-        footerText: "text-white",
-        paypassIcon: "text-gray-400",
-        cardTypeRoot: "bg-white/10",
-    },
-    "gradient-strip-vertical": {
-        root: "bg-linear-to-b from-[#FBC2EB] to-[#A18CD1] before:pointer-events-none before:absolute before:inset-0 before:z-1 before:rounded-[inherit] before:mask-linear-135 before:mask-linear-to-white/20 before:ring-1 before:ring-white/30 before:ring-inset",
-        company: "text-white",
-        footerText: "text-white",
-        paypassIcon: "text-white",
-        cardTypeRoot: "bg-white/10",
-    },
-    "salmon-strip-vertical": {
-        root: "bg-[#F4D9D0] before:pointer-events-none before:absolute before:inset-0 before:z-1 before:rounded-[inherit] before:mask-linear-135 before:mask-linear-to-white/20 before:ring-1 before:ring-white/30 before:ring-inset",
+    "orange": {
+        root: "bg-[#F97316] before:pointer-events-none before:absolute before:inset-0 before:z-1 before:rounded-[inherit] before:ring-1 before:ring-white/20 before:ring-inset",
         company: "text-white",
         footerText: "text-white",
         paypassIcon: "text-white",
@@ -128,17 +101,14 @@ interface CreditCardProps {
 }
 
 const calculateScale = (desiredWidth: number, originalWidth: number, originalHeight: number) => {
-    // Calculate the scale factor
     const scale = desiredWidth / originalWidth;
-
-    // Calculate the new dimensions
     const scaledWidth = originalWidth * scale;
     const scaledHeight = originalHeight * scale;
 
     return {
-        scale: scale.toFixed(4), // Scale rounded to 4 decimal places
-        scaledWidth: scaledWidth.toFixed(2), // Width rounded to 2 decimal places
-        scaledHeight: scaledHeight.toFixed(2), // Height rounded to 2 decimal places
+        scale: scale.toFixed(4),
+        scaledWidth: scaledWidth.toFixed(2),
+        scaledHeight: scaledHeight.toFixed(2),
     };
 };
 
@@ -152,8 +122,9 @@ export const CreditCard = ({
     width,
     currentBalance,
 }: CreditCardProps) => {
-    const originalWidth = 316;
-    const originalHeight = 190;
+    const [flipped, setFlipped] = useState(false);
+    const originalWidth = 340;
+    const originalHeight = 210;
 
     const { scale, scaledWidth, scaledHeight } = useMemo(() => {
         if (!width)
@@ -166,6 +137,11 @@ export const CreditCard = ({
         return calculateScale(width, originalWidth, originalHeight);
     }, [width]);
 
+    // Use orange gradient for orange type, otherwise use the style system
+    const isOrangeType = type === "orange";
+    const orangeGradient = "linear-gradient(135deg, #F97316 0%, #EA580C 40%, #FB923C 80%, #FDBA74 100%)";
+    const orangeGradientBack = "linear-gradient(135deg, #EA580C 0%, #F97316 60%, #FDBA74 100%)";
+
     return (
         <div
             style={{
@@ -174,75 +150,152 @@ export const CreditCard = ({
             }}
             className={cx("relative flex", className)}
         >
+            {/* Card wrapper with 3D perspective */}
             <div
+                onClick={() => setFlipped(!flipped)}
                 style={{
-                    transform: `scale(${scale})`,
-                    width: `${originalWidth}px`,
-                    height: `${originalHeight}px`,
+                    perspective: "1000px",
+                    cursor: "pointer",
+                    userSelect: "none",
+                    width: "100%",
+                    height: "100%",
                 }}
-                className={cx("absolute top-0 left-0 flex origin-top-left flex-col justify-between overflow-hidden rounded-2xl p-4", styles[type].root)}
             >
-                {/* Horizontal strip */}
-                {STRIP_TYPES.includes(type as (typeof STRIP_TYPES)[number]) && (
-                    <div className="pointer-events-none absolute inset-x-0 bottom-0 z-0 h-1/2 bg-gray-800"></div>
-                )}
-                {/* Vertical stripe */}
-                {VERTICAL_STRIP_TYPES.includes(type as (typeof VERTICAL_STRIP_TYPES)[number]) && (
-                    <div className="pointer-events-none absolute inset-y-0 right-22 left-0 z-0 bg-gray-800"></div>
-                )}
-                {/* Gradient diffusor */}
-                {type === "transparent-gradient" && (
-                    <div className="absolute -top-4 -left-4 grid grid-cols-2 blur-3xl">
-                        <div className="size-20 rounded-tl-full bg-pink-500 opacity-30 mix-blend-normal" />
-                        <div className="size-20 rounded-tr-full bg-orange-500 opacity-50 mix-blend-normal" />
-                        <div className="size-20 rounded-bl-full bg-blue-500 opacity-30 mix-blend-normal" />
-                        <div className="size-20 rounded-br-full bg-success-500 opacity-30 mix-blend-normal" />
-                    </div>
-                )}
+                <div
+                    style={{
+                        width: `${originalWidth}px`,
+                        height: `${originalHeight}px`,
+                        position: "relative",
+                        transformStyle: "preserve-3d",
+                        transition: "transform 0.7s cubic-bezier(0.4, 0.2, 0.2, 1)",
+                        transform: `scale(${scale}) ${flipped ? "rotateY(180deg)" : "rotateY(0deg)"}`,
+                        transformOrigin: "center center",
+                    }}
+                >
+                    {/* FRONT */}
+                    <div
+                        style={{
+                            position: "absolute",
+                            inset: 0,
+                            backfaceVisibility: "hidden",
+                            WebkitBackfaceVisibility: "hidden",
+                            borderRadius: 20,
+                            background: isOrangeType ? orangeGradient : undefined,
+                            boxShadow: isOrangeType 
+                                ? "0 25px 60px rgba(249, 115, 22, 0.45), 0 8px 25px rgba(0,0,0,0.4)"
+                                : undefined,
+                            padding: "26px 28px",
+                            display: "flex",
+                            flexDirection: "column",
+                            justifyContent: "space-between",
+                            overflow: "hidden",
+                            ...(isOrangeType ? {} : { className: cx(styles[type].root) }),
+                        }}
+                        className={!isOrangeType ? cx(styles[type].root) : undefined}
+                    >
+                        {/* Glossy overlay */}
+                        <div
+                            style={{
+                                position: "absolute",
+                                top: 0,
+                                left: 0,
+                                right: 0,
+                                height: "55%",
+                                background: "linear-gradient(180deg, rgba(255,255,255,0.13) 0%, rgba(255,255,255,0) 100%)",
+                                borderRadius: "20px 20px 0 0",
+                                pointerEvents: "none",
+                            }}
+                        />
+                        
+                        {/* Decorative circles */}
+                        <div
+                            style={{
+                                position: "absolute",
+                                width: 220,
+                                height: 220,
+                                borderRadius: "50%",
+                                border: "1.5px solid rgba(255,255,255,0.08)",
+                                top: -70,
+                                right: -60,
+                            }}
+                        />
+                        <div
+                            style={{
+                                position: "absolute",
+                                width: 160,
+                                height: 160,
+                                borderRadius: "50%",
+                                border: "1.5px solid rgba(255,255,255,0.06)",
+                                bottom: -50,
+                                left: -40,
+                            }}
+                        />
 
-                <div className="relative flex items-start justify-between px-1 pt-1">
-                    {currentBalance ? (
-                        <div className="flex flex-col gap-1">
-                            <div className={cx("text-xs leading-[normal] font-normal", styles[type].company)}>Current Balance</div>
-                            <div className={cx("text-2xl leading-[normal] font-bold", styles[type].company)}>{currentBalance}</div>
-                        </div>
-                    ) : (
-                        <div className={cx("text-md leading-[normal] font-semibold", styles[type].company)}>{company}</div>
-                    )}
-
-                    <PaypassIcon className={styles[type].paypassIcon} />
-                </div>
-
-                <div className="relative flex items-end justify-between gap-3">
-                    <div className="flex min-w-0 flex-col gap-2">
-                        <div className="flex items-end gap-1">
-                            <p
-                                style={{
-                                    wordBreak: "break-word",
-                                }}
-                                className={cx("text-xs leading-snug font-semibold tracking-[0.6px] uppercase", styles[type].footerText)}
-                            >
-                                {cardHolder}
-                            </p>
-                            <p
-                                className={cx(
-                                    "ml-auto text-right text-xs leading-[normal] font-semibold tracking-[0.6px] tabular-nums",
-                                    styles[type].footerText,
+                        {/* Top row */}
+                        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", position: "relative", zIndex: 2 }}>
+                            <div>
+                                {currentBalance ? (
+                                    <>
+                                        <p style={{ color: "rgba(255,255,255,0.65)", fontSize: 11, fontWeight: 500, letterSpacing: "0.08em", textTransform: "uppercase", margin: 0 }}>
+                                            Current Balance
+                                        </p>
+                                        <p style={{ color: "#fff", fontSize: 28, fontWeight: 700, letterSpacing: "-0.02em", margin: "4px 0 0", lineHeight: 1 }}>
+                                            {currentBalance}
+                                        </p>
+                                    </>
+                                ) : (
+                                    <div className={cx("text-md leading-[normal] font-semibold", styles[type].company)}>{company}</div>
                                 )}
-                            >
+                            </div>
+                            <MastercardIconComponent />
+                        </div>
+
+                        {/* Bottom row */}
+                        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", position: "relative", zIndex: 2 }}>
+                            <p style={{ color: "rgba(255,255,255,0.8)", fontSize: 13.5, fontWeight: 400, letterSpacing: "0.18em", margin: 0, fontFamily: "monospace" }}>
+                                {cardNumber}
+                            </p>
+                            <p style={{ color: "rgba(255,255,255,0.8)", fontSize: 13, fontWeight: 500, letterSpacing: "0.05em", margin: 0 }}>
                                 {cardExpiration}
                             </p>
                         </div>
-                        <div className={cx("text-md leading-[normal] font-semibold tracking-[1px] tabular-nums", styles[type].footerText)}>
-                            {cardNumber}
-
-                            {/* This is just a placeholder to always keep the space for card number even if there's no card number yet. */}
-                            <span className="pointer-events-none invisible inline-block w-0 max-w-0 opacity-0">1</span>
-                        </div>
                     </div>
 
-                    <div className={cx("flex h-8 w-11.5 shrink-0 items-center justify-center rounded", styles[type].cardTypeRoot)}>
-                        {CARD_WITH_COLOR_LOGO.includes(type as (typeof CARD_WITH_COLOR_LOGO)[number]) ? <MastercardIcon /> : <MastercardIconWhite />}
+                    {/* BACK */}
+                    <div
+                        style={{
+                            position: "absolute",
+                            inset: 0,
+                            backfaceVisibility: "hidden",
+                            WebkitBackfaceVisibility: "hidden",
+                            borderRadius: 20,
+                            background: isOrangeType ? orangeGradientBack : undefined,
+                            boxShadow: isOrangeType 
+                                ? "0 25px 60px rgba(249, 115, 22, 0.45), 0 8px 25px rgba(0,0,0,0.4)"
+                                : undefined,
+                            transform: "rotateY(180deg)",
+                            overflow: "hidden",
+                            display: "flex",
+                            flexDirection: "column",
+                            justifyContent: "center",
+                            ...(isOrangeType ? {} : { className: cx(styles[type].root) }),
+                        }}
+                        className={!isOrangeType ? cx(styles[type].root) : undefined}
+                    >
+                        {/* Magnetic stripe */}
+                        <div style={{ width: "100%", height: 42, background: "#111", margin: "0 0 20px" }} />
+                        {/* CVV strip */}
+                        <div style={{ padding: "0 28px" }}>
+                            <div style={{ background: "rgba(255,255,255,0.9)", borderRadius: 4, padding: "6px 12px", display: "flex", justifyContent: "flex-end" }}>
+                                <span style={{ color: "#1d1d1d", fontSize: 14, fontWeight: 600, letterSpacing: "0.1em", fontFamily: "monospace" }}>
+                                    • • •
+                                </span>
+                            </div>
+                            <p style={{ color: "rgba(255,255,255,0.5)", fontSize: 10, marginTop: 6, textAlign: "right" }}>CVV</p>
+                        </div>
+                        <div style={{ display: "flex", justifyContent: "flex-end", padding: "10px 28px 0" }}>
+                            <MastercardIconComponent />
+                        </div>
                     </div>
                 </div>
             </div>

@@ -43,7 +43,7 @@ export const Sidebar = React.forwardRef(
         data-collapsible={collapsible}
         data-state={isIconOnly ? 'collapsed' : 'expanded'}
         className={cn(
-          'fixed top-0 left-0 z-50 flex h-screen flex-col border-r border-border bg-card dark:bg-[#151821] transition-[width] duration-300 ease-sidebar pt-[env(safe-area-inset-top)]',
+          'fixed top-0 left-0 z-50 flex h-screen flex-col border-r border-border bg-card dark:bg-[#13161e] transition-[width] duration-300 ease-sidebar pt-[env(safe-area-inset-top)]',
           open ? 'translate-x-0' : '-translate-x-full lg:translate-x-0',
           isIconOnly ? 'w-[52px]' : 'w-[292px] max-w-[85vw]',
           className

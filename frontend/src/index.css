@@ -11,7 +11,7 @@
     --card: 0 0% 100%;
     --card-foreground: 222 47% 11%;
 
-    --primary: 20 100% 50%; /* warm orange */
+    --primary: 217 91% 60%; /* blue */
     --primary-foreground: 0 0% 100%;
 
     /* Slightly darker so border-secondary and bg-secondary are visible vs white */
@@ -21,7 +21,7 @@
     --muted: 214 20% 92%;
     --muted-foreground: 215 15% 35%;
 
-    --accent: 20 100% 50%;
+    --accent: 217 91% 60%; /* blue */
     --accent-foreground: 0 0% 100%;
 
     --destructive: 0 72% 51%;
@@ -32,9 +32,9 @@
     --input: 214 20% 88%;
     --ring: 222 84% 56%;
 
-    /* Sidebar active state: dark reddish-brown with orange accent */
-    --sidebar-active-bg: 20 55% 22%;
-    --sidebar-active-accent: 30 100% 50%;
+    /* Sidebar active state: dark blue with blue accent */
+    --sidebar-active-bg: 217 55% 22%;
+    --sidebar-active-accent: 217 91% 60%;
   }
 
   .dark {
@@ -42,10 +42,10 @@
     --background: 225 25% 6%; /* #0c0e14 for page background */
     --foreground: 210 40% 96%;
 
-    --card: 225 22% 11%; /* Dark Blue-Green #151821 for sidebar and cards */
+    --card: 224 22% 10%; /* #13161e for sidebar and cards */
     --card-foreground: 210 40% 96%;
 
-    --primary: 20 100% 50%;
+    --primary: 217 91% 60%; /* blue */
     --primary-foreground: 0 0% 100%;
 
     --secondary: 210 25% 18%;
@@ -54,7 +54,7 @@
     --muted: 210 25% 18%;
     --muted-foreground: 210 30% 80%;
 
-    --accent: 20 100% 50%;
+    --accent: 217 91% 60%; /* blue */
     --accent-foreground: 0 0% 100%;
 
     --destructive: 0 72% 51%;
@@ -64,8 +64,8 @@
     --input: 216 19% 15%;
     --ring: 222 84% 56%;
 
-    --sidebar-active-bg: 20 55% 22%;
-    --sidebar-active-accent: 30 100% 50%;
+    --sidebar-active-bg: 217 55% 22%;
+    --sidebar-active-accent: 217 91% 60%;
 
     /* Table color scheme */
     --table-header-bg: #0f1117;

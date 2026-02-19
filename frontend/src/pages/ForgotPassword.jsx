@@ -172,7 +172,7 @@ const ForgotPassword = () => {
                   <Button
                     type="submit"
                     disabled={loading}
-                    className="w-full h-12 bg-[#f97316] hover:bg-[#ea580c] text-white font-semibold rounded-lg transition-colors"
+                    className="w-full h-12 bg-primary hover:bg-primary/90 text-white font-semibold rounded-lg transition-colors"
                   >
                     {loading ? 'Sending OTP...' : 'Send OTP'}
                   </Button>
@@ -211,7 +211,7 @@ const ForgotPassword = () => {
                   <Button
                     type="submit"
                     disabled={loading || otp.length !== 6}
-                    className="w-full h-12 bg-[#f97316] hover:bg-[#ea580c] text-white font-semibold rounded-lg transition-colors"
+                    className="w-full h-12 bg-primary hover:bg-primary/90 text-white font-semibold rounded-lg transition-colors"
                   >
                     {loading ? 'Verifying...' : 'Verify OTP'}
                   </Button>
@@ -273,7 +273,7 @@ const ForgotPassword = () => {
                   <Button
                     type="submit"
                     disabled={loading}
-                    className="w-full h-12 bg-[#f97316] hover:bg-[#ea580c] text-white font-semibold rounded-lg transition-colors"
+                    className="w-full h-12 bg-primary hover:bg-primary/90 text-white font-semibold rounded-lg transition-colors"
                   >
                     {loading ? 'Updating...' : 'Update Password'}
                   </Button>

@@ -44,11 +44,18 @@ module.exports = {
           DEFAULT: 'hsl(var(--destructive))',
           foreground: 'hsl(var(--destructive-foreground))',
         },
+        sidebar: {
+          'active-bg': 'hsl(var(--sidebar-active-bg))',
+          'active-accent': 'hsl(var(--sidebar-active-accent))',
+        },
       },
       borderRadius: {
         lg: '0.75rem',
         md: '0.5rem',
         sm: '0.25rem',
+      },
+      transitionTimingFunction: {
+        'sidebar': 'cubic-bezier(0.4, 0, 0.2, 1)',
       },
       keyframes: {
         'accordion-down': {

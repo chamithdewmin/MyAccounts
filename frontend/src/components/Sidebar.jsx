@@ -85,10 +85,10 @@ const SectionHeader = ({ title }) => (
 const NavItem = ({ item, onClose }) => {
   const linkClass = ({ isActive }) =>
     cn(
-      'flex items-center gap-3 px-4 py-3 min-h-[44px] rounded-lg transition-all duration-200 touch-manipulation',
+      'flex items-center gap-3 px-4 py-3 min-h-[44px] rounded-2xl transition-all duration-300 ease-sidebar touch-manipulation',
       isActive
-        ? 'bg-primary text-white shadow-lg hover:bg-primary'
-        : 'text-secondary-foreground hover:bg-secondary hover:translate-x-1'
+        ? 'bg-sidebar-active-bg text-sidebar-active-accent shadow-lg hover:bg-sidebar-active-bg [&>svg]:text-sidebar-active-accent'
+        : 'text-secondary-foreground hover:bg-secondary hover:translate-x-0.5 [&>svg]:transition-colors [&>svg]:duration-300 [&>svg]:ease-sidebar'
     );
 
   return (
@@ -97,7 +97,7 @@ const NavItem = ({ item, onClose }) => {
       onClick={onClose}
       className={linkClass}
     >
-      <item.icon className="w-5 h-5" />
+      <item.icon className="w-5 h-5 shrink-0" />
       <span className="font-medium">{item.label}</span>
     </NavLink>
   );
@@ -164,10 +164,10 @@ const Sidebar = ({ isOpen, onClose }) => {
                           type="button"
                           onClick={() => setReportsExpanded((p) => !p)}
                           className={cn(
-                            'w-full flex items-center justify-between gap-3 px-4 py-3 min-h-[44px] rounded-lg transition-all duration-200 touch-manipulation',
+                            'w-full flex items-center justify-between gap-3 px-4 py-3 min-h-[44px] rounded-2xl transition-all duration-300 ease-sidebar touch-manipulation',
                             isReportsActive
-                              ? 'bg-primary text-white shadow-lg hover:bg-primary'
-                              : 'text-secondary-foreground hover:bg-secondary hover:translate-x-1'
+                              ? 'bg-sidebar-active-bg text-sidebar-active-accent shadow-lg hover:bg-sidebar-active-bg [&_svg]:text-sidebar-active-accent'
+                              : 'text-secondary-foreground hover:bg-secondary hover:translate-x-0.5'
                           )}
                         >
                           <div className="flex items-center gap-3">
@@ -195,9 +195,9 @@ const Sidebar = ({ isOpen, onClose }) => {
                                     onClick={onClose}
                                     className={({ isActive }) =>
                                       cn(
-                                        'flex items-center gap-3 px-3 py-2 rounded-lg transition-all duration-200 text-sm',
+                                        'flex items-center gap-3 px-3 py-2 rounded-2xl transition-all duration-300 ease-sidebar text-sm',
                                         isActive
-                                          ? 'bg-primary text-white'
+                                          ? 'bg-sidebar-active-bg text-sidebar-active-accent [&>svg]:text-sidebar-active-accent'
                                           : 'text-muted-foreground hover:bg-secondary hover:text-foreground'
                                       )
                                     }

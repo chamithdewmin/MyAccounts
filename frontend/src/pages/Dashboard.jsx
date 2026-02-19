@@ -692,9 +692,6 @@ export default function FinanceDashboard() {
 
           {/* MY CARD */}
           <div style={s.card}>
-            <h2 style={{ color: "#fff", fontSize: 16, fontWeight: 700, margin: "0 0 4px" }}>My Card</h2>
-            <p style={{ color: "#8b9ab0", fontSize: 12, margin: "0 0 2px" }}>Card Balance</p>
-            <p style={{ color: "#fff", fontSize: 22, fontWeight: 800, margin: "0 0 14px", letterSpacing: "-0.02em" }}>{formatCurrency(cardBalance)}</p>
 
             {/* Card Slider */}
             {(() => {

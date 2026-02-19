@@ -14,6 +14,44 @@ const MastercardIcon = () => (
   </div>
 );
 
+// ─── UPWARD TRENDING GRAPH ICON ───────────────────────────────────────────────
+const UpwardTrendIcon = () => (
+  <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <path
+      d="M3 14L7 10L10 13L17 6"
+      stroke="#22c55e"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+    <path
+      d="M17 6L13 6L13 10"
+      stroke="#22c55e"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+  </svg>
+);
+
+// ─── CARD ICON ────────────────────────────────────────────────────────────────
+const CardIcon = () => (
+  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <rect x="2" y="5" width="20" height="14" rx="2" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+    <path d="M2 10H22" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+    <rect x="16" y="14" width="4" height="3" rx="0.5" fill="#fff"/>
+  </svg>
+);
+
+// ─── CASH ICON ────────────────────────────────────────────────────────────────
+const CashIcon = () => (
+  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <rect x="2" y="7" width="20" height="12" rx="2" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+    <circle cx="12" cy="13" r="2" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+    <path d="M6 9H7M17 9H18M6 17H7M17 17H18" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+  </svg>
+);
+
 // ─── CUSTOM TOOLTIP ───────────────────────────────────────────────────────────
 const CustomTooltip = ({ active, payload, label, currency = "" }) => {
   if (active && payload && payload.length) {
@@ -184,33 +222,36 @@ export default function FinanceDashboard() {
     const lastMonthYear = thisMonth === 0 ? thisYear - 1 : thisYear;
     
     const categoryMap = {};
-    const categoryIcons = {
-      'Hosting': '💻',
-      'Tools & Subscriptions': '🔧',
-      'Advertising & Marketing': '📢',
-      'Transport': '🚗',
-      'Office & Utilities': '🏠',
-      'Food': '🍔',
-      'Other': '💳',
-    };
     const colors = ["#3b82f6", "#22d3ee", "#60a5fa", "#8b5cf6", "#ec4899", "#f59e0b", "#10b981"];
     
-    // Calculate this month's spending by category
+    // Helper function to determine if payment method is card/bank
+    const isCardPayment = (paymentMethod) => {
+      if (!paymentMethod) return false;
+      const method = String(paymentMethod).toLowerCase().replace(/\s+/g, '_');
+      return ['bank', 'card', 'online', 'online_transfer', 'online_payment'].includes(method);
+    };
+    
+    // Calculate this month's spending by category and determine payment method
     expenses.forEach(expense => {
       const expenseDate = new Date(expense.date);
       const category = expense.category || 'Other';
       
       if (expenseDate.getMonth() === thisMonth && expenseDate.getFullYear() === thisYear) {
         if (!categoryMap[category]) {
-          categoryMap[category] = { spent: 0, lastMonthSpent: 0, total: 0 };
+          categoryMap[category] = { spent: 0, lastMonthSpent: 0, total: 0, cardAmount: 0, cashAmount: 0 };
         }
         categoryMap[category].spent += expense.amount || 0;
+        if (isCardPayment(expense.paymentMethod)) {
+          categoryMap[category].cardAmount += expense.amount || 0;
+        } else {
+          categoryMap[category].cashAmount += expense.amount || 0;
+        }
       }
       
       // Calculate last month's spending for comparison
       if (expenseDate.getMonth() === lastMonth && expenseDate.getFullYear() === lastMonthYear) {
         if (!categoryMap[category]) {
-          categoryMap[category] = { spent: 0, lastMonthSpent: 0, total: 0 };
+          categoryMap[category] = { spent: 0, lastMonthSpent: 0, total: 0, cardAmount: 0, cashAmount: 0 };
         }
         categoryMap[category].lastMonthSpent += expense.amount || 0;
       }
@@ -226,8 +267,11 @@ export default function FinanceDashboard() {
         // Estimate total as 150% of spent for visualization
         const total = data.spent * 1.5;
         
+        // Determine icon based on which payment method is more common
+        const useCardIcon = data.cardAmount >= data.cashAmount;
+        
         return {
-          icon: categoryIcons[category] || '💳',
+          icon: useCardIcon ? <CardIcon /> : <CashIcon />,
           label: category,
           spent: data.spent,
           total: total,
@@ -291,6 +335,7 @@ export default function FinanceDashboard() {
   const bankBalance = totals.bankBalance || 0;
   const cashBalance = totals.cashInHand || 0;
   const cardBalance = bankBalance + cashBalance;
+  const pendingPayments = totals.pendingPayments || 0;
 
   // Calculate monthly profit (this month)
   const monthlyProfit = useMemo(() => {
@@ -315,7 +360,7 @@ export default function FinanceDashboard() {
     return monthlyIncome - monthlyExpenses;
   }, [incomes, expenses]);
 
-  // Calculate percentage changes (simplified - comparing this month to last month)
+  // Calculate percentage changes (comparing this month to last month)
   const monthlyChange = useMemo(() => {
     const now = new Date();
     const thisMonth = now.getMonth();
@@ -371,6 +416,12 @@ export default function FinanceDashboard() {
       profit: profitChangePercent,
     };
   }, [incomes, expenses]);
+
+  // Calculate percentage for pending payments (as percentage of total income)
+  const pendingPaymentsPercentage = useMemo(() => {
+    if (totalIncome === 0) return "0.00";
+    return ((pendingPayments / totalIncome) * 100).toFixed(2);
+  }, [pendingPayments, totalIncome]);
 
   const s = {
     page: {
@@ -432,12 +483,30 @@ export default function FinanceDashboard() {
           badgeColor={parseFloat(monthlyChange.expense) <= 0 ? "green" : "red"} 
         />
         <StatCard 
-          icon="📊" 
+          icon={<UpwardTrendIcon />} 
           iconBg="rgba(34,197,94,0.15)" 
           label="Net Profit (This Month)" 
           value={formatCurrency(monthlyProfit)} 
           badge={monthlyChange.profit !== "0.00" ? `${parseFloat(monthlyChange.profit) > 0 ? '+' : ''}${monthlyChange.profit}%` : null}
           badgeColor={parseFloat(monthlyChange.profit) >= 0 ? "green" : "red"} 
+        />
+        <StatCard 
+          icon={
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path
+                d="M12 9V13M12 17H12.01M21 12C21 16.9706 16.9706 21 12 21C7.02944 21 3 16.9706 3 12C3 7.02944 7.02944 3 12 3C16.9706 3 21 7.02944 21 12Z"
+                stroke="#eab308"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+            </svg>
+          }
+          iconBg="rgba(234,179,8,0.2)" 
+          label="Pending Payments" 
+          value={formatCurrency(pendingPayments)} 
+          badge={pendingPaymentsPercentage !== "0.00" ? `${pendingPaymentsPercentage}%` : null}
+          badgeColor="red"
         />
       </div>
 
@@ -506,39 +575,14 @@ export default function FinanceDashboard() {
               <h3 style={{ color: "#fff", fontSize: 14, fontWeight: 700, margin: "0 0 14px" }}>Payment</h3>
               <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
                 {payments.length > 0 ? payments.map((p, i) => {
-                  const isPositive = p.percentageChange >= 0;
-                  const badgeBg = isPositive 
-                    ? "rgba(34,197,94,0.2)" 
-                    : "rgba(239,68,68,0.2)";
-                  const badgeTextColor = isPositive ? "#22c55e" : "#ef4444";
-                  const badgeGlow = isPositive
-                    ? "0 0 8px rgba(34,197,94,0.4), 0 0 4px rgba(34,197,94,0.2)"
-                    : "0 0 8px rgba(239,68,68,0.4), 0 0 4px rgba(239,68,68,0.2)";
-                  const percentageText = p.percentageChange !== undefined && !isNaN(p.percentageChange)
-                    ? `${isPositive ? '+' : ''}${p.percentageChange.toFixed(2)}%`
-                    : null;
-
                   return (
                     <div key={i}>
                       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 5 }}>
                         <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                          <div style={{ width: 32, height: 32, borderRadius: 8, background: "#1e2433", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 14 }}>{p.icon}</div>
-                          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                            <span style={{ color: "#d1d9e6", fontSize: 13, fontWeight: 500 }}>{p.label}</span>
-                            {percentageText && (
-                              <span style={{
-                                background: badgeBg,
-                                color: badgeTextColor,
-                                fontSize: 10,
-                                fontWeight: 700,
-                                padding: "3px 8px",
-                                borderRadius: 20,
-                                boxShadow: badgeGlow,
-                                fontFamily: "'Inter', sans-serif",
-                                whiteSpace: "nowrap",
-                              }}>{percentageText}</span>
-                            )}
+                          <div style={{ width: 32, height: 32, borderRadius: 8, background: "#1e2433", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                            {p.icon}
                           </div>
+                          <span style={{ color: "#d1d9e6", fontSize: 13, fontWeight: 500 }}>{p.label}</span>
                         </div>
                         <span style={{ color: "#8b9ab0", fontSize: 11 }}>
                           <span style={{ color: "#fff", fontWeight: 600 }}>{formatCurrency(p.spent)}</span>/{formatCurrency(p.total)}

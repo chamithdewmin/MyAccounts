@@ -39,7 +39,7 @@
 
   .dark {
     /* Dark theme with custom background colors */
-    --background: 0 0% 0%; /* Pure Black #000000 for page background */
+    --background: 225 64% 6%; /* Dark Blue-Grey #0C0E14 for page background */
     --foreground: 210 40% 96%;
 
     --card: 225 22% 11%; /* Dark Blue-Green #151821 for sidebar and cards */

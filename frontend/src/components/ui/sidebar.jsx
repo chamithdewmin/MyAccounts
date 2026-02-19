@@ -24,7 +24,7 @@ export function SidebarProvider({ children, defaultCollapsed = false }) {
       }}
     >
       <div
-        className="group/sidebar-wrapper flex min-h-screen w-full bg-background dark:bg-[#000000]"
+        className="group/sidebar-wrapper flex min-h-screen w-full bg-background dark:bg-[#0C0E14]"
         data-state={collapsed ? 'collapsed' : 'expanded'}
       >
         {children}

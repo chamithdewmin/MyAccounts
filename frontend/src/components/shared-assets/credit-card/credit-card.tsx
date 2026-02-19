@@ -188,7 +188,7 @@ export const CreditCard = ({
                             borderRadius: 20,
                             background: isOrangeType ? orangeGradient : undefined,
                             boxShadow: isOrangeType 
-                                ? "0 25px 60px rgba(249, 115, 22, 0.45), 0 8px 25px rgba(0,0,0,0.4)"
+                                ? "0 8px 25px rgba(0,0,0,0.4)"
                                 : undefined,
                             padding: "26px 28px",
                             display: "flex",
@@ -264,7 +264,7 @@ export const CreditCard = ({
                             borderRadius: 20,
                             background: isOrangeType ? orangeGradientBack : undefined,
                             boxShadow: isOrangeType 
-                                ? "0 25px 60px rgba(249, 115, 22, 0.45), 0 8px 25px rgba(0,0,0,0.4)"
+                                ? "0 8px 25px rgba(0,0,0,0.4)"
                                 : undefined,
                             transform: "rotateY(180deg)",
                             overflow: "hidden",

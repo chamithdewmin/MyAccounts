@@ -221,7 +221,7 @@ const Dashboard = () => {
 
       <div style={{
         minHeight: '100vh',
-        background: '#0c0e14',
+        background: '#0C0E14',
         padding: 24,
         fontFamily: "'DM Sans', -apple-system, BlinkMacSystemFont, sans-serif",
         color: '#fff',
@@ -384,7 +384,7 @@ const Dashboard = () => {
                   cardNumber={cardNumber}
                   cardHolder={cardHolder}
                   cardExpiration={cardExpiry}
-                  width={280}
+                  width={320}
                   currentBalance={currentBalanceFormatted}
                 />
               </div>

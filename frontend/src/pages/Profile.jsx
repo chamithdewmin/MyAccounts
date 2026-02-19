@@ -94,18 +94,6 @@ const Profile = () => {
     [updateSettings]
   );
 
-  const saveNow = useCallback(
-    (partial) => {
-      if (saveTimeoutRef.current) {
-        clearTimeout(saveTimeoutRef.current);
-        saveTimeoutRef.current = null;
-      }
-      setLocal((prev) => ({ ...prev, ...partial }));
-      updateSettings(partial);
-    },
-    [updateSettings]
-  );
-
   const handleAvatarUpload = async (e) => {
     const file = e.target.files?.[0];
     if (!file) return;

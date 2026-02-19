@@ -76,7 +76,7 @@ const Profile = () => {
     [updateSettings]
   );
 
-  const handleAvatarUpload = (e) => {
+  const handleAvatarUpload = async (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
     if (file.size > 5 * 1024 * 1024) {
@@ -84,12 +84,17 @@ const Profile = () => {
       return;
     }
     const reader = new FileReader();
-    reader.onload = () => {
-      saveNow({ profileAvatar: reader.result });
-      toast({ title: 'Avatar updated', description: 'Your profile picture has been updated.' });
+    reader.onload = async () => {
+      try {
+        await updateSettings({ profileAvatar: reader.result });
+        setLocal((prev) => ({ ...prev, profileAvatar: reader.result }));
+        toast({ title: 'Avatar updated', description: 'Your profile picture has been saved.' });
+      } catch (err) {
+        toast({ title: 'Upload failed', description: err.message || 'Failed to save avatar.', variant: 'destructive' });
+      }
     };
     reader.onerror = () => {
-      toast({ title: 'Upload failed', description: 'Failed to upload image. Please try again.', variant: 'destructive' });
+      toast({ title: 'Upload failed', description: 'Failed to read image file.', variant: 'destructive' });
     };
     reader.readAsDataURL(file);
   };
@@ -97,26 +102,41 @@ const Profile = () => {
   const handleSaveProfile = async () => {
     setSaving(true);
     try {
-      // Update personal details if changed
-      const updates = {};
-      if (local.firstName !== (user?.name?.split(' ')[0] || '')) {
-        updates.firstName = local.firstName;
+      // Update personal details (name, email, password) via users API
+      const fullName = `${local.firstName.trim()} ${local.lastName.trim()}`.trim() || user?.name || 'User';
+      const nameChanged = fullName !== user?.name;
+      const emailChanged = local.email !== user?.email;
+      const passwordChanged = local.password && local.currentPassword;
+
+      if (nameChanged || emailChanged || passwordChanged) {
+        try {
+          await api.users.update(user?.id, {
+            name: fullName,
+            email: local.email.trim(),
+            ...(passwordChanged ? { password: local.password } : {}),
+          });
+          toast({ title: 'Profile updated', description: 'Your personal details have been saved.' });
+          // Refresh user data
+          window.dispatchEvent(new CustomEvent('auth:login'));
+        } catch (err) {
+          toast({ title: 'Error', description: err.message || 'Failed to update personal details.', variant: 'destructive' });
+          setSaving(false);
+          return;
+        }
       }
-      if (local.lastName !== (user?.name?.split(' ').slice(1).join(' ') || '')) {
-        updates.lastName = local.lastName;
-      }
-      if (local.email !== user?.email) {
-        updates.email = local.email;
-      }
-      if (local.password && local.currentPassword) {
-        // Password change would go here - need API endpoint
-        updates.password = local.password;
-      }
-      if (Object.keys(updates).length > 0) {
-        // await api.profile.update(updates);
-        toast({ title: 'Profile updated', description: 'Your personal details have been saved.' });
-      }
+
+      // Save business profile and invoice branding via settings API
+      const settingsUpdates = {
+        businessName: local.businessName,
+        phone: local.phone,
+        logo: local.logo,
+        invoiceThemeColor: local.invoiceThemeColor,
+        profileAvatar: local.profileAvatar,
+      };
+      await updateSettings(settingsUpdates);
+
       setLocal((prev) => ({ ...prev, currentPassword: '', password: '' }));
+      toast({ title: 'Success', description: 'All profile details have been saved.' });
     } catch (error) {
       toast({ title: 'Error', description: error.message || 'Failed to update profile.', variant: 'destructive' });
     } finally {
@@ -201,7 +221,15 @@ const Profile = () => {
                         type="button"
                         variant="ghost"
                         size="sm"
-                        onClick={() => saveNow({ profileAvatar: null })}
+                        onClick={async () => {
+                          try {
+                            await updateSettings({ profileAvatar: null });
+                            setLocal((prev) => ({ ...prev, profileAvatar: null }));
+                            toast({ title: 'Avatar removed', description: 'Profile picture has been removed.' });
+                          } catch (err) {
+                            toast({ title: 'Error', description: err.message || 'Failed to remove avatar.', variant: 'destructive' });
+                          }
+                        }}
                         className="w-fit text-destructive hover:text-destructive"
                       >
                         Remove
@@ -314,7 +342,10 @@ const Profile = () => {
                 <Input
                   id="company-name"
                   value={s.businessName}
-                  onChange={(e) => debouncedSave({ businessName: e.target.value })}
+                  onChange={(e) => {
+                    setLocal((prev) => ({ ...prev, businessName: e.target.value }));
+                    debouncedSave({ businessName: e.target.value });
+                  }}
                   placeholder="My Business"
                 />
               </div>
@@ -324,7 +355,10 @@ const Profile = () => {
                   id="phone-number"
                   type="tel"
                   value={s.phone ?? ''}
-                  onChange={(e) => debouncedSave({ phone: e.target.value })}
+                  onChange={(e) => {
+                    setLocal((prev) => ({ ...prev, phone: e.target.value }));
+                    debouncedSave({ phone: e.target.value });
+                  }}
                   placeholder="+94761234567 or 0761234567"
                 />
               </div>
@@ -420,11 +454,22 @@ const Profile = () => {
                     id="logo-upload"
                     type="file"
                     accept="image/*"
-                    onChange={(e) => {
+                    onChange={async (e) => {
                       const file = e.target.files?.[0];
                       if (!file) return;
                       const reader = new FileReader();
-                      reader.onload = () => saveNow({ logo: reader.result });
+                      reader.onload = async () => {
+                        try {
+                          await updateSettings({ logo: reader.result });
+                          setLocal((prev) => ({ ...prev, logo: reader.result }));
+                          toast({ title: 'Logo updated', description: 'Invoice logo has been saved.' });
+                        } catch (err) {
+                          toast({ title: 'Upload failed', description: err.message || 'Failed to save logo.', variant: 'destructive' });
+                        }
+                      };
+                      reader.onerror = () => {
+                        toast({ title: 'Upload failed', description: 'Failed to read image file.', variant: 'destructive' });
+                      };
                       reader.readAsDataURL(file);
                     }}
                     className="block w-full text-sm text-muted-foreground
@@ -434,7 +479,22 @@ const Profile = () => {
                   {s.logo && (
                     <div className="flex items-center gap-2">
                       <img src={s.logo} alt="Logo" className="h-10 w-10 rounded border border-border object-contain bg-white" />
-                      <Button type="button" variant="outline" size="sm" onClick={() => saveNow({ logo: null })}>Remove</Button>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={async () => {
+                          try {
+                            await updateSettings({ logo: null });
+                            setLocal((prev) => ({ ...prev, logo: null }));
+                            toast({ title: 'Logo removed', description: 'Invoice logo has been removed.' });
+                          } catch (err) {
+                            toast({ title: 'Error', description: err.message || 'Failed to remove logo.', variant: 'destructive' });
+                          }
+                        }}
+                      >
+                        Remove
+                      </Button>
                     </div>
                   )}
                 </div>
@@ -447,13 +507,19 @@ const Profile = () => {
                     id="invoice-theme-color"
                     type="color"
                     value={s.invoiceThemeColor || '#F97316'}
-                    onChange={(e) => debouncedSave({ invoiceThemeColor: e.target.value })}
+                    onChange={(e) => {
+                      setLocal((prev) => ({ ...prev, invoiceThemeColor: e.target.value }));
+                      debouncedSave({ invoiceThemeColor: e.target.value });
+                    }}
                     className="h-10 w-14 cursor-pointer rounded border border-border bg-transparent p-0"
                   />
                   <Input
                     type="text"
                     value={s.invoiceThemeColor || '#F97316'}
-                    onChange={(e) => debouncedSave({ invoiceThemeColor: e.target.value })}
+                    onChange={(e) => {
+                      setLocal((prev) => ({ ...prev, invoiceThemeColor: e.target.value }));
+                      debouncedSave({ invoiceThemeColor: e.target.value });
+                    }}
                     placeholder="#F97316"
                     className="font-mono w-28"
                   />

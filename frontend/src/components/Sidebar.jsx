@@ -47,7 +47,6 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { AvatarLabelGroup, AvatarWithStatus, AvatarFallback } from '@/components/ui/avatar';
-import { ThemeTogglerButton } from '@/components/ThemeTogglerButton';
 
 const reportItems = [
   { to: '/reports/overview', label: 'Overview Reports' },
@@ -291,7 +290,6 @@ export default function Sidebar() {
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
-              <ThemeTogglerButton variant="ghost" size="sm" className="shrink-0 h-8 w-8" />
             </div>
           </div>
         </SidebarFooter>

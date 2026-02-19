@@ -76,14 +76,14 @@ function AvatarLabelGroup({
         ) : null}
         <AvatarFallback>{title ? title.charAt(0).toUpperCase() : '?'}</AvatarFallback>
       </AvatarWithStatus>
-      <div className="flex min-w-0 flex-col truncate">
+      <div className="flex min-w-0 flex-col items-start text-left truncate">
         {title && (
-          <span className={cn('font-semibold text-foreground truncate', textSize)}>
+          <span className={cn('font-semibold text-foreground truncate w-full text-left', textSize)}>
             {title}
           </span>
         )}
         {subtitle && (
-          <span className={cn('text-muted-foreground truncate', size === 'sm' ? 'text-xs' : 'text-sm')}>
+          <span className={cn('text-muted-foreground truncate w-full text-left', size === 'sm' ? 'text-xs' : 'text-sm')}>
             {subtitle}
           </span>
         )}

@@ -23,6 +23,7 @@ import SMS from './pages/SMS';
 import Reminders from './pages/Reminders';
 import AIInsights from './pages/AIInsights';
 import Dashboard from './pages/Dashboard';
+import Calendar from './pages/Calendar';
 import Layout from './components/Layout';
 
 function App() {
@@ -58,6 +59,8 @@ function App() {
         <Route path="expenses" element={<Inventory />} />
         <Route path="invoices" element={<Orders />} />
         <Route path="clients" element={<Customers />} />
+        <Route path="cash-flow" element={<CashFlow />} />
+        <Route path="calendar" element={<Calendar />} />
         <Route path="reports" element={<Navigate to="/reports/overview" replace />} />
         <Route path="reports/overview" element={<ReportOverview />} />
         <Route path="reports/profit-loss" element={<ReportProfitLoss />} />

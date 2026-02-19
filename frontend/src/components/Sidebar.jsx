@@ -20,6 +20,7 @@ import {
   Sparkles,
   LogOut,
   LayoutDashboard,
+  Calendar,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/contexts/AuthContext';
@@ -69,6 +70,7 @@ const NAV_ITEMS_WITH_DIVIDERS = [
   { divider: true },
   { label: 'Expenses', href: '/expenses', icon: Receipt },
   { label: 'Cash Flow', href: '/cash-flow', icon: TrendingUp },
+  { label: 'Calendar', href: '/calendar', icon: Calendar },
   { label: 'Reports', icon: BarChart3, href: '/reports/overview', items: reportSubItems },
   { divider: true },
   { label: 'Reminders', href: '/reminders', icon: Bell },

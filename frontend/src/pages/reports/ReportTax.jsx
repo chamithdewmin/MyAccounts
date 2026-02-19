@@ -178,7 +178,7 @@ export default function TaxReports(){
               </div>)}
             </div>
           </Card>
-        </div>
+              </div>
 
         {/* CATEGORY TABLE */}
         <Card title="Income Category Analysis" subtitle="Tax liability per income source">
@@ -196,7 +196,7 @@ export default function TaxReports(){
                 <td style={{padding:"13px 14px"}}>
                   <span style={{background:cat.taxable?"rgba(239,68,68,0.12)":"rgba(34,197,94,0.12)",color:cat.taxable?C.red:C.green,borderRadius:6,padding:"3px 10px",fontSize:11,fontWeight:700,display:"inline-flex",alignItems:"center",gap:5}}>
                     <span style={{width:5,height:5,borderRadius:"50%",background:cat.taxable?C.red:C.green,display:"inline-block"}}/>{cat.taxable?"Taxable":"Exempt"}
-                  </span>
+                          </span>
                 </td>
               </tr>)}
             </tbody>

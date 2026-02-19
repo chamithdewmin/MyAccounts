@@ -270,16 +270,21 @@ export default function Sidebar() {
                     <LogOut className="w-4 h-4 mr-2 shrink-0" />
                     Log out
                   </DropdownMenuItem>
-                  <div className="mt-2 rounded-md bg-secondary/50 px-3 py-2.5 flex items-center gap-2">
-                    <AvatarLabelGroup
-                      size="sm"
-                      title={user?.name || 'User'}
-                      subtitle={user?.email}
-                      online
-                      className="min-w-0 flex-1"
-                    />
-                    <ChevronsUpDown className="h-4 w-4 shrink-0 text-muted-foreground" />
-                  </div>
+                  <DropdownMenuItem
+                    className="mt-2 rounded-md bg-secondary/50 px-3 py-2.5 cursor-pointer focus:bg-secondary/70"
+                    onSelect={(e) => e.preventDefault()}
+                  >
+                    <div className="flex items-center gap-2 w-full">
+                      <AvatarLabelGroup
+                        size="sm"
+                        title={user?.name || 'User'}
+                        subtitle={user?.email}
+                        online
+                        className="min-w-0 flex-1"
+                      />
+                      <ChevronsUpDown className="h-4 w-4 shrink-0 text-muted-foreground" />
+                    </div>
+                  </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
             </div>

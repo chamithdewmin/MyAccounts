@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useNavigate } from 'react-router-dom';
 import {
   LayoutDashboard,
   Receipt,
@@ -14,8 +15,10 @@ import {
   Settings,
   X,
   ChevronDown,
+  ChevronsUpDown,
   CreditCard,
   Sparkles,
+  LogOut,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/contexts/AuthContext';
@@ -37,6 +40,14 @@ import {
   SidebarMenuSubItem,
   useSidebar,
 } from '@/components/ui/sidebar';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import { AvatarLabelGroup, AvatarWithStatus, AvatarFallback } from '@/components/ui/avatar';
+import { ThemeTogglerButton } from '@/components/ThemeTogglerButton';
 
 const reportItems = [
   { to: '/reports/overview', label: 'Overview Reports' },
@@ -183,11 +194,17 @@ function ReportsNav() {
 }
 
 export default function Sidebar() {
-  const { user } = useAuth();
+  const { user, logout } = useAuth();
+  const navigate = useNavigate();
   const { settings } = useFinance();
   const { open, setOpen, collapsed } = useSidebar();
   const canManageUsers = user?.email === ADMIN_EMAIL;
   const logoSrc = settings?.theme === 'light' ? sidebarLogoLight : sidebarLogo;
+
+  const handleLogout = () => {
+    logout();
+    navigate('/login');
+  };
 
   return (
     <>
@@ -242,7 +259,42 @@ export default function Sidebar() {
           ))}
         </SidebarContent>
 
-        <SidebarFooter />
+        <SidebarFooter>
+          <div className="rounded-lg border border-secondary bg-secondary/30 px-2 py-2">
+            <div className={cn('flex items-center gap-2', collapsed && 'justify-center')}>
+              <DropdownMenu>
+                <DropdownMenuTrigger className={cn(
+                  'flex min-w-0 flex-1 items-center gap-2 rounded-md p-1.5 hover:bg-secondary/50 transition-colors touch-manipulation outline-none focus-visible:ring-2 focus-visible:ring-ring',
+                  collapsed && 'flex-1 justify-center'
+                )}>
+                  {collapsed ? (
+                    <AvatarWithStatus online className="h-8 w-8">
+                      <AvatarFallback>{(user?.name || 'U').charAt(0).toUpperCase()}</AvatarFallback>
+                    </AvatarWithStatus>
+                  ) : (
+                    <>
+                      <AvatarLabelGroup
+                        size="sm"
+                        title={user?.name || 'User'}
+                        subtitle={user?.email}
+                        online
+                        className="min-w-0 flex-1"
+                      />
+                      <ChevronsUpDown className="h-4 w-4 shrink-0 text-muted-foreground" />
+                    </>
+                  )}
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" side="top" className="w-56">
+                  <DropdownMenuItem onClick={handleLogout}>
+                    <LogOut className="w-4 h-4 mr-2" />
+                    Log out
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+              <ThemeTogglerButton variant="ghost" size="sm" className="shrink-0 h-8 w-8" />
+            </div>
+          </div>
+        </SidebarFooter>
 
         <SidebarRail />
       </SidebarRoot>

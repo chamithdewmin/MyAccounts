@@ -141,6 +141,10 @@ export function SidebarTrigger({ className, ...props }) {
   );
 }
 
+export function SidebarDivider({ className, ...props }) {
+  return <div className={cn('my-2 border-t border-secondary', className)} {...props} />;
+}
+
 export function SidebarGroup({ className, ...props }) {
   return <div className={cn('space-y-0.5', className)} {...props} />;
 }

@@ -147,8 +147,10 @@ export const CreditCard = ({
             style={{
                 width: `${scaledWidth}px`,
                 height: `${scaledHeight}px`,
+                display: 'flex',
+                justifyContent: 'flex-start',
             }}
-            className={cx("relative flex", className)}
+            className={cx("relative", className)}
         >
             {/* Card wrapper with 3D perspective */}
             <div
@@ -193,19 +195,6 @@ export const CreditCard = ({
                         }}
                         className={!isOrangeType ? cx(styles[type].root) : undefined}
                     >
-                        {/* Glossy overlay */}
-                        <div
-                            style={{
-                                position: "absolute",
-                                top: 0,
-                                left: 0,
-                                right: 0,
-                                height: "55%",
-                                background: "linear-gradient(180deg, rgba(255,255,255,0.13) 0%, rgba(255,255,255,0) 100%)",
-                                borderRadius: "20px 20px 0 0",
-                                pointerEvents: "none",
-                            }}
-                        />
                         
                         {/* Decorative circles */}
                         <div

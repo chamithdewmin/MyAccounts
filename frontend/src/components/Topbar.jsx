@@ -1,8 +1,11 @@
 import React, { useState } from 'react';
 import { Search, Menu, Bell } from 'lucide-react';
 import { SidebarTrigger } from '@/components/ui/sidebar';
+import { ThemeTogglerButton } from '@/components/ThemeTogglerButton';
+import { useAuth } from '@/contexts/AuthContext';
 
 const Topbar = () => {
+  const { user } = useAuth();
   const [searchQuery, setSearchQuery] = useState('');
 
   return (
@@ -25,8 +28,13 @@ const Topbar = () => {
           </div>
         </div>
 
-        {/* Right: notification only */}
-        <div className="flex items-center gap-1 sm:gap-3 shrink-0">
+        {/* Right: user name/email (left-aligned) + theme + notification */}
+        <div className="flex items-center gap-2 sm:gap-3 shrink-0">
+          <div className="hidden sm:flex flex-col items-start text-left min-w-0 max-w-[140px] md:max-w-[180px]">
+            <span className="text-sm font-medium text-foreground truncate w-full">{user?.name || 'User'}</span>
+            <span className="text-xs text-muted-foreground truncate w-full">{user?.email || ''}</span>
+          </div>
+          <ThemeTogglerButton variant="ghost" size="icon" className="min-w-[44px] min-h-[44px] touch-manipulation" />
           <button type="button" aria-label="Notifications" className="p-2.5 min-w-[44px] min-h-[44px] flex items-center justify-center hover:bg-secondary rounded-lg transition-colors relative touch-manipulation">
             <Bell className="w-5 h-5" />
             <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-primary rounded-full" />

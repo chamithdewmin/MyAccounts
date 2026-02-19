@@ -104,21 +104,21 @@ const AIInsights = () => {
         {/* Financial snapshot */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
           <div className="bg-card rounded-lg border border-secondary p-4 flex items-center gap-3">
-            <div className="w-10 h-10 bg-primary/10 rounded-lg flex items-center justify-center">
-              <Wallet className="w-5 h-5 text-primary" />
+            <div className="w-10 h-10 rounded-lg flex items-center justify-center shrink-0 bg-[#2a1f1f] dark:bg-[#2a1f1f]">
+              <Wallet className="w-5 h-5 text-[#F97316] stroke-2" style={{ filter: 'drop-shadow(0 0 8px rgba(249, 115, 22, 0.8)) drop-shadow(0 0 12px rgba(249, 115, 22, 0.4))' }} />
             </div>
             <div>
               <p className="text-xs text-muted-foreground">Cash in Hand</p>
-              <p className="text-lg font-bold">{currency} {(totals?.cashInHand ?? 0).toLocaleString()}</p>
+              <p className="text-lg font-bold text-[#F97316]">{currency} {(totals?.cashInHand ?? 0).toLocaleString()}</p>
             </div>
           </div>
           <div className="bg-card rounded-lg border border-secondary p-4 flex items-center gap-3">
-            <div className="w-10 h-10 bg-primary/10 rounded-lg flex items-center justify-center">
-              <Wallet className="w-5 h-5 text-primary" />
+            <div className="w-10 h-10 rounded-lg flex items-center justify-center shrink-0 bg-[#2a1f1f] dark:bg-[#2a1f1f]">
+              <Wallet className="w-5 h-5 text-[#F97316] stroke-2" style={{ filter: 'drop-shadow(0 0 8px rgba(249, 115, 22, 0.8)) drop-shadow(0 0 12px rgba(249, 115, 22, 0.4))' }} />
             </div>
             <div>
               <p className="text-xs text-muted-foreground">Bank Balance</p>
-              <p className="text-lg font-bold">{currency} {(totals?.bankBalance ?? 0).toLocaleString()}</p>
+              <p className="text-lg font-bold text-[#F97316]">{currency} {(totals?.bankBalance ?? 0).toLocaleString()}</p>
             </div>
           </div>
           <div className="bg-card rounded-lg border border-secondary p-4 flex items-center gap-3">

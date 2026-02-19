@@ -42,7 +42,7 @@
     --background: 0 0% 0%; /* Pure Black #000000 for page background */
     --foreground: 210 40% 96%;
 
-    --card: 238 18% 8.6%; /* Dark Navy / Charcoal Blue #12131A for sidebar */
+    --card: 225 22% 11%; /* Dark Blue-Green #151821 for sidebar and cards */
     --card-foreground: 210 40% 96%;
 
     --primary: 20 100% 50%;

@@ -22,6 +22,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useFinance } from '@/contexts/FinanceContext';
 import sidebarLogo from '@/assets/side bar logo.png';
 import sidebarLogoLight from '@/assets/side-bar-light.png';
+import sidebarIcon from '@/assets/icon.png';
 import {
   Sidebar as SidebarRoot,
   SidebarHeader,
@@ -184,7 +185,7 @@ function ReportsNav() {
 export default function Sidebar() {
   const { user } = useAuth();
   const { settings } = useFinance();
-  const { open, setOpen } = useSidebar();
+  const { open, setOpen, collapsed } = useSidebar();
   const canManageUsers = user?.email === ADMIN_EMAIL;
   const logoSrc = settings?.theme === 'light' ? sidebarLogoLight : sidebarLogo;
 
@@ -205,8 +206,12 @@ export default function Sidebar() {
 
       <SidebarRoot collapsible="icon">
         <SidebarHeader>
-          <div className="flex items-center min-w-0 flex-1">
-            <img src={logoSrc} alt="MyAccounts" className="h-8 object-contain" />
+          <div className="flex items-center min-w-0 flex-1 justify-center">
+            {collapsed ? (
+              <img src={sidebarIcon} alt="MyAccounts" className="h-8 w-8 object-contain shrink-0" />
+            ) : (
+              <img src={logoSrc} alt="MyAccounts" className="h-8 object-contain" />
+            )}
           </div>
           <button
             type="button"

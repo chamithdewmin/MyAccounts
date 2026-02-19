@@ -9,6 +9,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { SidebarTrigger } from '@/components/ui/sidebar';
+import { ThemeTogglerButton } from '@/components/ThemeTogglerButton';
 
 const Topbar = () => {
   const { user, logout } = useAuth();
@@ -40,8 +41,9 @@ const Topbar = () => {
           </div>
         </div>
 
-        {/* Right: notification + user */}
+        {/* Right: theme + notification + user */}
         <div className="flex items-center gap-1 sm:gap-3 shrink-0">
+          <ThemeTogglerButton variant="ghost" size="icon" className="min-w-[44px] min-h-[44px] touch-manipulation" />
           <button type="button" aria-label="Notifications" className="p-2.5 min-w-[44px] min-h-[44px] flex items-center justify-center hover:bg-secondary rounded-lg transition-colors relative touch-manipulation">
             <Bell className="w-5 h-5" />
             <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-primary rounded-full" />

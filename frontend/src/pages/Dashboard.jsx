@@ -678,11 +678,11 @@ export default function FinanceDashboard() {
 
             {/* Buttons */}
             <div style={{ display: "flex", gap: 10 }}>
-              <button style={{ flex: 1, background: "#3b82f6", color: "#fff", border: "none", borderRadius: 12, padding: "10px 0", fontSize: 13, fontWeight: 700, cursor: "pointer" }}>
-                Manage Cards
+              <button style={{ flex: 1, background: "#3b82f6", color: "#fff", border: "none", borderRadius: 12, padding: "10px 0", fontSize: 13, fontWeight: 700, cursor: "pointer", transition: "background 0.2s" }}>
+                Deposit
               </button>
-              <button style={{ flex: 1, background: "transparent", color: "#fff", border: "1.5px solid #2a3347", borderRadius: 12, padding: "10px 0", fontSize: 13, fontWeight: 700, cursor: "pointer" }}>
-                Transfer
+              <button style={{ flex: 1, background: "#3b82f6", color: "#fff", border: "none", borderRadius: 12, padding: "10px 0", fontSize: 13, fontWeight: 700, cursor: "pointer", transition: "background 0.2s" }}>
+                Withdrawal
               </button>
             </div>
           </div>

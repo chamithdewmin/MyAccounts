@@ -117,7 +117,20 @@ export default function FinanceDashboard() {
   };
 
   return (
-    <div style={s.page}>
+    <>
+      <style>{`
+        .dashboard-container,
+        .dashboard-container * {
+          scrollbar-width: none !important;
+          -ms-overflow-style: none !important;
+        }
+        .dashboard-container *::-webkit-scrollbar {
+          display: none !important;
+          width: 0 !important;
+          height: 0 !important;
+        }
+      `}</style>
+      <div className="dashboard-container" style={s.page}>
       {/* HEADER */}
       <div style={{ marginBottom: 6 }}>
         <p style={{ color: "#8b9ab0", fontSize: 13, margin: 0 }}>Good morning, Alex 👋</p>
@@ -305,5 +318,6 @@ export default function FinanceDashboard() {
         </div>
       </div>
     </div>
+    </>
   );
 }

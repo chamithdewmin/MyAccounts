@@ -640,11 +640,15 @@ export default function FinanceDashboard() {
             <div style={{
               borderRadius: 16,
               background: "linear-gradient(135deg, #2563eb 0%, #1d4ed8 50%, #3b82f6 100%)",
-              padding: "18px 20px",
+              padding: "24px 20px",
+              minHeight: "180px",
               marginBottom: 12,
               position: "relative",
               overflow: "hidden",
               boxShadow: "0 12px 30px rgba(37,99,235,0.4)",
+              display: "flex",
+              flexDirection: "column",
+              justifyContent: "space-between",
             }}>
               <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: "50%", background: "linear-gradient(180deg,rgba(255,255,255,0.12) 0%,transparent 100%)", borderRadius: "16px 16px 0 0" }} />
               <div style={{ position: "absolute", width: 160, height: 160, borderRadius: "50%", border: "1.5px solid rgba(255,255,255,0.07)", top: -50, right: -40 }} />
@@ -655,7 +659,7 @@ export default function FinanceDashboard() {
                 </div>
                 <MastercardIcon />
               </div>
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", marginTop: 22, position: "relative", zIndex: 1 }}>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", marginTop: 28, position: "relative", zIndex: 1 }}>
                 <p style={{ color: "rgba(255,255,255,0.75)", fontSize: 12, fontFamily: "monospace", letterSpacing: "0.15em", margin: 0 }}>
                   {settings.bankDetails?.accountNumber?.replace(/(.{4})/g, '$1 ').trim() || '**** **** **** ****'}
                 </p>

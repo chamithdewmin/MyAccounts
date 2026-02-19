@@ -42,7 +42,12 @@ function AvatarWithStatus({ online, className, children, ...props }) {
       {children}
       {online && (
         <span
-          className="absolute bottom-0 right-0 h-3 w-3 rounded-full border-2 border-card bg-emerald-500"
+          className="absolute h-3 w-3 rounded-full border-2 border-card bg-emerald-500 z-10"
+          style={{ 
+            bottom: '-2px',
+            right: '-2px',
+            boxShadow: '0 0 0 2px hsl(var(--card))'
+          }}
           aria-hidden
         />
       )}

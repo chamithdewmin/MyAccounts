@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { Helmet } from 'react-helmet';
 import { motion } from 'framer-motion';
-import { Save, Wallet, Palette, Percent, Trash2 } from 'lucide-react';
+import { Save, Palette, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
@@ -55,8 +55,7 @@ const Settings = () => {
   const s = local;
 
   const mainFields = [
-    'taxRate', 'currency',
-    'openingCash', 'ownerCapital', 'payables', 'theme', 'taxEnabled',
+    'theme',
   ];
   const hasMainSettingsChanges = mainFields.some(
     (k) => String(s[k] ?? '') !== String((settings ?? {})[k] ?? '')
@@ -80,105 +79,7 @@ const Settings = () => {
           animate={{ opacity: 1, y: 0 }}
           className="space-y-6"
         >
-          {/* 1. Tax & Currency */}
-          <div className="bg-card rounded-lg p-6 border border-secondary">
-            <div className="flex items-center gap-2 mb-4">
-              <Percent className="w-5 h-5 text-primary" />
-              <h2 className="text-lg font-semibold">Tax & Currency</h2>
-            </div>
-            <p className="text-sm text-muted-foreground mb-4">Configure taxes and currency for invoices and reports.</p>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="currency">Currency</Label>
-                <select
-                  id="currency"
-                  className="w-full px-3 py-2 bg-secondary border border-secondary rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
-                  value={s.currency}
-                  onChange={(e) => debouncedSave({ currency: e.target.value })}
-                >
-                  <option value="LKR">LKR (රු)</option>
-                  <option value="USD">USD ($)</option>
-                  <option value="EUR">EUR (€)</option>
-                  <option value="GBP">GBP (£)</option>
-                </select>
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="tax-rate">Tax Rate (%)</Label>
-                <Input
-                  id="tax-rate"
-                  type="number"
-                  value={s.taxRate}
-                  onChange={(e) => debouncedSave({ taxRate: Number(e.target.value || 0) })}
-                />
-              </div>
-              <div className="md:col-span-2 rounded-lg border border-secondary bg-secondary/30 px-4 py-3 flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium">Tax Estimation</p>
-                  <p className="text-xs text-muted-foreground">Enable simple tax estimation in reports</p>
-                </div>
-                <button
-                  type="button"
-                  role="switch"
-                  aria-checked={s.taxEnabled}
-                  onClick={() => saveNow({ taxEnabled: !s.taxEnabled })}
-                  className={cn(
-                    'relative inline-flex h-7 w-14 items-center rounded-full border transition-colors',
-                    s.taxEnabled ? 'bg-primary border-primary' : 'bg-muted border-secondary',
-                  )}
-                >
-                  <span className={cn(
-                    'inline-block h-5 w-5 transform rounded-full bg-white shadow transition-transform',
-                    s.taxEnabled ? 'translate-x-7' : 'translate-x-1',
-                  )} />
-                </button>
-              </div>
-            </div>
-          </div>
-
-          {/* 2. Opening Balances */}
-          <div className="bg-card rounded-lg p-6 border border-secondary">
-            <div className="flex items-center gap-2 mb-4">
-              <Wallet className="w-5 h-5 text-primary" />
-              <h2 className="text-lg font-semibold">Opening Balances</h2>
-            </div>
-            <p className="text-sm text-muted-foreground mb-4">
-              Starting figures for Balance Sheet. Set when you first use the system.
-            </p>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="opening-cash">Opening Cash</Label>
-                <Input
-                  id="opening-cash"
-                  type="number"
-                  value={s.openingCash ?? 0}
-                  onChange={(e) => debouncedSave({ openingCash: Number(e.target.value || 0) })}
-                />
-                <p className="text-xs text-muted-foreground">Cash at business start</p>
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="owner-capital">Owner Capital</Label>
-                <Input
-                  id="owner-capital"
-                  type="number"
-                  value={s.ownerCapital ?? 0}
-                  onChange={(e) => debouncedSave({ ownerCapital: Number(e.target.value || 0) })}
-                />
-                <p className="text-xs text-muted-foreground">Owner deposits / investment</p>
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="payables">Payables</Label>
-                <Input
-                  id="payables"
-                  type="number"
-                  value={s.payables ?? 0}
-                  onChange={(e) => debouncedSave({ payables: Number(e.target.value || 0) })}
-                />
-                <p className="text-xs text-muted-foreground">Unpaid bills at start</p>
-              </div>
-            </div>
-          </div>
-
-          {/* 3. App Preferences */}
+          {/* 1. App Preferences */}
           <div className="bg-card rounded-lg p-6 border border-secondary">
             <div className="flex items-center gap-2 mb-4">
               <Palette className="w-5 h-5 text-primary" />

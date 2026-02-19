@@ -67,11 +67,7 @@ router.put('/', async (req, res) => {
 
     const invoiceThemeColor = (d.invoiceThemeColor || '#F97316').toString().trim().slice(0, 20);
     if (usePhone) {
-      const params = [
-        d.businessName, d.phone != null ? d.phone : '', d.currency, d.taxRate != null ? d.taxRate : null, d.taxEnabled,
-        d.theme, d.logo, useProfileAvatar ? d.profileAvatar : null, invoiceThemeColor, d.openingCash, d.ownerCapital, d.payables,
-        expenseCategoriesJson, uid,
-      ];
+      let params;
       let updateQuery = `UPDATE settings SET
           business_name = COALESCE($1, business_name),
           phone = COALESCE($2, phone),
@@ -81,6 +77,11 @@ router.put('/', async (req, res) => {
           theme = COALESCE($6, theme),
           logo = COALESCE($7, logo),`;
       if (useProfileAvatar) {
+        params = [
+          d.businessName, d.phone != null ? d.phone : '', d.currency, d.taxRate != null ? d.taxRate : null, d.taxEnabled,
+          d.theme, d.logo, d.profileAvatar, invoiceThemeColor, d.openingCash, d.ownerCapital, d.payables,
+          expenseCategoriesJson, uid,
+        ];
         updateQuery += ` profile_avatar = COALESCE($8, profile_avatar),`;
         updateQuery += ` invoice_theme_color = COALESCE($9, invoice_theme_color),
           opening_cash = COALESCE($10, opening_cash),
@@ -90,6 +91,11 @@ router.put('/', async (req, res) => {
           updated_at = NOW()
          WHERE user_id = $14`;
       } else {
+        params = [
+          d.businessName, d.phone != null ? d.phone : '', d.currency, d.taxRate != null ? d.taxRate : null, d.taxEnabled,
+          d.theme, d.logo, invoiceThemeColor, d.openingCash, d.ownerCapital, d.payables,
+          expenseCategoriesJson, uid,
+        ];
         updateQuery += ` invoice_theme_color = COALESCE($8, invoice_theme_color),
           opening_cash = COALESCE($9, opening_cash),
           owner_capital = COALESCE($10, owner_capital),
@@ -115,11 +121,7 @@ router.put('/', async (req, res) => {
         }
       }
     } else {
-      const params = [
-        d.businessName, d.currency, d.taxRate != null ? d.taxRate : null, d.taxEnabled,
-        d.theme, d.logo, useProfileAvatar ? d.profileAvatar : null, invoiceThemeColor, d.openingCash, d.ownerCapital, d.payables,
-        expenseCategoriesJson, uid,
-      ];
+      let params;
       let updateQuery = `UPDATE settings SET
           business_name = COALESCE($1, business_name),
           currency = COALESCE($2, currency),
@@ -128,6 +130,11 @@ router.put('/', async (req, res) => {
           theme = COALESCE($5, theme),
           logo = COALESCE($6, logo),`;
       if (useProfileAvatar) {
+        params = [
+          d.businessName, d.currency, d.taxRate != null ? d.taxRate : null, d.taxEnabled,
+          d.theme, d.logo, d.profileAvatar, invoiceThemeColor, d.openingCash, d.ownerCapital, d.payables,
+          expenseCategoriesJson, uid,
+        ];
         updateQuery += ` profile_avatar = COALESCE($7, profile_avatar),`;
         updateQuery += ` invoice_theme_color = COALESCE($8, invoice_theme_color),
           opening_cash = COALESCE($9, opening_cash),
@@ -137,6 +144,11 @@ router.put('/', async (req, res) => {
           updated_at = NOW()
          WHERE user_id = $13`;
       } else {
+        params = [
+          d.businessName, d.currency, d.taxRate != null ? d.taxRate : null, d.taxEnabled,
+          d.theme, d.logo, invoiceThemeColor, d.openingCash, d.ownerCapital, d.payables,
+          expenseCategoriesJson, uid,
+        ];
         updateQuery += ` invoice_theme_color = COALESCE($7, invoice_theme_color),
           opening_cash = COALESCE($8, opening_cash),
           owner_capital = COALESCE($9, owner_capital),

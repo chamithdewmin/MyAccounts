@@ -98,8 +98,8 @@ const Dashboard = () => {
             className="bg-card rounded-lg p-4 sm:p-6 border border-secondary min-w-0"
           >
             <div className="flex items-center gap-3 mb-3 sm:mb-4">
-              <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-lg flex items-center justify-center shrink-0">
-                <Wallet className="w-5 h-5 sm:w-6 sm:h-6 text-black dark:text-white stroke-2" />
+              <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-lg flex items-center justify-center shrink-0 bg-[#2a1f1f] dark:bg-[#2a1f1f]">
+                <Wallet className="w-5 h-5 sm:w-6 sm:h-6 text-[#F97316] stroke-2" style={{ filter: 'drop-shadow(0 0 8px rgba(249, 115, 22, 0.8)) drop-shadow(0 0 12px rgba(249, 115, 22, 0.4))' }} />
               </div>
               <span className="text-xs sm:text-sm font-medium text-muted-foreground truncate">Cash in Hand / Bank Balance</span>
             </div>

@@ -88,7 +88,7 @@ const SIDEBAR_SECTIONS = [
 ];
 
 function NavItem({ item }) {
-  const { setOpen } = useSidebar();
+  const { setOpen, collapsed } = useSidebar();
   return (
     <SidebarMenuItem>
       <NavLink
@@ -97,15 +97,15 @@ function NavItem({ item }) {
         className={({ isActive }) =>
           cn(
             'flex w-full items-center gap-3 rounded-2xl px-3 py-3 min-h-[44px] transition-all duration-300 ease-sidebar touch-manipulation',
+            collapsed && 'justify-center px-2',
             isActive
               ? 'bg-sidebar-active-bg text-sidebar-active-accent shadow-lg [&>svg]:text-sidebar-active-accent'
-              : 'text-secondary-foreground hover:bg-secondary hover:translate-x-0.5',
-            'sidebar-label'
+              : 'text-secondary-foreground hover:bg-secondary hover:translate-x-0.5'
           )
         }
       >
         <item.icon className="w-5 h-5 shrink-0" />
-        <span className="font-medium">{item.label}</span>
+        <span className="sidebar-label font-medium">{item.label}</span>
       </NavLink>
     </SidebarMenuItem>
   );
@@ -113,7 +113,7 @@ function NavItem({ item }) {
 
 function ReportsNav() {
   const location = useLocation();
-  const { setOpen } = useSidebar();
+  const { setOpen, collapsed } = useSidebar();
   const isReportsActive = location.pathname.startsWith('/reports');
   const [expanded, setExpanded] = useState(isReportsActive);
 
@@ -129,21 +129,22 @@ function ReportsNav() {
           onClick={() => setExpanded((p) => !p)}
           className={cn(
             'flex w-full items-center justify-between gap-3 rounded-2xl px-3 py-3 min-h-[44px] transition-all duration-300 ease-sidebar touch-manipulation text-left',
+            collapsed && 'justify-center px-2',
             isReportsActive
               ? 'bg-sidebar-active-bg text-sidebar-active-accent shadow-lg [&_svg]:text-sidebar-active-accent'
               : 'text-secondary-foreground hover:bg-secondary hover:translate-x-0.5'
           )}
         >
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-3 min-w-0">
             <BarChart3 className="w-5 h-5 shrink-0" />
             <span className="sidebar-label font-medium">Reports</span>
           </div>
           <ChevronDown
-            className={cn('w-4 h-4 shrink-0 transition-transform', expanded && 'rotate-180')}
+            className={cn('sidebar-label w-4 h-4 shrink-0 transition-transform', expanded && 'rotate-180')}
           />
         </button>
         <AnimatePresence>
-          {expanded && (
+          {expanded && !collapsed && (
             <motion.div
               initial={{ height: 0, opacity: 0 }}
               animate={{ height: 'auto', opacity: 1 }}
@@ -159,7 +160,7 @@ function ReportsNav() {
                       onClick={() => setOpen(false)}
                       className={({ isActive }) =>
                         cn(
-                          'flex w-full items-center gap-3 rounded-2xl px-3 py-2 text-sm transition-all duration-300 ease-sidebar sidebar-label',
+                          'flex w-full items-center gap-3 rounded-2xl px-3 py-2 text-sm transition-all duration-300 ease-sidebar',
                           isActive
                             ? 'bg-sidebar-active-bg text-sidebar-active-accent [&>svg]:text-sidebar-active-accent'
                             : 'text-muted-foreground hover:bg-secondary hover:text-foreground'
@@ -167,7 +168,7 @@ function ReportsNav() {
                       }
                     >
                       <FileText className="w-4 h-4 shrink-0" />
-                      <span>{sub.label}</span>
+                      <span className="sidebar-label">{sub.label}</span>
                     </NavLink>
                   </SidebarMenuSubItem>
                 ))}

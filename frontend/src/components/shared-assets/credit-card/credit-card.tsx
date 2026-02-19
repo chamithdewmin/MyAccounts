@@ -39,6 +39,13 @@ const styles = sortCx({
         paypassIcon: "text-white",
         cardTypeRoot: "bg-white/10",
     },
+    "orange": {
+        root: "bg-[#F97316] before:pointer-events-none before:absolute before:inset-0 before:z-1 before:rounded-[inherit] before:ring-1 before:ring-white/20 before:ring-inset",
+        company: "text-white",
+        footerText: "text-white",
+        paypassIcon: "text-white",
+        cardTypeRoot: "bg-white/10",
+    },
     "gray-light": {
         root: "bg-gray-100 before:pointer-events-none before:absolute before:inset-0 before:z-1 before:rounded-[inherit] before:mask-linear-135 before:mask-linear-to-white/20 before:ring-1 before:ring-black/10 before:ring-inset",
         company: "text-gray-700",
@@ -101,11 +108,11 @@ const styles = sortCx({
     },
 });
 
-const _NORMAL_TYPES = ["transparent", "transparent-gradient", "brand-dark", "brand-light", "gray-dark", "gray-light"] as const;
+const _NORMAL_TYPES = ["transparent", "transparent-gradient", "brand-dark", "brand-light", "gray-dark", "gray-light", "orange"] as const;
 const STRIP_TYPES = ["transparent-strip", "gray-strip", "gradient-strip", "salmon-strip"] as const;
 const VERTICAL_STRIP_TYPES = ["gray-strip-vertical", "gradient-strip-vertical", "salmon-strip-vertical"] as const;
 
-const CARD_WITH_COLOR_LOGO = ["brand-dark", "brand-light", "gray-dark", "gray-light"] as const;
+const CARD_WITH_COLOR_LOGO = ["brand-dark", "brand-light", "gray-dark", "gray-light", "orange"] as const;
 
 type CreditCardType = (typeof _NORMAL_TYPES)[number] | (typeof STRIP_TYPES)[number] | (typeof VERTICAL_STRIP_TYPES)[number];
 
@@ -117,6 +124,7 @@ interface CreditCardProps {
     type?: CreditCardType;
     className?: string;
     width?: number;
+    currentBalance?: string;
 }
 
 const calculateScale = (desiredWidth: number, originalWidth: number, originalHeight: number) => {
@@ -142,6 +150,7 @@ export const CreditCard = ({
     type = "brand-dark",
     className,
     width,
+    currentBalance,
 }: CreditCardProps) => {
     const originalWidth = 316;
     const originalHeight = 190;
@@ -192,7 +201,14 @@ export const CreditCard = ({
                 )}
 
                 <div className="relative flex items-start justify-between px-1 pt-1">
-                    <div className={cx("text-md leading-[normal] font-semibold", styles[type].company)}>{company}</div>
+                    {currentBalance ? (
+                        <div className="flex flex-col gap-1">
+                            <div className={cx("text-xs leading-[normal] font-normal", styles[type].company)}>Current Balance</div>
+                            <div className={cx("text-2xl leading-[normal] font-bold", styles[type].company)}>{currentBalance}</div>
+                        </div>
+                    ) : (
+                        <div className={cx("text-md leading-[normal] font-semibold", styles[type].company)}>{company}</div>
+                    )}
 
                     <PaypassIcon className={styles[type].paypassIcon} />
                 </div>

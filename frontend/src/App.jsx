@@ -4,7 +4,6 @@ import { useAuth } from './contexts/AuthContext';
 import { useFinance } from './contexts/FinanceContext';
 import Login from './pages/Login';
 import ForgotPassword from './pages/ForgotPassword';
-import Dashboard from './pages/Dashboard';
 import POS from './pages/POS';
 import Inventory from './pages/Inventory';
 import Orders from './pages/Orders';
@@ -23,6 +22,7 @@ import Users from './pages/Users';
 import SMS from './pages/SMS';
 import Reminders from './pages/Reminders';
 import AIInsights from './pages/AIInsights';
+import Dashboard from './pages/Dashboard';
 import Layout from './components/Layout';
 
 function App() {
@@ -48,8 +48,8 @@ function App() {
 
   return (
     <Routes>
-      <Route path="/login" element={!isAuthenticated ? <Login /> : <Navigate to="/dashboard" />} />
-      <Route path="/forgot-password" element={!isAuthenticated ? <ForgotPassword /> : <Navigate to="/dashboard" />} />
+      <Route path="/login" element={!isAuthenticated ? <Login /> : <Navigate to="/ai-insights" />} />
+      <Route path="/forgot-password" element={!isAuthenticated ? <ForgotPassword /> : <Navigate to="/ai-insights" />} />
       <Route path="/" element={isAuthenticated ? <Layout /> : <Navigate to="/login" replace />}>
         <Route index element={<Navigate to="/dashboard" />} />
         <Route path="dashboard" element={<Dashboard />} />
@@ -67,7 +67,7 @@ function App() {
         <Route path="reports/tax" element={<ReportTax />} />
         <Route path="reports/balance-sheet" element={<BalanceSheet />} />
         <Route path="cash-flow" element={<CashFlow />} />
-        <Route path="users" element={user?.email === 'logozodev@gmail.com' ? <Users /> : <Navigate to="/dashboard" replace />} />
+        <Route path="users" element={user?.email === 'logozodev@gmail.com' ? <Users /> : <Navigate to="/ai-insights" replace />} />
         <Route path="sms" element={<SMS />} />
         <Route path="reminders" element={<Reminders />} />
         <Route path="profile" element={<Profile />} />

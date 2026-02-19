@@ -9,8 +9,64 @@ import { useAuth } from "@/contexts/AuthContext";
 // ─── MASTERCARD ───────────────────────────────────────────────────────────────
 const MastercardIcon = () => (
   <div style={{ display: "flex", alignItems: "center" }}>
-    <div style={{ width: 28, height: 28, borderRadius: "50%", background: "#EB001B", marginRight: -10, zIndex: 1 }} />
-    <div style={{ width: 28, height: 28, borderRadius: "50%", background: "#F79E1B" }} />
+    <div style={{ width: 30, height: 30, borderRadius: "50%", background: "#EB001B", marginRight: -11, zIndex: 1 }} />
+    <div style={{ width: 30, height: 30, borderRadius: "50%", background: "#F79E1B" }} />
+  </div>
+);
+
+// ─── CARD FACE COMPONENT ─────────────────────────────────────────────────────
+const CardFace = ({ card }) => (
+  <div style={{
+    width: "100%", height: "100%",
+    borderRadius: 16,
+    background: card.gradient,
+    boxShadow: `0 20px 50px ${card.shadow}, 0 8px 20px rgba(0,0,0,0.4)`,
+    padding: "22px 20px",
+    boxSizing: "border-box",
+    display: "flex",
+    flexDirection: "column",
+    justifyContent: "space-between",
+    position: "relative",
+    overflow: "hidden",
+  }}>
+    {/* Glossy top */}
+    <div style={{
+      position: "absolute", top: 0, left: 0, right: 0, height: "52%",
+      background: "linear-gradient(180deg, rgba(255,255,255,0.14) 0%, transparent 100%)",
+      borderRadius: "16px 16px 0 0",
+      pointerEvents: "none",
+    }} />
+    {/* Circle deco */}
+    <div style={{ position: "absolute", width: 200, height: 200, borderRadius: "50%", border: "1.5px solid rgba(255,255,255,0.07)", top: -70, right: -50 }} />
+    <div style={{ position: "absolute", width: 130, height: 130, borderRadius: "50%", border: "1px solid rgba(255,255,255,0.05)", bottom: -40, left: -30 }} />
+
+    {/* Top row */}
+    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", position: "relative", zIndex: 2 }}>
+      <div>
+        <p style={{ color: "rgba(255,255,255,0.6)", fontSize: 10, fontWeight: 600, letterSpacing: "0.12em", textTransform: "uppercase", margin: 0 }}>
+          {card.label}
+        </p>
+        <p style={{ color: "#fff", fontSize: 26, fontWeight: 800, margin: "6px 0 0", letterSpacing: "-0.02em", lineHeight: 1 }}>
+          {card.amount}
+        </p>
+      </div>
+      {card.showMastercard ? <MastercardIcon /> : (
+        <div style={{ fontSize: 26 }}>{card.emoji}</div>
+      )}
+    </div>
+
+    {/* Bottom row */}
+    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", position: "relative", zIndex: 2 }}>
+      <p style={{ color: "rgba(255,255,255,0.7)", fontSize: 12, fontFamily: "monospace", letterSpacing: "0.14em", margin: 0 }}>
+        {card.number}
+      </p>
+      <p style={{
+        color: "rgba(255,255,255,0.8)",
+        fontSize: 13, fontWeight: 600, margin: 0,
+      }}>
+        {card.expiry}
+      </p>
+    </div>
   </div>
 );
 
@@ -124,6 +180,10 @@ export default function FinanceDashboard() {
   const { incomes, expenses, totals, settings } = useFinance();
   const { user } = useAuth();
   const [activeBar, setActiveBar] = useState(null);
+  const [currentCard, setCurrentCard] = useState(0);
+  const [prevCard, setPrevCard] = useState(null);
+  const [direction, setDirection] = useState("right");
+  const [animating, setAnimating] = useState(false);
 
   // Get current year for display
   const currentYear = new Date().getFullYear();
@@ -636,52 +696,215 @@ export default function FinanceDashboard() {
             <p style={{ color: "#8b9ab0", fontSize: 12, margin: "0 0 2px" }}>Card Balance</p>
             <p style={{ color: "#fff", fontSize: 22, fontWeight: 800, margin: "0 0 14px", letterSpacing: "-0.02em" }}>{formatCurrency(cardBalance)}</p>
 
-            {/* Credit Card */}
-            <div style={{
-              borderRadius: 16,
-              background: "linear-gradient(135deg, #2563eb 0%, #1d4ed8 50%, #3b82f6 100%)",
-              padding: "24px 20px",
-              minHeight: "180px",
-              marginBottom: 12,
-              position: "relative",
-              overflow: "hidden",
-              boxShadow: "0 12px 30px rgba(37,99,235,0.4)",
-              display: "flex",
-              flexDirection: "column",
-              justifyContent: "space-between",
-            }}>
-              <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: "50%", background: "linear-gradient(180deg,rgba(255,255,255,0.12) 0%,transparent 100%)", borderRadius: "16px 16px 0 0" }} />
-              <div style={{ position: "absolute", width: 160, height: 160, borderRadius: "50%", border: "1.5px solid rgba(255,255,255,0.07)", top: -50, right: -40 }} />
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", position: "relative", zIndex: 1 }}>
-                <div>
-                  <p style={{ color: "rgba(255,255,255,0.6)", fontSize: 10, margin: 0, letterSpacing: "0.08em", textTransform: "uppercase" }}>Current Balance</p>
-                  <p style={{ color: "#fff", fontSize: 22, fontWeight: 800, margin: "4px 0 0", letterSpacing: "-0.02em" }}>{formatCurrency(bankBalance)}</p>
-                </div>
-                <MastercardIcon />
-              </div>
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", marginTop: 28, position: "relative", zIndex: 1 }}>
-                <p style={{ color: "rgba(255,255,255,0.75)", fontSize: 12, fontFamily: "monospace", letterSpacing: "0.15em", margin: 0 }}>
-                  {settings.bankDetails?.accountNumber?.replace(/(.{4})/g, '$1 ').trim() || '**** **** **** ****'}
-                </p>
-                <p style={{ color: "rgba(255,255,255,0.75)", fontSize: 12, margin: 0 }}>
-                  {new Date().toLocaleDateString('en-US', { month: '2-digit', year: '2-digit' })}
-                </p>
-              </div>
-            </div>
+            {/* Card Slider */}
+            {(() => {
+              const cards = [
+                {
+                  id: 0,
+                  type: "credit",
+                  label: "CURRENT BALANCE",
+                  amount: formatCurrency(bankBalance),
+                  number: settings.bankDetails?.accountNumber?.replace(/(.{4})/g, '$1 ').trim() || '**** **** **** ****',
+                  expiry: new Date().toLocaleDateString('en-US', { month: '2-digit', year: '2-digit' }),
+                  gradient: "linear-gradient(135deg, #2563eb 0%, #1d4ed8 50%, #3b82f6 100%)",
+                  shadow: "rgba(37,99,235,0.45)",
+                  showMastercard: true,
+                },
+                {
+                  id: 1,
+                  type: "cash",
+                  label: "CASH IN HAND",
+                  amount: formatCurrency(cashBalance),
+                  number: "SN 2024 • 00482913",
+                  expiry: `+${formatCurrency(cashBalance)}`,
+                  gradient: "linear-gradient(135deg, #16a34a 0%, #15803d 50%, #22c55e 100%)",
+                  shadow: "rgba(22,163,74,0.45)",
+                  showMastercard: false,
+                  emoji: "💵",
+                },
+              ];
 
-            {/* Dots */}
-            <div style={{ display: "flex", justifyContent: "center", gap: 6, marginBottom: 14 }}>
-              <div style={{ width: 8, height: 8, borderRadius: "50%", background: "#3b82f6" }} />
-              <div style={{ width: 8, height: 8, borderRadius: "50%", background: "#1e2433" }} />
-              <div style={{ width: 8, height: 8, borderRadius: "50%", background: "#1e2433" }} />
-            </div>
+              const goTo = (idx) => {
+                if (idx === currentCard || animating) return;
+                setDirection(idx > currentCard ? "left" : "right");
+                setPrevCard(currentCard);
+                setAnimating(true);
+                setCurrentCard(idx);
+                setTimeout(() => {
+                  setPrevCard(null);
+                  setAnimating(false);
+                }, 420);
+              };
+
+              const card = cards[currentCard];
+              const prevCardData = prevCard !== null ? cards[prevCard] : null;
+
+              const enterFrom = direction === "left" ? "100%" : "-100%";
+              const exitTo = direction === "left" ? "-100%" : "100%";
+
+              return (
+                <>
+                  {/* Card viewport */}
+                  <div style={{ position: "relative", width: "100%", height: 210, overflow: "hidden", borderRadius: 16, marginBottom: 12 }}>
+                    {/* Exiting card */}
+                    {prevCardData && (
+                      <div key={`prev-${prevCard}`} style={{
+                        position: "absolute", inset: 0,
+                        animation: `slideOut${direction === "left" ? "Left" : "Right"} 0.42s cubic-bezier(0.4,0,0.2,1) forwards`,
+                      }}>
+                        <CardFace card={prevCardData} />
+                      </div>
+                    )}
+
+                    {/* Entering card */}
+                    <div key={`curr-${currentCard}`} style={{
+                      position: "absolute", inset: 0,
+                      animation: animating
+                        ? `slideIn${direction === "left" ? "Left" : "Right"} 0.42s cubic-bezier(0.4,0,0.2,1) forwards`
+                        : "none",
+                    }}>
+                      <CardFace card={card} />
+                    </div>
+                  </div>
+
+                  {/* Dots */}
+                  <div style={{ display: "flex", justifyContent: "center", gap: 8, marginBottom: 14 }}>
+                    {cards.map((c, i) => (
+                      <button
+                        key={i}
+                        onClick={() => goTo(i)}
+                        style={{
+                          width: currentCard === i ? 22 : 8,
+                          height: 8,
+                          borderRadius: 99,
+                          border: "none",
+                          cursor: "pointer",
+                          padding: 0,
+                          transition: "all 0.3s ease",
+                          background: currentCard === i
+                            ? (c.id === 1 ? "#16a34a" : "#3b82f6")
+                            : "#2a3347",
+                        }}
+                      />
+                    ))}
+                  </div>
+
+                  {/* Info strip */}
+                  <div style={{
+                    background: "#13161e",
+                    borderRadius: 14,
+                    padding: "14px 18px",
+                    border: "1px solid #1e2433",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "space-between",
+                    marginBottom: 14,
+                    animation: animating ? "dropIn 0.45s cubic-bezier(0.34,1.56,0.64,1)" : "none",
+                  }}>
+                    {card.type === "cash" ? (
+                      <>
+                        <div style={{ display: "flex", gap: 20 }}>
+                          <div>
+                            <p style={{ color: "#8b9ab0", fontSize: 11, margin: "0 0 2px", textTransform: "uppercase", letterSpacing: "0.07em" }}>My Cash</p>
+                            <p style={{ color: "#fff", fontSize: 15, fontWeight: 700, margin: 0 }}>Cash in Hand Balance</p>
+                          </div>
+                        </div>
+                        <button style={{
+                          background: "linear-gradient(135deg, #16a34a, #15803d)",
+                          color: "#fff", border: "none", borderRadius: 10,
+                          padding: "9px 18px", fontSize: 13, fontWeight: 700, cursor: "pointer",
+                          boxShadow: "0 4px 12px rgba(22,163,74,0.35)",
+                        }}>
+                          Deposit →
+                        </button>
+                      </>
+                    ) : (
+                      <>
+                        <div style={{ display: "flex", gap: 20 }}>
+                          <div>
+                            <p style={{ color: "#8b9ab0", fontSize: 11, margin: "0 0 2px", textTransform: "uppercase", letterSpacing: "0.07em" }}>Card Type</p>
+                            <p style={{ color: "#fff", fontSize: 15, fontWeight: 700, margin: 0 }}>Mastercard</p>
+                          </div>
+                          <div>
+                            <p style={{ color: "#8b9ab0", fontSize: 11, margin: "0 0 2px", textTransform: "uppercase", letterSpacing: "0.07em" }}>Expires</p>
+                            <p style={{ color: "#fff", fontSize: 15, fontWeight: 700, margin: 0 }}>{card.expiry}</p>
+                          </div>
+                        </div>
+                        <button style={{
+                          background: "linear-gradient(135deg, #2563eb, #1d4ed8)",
+                          color: "#fff", border: "none", borderRadius: 10,
+                          padding: "9px 18px", fontSize: 13, fontWeight: 700, cursor: "pointer",
+                          boxShadow: "0 4px 12px rgba(37,99,235,0.35)",
+                        }}>
+                          Manage →
+                        </button>
+                      </>
+                    )}
+                  </div>
+
+                  <style>{`
+                    @keyframes slideInLeft {
+                      from { transform: translateX(100%); }
+                      to   { transform: translateX(0); }
+                    }
+                    @keyframes slideOutLeft {
+                      from { transform: translateX(0); }
+                      to   { transform: translateX(-100%); }
+                    }
+                    @keyframes slideInRight {
+                      from { transform: translateX(-100%); }
+                      to   { transform: translateX(0); }
+                    }
+                    @keyframes slideOutRight {
+                      from { transform: translateX(0); }
+                      to   { transform: translateX(100%); }
+                    }
+                    @keyframes dropIn {
+                      0%   { transform: translateY(-60px) scale(0.9); opacity: 0; }
+                      60%  { transform: translateY(8px) scale(1.02); opacity: 1; }
+                      100% { transform: translateY(0) scale(1); opacity: 1; }
+                    }
+                  `}</style>
+                </>
+              );
+            })()}
 
             {/* Buttons */}
             <div style={{ display: "flex", gap: 10 }}>
-              <button style={{ flex: 1, background: "#3b82f6", color: "#fff", border: "none", borderRadius: 12, padding: "10px 0", fontSize: 13, fontWeight: 700, cursor: "pointer", transition: "background 0.2s" }}>
+              <button 
+                style={{ 
+                  flex: 1, 
+                  background: "#3b82f6", 
+                  color: "#fff", 
+                  border: "none", 
+                  borderRadius: 12, 
+                  padding: "10px 0", 
+                  fontSize: 13, 
+                  fontWeight: 700, 
+                  cursor: "pointer", 
+                  transition: "background 0.2s",
+                }}
+                onMouseEnter={(e) => e.target.style.background = "#2563eb"}
+                onMouseLeave={(e) => e.target.style.background = "#3b82f6"}
+              >
                 Deposit
               </button>
-              <button style={{ flex: 1, background: "#3b82f6", color: "#fff", border: "none", borderRadius: 12, padding: "10px 0", fontSize: 13, fontWeight: 700, cursor: "pointer", transition: "background 0.2s" }}>
+              <button 
+                style={{ 
+                  flex: 1, 
+                  background: "transparent", 
+                  color: "#fff", 
+                  border: "1.5px solid #2a3347", 
+                  borderRadius: 12, 
+                  padding: "10px 0", 
+                  fontSize: 13, 
+                  fontWeight: 700, 
+                  cursor: "pointer", 
+                  transition: "border-color 0.2s",
+                }}
+                onMouseEnter={(e) => e.target.style.borderColor = "#1e2433"}
+                onMouseLeave={(e) => e.target.style.borderColor = "#2a3347"}
+              >
                 Withdrawal
               </button>
             </div>

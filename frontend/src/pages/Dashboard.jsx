@@ -1,8 +1,6 @@
 import React, { useMemo, useState } from 'react';
 import { Helmet } from 'react-helmet';
-import { motion } from 'framer-motion';
-import { ArrowDown, ArrowUp, TrendingUp, Home, Code, Utensils, CreditCard as CreditCardIcon } from 'lucide-react';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
+import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
 import { CreditCard } from '@/components/shared-assets/credit-card/credit-card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -51,7 +49,7 @@ const Dashboard = () => {
     }
   };
 
-  // Calculate percentage change (mock for now - can be enhanced with previous period comparison)
+  // Calculate percentage change (mock for now)
   const incomeChange = 3.23;
   const outcomeChange = -0.68;
   const profitChange = 12.5;
@@ -77,7 +75,7 @@ const Dashboard = () => {
         const monthOrder = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
         return monthOrder.indexOf(a.month) - monthOrder.indexOf(b.month);
       })
-      .slice(-8); // Last 8 months
+      .slice(-8);
   }, [incomes, expenses]);
 
   // Daily activity data (last 7 days)
@@ -141,7 +139,7 @@ const Dashboard = () => {
     
     const total = totals.monthlyExpenses || 1;
     const dailyPercent = Math.round((dailyPayment / total) * 100);
-    const hobbyPercent = 20; // Mock data
+    const hobbyPercent = 20;
     const totalPercent = Math.min(dailyPercent + hobbyPercent, 100);
     
     return {

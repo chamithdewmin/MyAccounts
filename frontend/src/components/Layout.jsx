@@ -2,15 +2,13 @@ import React from 'react';
 import { Outlet } from 'react-router-dom';
 import { SidebarProvider, SidebarInset } from '@/components/ui/sidebar';
 import Sidebar from '@/components/Sidebar';
-import Topbar from '@/components/Topbar';
 
 const Layout = () => {
   return (
     <SidebarProvider defaultCollapsed={false}>
       <Sidebar />
       <SidebarInset>
-        <Topbar />
-        <main className="p-3 sm:p-4 lg:p-6 min-w-0 max-w-full flex-1">
+        <main className="p-3 sm:p-4 lg:p-6 min-w-0 max-w-full flex-1 pt-[env(safe-area-inset-top)]">
           <Outlet />
         </main>
       </SidebarInset>

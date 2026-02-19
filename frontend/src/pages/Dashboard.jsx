@@ -1,7 +1,7 @@
 import React, { useMemo, useState } from 'react';
 import { Helmet } from 'react-helmet';
 import { motion } from 'framer-motion';
-import { ArrowDown, ArrowUp, Home, Code, Utensils, CreditCard as CreditCardIcon } from 'lucide-react';
+import { ArrowDown, ArrowUp, TrendingUp, Home, Code, Utensils, CreditCard as CreditCardIcon } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
 import { CreditCard } from '@/components/shared-assets/credit-card/credit-card';
 import { Button } from '@/components/ui/button';
@@ -51,36 +51,37 @@ const Dashboard = () => {
     }
   };
 
-  // Calculate percentage change (mock data for now - can be enhanced with previous period comparison)
+  // Calculate percentage change (mock for now - can be enhanced with previous period comparison)
   const incomeChange = 3.23;
   const outcomeChange = -0.68;
+  const profitChange = 12.5;
 
   // Monthly data for Analytics chart
-  const monthlyData = useMemo(() => {
+  const analyticsData = useMemo(() => {
     const map = new Map();
     const addToMap = (dateIso, field, amount) => {
       const d = new Date(dateIso);
       if (Number.isNaN(d.getTime())) return;
       const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
       const label = d.toLocaleDateString('en-US', { month: 'short' });
-      const existing = map.get(key) || { name: label, Income: 0, Outcome: 0 };
+      const existing = map.get(key) || { month: label, income: 0, outcome: 0 };
       existing[field] += amount;
       map.set(key, existing);
     };
 
-    incomes.forEach((i) => addToMap(i.date, 'Income', i.amount));
-    expenses.forEach((e) => addToMap(e.date, 'Outcome', e.amount));
+    incomes.forEach((i) => addToMap(i.date, 'income', i.amount));
+    expenses.forEach((e) => addToMap(e.date, 'outcome', e.amount));
 
     return Array.from(map.values())
       .sort((a, b) => {
         const monthOrder = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-        return monthOrder.indexOf(a.name) - monthOrder.indexOf(b.name);
+        return monthOrder.indexOf(a.month) - monthOrder.indexOf(b.month);
       })
       .slice(-8); // Last 8 months
   }, [incomes, expenses]);
 
   // Daily activity data (last 7 days)
-  const dailyActivityData = useMemo(() => {
+  const activityData = useMemo(() => {
     const days = ['Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa', 'Su'];
     const data = [];
     const now = new Date();
@@ -99,37 +100,36 @@ const Dashboard = () => {
         .reduce((sum, exp) => sum + exp.amount, 0);
       
       data.push({
-        name: days[6 - i],
-        Earning: earning,
-        Spent: spent,
+        day: days[6 - i],
+        earning: earning,
+        spent: spent,
       });
     }
     return data;
   }, [incomes, expenses]);
 
   // Payment categories with progress
-  const paymentCategories = useMemo(() => {
+  const payments = useMemo(() => {
     const categories = [
-      { name: 'Account', icon: CreditCardIcon, target: 10000 },
-      { name: 'Software', icon: Code, target: 250 },
-      { name: 'Rent House', icon: Home, target: 52000 },
-      { name: 'Food', icon: Utensils, target: 1000 },
+      { icon: '💳', label: 'Account', total: 10000, color: '#F97316' },
+      { icon: '💻', label: 'Software', total: 250, color: '#FB923C' },
+      { icon: '🏠', label: 'Rent House', total: 52000, color: '#FDBA74' },
+      { icon: '🍔', label: 'Food', total: 1000, color: '#F97316' },
     ];
 
     return categories.map((cat) => {
       const spent = expenses
-        .filter((e) => e.category?.toLowerCase().includes(cat.name.toLowerCase()))
+        .filter((e) => e.category?.toLowerCase().includes(cat.label.toLowerCase()))
         .reduce((sum, e) => sum + e.amount, 0);
       
       return {
         ...cat,
-        current: spent,
-        percentage: Math.min((spent / cat.target) * 100, 100),
+        spent: spent,
       };
     });
   }, [expenses]);
 
-  // Activity breakdown for donut chart
+  // Activity breakdown for pie chart
   const activityBreakdown = useMemo(() => {
     const dailyPayment = expenses
       .filter((e) => {
@@ -142,11 +142,13 @@ const Dashboard = () => {
     const total = totals.monthlyExpenses || 1;
     const dailyPercent = Math.round((dailyPayment / total) * 100);
     const hobbyPercent = 20; // Mock data
+    const totalPercent = Math.min(dailyPercent + hobbyPercent, 100);
     
-    return [
-      { name: 'Daily payment', value: dailyPercent, color: '#F97316' },
-      { name: 'Hobby', value: hobbyPercent, color: '#FB923C' },
-    ];
+    return {
+      dailyPercent: Math.min(dailyPercent, 75),
+      hobbyPercent: Math.min(hobbyPercent, 25),
+      totalPercent,
+    };
   }, [expenses, totals.monthlyExpenses]);
 
   const cardBalance = (totals.cashInHand ?? 0) + (totals.bankBalance ?? 0);
@@ -158,10 +160,57 @@ const Dashboard = () => {
     : '5282 3456 7890 1289';
   
   const cardHolder = user?.name?.toUpperCase() || 'CARD HOLDER';
-  const cardExpiry = '09/25'; // Can be made dynamic
+  const cardExpiry = '09/25';
   const currentBalanceFormatted = `${settings.currency} ${currentBalance.toLocaleString()}`;
 
-  const COLORS = ['#F97316', '#FB923C'];
+  // Custom Tooltip
+  const CustomTooltip = ({ active, payload, label }) => {
+    if (active && payload && payload.length) {
+      return (
+        <div style={{ background: '#1e2433', border: '1px solid #2a3347', borderRadius: 10, padding: '10px 14px' }}>
+          <p style={{ color: '#fff', fontWeight: 700, marginBottom: 4, fontSize: 13 }}>{label} 2024</p>
+          {payload.map((p, i) => (
+            <p key={i} style={{ color: p.color, fontSize: 12, margin: '2px 0' }}>
+              {settings.currency} {p.value.toLocaleString()}
+            </p>
+          ))}
+        </div>
+      );
+    }
+    return null;
+  };
+
+  // Stat Card Component
+  const StatCard = ({ icon, iconBg, label, value, badge, badgeColor }) => (
+    <div style={{
+      background: '#13161e',
+      borderRadius: 16,
+      padding: '18px 20px',
+      display: 'flex',
+      alignItems: 'center',
+      gap: 16,
+      flex: 1,
+      border: '1px solid #1e2433',
+    }}>
+      <div style={{
+        width: 44, height: 44, borderRadius: 12,
+        background: iconBg,
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+        fontSize: 18, flexShrink: 0,
+      }}>{icon}</div>
+      <div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          <p style={{ color: '#8b9ab0', fontSize: 12, margin: 0, fontWeight: 500 }}>{label}</p>
+          <span style={{
+            background: badgeColor === 'green' ? 'rgba(34,197,94,0.15)' : 'rgba(239,68,68,0.15)',
+            color: badgeColor === 'green' ? '#22c55e' : '#ef4444',
+            fontSize: 10, fontWeight: 700, padding: '2px 6px', borderRadius: 6,
+          }}>{badge}</span>
+        </div>
+        <p style={{ color: '#fff', fontSize: 22, fontWeight: 800, margin: '4px 0 0', letterSpacing: '-0.03em' }}>{value}</p>
+      </div>
+    </div>
+  );
 
   return (
     <>
@@ -170,192 +219,165 @@ const Dashboard = () => {
         <meta name="description" content="Quick overview of your business income, expenses, profit, and pending payments" />
       </Helmet>
 
-      <div className="space-y-4 sm:space-y-6 min-w-0">
-        <div>
-          <h1 className="text-2xl sm:text-3xl font-bold">Dashboard</h1>
-          <p className="text-muted-foreground text-sm sm:text-base">See your business health in a few seconds.</p>
+      <div style={{
+        minHeight: '100vh',
+        background: '#0c0e14',
+        padding: 24,
+        fontFamily: "'DM Sans', -apple-system, BlinkMacSystemFont, sans-serif",
+        color: '#fff',
+      }}>
+        {/* HEADER */}
+        <div style={{ marginBottom: 6 }}>
+          <p style={{ color: '#8b9ab0', fontSize: 13, margin: 0 }}>Good morning, {user?.name?.split(' ')[0] || 'User'} 👋</p>
+          <h1 style={{ color: '#fff', fontSize: 20, fontWeight: 800, margin: '2px 0 20px', letterSpacing: '-0.02em' }}>
+            Here's what's happening with your finances today.
+          </h1>
         </div>
 
-        {/* Top Row - Total Income and Total Outcome */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {/* Total Income Card */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="bg-card rounded-lg p-6 border border-secondary"
-          >
-            <div className="flex items-center justify-between mb-4">
-              <div>
-                <p className="text-sm text-muted-foreground mb-1">Total Income</p>
-                <p className="text-3xl font-bold">{settings.currency} {totals.monthlyIncome.toLocaleString()}</p>
-              </div>
-              <div className="w-12 h-12 rounded-full bg-orange-500/20 flex items-center justify-center">
-                <ArrowDown className="w-6 h-6 text-orange-500" />
-              </div>
-            </div>
-            <div className="flex items-center gap-2">
-              <span className={`text-sm font-medium ${incomeChange >= 0 ? 'text-green-500' : 'text-red-500'}`}>
-                {incomeChange >= 0 ? '+' : ''}{incomeChange}%
-              </span>
-              <span className="text-sm text-muted-foreground">from last month</span>
-            </div>
-          </motion.div>
-
-          {/* Total Outcome Card */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.1 }}
-            className="bg-card rounded-lg p-6 border border-secondary"
-          >
-            <div className="flex items-center justify-between mb-4">
-              <div>
-                <p className="text-sm text-muted-foreground mb-1">Total Outcome</p>
-                <p className="text-3xl font-bold">{settings.currency} {totals.monthlyExpenses.toLocaleString()}</p>
-              </div>
-              <div className="w-12 h-12 rounded-full bg-orange-500/20 flex items-center justify-center">
-                <ArrowUp className="w-6 h-6 text-orange-500" />
-              </div>
-            </div>
-            <div className="flex items-center gap-2">
-              <span className={`text-sm font-medium ${outcomeChange >= 0 ? 'text-green-500' : 'text-red-500'}`}>
-                {outcomeChange >= 0 ? '+' : ''}{outcomeChange}%
-              </span>
-              <span className="text-sm text-muted-foreground">from last month</span>
-            </div>
-          </motion.div>
+        {/* TOP STAT CARDS */}
+        <div style={{ display: 'flex', gap: 16, marginBottom: 16, flexWrap: 'wrap' }}>
+          <StatCard 
+            icon="↙" 
+            iconBg="rgba(249,115,22,0.2)" 
+            label="Total Income" 
+            value={`${settings.currency} ${totals.monthlyIncome.toLocaleString()}`} 
+            badge={`+${incomeChange}%`} 
+            badgeColor="green" 
+          />
+          <StatCard 
+            icon="↗" 
+            iconBg="rgba(239,68,68,0.15)" 
+            label="Total Outcome" 
+            value={`${settings.currency} ${totals.monthlyExpenses.toLocaleString()}`} 
+            badge={`${outcomeChange}%`} 
+            badgeColor="red" 
+          />
+          <StatCard 
+            icon="📈" 
+            iconBg="rgba(34,197,94,0.15)" 
+            label="Net Profit" 
+            value={`${settings.currency} ${totals.monthlyProfit.toLocaleString()}`} 
+            badge={`+${profitChange}%`} 
+            badgeColor="green" 
+          />
         </div>
 
-        {/* Main Content Grid */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-          {/* Left Column - Analytics and Activity */}
-          <div className="lg:col-span-2 space-y-4">
-            {/* Analytics Section */}
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.2 }}
-              className="bg-card rounded-lg p-6 border border-secondary"
-            >
-              <div className="flex items-center justify-between mb-4">
-                <h2 className="text-lg font-bold">Analytics</h2>
-                <select className="bg-secondary border border-secondary rounded-md px-3 py-1 text-sm">
-                  <option>2024</option>
-                </select>
-              </div>
-              <div className="flex items-center gap-4 mb-4">
-                <div className="flex items-center gap-2">
-                  <div className="w-3 h-3 rounded-full bg-orange-500"></div>
-                  <span className="text-sm text-muted-foreground">Income</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <div className="w-3 h-3 rounded-full bg-orange-300"></div>
-                  <span className="text-sm text-muted-foreground">Outcome</span>
+        {/* MAIN GRID */}
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 320px', gap: 16 }}>
+          {/* LEFT COLUMN */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+            {/* ANALYTICS */}
+            <div style={{
+              background: '#13161e',
+              borderRadius: 20,
+              border: '1px solid #1e2433',
+              padding: 20,
+            }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
+                <h2 style={{ color: '#fff', fontSize: 16, fontWeight: 700, margin: 0 }}>Analytics</h2>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                    <div style={{ width: 8, height: 8, borderRadius: '50%', background: '#F97316' }} />
+                    <span style={{ color: '#8b9ab0', fontSize: 12 }}>Income</span>
+                  </div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                    <div style={{ width: 8, height: 8, borderRadius: '50%', background: '#FB923C' }} />
+                    <span style={{ color: '#8b9ab0', fontSize: 12 }}>Outcome</span>
+                  </div>
+                  <div style={{ background: '#1e2433', borderRadius: 8, padding: '4px 12px', fontSize: 12, color: '#8b9ab0' }}>2024 ▾</div>
                 </div>
               </div>
-              <ResponsiveContainer width="100%" height={280}>
-                <BarChart data={monthlyData}>
-                  <CartesianGrid strokeDasharray="3 3" stroke={settings?.theme === 'light' ? 'hsl(214, 20%, 86%)' : '#1f2933'} />
-                  <XAxis dataKey="name" stroke={settings?.theme === 'light' ? 'hsl(215, 15%, 35%)' : '#bfc9d1'} />
-                  <YAxis stroke={settings?.theme === 'light' ? 'hsl(215, 15%, 35%)' : '#bfc9d1'} />
-                  <Tooltip
-                    contentStyle={{
-                      backgroundColor: settings?.theme === 'light' ? 'hsl(0, 0%, 100%)' : '#111316',
-                      border: settings?.theme === 'light' ? '1px solid hsl(214, 20%, 86%)' : '1px solid #1f2933',
-                      borderRadius: '0.5rem',
-                    }}
-                  />
-                  <Bar dataKey="Income" fill="#F97316" radius={[8, 8, 0, 0]} />
-                  <Bar dataKey="Outcome" fill="#FB923C" radius={[8, 8, 0, 0]} />
+              <ResponsiveContainer width="100%" height={220}>
+                <BarChart data={analyticsData} barGap={4} barCategoryGap={20}>
+                  <XAxis dataKey="month" axisLine={false} tickLine={false} tick={{ fill: '#8b9ab0', fontSize: 12 }} />
+                  <YAxis axisLine={false} tickLine={false} tick={{ fill: '#8b9ab0', fontSize: 11 }} tickFormatter={v => `${v / 1000}K`} />
+                  <Tooltip content={<CustomTooltip />} cursor={{ fill: 'rgba(255,255,255,0.03)' }} />
+                  <Bar dataKey="income" radius={[6, 6, 0, 0]} fill="#F97316" />
+                  <Bar dataKey="outcome" radius={[6, 6, 0, 0]} fill="#FB923C" opacity={0.7} />
                 </BarChart>
               </ResponsiveContainer>
-            </motion.div>
+            </div>
 
-            {/* Activity Section (Left) */}
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.3 }}
-              className="bg-card rounded-lg p-6 border border-secondary"
-            >
-              <h2 className="text-lg font-bold mb-4">Activity</h2>
-              <div className="flex items-center gap-4 mb-4">
-                <div className="flex items-center gap-2">
-                  <div className="w-3 h-3 rounded-full bg-orange-500"></div>
-                  <span className="text-sm text-muted-foreground">Earning</span>
+            {/* BOTTOM ROW */}
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+              {/* ACTIVITY */}
+              <div style={{
+                background: '#13161e',
+                borderRadius: 20,
+                border: '1px solid #1e2433',
+                padding: 20,
+              }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+                  <h3 style={{ color: '#fff', fontSize: 14, fontWeight: 700, margin: 0 }}>Activity</h3>
+                  <div style={{ display: 'flex', gap: 12 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
+                      <div style={{ width: 7, height: 7, borderRadius: '50%', background: '#F97316' }} />
+                      <span style={{ color: '#8b9ab0', fontSize: 11 }}>Earning</span>
+                    </div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
+                      <div style={{ width: 7, height: 7, borderRadius: '50%', background: '#FB923C' }} />
+                      <span style={{ color: '#8b9ab0', fontSize: 11 }}>Spent</span>
+                    </div>
+                  </div>
                 </div>
-                <div className="flex items-center gap-2">
-                  <div className="w-3 h-3 rounded-full bg-orange-300"></div>
-                  <span className="text-sm text-muted-foreground">Spent</span>
-                </div>
+                <ResponsiveContainer width="100%" height={160}>
+                  <BarChart data={activityData} barGap={2} barCategoryGap={14}>
+                    <XAxis dataKey="day" axisLine={false} tickLine={false} tick={{ fill: '#8b9ab0', fontSize: 11 }} />
+                    <YAxis axisLine={false} tickLine={false} tick={{ fill: '#8b9ab0', fontSize: 10 }} tickFormatter={v => `${settings.currency}${v / 1000}k`} width={30} />
+                    <Tooltip content={<CustomTooltip />} cursor={{ fill: 'rgba(255,255,255,0.03)' }} />
+                    <Bar dataKey="earning" radius={[4, 4, 0, 0]} fill="#F97316" />
+                    <Bar dataKey="spent" radius={[4, 4, 0, 0]} fill="#FB923C" opacity={0.7} />
+                  </BarChart>
+                </ResponsiveContainer>
               </div>
-              <ResponsiveContainer width="100%" height={200}>
-                <BarChart data={dailyActivityData}>
-                  <CartesianGrid strokeDasharray="3 3" stroke={settings?.theme === 'light' ? 'hsl(214, 20%, 86%)' : '#1f2933'} />
-                  <XAxis dataKey="name" stroke={settings?.theme === 'light' ? 'hsl(215, 15%, 35%)' : '#bfc9d1'} />
-                  <YAxis stroke={settings?.theme === 'light' ? 'hsl(215, 15%, 35%)' : '#bfc9d1'} />
-                  <Tooltip
-                    contentStyle={{
-                      backgroundColor: settings?.theme === 'light' ? 'hsl(0, 0%, 100%)' : '#111316',
-                      border: settings?.theme === 'light' ? '1px solid hsl(214, 20%, 86%)' : '1px solid #1f2933',
-                      borderRadius: '0.5rem',
-                    }}
-                  />
-                  <Bar dataKey="Earning" fill="#F97316" radius={[8, 8, 0, 0]} />
-                  <Bar dataKey="Spent" fill="#FB923C" radius={[8, 8, 0, 0]} />
-                </BarChart>
-              </ResponsiveContainer>
-            </motion.div>
 
-            {/* Payment Section */}
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.4 }}
-              className="bg-card rounded-lg p-6 border border-secondary"
-            >
-              <h2 className="text-lg font-bold mb-4">Payment</h2>
-              <div className="space-y-4">
-                {paymentCategories.map((category, index) => {
-                  const Icon = category.icon;
-                  return (
-                    <div key={index} className="space-y-2">
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-3">
-                          <Icon className="w-5 h-5 text-muted-foreground" />
-                          <span className="text-sm font-medium">{category.name}</span>
+              {/* PAYMENT */}
+              <div style={{
+                background: '#13161e',
+                borderRadius: 20,
+                border: '1px solid #1e2433',
+                padding: 20,
+              }}>
+                <h3 style={{ color: '#fff', fontSize: 14, fontWeight: 700, margin: '0 0 14px' }}>Payment</h3>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+                  {payments.map((p, i) => (
+                    <div key={i}>
+                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 5 }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                          <div style={{ width: 32, height: 32, borderRadius: 8, background: '#1e2433', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 14 }}>{p.icon}</div>
+                          <span style={{ color: '#d1d9e6', fontSize: 13, fontWeight: 500 }}>{p.label}</span>
                         </div>
-                        <span className="text-sm font-medium">
-                          {settings.currency} {category.current.toLocaleString()}/{category.target.toLocaleString()}
+                        <span style={{ color: '#8b9ab0', fontSize: 11 }}>
+                          <span style={{ color: '#fff', fontWeight: 600 }}>{settings.currency}{p.spent.toLocaleString()}</span>/{p.total.toLocaleString()}
                         </span>
                       </div>
-                      <div className="w-full bg-secondary rounded-full h-2">
-                        <div
-                          className="bg-orange-500 h-2 rounded-full transition-all"
-                          style={{ width: `${category.percentage}%` }}
-                        ></div>
+                      <div style={{ height: 3, background: '#1e2433', borderRadius: 99 }}>
+                        <div style={{ height: 3, background: p.color, borderRadius: 99, width: `${(p.spent / p.total) * 100}%` }} />
                       </div>
                     </div>
-                  );
-                })}
+                  ))}
+                </div>
               </div>
-            </motion.div>
+            </div>
           </div>
 
-          {/* Right Column - My Card and Activity Chart */}
-          <div className="space-y-4">
-            {/* My Card Section */}
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.2 }}
-              className="bg-card rounded-lg p-6 border border-secondary"
-            >
-              <h2 className="text-lg font-bold mb-4">My Card</h2>
-              <p className="text-sm text-muted-foreground mb-2">Card Balance</p>
-              <p className="text-xl font-bold mb-4">{settings.currency} {cardBalance.toLocaleString()}</p>
-              
-              <div className="mb-4">
+          {/* RIGHT COLUMN */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+            {/* MY CARD */}
+            <div style={{
+              background: '#13161e',
+              borderRadius: 20,
+              border: '1px solid #1e2433',
+              padding: 20,
+            }}>
+              <h2 style={{ color: '#fff', fontSize: 16, fontWeight: 700, margin: '0 0 4px' }}>My Card</h2>
+              <p style={{ color: '#8b9ab0', fontSize: 12, margin: '0 0 2px' }}>Card Balance</p>
+              <p style={{ color: '#fff', fontSize: 22, fontWeight: 800, margin: '0 0 14px', letterSpacing: '-0.02em' }}>
+                {settings.currency} {cardBalance.toLocaleString()}
+              </p>
+
+              {/* Credit Card */}
+              <div className="mb-3">
                 <CreditCard
                   type="orange"
                   company={settings.businessName || 'My Business'}
@@ -366,84 +388,88 @@ const Dashboard = () => {
                   currentBalance={currentBalanceFormatted}
                 />
               </div>
-              
-              <div className="flex flex-col gap-2">
-                <Button
-                  size="sm"
-                  className="w-full bg-orange-500 hover:bg-orange-600"
+
+              {/* Dots */}
+              <div style={{ display: 'flex', justifyContent: 'center', gap: 6, marginBottom: 14 }}>
+                <div style={{ width: 8, height: 8, borderRadius: '50%', background: '#F97316' }} />
+                <div style={{ width: 8, height: 8, borderRadius: '50%', background: '#1e2433' }} />
+                <div style={{ width: 8, height: 8, borderRadius: '50%', background: '#1e2433' }} />
+              </div>
+
+              {/* Buttons */}
+              <div style={{ display: 'flex', gap: 10 }}>
+                <button 
                   onClick={() => {
                     setTransferType('cash-to-bank');
                     setTransferForm({ amount: '', date: new Date().toISOString().slice(0, 10), notes: '' });
                     setTransferOpen(true);
                   }}
+                  style={{ flex: 1, background: '#F97316', color: '#fff', border: 'none', borderRadius: 12, padding: '10px 0', fontSize: 13, fontWeight: 700, cursor: 'pointer' }}
                 >
                   Manage Cards
-                </Button>
-                <Button
-                  size="sm"
-                  variant="outline"
-                  className="w-full"
+                </button>
+                <button 
                   onClick={() => {
                     setTransferType('cash-to-bank');
                     setTransferForm({ amount: '', date: new Date().toISOString().slice(0, 10), notes: '' });
                     setTransferOpen(true);
                   }}
+                  style={{ flex: 1, background: 'transparent', color: '#fff', border: '1.5px solid #2a3347', borderRadius: 12, padding: '10px 0', fontSize: 13, fontWeight: 700, cursor: 'pointer' }}
                 >
                   Transfer
-                </Button>
+                </button>
               </div>
-            </motion.div>
+            </div>
 
-            {/* Activity Chart (Right) */}
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.3 }}
-              className="bg-card rounded-lg p-6 border border-secondary"
-            >
-              <div className="flex items-center justify-between mb-4">
-                <h2 className="text-lg font-bold">Activity</h2>
-                <select className="bg-secondary border border-secondary rounded-md px-3 py-1 text-sm">
-                  <option>Month</option>
-                </select>
+            {/* ACTIVITY GAUGE */}
+            <div style={{
+              background: '#13161e',
+              borderRadius: 20,
+              border: '1px solid #1e2433',
+              padding: 20,
+            }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+                <h3 style={{ color: '#fff', fontSize: 14, fontWeight: 700, margin: 0 }}>Activity</h3>
+                <div style={{ background: '#1e2433', borderRadius: 8, padding: '4px 10px', fontSize: 12, color: '#8b9ab0' }}>Month ▾</div>
               </div>
-              
-              <div className="relative flex items-center justify-center mb-6" style={{ height: '200px' }}>
-                <ResponsiveContainer width="100%" height={200}>
-                  <PieChart>
-                    <Pie
-                      data={activityBreakdown}
-                      cx="50%"
-                      cy="50%"
-                      innerRadius={60}
-                      outerRadius={80}
-                      paddingAngle={5}
-                      dataKey="value"
-                    >
-                      {activityBreakdown.map((entry, index) => (
-                        <Cell key={`cell-${index}`} fill={entry.color} />
-                      ))}
-                    </Pie>
-                    <Tooltip />
-                  </PieChart>
-                </ResponsiveContainer>
-                <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                  <p className="text-3xl font-bold">{activityBreakdown.reduce((sum, item) => sum + item.value, 0)}%</p>
+              <div style={{ display: 'flex', justifyContent: 'center' }}>
+                <PieChart width={200} height={120}>
+                  <Pie 
+                    data={[{ value: activityBreakdown.dailyPercent }, { value: activityBreakdown.hobbyPercent }]} 
+                    cx={100} 
+                    cy={110} 
+                    startAngle={180} 
+                    endAngle={0} 
+                    innerRadius={65} 
+                    outerRadius={92} 
+                    dataKey="value" 
+                    strokeWidth={0}
+                  >
+                    <Cell fill="#F97316" />
+                    <Cell fill="#FB923C" opacity={0.25} />
+                  </Pie>
+                </PieChart>
+              </div>
+              <p style={{ color: '#fff', fontWeight: 800, fontSize: 22, textAlign: 'center', margin: '-20px 0 12px', letterSpacing: '-0.02em' }}>
+                {activityBreakdown.totalPercent}%
+              </p>
+              <div style={{ display: 'flex', justifyContent: 'space-around' }}>
+                <div style={{ textAlign: 'center' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 6, justifyContent: 'center' }}>
+                    <div style={{ width: 8, height: 8, borderRadius: '50%', background: '#F97316' }} />
+                    <span style={{ color: '#8b9ab0', fontSize: 12 }}>Daily payment</span>
+                  </div>
+                  <p style={{ color: '#fff', fontWeight: 700, fontSize: 16, margin: '4px 0 0' }}>{activityBreakdown.dailyPercent}%</p>
+                </div>
+                <div style={{ textAlign: 'center' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 6, justifyContent: 'center' }}>
+                    <div style={{ width: 8, height: 8, borderRadius: '50%', background: '#FB923C' }} />
+                    <span style={{ color: '#8b9ab0', fontSize: 12 }}>Hobby</span>
+                  </div>
+                  <p style={{ color: '#fff', fontWeight: 700, fontSize: 16, margin: '4px 0 0' }}>{activityBreakdown.hobbyPercent}%</p>
                 </div>
               </div>
-
-              <div className="space-y-2">
-                {activityBreakdown.map((item, index) => (
-                  <div key={index} className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <div className="w-3 h-3 rounded-full" style={{ backgroundColor: item.color }}></div>
-                      <span className="text-sm text-muted-foreground">{item.name}</span>
-                    </div>
-                    <span className="text-sm font-medium">{item.value}%</span>
-                  </div>
-                ))}
-              </div>
-            </motion.div>
+            </div>
           </div>
         </div>
       </div>

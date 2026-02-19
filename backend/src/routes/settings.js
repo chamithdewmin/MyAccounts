@@ -8,7 +8,7 @@ router.use(authMiddleware);
 const toSettings = (row) => {
   const base = {
     businessName: row.business_name || 'My Business',
-    phone: (row && (row.phone ?? '')) || '',
+    phone: row.phone ?? '',
     currency: row.currency || 'LKR',
     taxRate: parseFloat(row.tax_rate) || 10,
     taxEnabled: row.tax_enabled ?? true,

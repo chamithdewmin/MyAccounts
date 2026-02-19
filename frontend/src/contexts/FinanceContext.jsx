@@ -210,8 +210,33 @@ export const FinanceProvider = ({ children }) => {
   };
 
   const updateSettings = async (partial) => {
-    if (hasToken()) await api.settings.update(partial);
-    setSettings((prev) => ({ ...prev, ...partial }));
+    if (hasToken()) {
+      try {
+        // Update settings via API - backend returns updated settings
+        const updated = await api.settings.update(partial);
+        // Use the updated settings from database response
+        if (updated && typeof updated === 'object') {
+          const settingsMerged = { ...getDefaultSettings(), ...updated };
+          // Preserve bankDetails from current state
+          settingsMerged.bankDetails = settings.bankDetails;
+          setSettings(settingsMerged);
+        } else {
+          // Fallback: reload from database if response format is unexpected
+          const settingsRes = await api.settings.get().catch(() => getDefaultSettings());
+          const settingsMerged = settingsRes && typeof settingsRes === 'object' ? { ...getDefaultSettings(), ...settingsRes } : getDefaultSettings();
+          settingsMerged.bankDetails = settings.bankDetails;
+          setSettings(settingsMerged);
+        }
+      } catch (error) {
+        console.error('Failed to update settings:', error);
+        // Still update local state for offline mode, but show error
+        setSettings((prev) => ({ ...prev, ...partial }));
+        throw error;
+      }
+    } else {
+      // Offline mode: just update local state
+      setSettings((prev) => ({ ...prev, ...partial }));
+    }
   };
 
   const saveBankDetails = async (data) => {

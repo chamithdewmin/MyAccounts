@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { Helmet } from 'react-helmet';
 import { motion } from 'framer-motion';
-import { User, Building2, Landmark, Receipt, Palette, Upload, Eye, EyeOff, Save, Percent, Wallet } from 'lucide-react';
+import { User, Building2, Landmark, Upload, Eye, EyeOff, Save, Wallet } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
@@ -26,9 +26,6 @@ const Profile = () => {
     password: '',
     profileAvatar: settings?.profileAvatar || null,
     phone: settings?.phone || '',
-    currency: settings?.currency || 'LKR',
-    taxRate: settings?.taxRate ?? 10,
-    taxEnabled: settings?.taxEnabled ?? true,
     openingCash: settings?.openingCash ?? 0,
     ownerCapital: settings?.ownerCapital ?? 0,
     payables: settings?.payables ?? 0,
@@ -44,14 +41,14 @@ const Profile = () => {
 
   useEffect(() => {
     if (!settings) return;
+    // Ensure phone number is properly loaded (handle both null and empty string)
+    const phoneValue = settings.phone !== null && settings.phone !== undefined ? settings.phone : '';
     setLocal((prev) => ({
       ...prev,
       ...settings,
       profileAvatar: settings.profileAvatar || null,
-      phone: settings.phone || '',
-      currency: settings.currency || 'LKR',
-      taxRate: settings.taxRate ?? 10,
-      taxEnabled: settings.taxEnabled ?? true,
+      phone: phoneValue,
+      businessName: settings.businessName || prev.businessName || 'My Business',
       openingCash: settings.openingCash ?? 0,
       ownerCapital: settings.ownerCapital ?? 0,
       payables: settings.payables ?? 0,
@@ -104,11 +101,12 @@ const Profile = () => {
     const reader = new FileReader();
     reader.onload = async () => {
       try {
+        // Save to database - updateSettings will reload from DB and update state
         await updateSettings({ profileAvatar: reader.result });
-        setLocal((prev) => ({ ...prev, profileAvatar: reader.result }));
-        toast({ title: 'Avatar updated', description: 'Your profile picture has been saved.' });
+        // Local state will be updated automatically by updateSettings via FinanceContext
+        toast({ title: 'Avatar updated', description: 'Your profile picture has been saved to the database.' });
       } catch (err) {
-        toast({ title: 'Upload failed', description: err.message || 'Failed to save avatar.', variant: 'destructive' });
+        toast({ title: 'Upload failed', description: err.message || 'Failed to save avatar to database.', variant: 'destructive' });
       }
     };
     reader.onerror = () => {
@@ -143,12 +141,10 @@ const Profile = () => {
         }
       }
 
-      // Save business profile and invoice branding via settings API
+      // Save business profile via settings API
       const settingsUpdates = {
         businessName: local.businessName,
         phone: local.phone,
-        logo: local.logo,
-        invoiceThemeColor: local.invoiceThemeColor,
         profileAvatar: local.profileAvatar,
       };
       await updateSettings(settingsUpdates);
@@ -288,11 +284,12 @@ const Profile = () => {
                         size="sm"
                         onClick={async () => {
                           try {
+                            // Save to database - updateSettings will reload from DB and update state
                             await updateSettings({ profileAvatar: null });
-                            setLocal((prev) => ({ ...prev, profileAvatar: null }));
-                            toast({ title: 'Avatar removed', description: 'Profile picture has been removed.' });
+                            // Local state will be updated automatically by updateSettings via FinanceContext
+                            toast({ title: 'Avatar removed', description: 'Profile picture has been removed from the database.' });
                           } catch (err) {
-                            toast({ title: 'Error', description: err.message || 'Failed to remove avatar.', variant: 'destructive' });
+                            toast({ title: 'Error', description: err.message || 'Failed to remove avatar from database.', variant: 'destructive' });
                           }
                         }}
                         className="w-fit text-destructive hover:text-destructive"
@@ -492,71 +489,7 @@ const Profile = () => {
             </div>
           </div>
 
-          {/* 4. Tax & Currency */}
-          <div className="bg-card rounded-lg p-4 sm:p-6 border border-border">
-            <div className="flex items-center gap-2 mb-4">
-              <Percent className="w-5 h-5 text-primary shrink-0" />
-              <h2 className="text-base sm:text-lg font-semibold">Tax & Currency</h2>
-            </div>
-            <p className="text-sm text-muted-foreground mb-4">Configure taxes and currency for invoices and reports.</p>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="currency">Currency</Label>
-                <select
-                  id="currency"
-                  className="w-full px-3 py-2 bg-secondary border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
-                  value={s.currency || 'LKR'}
-                  onChange={(e) => {
-                    setLocal((prev) => ({ ...prev, currency: e.target.value }));
-                    debouncedSave({ currency: e.target.value });
-                  }}
-                >
-                  <option value="LKR">LKR (රු)</option>
-                  <option value="USD">USD ($)</option>
-                  <option value="EUR">EUR (€)</option>
-                  <option value="GBP">GBP (£)</option>
-                </select>
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="tax-rate">Tax Rate (%)</Label>
-                <Input
-                  id="tax-rate"
-                  type="number"
-                  value={s.taxRate ?? 10}
-                  onChange={(e) => {
-                    setLocal((prev) => ({ ...prev, taxRate: Number(e.target.value || 0) }));
-                    debouncedSave({ taxRate: Number(e.target.value || 0) });
-                  }}
-                />
-              </div>
-              <div className="md:col-span-2 rounded-lg border border-border bg-secondary/30 px-4 py-3 flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium">Tax Estimation</p>
-                  <p className="text-xs text-muted-foreground">Enable simple tax estimation in reports</p>
-                </div>
-                <button
-                  type="button"
-                  role="switch"
-                  aria-checked={s.taxEnabled}
-                  onClick={() => {
-                    setLocal((prev) => ({ ...prev, taxEnabled: !prev.taxEnabled }));
-                    saveNow({ taxEnabled: !s.taxEnabled });
-                  }}
-                  className={cn(
-                    'relative inline-flex h-7 w-14 items-center rounded-full border transition-colors',
-                    s.taxEnabled ? 'bg-primary border-primary' : 'bg-muted border-border',
-                  )}
-                >
-                  <span className={cn(
-                    'inline-block h-5 w-5 transform rounded-full bg-white shadow transition-transform',
-                    s.taxEnabled ? 'translate-x-7' : 'translate-x-1',
-                  )} />
-                </button>
-              </div>
-            </div>
-          </div>
-
-          {/* 5. Opening Balances */}
+          {/* 4. Opening Balances */}
           <div className="bg-card rounded-lg p-4 sm:p-6 border border-border">
             <div className="flex items-center gap-2 mb-4">
               <Wallet className="w-5 h-5 text-primary shrink-0" />
@@ -608,95 +541,6 @@ const Profile = () => {
             </div>
           </div>
 
-          {/* 6. Invoice & Branding */}
-          <div className="bg-card rounded-lg p-4 sm:p-6 border border-border">
-            <div className="flex items-center gap-2 mb-4">
-              <Receipt className="w-5 h-5 text-primary shrink-0" />
-              <h2 className="text-base sm:text-lg font-semibold">Invoice & Branding</h2>
-            </div>
-            <p className="text-sm text-muted-foreground mb-4">Customize how your invoices look to clients.</p>
-            <div className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="logo-upload">Invoice Logo</Label>
-                <p className="text-xs text-muted-foreground">Optional logo on invoice header. Square images ~80×80 work best.</p>
-                <div className="flex items-center gap-4">
-                  <input
-                    id="logo-upload"
-                    type="file"
-                    accept="image/*"
-                    onChange={async (e) => {
-                      const file = e.target.files?.[0];
-                      if (!file) return;
-                      const reader = new FileReader();
-                      reader.onload = async () => {
-                        try {
-                          await updateSettings({ logo: reader.result });
-                          setLocal((prev) => ({ ...prev, logo: reader.result }));
-                          toast({ title: 'Logo updated', description: 'Invoice logo has been saved.' });
-                        } catch (err) {
-                          toast({ title: 'Upload failed', description: err.message || 'Failed to save logo.', variant: 'destructive' });
-                        }
-                      };
-                      reader.onerror = () => {
-                        toast({ title: 'Upload failed', description: 'Failed to read image file.', variant: 'destructive' });
-                      };
-                      reader.readAsDataURL(file);
-                    }}
-                    className="block w-full text-sm text-muted-foreground
-                      file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0
-                      file:text-sm file:font-semibold file:bg-secondary file:text-foreground hover:file:bg-secondary/80"
-                  />
-                  {s.logo && (
-                    <div className="flex items-center gap-2">
-                      <img src={s.logo} alt="Logo" className="h-10 w-10 rounded border border-border object-contain bg-white" />
-                      <Button
-                        type="button"
-                        variant="outline"
-                        size="sm"
-                        onClick={async () => {
-                          try {
-                            await updateSettings({ logo: null });
-                            setLocal((prev) => ({ ...prev, logo: null }));
-                            toast({ title: 'Logo removed', description: 'Invoice logo has been removed.' });
-                          } catch (err) {
-                            toast({ title: 'Error', description: err.message || 'Failed to remove logo.', variant: 'destructive' });
-                          }
-                        }}
-                      >
-                        Remove
-                      </Button>
-                    </div>
-                  )}
-                </div>
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="invoice-theme-color">Invoice Theme Color</Label>
-                <p className="text-xs text-muted-foreground">Color for headers, totals, and accents on invoices.</p>
-                <div className="flex items-center gap-3">
-                  <input
-                    id="invoice-theme-color"
-                    type="color"
-                    value={s.invoiceThemeColor || '#F97316'}
-                    onChange={(e) => {
-                      setLocal((prev) => ({ ...prev, invoiceThemeColor: e.target.value }));
-                      debouncedSave({ invoiceThemeColor: e.target.value });
-                    }}
-                    className="h-10 w-14 cursor-pointer rounded border border-border bg-transparent p-0"
-                  />
-                  <Input
-                    type="text"
-                    value={s.invoiceThemeColor || '#F97316'}
-                    onChange={(e) => {
-                      setLocal((prev) => ({ ...prev, invoiceThemeColor: e.target.value }));
-                      debouncedSave({ invoiceThemeColor: e.target.value });
-                    }}
-                    placeholder="#F97316"
-                    className="font-mono w-28"
-                  />
-                </div>
-              </div>
-            </div>
-          </div>
         </motion.div>
       </div>
     </>

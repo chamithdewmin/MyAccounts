@@ -1,460 +1,192 @@
-import React, { useMemo, useState } from 'react';
-import { Helmet } from 'react-helmet';
-import { motion } from 'framer-motion';
-import { Download, RefreshCw, Calendar } from 'lucide-react';
-import { useFinance } from '@/contexts/FinanceContext';
-import ReportPreviewModal from '@/components/ReportPreviewModal';
-import { getPrintHtml } from '@/utils/pdfPrint';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { useToast } from '@/components/ui/use-toast';
+import { useState } from "react";
+import { BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from "recharts";
 
-const filterByRange = (items, range, dateKey = 'date') => {
-  if (!range) return items;
-  return items.filter((i) => {
-    const d = new Date(i[dateKey]);
-    return d >= range.start && d <= range.end;
-  });
+const C = { bg:"#0c0e14",bg2:"#0f1117",card:"#13161e",border:"#1e2433",border2:"#2a3347",text:"#fff",text2:"#d1d9e6",muted:"#8b9ab0",faint:"#4a5568",green:"#22c55e",red:"#ef4444",blue:"#3b82f6",cyan:"#22d3ee",yellow:"#eab308",purple:"#a78bfa",orange:"#f97316" };
+
+const Svg=({d,s=18,c="#fff",sw=2})=><svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth={sw} strokeLinecap="round" strokeLinejoin="round" style={{display:"block",flexShrink:0}}><path d={d}/></svg>;
+const I={
+  Receipt:      ()=><Svg d="M4 2v20l2-1 2 1 2-1 2 1 2-1 2 1 2-1 2 1V2l-2 1-2-1-2 1-2-1-2 1-2-1-2 1-2-1zM8 9h8M8 13h6"/>,
+  FileText:     ()=><Svg d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8l-6-6zM14 2v6h6M16 13H8M16 17H8M10 9H8"/>,
+  Scissors:     ()=><Svg d="M6 9a3 3 0 100-6 3 3 0 000 6zM6 15a3 3 0 100 6 3 3 0 000-6zM20 4L8.12 15.88M14.47 14.48L20 20M8.12 8.12L12 12"/>,
+  CheckCircle:  ()=><Svg d="M22 11.08V12a10 10 0 11-5.93-9.14M22 4L12 14.01l-3-3"/>,
+  AlertTriangle:()=><Svg d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0zM12 9v4M12 17h.01"/>,
+  Target:       ()=><Svg d="M12 22a10 10 0 110-20 10 10 0 010 20zM12 18a6 6 0 110-12 6 6 0 010 12zM12 14a2 2 0 110-4 2 2 0 010 4z"/>,
+  Download:     ()=><Svg d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3"/>,
+  Clock:        ()=><Svg d="M12 22a10 10 0 110-20 10 10 0 010 20zM12 6v6l4 2"/>,
+  PieChart:     ()=><Svg d="M21.21 15.89A10 10 0 118 2.83M22 12A10 10 0 0012 2v10z"/>,
+  Refresh:      ()=><Svg d="M3 12a9 9 0 019-9 9.75 9.75 0 016.74 2.74L21 8M21 12a9 9 0 01-9 9 9.75 9.75 0 01-6.74-2.74L3 16M3 12h6m12 0h-6" />,
 };
 
-const getDateRange = (option, fromDate, toDate) => {
-  const now = new Date();
-  if (option === 'this_month') {
-    const start = new Date(now.getFullYear(), now.getMonth(), 1);
-    const end = new Date(now.getFullYear(), now.getMonth() + 1, 0);
-    return { start, end };
-  }
-  if (option === 'last_month') {
-    const start = new Date(now.getFullYear(), now.getMonth() - 1, 1);
-    const end = new Date(now.getFullYear(), now.getMonth(), 0);
-    return { start, end };
-  }
-  if (option === 'this_year') {
-    const start = new Date(now.getFullYear(), 0, 1);
-    const end = new Date(now.getFullYear(), 11, 31);
-    return { start, end };
-  }
-  if (option === 'custom' && fromDate && toDate) {
-    return {
-      start: new Date(fromDate + 'T00:00:00'),
-      end: new Date(toDate + 'T23:59:59'),
-    };
-  }
-  return null;
+const quarterly=[
+  {quarter:"Q1 2025",gross:135000,taxable:108000,deductions:27000,taxOwed:21600,status:"Filed",paid:true},
+  {quarter:"Q2 2025",gross:148000,taxable:118400,deductions:29600,taxOwed:23680,status:"Filed",paid:true},
+  {quarter:"Q3 2025",gross:125000,taxable:100000,deductions:25000,taxOwed:20000,status:"Filed",paid:true},
+  {quarter:"Q4 2025",gross:172000,taxable:137600,deductions:34400,taxOwed:27520,status:"Pending",paid:false},
+];
+const incSplit=[
+  {name:"Taxable Income",value:464000,color:C.red},
+  {name:"Non-Taxable",value:116000,color:C.green},
+  {name:"Deductions",value:116000,color:C.blue},
+];
+const categories=[
+  {name:"Service Income",taxable:true,value:180000,color:C.orange},
+  {name:"Product Sales",taxable:true,value:130000,color:C.yellow},
+  {name:"Consulting",taxable:true,value:154000,color:C.blue},
+  {name:"Grants / Gifts",taxable:false,value:116000,color:C.green},
+];
+
+const Tip=({active,payload,label})=>{
+  if(!active||!payload?.length)return null;
+  return <div style={{background:"#1a1d27",border:`1px solid ${C.border2}`,borderRadius:12,padding:"12px 16px"}}>
+    <p style={{color:C.muted,fontSize:11,margin:"0 0 8px",fontWeight:600}}>{label}</p>
+    {payload.map((p,i)=><div key={i} style={{display:"flex",alignItems:"center",gap:8,marginBottom:3}}>
+      <div style={{width:7,height:7,borderRadius:"50%",background:p.color}}/><span style={{color:C.text2,fontSize:12}}>{p.name}:</span><span style={{color:C.text,fontWeight:700,fontSize:12}}>LKR {Number(p.value).toLocaleString()}</span>
+    </div>)}
+  </div>;
+};
+const Stat=({label,value,color,Icon,sub,subColor})=>(
+  <div style={{background:C.card,borderRadius:14,border:`1px solid ${C.border}`,padding:"20px 22px",position:"relative",overflow:"hidden"}}>
+    <div style={{position:"absolute",right:14,top:14,width:36,height:36,borderRadius:10,background:`${color||C.blue}18`,display:"flex",alignItems:"center",justifyContent:"center",opacity:0.8}}><Icon/></div>
+    <p style={{color:C.muted,fontSize:10,fontWeight:700,letterSpacing:"0.1em",textTransform:"uppercase",margin:0}}>{label}</p>
+    <p style={{color:color||C.text,fontSize:22,fontWeight:900,margin:"8px 0 0",letterSpacing:"-0.02em"}}>{value}</p>
+    {sub&&<p style={{color:subColor||C.muted,fontSize:12,margin:"5px 0 0",fontWeight:600}}>{sub}</p>}
+    <div style={{position:"absolute",bottom:0,left:0,right:0,height:3,background:`linear-gradient(90deg,${color||C.blue}55,transparent)`}}/>
+  </div>
+);
+const Card=({title,subtitle,children})=>(
+  <div style={{background:C.card,borderRadius:16,border:`1px solid ${C.border}`,padding:"22px 24px"}}>
+    <div style={{marginBottom:18}}><h3 style={{color:C.text,fontSize:15,fontWeight:800,margin:0}}>{title}</h3>{subtitle&&<p style={{color:C.muted,fontSize:12,margin:"4px 0 0"}}>{subtitle}</p>}</div>
+    {children}
+  </div>
+);
+const StatusBadge=({paid,status})=>{
+  const s=paid?{bg:"rgba(34,197,94,0.15)",c:C.green}:{bg:"rgba(234,179,8,0.15)",c:C.yellow};
+  return <span style={{background:s.bg,color:s.c,borderRadius:6,padding:"3px 10px",fontSize:11,fontWeight:700,display:"inline-flex",alignItems:"center",gap:5}}><span style={{width:5,height:5,borderRadius:"50%",background:s.c,display:"inline-block"}}/>{status}</span>;
 };
 
-const ReportTax = () => {
-  const { incomes, expenses, settings, loadData } = useFinance();
-  const { toast } = useToast();
-  const [reportPreview, setReportPreview] = useState({ open: false, html: '', filename: '', title: '' });
+export default function TaxReports(){
+  const [activeQ,setActiveQ]=useState(null);
+  const totalGross=quarterly.reduce((s,q)=>s+q.gross,0);
+  const totalTax=quarterly.reduce((s,q)=>s+q.taxOwed,0);
+  const totalDed=quarterly.reduce((s,q)=>s+q.deductions,0);
+  const paidTax=quarterly.filter(q=>q.paid).reduce((s,q)=>s+q.taxOwed,0);
+  const pendingTax=totalTax-paidTax;
+  const rate=((totalTax/totalGross)*100).toFixed(1);
 
-  const [periodOption, setPeriodOption] = useState('this_month');
-  const [fromDate, setFromDate] = useState(() => {
-    const d = new Date();
-    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-01`;
-  });
-  const [toDate, setToDate] = useState(() => {
-    const d = new Date();
-    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
-  });
+  return(
+    <div style={{minHeight:"100vh",background:C.bg,fontFamily:"'DM Sans',-apple-system,sans-serif",color:C.text}}>
+      <style>{`*{box-sizing:border-box;}body{margin:0;}::-webkit-scrollbar{width:4px;}::-webkit-scrollbar-thumb{background:${C.border2};border-radius:99px;}@keyframes fi{from{opacity:0;transform:translateY(10px);}to{opacity:1;transform:translateY(0);}}.qrow:hover td{background:rgba(255,255,255,0.018)!important;}`}</style>
 
-  const range = useMemo(
-    () => getDateRange(periodOption, fromDate, toDate),
-    [periodOption, fromDate, toDate]
-  );
+      <div style={{padding:"26px 32px",display:"flex",flexDirection:"column",gap:18,animation:"fi .3s ease"}}>
 
-  const taxData = useMemo(() => {
-    if (!range || !settings.taxEnabled) return null;
-
-    const filteredIncomes = filterByRange(incomes, range);
-    const filteredExpenses = filterByRange(expenses, range);
-    const taxRate = (Number(settings.taxRate) || 0) / 100;
-
-    // Income Tax by Service / Category
-    const incomeByCategory = filteredIncomes.reduce((acc, i) => {
-      const name = i.serviceType?.trim() || 'Other';
-      acc[name] = (acc[name] || 0) + i.amount;
-      return acc;
-    }, {});
-
-    const incomeItems = Object.entries(incomeByCategory)
-      .map(([name, amount]) => ({
-        name,
-        amount,
-        tax: amount * taxRate,
-      }))
-      .sort((a, b) => b.amount - a.amount);
-
-    // Expense Tax by Category
-    const expenseByCategory = filteredExpenses.reduce((acc, e) => {
-      const name = e.category || 'Other';
-      acc[name] = (acc[name] || 0) + e.amount;
-      return acc;
-    }, {});
-
-    const expenseItems = Object.entries(expenseByCategory)
-      .map(([name, amount]) => ({
-        name,
-        amount,
-        tax: amount * taxRate,
-      }))
-      .sort((a, b) => b.amount - a.amount);
-
-    const totalIncome = incomeItems.reduce((s, i) => s + i.amount, 0);
-    const totalExpenses = expenseItems.reduce((s, e) => s + e.amount, 0);
-    const taxCollected = incomeItems.reduce((s, i) => s + i.tax, 0);
-    const taxOnExpenses = expenseItems.reduce((s, e) => s + e.tax, 0);
-    const netTaxPayable = taxCollected - taxOnExpenses;
-
-    return {
-      incomeItems,
-      expenseItems,
-      totalIncome,
-      totalExpenses,
-      taxCollected,
-      taxOnExpenses,
-      netTaxPayable,
-    };
-  }, [incomes, expenses, range, settings.taxEnabled, settings.taxRate]);
-
-  const formatAmount = (n) => `${settings.currency} ${(n ?? 0).toLocaleString()}`;
-
-  const periodLabel = range
-    ? `${range.start.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })} – ${range.end.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}`
-    : 'Select period';
-
-  const handleExportCSV = () => {
-    if (!range || !taxData) return;
-    const rows = [
-      ['Tax Report', periodLabel],
-      ['Tax Rate', `${settings.taxRate}%`],
-      [],
-      ['INCOME SUMMARY', 'Amount', 'Tax'],
-      ...taxData.incomeItems.map((i) => [i.name, i.amount, i.tax]),
-      ['Total Income Tax Collected', '', taxData.taxCollected],
-      [],
-      ['EXPENSE SUMMARY', 'Amount', 'Tax'],
-      ...taxData.expenseItems.map((e) => [e.name, e.amount, e.tax]),
-      ['Total Expense Tax', '', taxData.taxOnExpenses],
-      [],
-      ['NET TAX PAYABLE', taxData.netTaxPayable],
-    ];
-    const csvContent = rows.map((r) => (Array.isArray(r) ? r.join(',') : r)).join('\n');
-    const blob = new Blob([csvContent], { type: 'text/csv' });
-    const url = window.URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `tax-report-${range.start.toISOString().slice(0, 10)}.csv`;
-    a.click();
-    toast({ title: 'Export successful', description: 'Tax report exported to CSV' });
-  };
-
-  const handleDownloadPDF = () => {
-    if (!range || !taxData) return;
-    let incomeRows = taxData.incomeItems
-      .map((i) => `<tr><td style="padding:8px; border:1px solid #ccc;">${i.name}</td><td style="padding:8px; border:1px solid #ccc; text-align:right;">${formatAmount(i.amount)}</td><td style="padding:8px; border:1px solid #ccc; text-align:right;">${formatAmount(i.tax)}</td></tr>`)
-      .join('');
-    let expenseRows = taxData.expenseItems
-      .map((e) => `<tr><td style="padding:8px; border:1px solid #ccc;">${e.name}</td><td style="padding:8px; border:1px solid #ccc; text-align:right;">${formatAmount(e.amount)}</td><td style="padding:8px; border:1px solid #ccc; text-align:right;">${formatAmount(e.tax)}</td></tr>`)
-      .join('');
-
-    if (taxData.incomeItems.length === 0) incomeRows = '<tr><td colspan="3" style="padding:8px; border:1px solid #ccc; color:#888;">No income in this period</td></tr>';
-    if (taxData.expenseItems.length === 0) expenseRows = '<tr><td colspan="3" style="padding:8px; border:1px solid #ccc; color:#888;">No expenses in this period</td></tr>';
-
-    const netColor = taxData.netTaxPayable >= 0 ? '#dc2626' : '#16a34a';
-    const innerContent = `
-      <h1>Tax Report</h1>
-      <p><strong>Period: ${periodLabel}</strong></p>
-      <p>Tax Rate: ${settings.taxRate}%</p>
-      <table style="width:100%; border-collapse: collapse; margin-top: 24px;">
-        <tr><td colspan="3" style="padding:8px; border:1px solid #ccc; background:#e8f5e9;"><strong>INCOME SUMMARY</strong></td></tr>
-        <tr><td style="padding:8px; border:1px solid #ccc;">Category</td><td style="padding:8px; border:1px solid #ccc; text-align:right;">Amount</td><td style="padding:8px; border:1px solid #ccc; text-align:right;">Tax</td></tr>
-        ${incomeRows}
-        <tr><td style="padding:8px; border:1px solid #ccc;"><strong>Total Income Tax Collected</strong></td><td colspan="2" style="padding:8px; border:1px solid #ccc; text-align:right;"><strong>${formatAmount(taxData.taxCollected)}</strong></td></tr>
-        <tr><td colspan="3" style="padding:12px;"></td></tr>
-        <tr><td colspan="3" style="padding:8px; border:1px solid #ccc; background:#ffebee;"><strong>EXPENSE SUMMARY</strong></td></tr>
-        <tr><td style="padding:8px; border:1px solid #ccc;">Category</td><td style="padding:8px; border:1px solid #ccc; text-align:right;">Amount</td><td style="padding:8px; border:1px solid #ccc; text-align:right;">Tax</td></tr>
-        ${expenseRows}
-        <tr><td style="padding:8px; border:1px solid #ccc;"><strong>Total Expense Tax</strong></td><td colspan="2" style="padding:8px; border:1px solid #ccc; text-align:right;"><strong>${formatAmount(taxData.taxOnExpenses)}</strong></td></tr>
-        <tr><td colspan="3" style="padding:12px;"></td></tr>
-        <tr><td style="padding:8px; border:1px solid #ccc; background:#e3f2fd;"><strong>NET TAX PAYABLE</strong></td><td colspan="2" style="padding:8px; border:1px solid #ccc; text-align:right; background:#e3f2fd; color:${netColor};"><strong>${formatAmount(taxData.netTaxPayable)}</strong></td></tr>
-      </table>
-    `;
-    const fullHtml = getPrintHtml(innerContent, { logo: settings?.logo, businessName: settings?.businessName });
-    setReportPreview({ open: true, html: fullHtml, filename: `tax-report-${range.start.toISOString().slice(0, 10)}.pdf`, title: 'Tax Report' });
-  };
-
-  return (
-    <>
-      <Helmet>
-        <title>Tax Report - MyAccounts</title>
-        <meta name="description" content="Tax collected, tax paid, and net tax payable for a period" />
-      </Helmet>
-
-      <div className="space-y-6">
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-          <div>
-            <h1 className="text-3xl font-bold">Tax Report</h1>
-            <p className="text-muted-foreground">
-              Tax collected, tax paid, and net tax payable for a period
-            </p>
+        {/* TOOLBAR */}
+        <div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+          <div style={{display:"flex",alignItems:"center",gap:12,padding:"12px 16px",background:"rgba(239,68,68,0.08)",border:"1px solid rgba(239,68,68,0.2)",borderRadius:12}}>
+            <div style={{width:32,height:32,borderRadius:8,background:"rgba(239,68,68,0.15)",display:"flex",alignItems:"center",justifyContent:"center"}}><I.AlertTriangle/></div>
+            <div><p style={{color:C.muted,fontSize:10,margin:0,textTransform:"uppercase",letterSpacing:"0.07em",fontWeight:700}}>Pending Tax</p><p style={{color:C.red,fontSize:14,fontWeight:800,margin:"2px 0 0"}}>LKR {pendingTax.toLocaleString()}</p></div>
           </div>
-          <div style={{ display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap" }}>
-            <button
-              onClick={() => { loadData(); toast({ title: 'Refreshed', description: 'Data refreshed' }); }}
-              style={{
-                display: "flex",
-                alignItems: "center",
-                gap: 8,
-                background: "#1c1e24",
-                border: "1px solid #303338",
-                borderRadius: 8,
-                padding: "9px 16px",
-                color: "#fff",
-                fontSize: 13,
-                fontWeight: 600,
-                cursor: "pointer",
-                fontFamily: "inherit",
-              }}
-            >
-              <RefreshCw className="w-4 h-4" />
-              <span>Refresh</span>
-            </button>
-            <button
-              onClick={handleExportCSV}
-              disabled={!range}
-              style={{
-                display: "flex",
-                alignItems: "center",
-                gap: 8,
-                background: "#1c1e24",
-                border: "1px solid #303338",
-                borderRadius: 8,
-                padding: "9px 16px",
-                color: "#fff",
-                fontSize: 13,
-                fontWeight: 600,
-                cursor: !range ? "not-allowed" : "pointer",
-                opacity: !range ? 0.5 : 1,
-                fontFamily: "inherit",
-              }}
-            >
-              <Download className="w-4 h-4" />
-              <span>Export CSV</span>
-            </button>
-            <button
-              onClick={handleDownloadPDF}
-              disabled={!range}
-              style={{
-                display: "flex",
-                alignItems: "center",
-                gap: 8,
-                background: "#1c1e24",
-                border: "1px solid #303338",
-                borderRadius: 8,
-                padding: "9px 16px",
-                color: "#fff",
-                fontSize: 13,
-                fontWeight: 600,
-                cursor: !range ? "not-allowed" : "pointer",
-                opacity: !range ? 0.5 : 1,
-                fontFamily: "inherit",
-              }}
-            >
-              <Download className="w-4 h-4" />
-              <span>Download PDF</span>
-            </button>
+          <div style={{display:"flex",gap:10,alignItems:"center"}}>
+            <button onClick={()=>window.location.reload()} style={{display:"flex",alignItems:"center",gap:8,background:"#1c1e24",border:"1px solid #303338",borderRadius:8,padding:"9px 16px",color:"#fff",fontSize:13,fontWeight:600,cursor:"pointer",fontFamily:"inherit"}}><I.Refresh/><span>Refresh</span></button>
+            <button onClick={()=>{}} style={{display:"flex",alignItems:"center",gap:8,background:"#1c1e24",border:"1px solid #303338",borderRadius:8,padding:"9px 16px",color:"#fff",fontSize:13,fontWeight:600,cursor:"pointer",fontFamily:"inherit"}}><I.Download/><span>Export CSV</span></button>
+            <button onClick={()=>{}} style={{display:"flex",alignItems:"center",gap:8,background:"#1c1e24",border:"1px solid #303338",borderRadius:8,padding:"9px 16px",color:"#fff",fontSize:13,fontWeight:600,cursor:"pointer",fontFamily:"inherit"}}><I.Download/><span>Download PDF</span></button>
           </div>
         </div>
 
-        {/* Period selector */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="bg-card rounded-lg p-4 border border-secondary"
-        >
-          <h2 className="text-sm font-semibold mb-3 flex items-center gap-2">
-            <Calendar className="w-4 h-4" />
-            Select Period
-          </h2>
-          <div className="flex flex-wrap gap-4 items-end">
-            <div className="flex flex-wrap gap-3">
-              <label className="flex items-center gap-2 cursor-pointer">
-                <input
-                  type="radio"
-                  name="period"
-                  checked={periodOption === 'this_month'}
-                  onChange={() => setPeriodOption('this_month')}
-                  className="text-primary"
-                />
-                <span>This Month</span>
-              </label>
-              <label className="flex items-center gap-2 cursor-pointer">
-                <input
-                  type="radio"
-                  name="period"
-                  checked={periodOption === 'last_month'}
-                  onChange={() => setPeriodOption('last_month')}
-                  className="text-primary"
-                />
-                <span>Last Month</span>
-              </label>
-              <label className="flex items-center gap-2 cursor-pointer">
-                <input
-                  type="radio"
-                  name="period"
-                  checked={periodOption === 'this_year'}
-                  onChange={() => setPeriodOption('this_year')}
-                  className="text-primary"
-                />
-                <span>This Year</span>
-              </label>
-              <label className="flex items-center gap-2 cursor-pointer">
-                <input
-                  type="radio"
-                  name="period"
-                  checked={periodOption === 'custom'}
-                  onChange={() => setPeriodOption('custom')}
-                  className="text-primary"
-                />
-                <span>Custom</span>
-              </label>
+        {/* STATS */}
+        <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:14}}>
+          <Stat label="Total Gross Income" value={`LKR ${totalGross.toLocaleString()}`} Icon={I.FileText}      color={C.text2}/>
+          <Stat label="Total Tax Owed"     value={`LKR ${totalTax.toLocaleString()}`}   Icon={I.Receipt}       color={C.red}   sub={`${rate}% effective rate`}/>
+          <Stat label="Total Deductions"   value={`LKR ${totalDed.toLocaleString()}`}   Icon={I.Scissors}      color={C.green} sub="Tax savings" subColor={C.green}/>
+          <Stat label="Tax Paid (Q1–Q3)"   value={`LKR ${paidTax.toLocaleString()}`}    Icon={I.CheckCircle}   color={C.blue}  sub={`LKR ${pendingTax.toLocaleString()} pending`} subColor={C.yellow}/>
+        </div>
+
+        {/* QUARTERLY BAR + DONUT */}
+        <div style={{display:"grid",gridTemplateColumns:"2.2fr 1fr",gap:16}}>
+          <Card title="Quarterly Tax Breakdown" subtitle="Gross income, taxable income & tax owed">
+            <ResponsiveContainer width="100%" height={260}>
+              <BarChart data={quarterly} barCategoryGap={30} barGap={4}>
+                <CartesianGrid strokeDasharray="3 3" stroke={C.border} vertical={false}/>
+                <XAxis dataKey="quarter" axisLine={false} tickLine={false} tick={{fill:C.muted,fontSize:12}}/>
+                <YAxis axisLine={false} tickLine={false} tick={{fill:C.muted,fontSize:11}} tickFormatter={v=>`${v/1000}K`}/>
+                <Tooltip content={<Tip/>} cursor={{fill:"rgba(255,255,255,0.02)"}}/>
+                <Legend wrapperStyle={{color:C.muted,fontSize:12,paddingTop:12}}/>
+                <Bar dataKey="gross"   name="Gross Income"   radius={[5,5,0,0]} fill={C.blue}   opacity={.5}/>
+                <Bar dataKey="taxable" name="Taxable Income" radius={[5,5,0,0]} fill={C.yellow}/>
+                <Bar dataKey="taxOwed" name="Tax Owed"       radius={[5,5,0,0]} fill={C.red}/>
+              </BarChart>
+            </ResponsiveContainer>
+          </Card>
+          <Card title="Income Split" subtitle="Taxable vs Non-Taxable vs Deductions">
+            <ResponsiveContainer width="100%" height={190}>
+              <PieChart><Pie data={incSplit} cx="50%" cy="50%" innerRadius={55} outerRadius={80} dataKey="value" strokeWidth={0}>
+                {incSplit.map((e,i)=><Cell key={i} fill={e.color}/>)}
+              </Pie><Tooltip formatter={v=>`LKR ${v.toLocaleString()}`} contentStyle={{background:"#1a1d27",border:`1px solid ${C.border2}`,borderRadius:10}}/></PieChart>
+            </ResponsiveContainer>
+            <div style={{display:"flex",flexDirection:"column",gap:9,marginTop:8}}>
+              {incSplit.map((e,i)=><div key={i} style={{display:"flex",justifyContent:"space-between"}}>
+                <div style={{display:"flex",alignItems:"center",gap:7}}><div style={{width:8,height:8,borderRadius:"50%",background:e.color}}/><span style={{color:C.text2,fontSize:12}}>{e.name}</span></div>
+                <span style={{color:C.text,fontSize:12,fontWeight:700}}>LKR {e.value.toLocaleString()}</span>
+              </div>)}
             </div>
-            {periodOption === 'custom' && (
-              <div className="flex gap-3 items-center">
-                <div className="space-y-1">
-                  <Label className="text-xs">From</Label>
-                  <Input
-                    type="date"
-                    value={fromDate}
-                    onChange={(e) => setFromDate(e.target.value)}
-                    className="w-[140px]"
-                  />
-                </div>
-                <div className="space-y-1">
-                  <Label className="text-xs">To</Label>
-                  <Input
-                    type="date"
-                    value={toDate}
-                    onChange={(e) => setToDate(e.target.value)}
-                    className="w-[140px]"
-                  />
-                </div>
-              </div>
-            )}
-          </div>
-        </motion.div>
+          </Card>
+        </div>
 
-        {!settings.taxEnabled && (
-          <div className="p-4 rounded-lg bg-muted border border-secondary text-muted-foreground">
-            Tax estimation is disabled. Enable it in Settings to view tax reports.
-          </div>
-        )}
+        {/* CATEGORY TABLE */}
+        <Card title="Income Category Analysis" subtitle="Tax liability per income source">
+          <table style={{width:"100%",borderCollapse:"collapse"}}>
+            <thead><tr style={{borderBottom:`1px solid ${C.border2}`}}>
+              {["Category","Amount","Taxable","Tax Rate","Tax Liability","Status"].map(h=><th key={h} style={{color:C.muted,fontSize:11,fontWeight:700,letterSpacing:"0.07em",textTransform:"uppercase",padding:"10px 14px",textAlign:"left"}}>{h}</th>)}
+            </tr></thead>
+            <tbody>
+              {categories.map((cat,i)=><tr key={i} style={{borderBottom:`1px solid ${C.border}`,background:i%2===0?"transparent":"rgba(255,255,255,0.012)"}}>
+                <td style={{padding:"13px 14px"}}><div style={{display:"flex",alignItems:"center",gap:8}}><div style={{width:8,height:8,borderRadius:"50%",background:cat.color}}/><span style={{color:C.text2,fontSize:13,fontWeight:600}}>{cat.name}</span></div></td>
+                <td style={{color:C.text,fontSize:13,padding:"13px 14px"}}>LKR {cat.value.toLocaleString()}</td>
+                <td style={{padding:"13px 14px"}}><span style={{color:cat.taxable?C.red:C.green,fontSize:12,fontWeight:700}}>{cat.taxable?"Yes":"No"}</span></td>
+                <td style={{color:C.muted,fontSize:13,padding:"13px 14px"}}>20%</td>
+                <td style={{color:cat.taxable?C.red:C.green,fontSize:13,fontWeight:700,padding:"13px 14px"}}>{cat.taxable?`LKR ${(cat.value*.2).toLocaleString()}`:"—"}</td>
+                <td style={{padding:"13px 14px"}}>
+                  <span style={{background:cat.taxable?"rgba(239,68,68,0.12)":"rgba(34,197,94,0.12)",color:cat.taxable?C.red:C.green,borderRadius:6,padding:"3px 10px",fontSize:11,fontWeight:700,display:"inline-flex",alignItems:"center",gap:5}}>
+                    <span style={{width:5,height:5,borderRadius:"50%",background:cat.taxable?C.red:C.green,display:"inline-block"}}/>{cat.taxable?"Taxable":"Exempt"}
+                  </span>
+                </td>
+              </tr>)}
+            </tbody>
+          </table>
+        </Card>
 
-        {/* Tax Report */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.05 }}
-          className="bg-card rounded-lg p-6 border border-secondary"
-        >
-          <h2 className="text-xl font-bold mb-2">
-            Tax Report – {periodLabel}
-          </h2>
-          <p className="text-sm text-muted-foreground mb-6">
-            Tax Rate: {settings.taxRate}% • Paid transactions only
-          </p>
-
-          {!taxData ? (
-            <p className="text-muted-foreground">Select a period and ensure tax is enabled in Settings.</p>
-          ) : (
-            <div className="space-y-8">
-              {/* Income Summary */}
-              <div className="space-y-4">
-                <h3 className="text-lg font-semibold text-green-600 dark:text-green-400 border-b border-secondary pb-2">
-                  Income Summary (Tax Collected)
-                </h3>
-                <div className="space-y-2">
-                  {taxData.incomeItems.length === 0 ? (
-                    <p className="text-sm text-muted-foreground">No income in this period</p>
-                  ) : (
-                    taxData.incomeItems.map((i) => (
-                      <div key={i.name} className="flex justify-between items-center text-sm">
-                        <span className="text-muted-foreground">{i.name}</span>
-                        <div className="flex gap-6">
-                          <span>{formatAmount(i.amount)}</span>
-                          <span className="text-green-600 dark:text-green-400 font-medium">
-                            Tax: {formatAmount(i.tax)}
-                          </span>
-                        </div>
-                      </div>
-                    ))
-                  )}
-                </div>
-                <div className="flex justify-between pt-2 border-t border-secondary font-semibold text-green-600 dark:text-green-400">
-                  <span>Total Income Tax Collected</span>
-                  <span>{formatAmount(taxData.taxCollected)}</span>
-                </div>
-              </div>
-
-              {/* Expense Summary */}
-              <div className="space-y-4">
-                <h3 className="text-lg font-semibold text-red-600 dark:text-red-400 border-b border-secondary pb-2">
-                  Expense Summary (Tax Deductible)
-                </h3>
-                <div className="space-y-2">
-                  {taxData.expenseItems.length === 0 ? (
-                    <p className="text-sm text-muted-foreground">No expenses in this period</p>
-                  ) : (
-                    taxData.expenseItems.map((e) => (
-                      <div key={e.name} className="flex justify-between items-center text-sm">
-                        <span className="text-muted-foreground">{e.name}</span>
-                        <div className="flex gap-6">
-                          <span>{formatAmount(e.amount)}</span>
-                          <span className="text-red-600 dark:text-red-400 font-medium">
-                            Tax: {formatAmount(e.tax)}
-                          </span>
-                        </div>
-                      </div>
-                    ))
-                  )}
-                </div>
-                <div className="flex justify-between pt-2 border-t border-secondary font-semibold text-red-600 dark:text-red-400">
-                  <span>Total Expense Tax</span>
-                  <span>{formatAmount(taxData.taxOnExpenses)}</span>
-                </div>
-              </div>
-
-              {/* Net Tax Payable */}
-              <div
-                className={`flex justify-between items-center p-4 rounded-lg font-bold text-lg ${
-                  taxData.netTaxPayable >= 0
-                    ? 'bg-red-500/10 border border-red-500/30 text-red-600 dark:text-red-400'
-                    : 'bg-green-500/10 border border-green-500/30 text-green-600 dark:text-green-400'
-                }`}
-              >
-                <span>NET TAX PAYABLE</span>
-                <span>{formatAmount(taxData.netTaxPayable)}</span>
-              </div>
-
-              <p className="text-xs text-muted-foreground">
-                Tax Collected − Tax on Expenses = Net Tax Payable
-              </p>
-            </div>
-          )}
-        </motion.div>
+        {/* QUARTERLY SUMMARY TABLE */}
+        <Card title="Quarterly Tax Summary" subtitle="Filing status and payment tracking — click row to highlight">
+          <table style={{width:"100%",borderCollapse:"collapse"}}>
+            <thead><tr style={{borderBottom:`1px solid ${C.border2}`}}>
+              {["Quarter","Gross Income","Deductions","Taxable Income","Tax Rate","Tax Owed","Filing","Payment"].map(h=><th key={h} style={{color:C.muted,fontSize:11,fontWeight:700,letterSpacing:"0.07em",textTransform:"uppercase",padding:"10px 12px",textAlign:"left"}}>{h}</th>)}
+            </tr></thead>
+            <tbody>
+              {quarterly.map((q,i)=><tr key={i} className="qrow" onClick={()=>setActiveQ(activeQ===i?null:i)} style={{borderBottom:`1px solid ${C.border}`,background:activeQ===i?"rgba(59,130,246,0.05)":i%2===0?"transparent":"rgba(255,255,255,0.012)",cursor:"pointer",transition:"background .15s"}}>
+                <td style={{color:C.text2,fontSize:13,padding:"13px 12px",fontWeight:700}}>{q.quarter}</td>
+                <td style={{color:C.text,fontSize:13,padding:"13px 12px"}}>LKR {q.gross.toLocaleString()}</td>
+                <td style={{color:C.green,fontSize:13,padding:"13px 12px"}}>LKR {q.deductions.toLocaleString()}</td>
+                <td style={{color:C.yellow,fontSize:13,padding:"13px 12px"}}>LKR {q.taxable.toLocaleString()}</td>
+                <td style={{color:C.muted,fontSize:13,padding:"13px 12px"}}>20%</td>
+                <td style={{color:C.red,fontSize:13,padding:"13px 12px",fontWeight:800}}>LKR {q.taxOwed.toLocaleString()}</td>
+                <td style={{padding:"13px 12px"}}><StatusBadge paid={q.paid} status={q.status}/></td>
+                <td style={{padding:"13px 12px"}}>
+                  <span style={{background:q.paid?"rgba(34,197,94,0.12)":"rgba(239,68,68,0.12)",color:q.paid?C.green:C.red,borderRadius:6,padding:"3px 10px",fontSize:11,fontWeight:700,display:"inline-flex",alignItems:"center",gap:5}}>
+                    {q.paid?<I.CheckCircle/>:<I.Clock/>}<span style={{marginLeft:2}}>{q.paid?"Paid":"Pending"}</span>
+                  </span>
+                </td>
+              </tr>)}
+            </tbody>
+            <tfoot><tr style={{borderTop:`2px solid ${C.border2}`,background:"rgba(255,255,255,0.02)"}}>
+              <td style={{color:C.text,fontSize:13,padding:"14px 12px",fontWeight:800}}>TOTAL</td>
+              <td style={{color:C.text,fontSize:13,padding:"14px 12px",fontWeight:800}}>LKR {totalGross.toLocaleString()}</td>
+              <td style={{color:C.green,fontSize:13,padding:"14px 12px",fontWeight:800}}>LKR {totalDed.toLocaleString()}</td>
+              <td colSpan={2}/>
+              <td style={{color:C.red,fontSize:13,padding:"14px 12px",fontWeight:800}}>LKR {totalTax.toLocaleString()}</td>
+              <td colSpan={2}/>
+            </tr></tfoot>
+          </table>
+        </Card>
       </div>
-
-      <ReportPreviewModal
-        open={reportPreview.open}
-        onOpenChange={(open) => setReportPreview((p) => ({ ...p, open }))}
-        html={reportPreview.html}
-        filename={reportPreview.filename}
-        reportTitle={reportPreview.title}
-      />
-    </>
+    </div>
   );
-};
-
-export default ReportTax;
+}

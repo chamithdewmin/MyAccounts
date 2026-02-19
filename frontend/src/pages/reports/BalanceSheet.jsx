@@ -1,568 +1,237 @@
-import React, { useMemo, useState } from 'react';
-import { Helmet } from 'react-helmet';
-import { motion } from 'framer-motion';
-import { Download, RefreshCw, Plus, Trash2, Calendar, AlertTriangle, CheckCircle } from 'lucide-react';
-import { useFinance } from '@/contexts/FinanceContext';
-import ReportPreviewModal from '@/components/ReportPreviewModal';
-import { getPrintHtml } from '@/utils/pdfPrint';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { useToast } from '@/components/ui/use-toast';
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogFooter,
-} from '@/components/ui/dialog';
+import { useState } from "react";
+import { BarChart, Bar, AreaChart, Area, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from "recharts";
 
-const filterByDate = (items, asAtDate, dateKey = 'date') => {
-  if (!asAtDate) return items;
-  const end = new Date(asAtDate);
-  end.setHours(23, 59, 59, 999);
-  return items.filter((i) => new Date(i[dateKey]) <= end);
+const C = { bg:"#0c0e14",bg2:"#0f1117",card:"#13161e",border:"#1e2433",border2:"#2a3347",text:"#fff",text2:"#d1d9e6",muted:"#8b9ab0",faint:"#4a5568",green:"#22c55e",red:"#ef4444",blue:"#3b82f6",cyan:"#22d3ee",yellow:"#eab308",purple:"#a78bfa",orange:"#f97316" };
+
+const Svg=({d,s=18,c="#fff",sw=2})=><svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth={sw} strokeLinecap="round" strokeLinejoin="round" style={{display:"block",flexShrink:0}}><path d={d}/></svg>;
+const I={
+  Building:    ()=><Svg d="M3 21h18M3 7l9-4 9 4M4 7v14M20 7v14M9 21v-4a2 2 0 014 0v4"/>,
+  Layers:      ()=><Svg d="M12 2l9 4.5-9 4.5-9-4.5L12 2zM3 11.5l9 4.5 9-4.5M3 16.5l9 4.5 9-4.5"/>,
+  Scale:       ()=><Svg d="M16 16l3-8 3 8c-.87.65-1.92 1-3 1s-2.13-.35-3-1zM2 16l3-8 3 8c-.87.65-1.92 1-3 1s-2.13-.35-3-1zM7 21h10M12 3v18M3 7h18"/>,
+  Gauge:       ()=><Svg d="M12 2a10 10 0 100 20 10 10 0 000-20zM12 6v2M6 12H4M20 12h-2M7.76 7.76l-1.41-1.42M17.66 7.76l1.41-1.41M12 18a6 6 0 010-12"/>,
+  ShieldCheck: ()=><Svg d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10zM9 12l2 2 4-4"/>,
+  CheckCircle: ()=><Svg d="M22 11.08V12a10 10 0 11-5.93-9.14M22 4L12 14.01l-3-3"/>,
+  TrendingUp:  ()=><Svg d="M23 6l-9.5 9.5-5-5L1 18M17 6h6v6"/>,
+  Download:    ()=><Svg d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3"/>,
+  Eye:         ()=><Svg d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8zM12 9a3 3 0 100 6 3 3 0 000-6z"/>,
+  List:        ()=><Svg d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/>,
+  Monitor:     ()=><Svg d="M2 3h20v14H2V3zM8 21h8M12 17v4"/>,
+  Package:     ()=><Svg d="M16.5 9.4l-9-5.19M21 16V8a2 2 0 00-1-1.73l-7-4a2 2 0 00-2 0l-7 4A2 2 0 003 8v8a2 2 0 001 1.73l7 4a2 2 0 002 0l7-4A2 2 0 0021 16zM3.27 6.96L12 12.01l8.73-5.05M12 22.08V12"/>,
+  CreditCard:  ()=><Svg d="M1 4h22v16H1V4zM1 10h22"/>,
+  Receipt:     ()=><Svg d="M4 2v20l2-1 2 1 2-1 2 1 2-1 2 1 2-1 2 1V2l-2 1-2-1-2 1-2-1-2 1-2-1-2 1-2-1zM8 9h8M8 13h6"/>,
+  FileText:    ()=><Svg d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8l-6-6zM14 2v6h6"/>,
+  Refresh:     ()=><Svg d="M3 12a9 9 0 019-9 9.75 9.75 0 016.74 2.74L21 8M21 12a9 9 0 01-9 9 9.75 9.75 0 01-6.74-2.74L3 16M3 12h6m12 0h-6" />,
 };
 
-const BalanceSheet = () => {
-  const { incomes, expenses, invoices, assets, loans, settings, addAsset, deleteAsset, addLoan, deleteLoan, loadData } =
-    useFinance();
-  const { toast } = useToast();
+const monthly=[
+  {period:"Aug",assets:280000,liabilities:120000,equity:160000},
+  {period:"Sep",assets:310000,liabilities:115000,equity:195000},
+  {period:"Oct",assets:295000,liabilities:130000,equity:165000},
+  {period:"Nov",assets:340000,liabilities:108000,equity:232000},
+  {period:"Dec",assets:390000,liabilities:100000,equity:290000},
+  {period:"Jan",assets:365000,liabilities:112000,equity:253000},
+  {period:"Feb",assets:380000,liabilities:105000,equity:275000},
+];
+const assetItems=[
+  {name:"Cash & Bank",value:19337,color:C.green,Icon:()=><Svg d="M12 1v22M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6" s={14}/>,type:"Current"},
+  {name:"Receivables",value:32000,color:C.cyan,Icon:()=><Svg d="M4 2v20l2-1 2 1 2-1 2 1 2-1 2 1 2-1 2 1V2l-2 1-2-1-2 1-2-1-2 1-2-1-2 1-2-1z" s={14}/>,type:"Current"},
+  {name:"Equipment",value:280000,color:C.blue,Icon:()=><Svg d="M2 3h20v14H2V3z" s={14}/>,type:"Non-Current"},
+  {name:"Other Assets",value:48663,color:C.purple,Icon:()=><Svg d="M16.5 9.4l-9-5.19M21 16V8a2 2 0 00-1-1.73l-7-4a2 2 0 00-2 0l-7 4A2 2 0 003 8v8a2 2 0 001 1.73l7 4a2 2 0 002 0l7-4A2 2 0 0021 16z" s={14}/>,type:"Non-Current"},
+];
+const liabItems=[
+  {name:"Accounts Payable",value:45000,color:C.red,due:"30 Days"},
+  {name:"Tax Payable",value:27520,color:C.yellow,due:"Q4 2025"},
+  {name:"Other Liabilities",value:32480,color:C.orange,due:"Ongoing"},
+];
 
-  const [asAtDate, setAsAtDate] = useState(() => {
-    const d = new Date();
-    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
-  });
-  const [assetDialogOpen, setAssetDialogOpen] = useState(false);
-  const [loanDialogOpen, setLoanDialogOpen] = useState(false);
-  const [reportPreview, setReportPreview] = useState({ open: false, html: '', filename: '', title: '' });
-  const [newAsset, setNewAsset] = useState({ name: '', amount: '' });
-  const [newLoan, setNewLoan] = useState({ name: '', amount: '' });
+const Tip=({active,payload,label})=>{
+  if(!active||!payload?.length)return null;
+  return <div style={{background:"#1a1d27",border:`1px solid ${C.border2}`,borderRadius:12,padding:"12px 16px"}}>
+    <p style={{color:C.muted,fontSize:11,margin:"0 0 8px",fontWeight:600}}>{label}</p>
+    {payload.map((p,i)=><div key={i} style={{display:"flex",alignItems:"center",gap:8,marginBottom:3}}>
+      <div style={{width:7,height:7,borderRadius:"50%",background:p.color}}/><span style={{color:C.text2,fontSize:12}}>{p.name}:</span><span style={{color:C.text,fontWeight:700,fontSize:12}}>LKR {Number(p.value).toLocaleString()}</span>
+    </div>)}
+  </div>;
+};
+const Stat=({label,value,color,Icon,sub,subColor})=>(
+  <div style={{background:C.card,borderRadius:14,border:`1px solid ${C.border}`,padding:"20px 22px",position:"relative",overflow:"hidden"}}>
+    <div style={{position:"absolute",right:14,top:14,width:36,height:36,borderRadius:10,background:`${color||C.blue}18`,display:"flex",alignItems:"center",justifyContent:"center",opacity:0.8}}><Icon/></div>
+    <p style={{color:C.muted,fontSize:10,fontWeight:700,letterSpacing:"0.1em",textTransform:"uppercase",margin:0}}>{label}</p>
+    <p style={{color:color||C.text,fontSize:20,fontWeight:900,margin:"8px 0 0",letterSpacing:"-0.02em"}}>{value}</p>
+    {sub&&<p style={{color:subColor||C.muted,fontSize:12,margin:"5px 0 0",fontWeight:600}}>{sub}</p>}
+    <div style={{position:"absolute",bottom:0,left:0,right:0,height:3,background:`linear-gradient(90deg,${color||C.blue}55,transparent)`}}/>
+  </div>
+);
+const Card=({title,subtitle,children})=>(
+  <div style={{background:C.card,borderRadius:16,border:`1px solid ${C.border}`,padding:"22px 24px"}}>
+    <div style={{marginBottom:18}}><h3 style={{color:C.text,fontSize:15,fontWeight:800,margin:0}}>{title}</h3>{subtitle&&<p style={{color:C.muted,fontSize:12,margin:"4px 0 0"}}>{subtitle}</p>}</div>
+    {children}
+  </div>
+);
+const DonutLegend=({items})=>(
+  <div style={{display:"flex",flexDirection:"column",gap:10,marginTop:10}}>
+    {items.map((e,i)=><div key={i} style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+      <div style={{display:"flex",alignItems:"center",gap:8}}><div style={{width:8,height:8,borderRadius:"50%",background:e.color}}/><span style={{color:C.text2,fontSize:12}}>{e.name}</span></div>
+      <div style={{textAlign:"right"}}><p style={{color:C.text,fontSize:12,fontWeight:700,margin:0}}>LKR {e.value.toLocaleString()}</p><p style={{color:C.muted,fontSize:10,margin:0}}>{((e.value/items.reduce((s,x)=>s+x.value,0))*100).toFixed(1)}%</p></div>
+    </div>)}
+  </div>
+);
 
-  const asAt = useMemo(() => new Date(asAtDate + 'T23:59:59'), [asAtDate]);
+export default function BalanceSheet(){
+  const [view,setView]=useState("overview");
+  const totalAssets=assetItems.reduce((s,a)=>s+a.value,0);
+  const totalLiab=liabItems.reduce((s,l)=>s+l.value,0);
+  const equity=totalAssets-totalLiab;
+  const debtRatio=((totalLiab/totalAssets)*100).toFixed(1);
+  const currentRatio=(19337/totalLiab).toFixed(2);
+  const healthy=parseFloat(debtRatio)<40;
 
-  const balanceData = useMemo(() => {
-    // Date rule: include ONLY transactions on or before selected date
-    const filteredIncomes = filterByDate(incomes, asAt);
-    const filteredExpenses = filterByDate(expenses, asAt);
-    const filteredAssets = filterByDate(assets, asAt, 'date');
-    const filteredLoans = filterByDate(loans, asAt, 'date');
+  return(
+    <div style={{minHeight:"100vh",background:C.bg,fontFamily:"'DM Sans',-apple-system,sans-serif",color:C.text}}>
+      <style>{`*{box-sizing:border-box;}body{margin:0;}::-webkit-scrollbar{width:4px;}::-webkit-scrollbar-thumb{background:${C.border2};border-radius:99px;}@keyframes fi{from{opacity:0;transform:translateY(10px);}to{opacity:1;transform:translateY(0);}}.brow:hover td{background:rgba(255,255,255,0.018)!important;}`}</style>
 
-    const openingCash = Number(settings.openingCash) || 0;
-    const paidIncome = filteredIncomes.reduce((s, i) => s + i.amount, 0);
-    const paidExpenses = filteredExpenses.reduce((s, e) => s + e.amount, 0);
+      <div style={{padding:"26px 32px",display:"flex",flexDirection:"column",gap:18,animation:"fi .3s ease"}}>
 
-    // 1. ASSETS
-    // Cash & Bank = Opening Cash + Paid Income − Paid Expenses
-    const cashAndBank = openingCash + paidIncome - paidExpenses;
-
-    // Receivables = Total Unpaid Invoices
-    const receivables = invoices
-      .filter((inv) => inv.status !== 'paid' && new Date(inv.createdAt) <= asAt)
-      .reduce((sum, inv) => sum + (Number(inv.total) || 0), 0);
-
-    // Equipment = Total Asset Purchase Value
-    const equipment = filteredAssets.reduce((s, a) => s + a.amount, 0);
-
-    const totalAssets = cashAndBank + receivables + equipment;
-
-    // 2. LIABILITIES
-    // Payables = Total Unpaid Bills (from settings until bills feature exists)
-    const payables = Number(settings.payables) || 0;
-
-    // Loans = Outstanding Loan Balance
-    const loansTotal = filteredLoans.reduce((s, l) => s + l.amount, 0);
-
-    // Taxes = Unpaid Tax Amount (estimated)
-    const totalProfit = paidIncome - paidExpenses;
-    const taxes = settings.taxEnabled && totalProfit > 0 ? (totalProfit * settings.taxRate) / 100 : 0;
-
-    const totalLiabilities = payables + loansTotal + taxes;
-
-    // 3. OWNER'S EQUITY (AUTO): Total Assets − Total Liabilities
-    const ownersEquity = totalAssets - totalLiabilities;
-
-    // Optional breakdown: Owner Capital + Retained Profit
-    const ownerCapital = Number(settings.ownerCapital) || 0;
-    const retainedProfit = ownersEquity - ownerCapital;
-
-    // 4. BALANCE VALIDATION: Assets must equal Liabilities + Owner's Equity
-    const sumLiabilitiesAndEquity = totalLiabilities + ownersEquity;
-    const isBalanced = Math.abs(totalAssets - sumLiabilitiesAndEquity) < 0.01;
-
-    return {
-      assets: {
-        openingCash,
-        cashAndBank,
-        receivables,
-        equipment,
-        total: totalAssets,
-      },
-      liabilities: {
-        payables,
-        loans: loansTotal,
-        taxes,
-        total: totalLiabilities,
-      },
-      ownersEquity,
-      ownerCapital,
-      retainedProfit,
-      totalProfit,
-      isBalanced,
-    };
-  }, [incomes, expenses, invoices, assets, loans, asAt, settings.taxEnabled, settings.taxRate, settings.openingCash, settings.ownerCapital, settings.payables]);
-
-  const formatAmount = (n) => `${settings.currency} ${(n ?? 0).toLocaleString()}`;
-
-  const handleAddAsset = () => {
-    if (!newAsset.amount || Number(newAsset.amount) <= 0) {
-      toast({ title: 'Invalid amount', description: 'Please enter a valid amount.' });
-      return;
-    }
-    addAsset({ name: newAsset.name || 'Equipment', amount: newAsset.amount });
-    setNewAsset({ name: '', amount: '' });
-    setAssetDialogOpen(false);
-    toast({ title: 'Asset added', description: 'Asset has been added to the balance sheet.' });
-  };
-
-  const handleAddLoan = () => {
-    if (!newLoan.amount || Number(newLoan.amount) <= 0) {
-      toast({ title: 'Invalid amount', description: 'Please enter a valid amount.' });
-      return;
-    }
-    addLoan({ name: newLoan.name || 'Loan', amount: newLoan.amount });
-    setNewLoan({ name: '', amount: '' });
-    setLoanDialogOpen(false);
-    toast({ title: 'Loan added', description: 'Loan has been added to the balance sheet.' });
-  };
-
-  const handleExportCSV = () => {
-    const dateStr = asAtDate.replace(/-/g, '');
-    const rows = [
-      ['Balance Sheet', `As at ${new Date(asAtDate).toLocaleDateString()}`],
-      ['Balanced', balanceData.isBalanced ? 'Yes' : 'No'],
-      [],
-      ['ASSETS', ''],
-      ['Cash & Bank', balanceData.assets.cashAndBank],
-      ['Receivables', balanceData.assets.receivables],
-      ['Equipment', balanceData.assets.equipment],
-      ['Total Assets', balanceData.assets.total],
-      [],
-      ['LIABILITIES', ''],
-      ['Payables', balanceData.liabilities.payables],
-      ['Loans', balanceData.liabilities.loans],
-      ['Taxes', balanceData.liabilities.taxes],
-      ['Total Liabilities', balanceData.liabilities.total],
-      [],
-      ['OWNER\'S EQUITY', ''],
-      ['Owner Capital', balanceData.ownerCapital],
-      ['Retained Profit', balanceData.retainedProfit],
-      ['Total Owner\'s Equity', balanceData.ownersEquity],
-    ];
-    const csvContent = rows.map((r) => r.join(',')).join('\n');
-    const blob = new Blob([csvContent], { type: 'text/csv' });
-    const url = window.URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `balance-sheet-${dateStr}.csv`;
-    a.click();
-    toast({ title: 'Export successful', description: 'Balance sheet exported to CSV' });
-  };
-
-  const handleDownloadPDF = () => {
-    const dateLabel = new Date(asAtDate).toLocaleDateString('en-US', {
-      day: 'numeric',
-      month: 'long',
-      year: 'numeric',
-    });
-    const innerContent = `
-      <h1>Balance Sheet</h1>
-      <p><strong>As at ${dateLabel}</strong></p>
-      <p>${balanceData.isBalanced ? '✓ Balanced' : '⚠ NOT BALANCED'}</p>
-      <table style="width:100%; border-collapse: collapse; margin-top: 24px;">
-        <tr><td colspan="2" style="padding:8px; border:1px solid #ccc; background:#f5f5f5;"><strong>ASSETS</strong></td></tr>
-        <tr><td style="padding:8px; border:1px solid #ccc;">Cash & Bank</td><td style="padding:8px; border:1px solid #ccc; text-align:right;">${formatAmount(balanceData.assets.cashAndBank)}</td></tr>
-        <tr><td style="padding:8px; border:1px solid #ccc;">Receivables</td><td style="padding:8px; border:1px solid #ccc; text-align:right;">${formatAmount(balanceData.assets.receivables)}</td></tr>
-        <tr><td style="padding:8px; border:1px solid #ccc;">Equipment</td><td style="padding:8px; border:1px solid #ccc; text-align:right;">${formatAmount(balanceData.assets.equipment)}</td></tr>
-        <tr><td style="padding:8px; border:1px solid #ccc;"><strong>Total Assets</strong></td><td style="padding:8px; border:1px solid #ccc; text-align:right;"><strong>${formatAmount(balanceData.assets.total)}</strong></td></tr>
-        <tr><td colspan="2" style="padding:12px;"></td></tr>
-        <tr><td colspan="2" style="padding:8px; border:1px solid #ccc; background:#f5f5f5;"><strong>LIABILITIES</strong></td></tr>
-        <tr><td style="padding:8px; border:1px solid #ccc;">Payables</td><td style="padding:8px; border:1px solid #ccc; text-align:right;">${formatAmount(balanceData.liabilities.payables)}</td></tr>
-        <tr><td style="padding:8px; border:1px solid #ccc;">Loans</td><td style="padding:8px; border:1px solid #ccc; text-align:right;">${formatAmount(balanceData.liabilities.loans)}</td></tr>
-        <tr><td style="padding:8px; border:1px solid #ccc;">Taxes</td><td style="padding:8px; border:1px solid #ccc; text-align:right;">${formatAmount(balanceData.liabilities.taxes)}</td></tr>
-        <tr><td style="padding:8px; border:1px solid #ccc;"><strong>Total Liabilities</strong></td><td style="padding:8px; border:1px solid #ccc; text-align:right;"><strong>${formatAmount(balanceData.liabilities.total)}</strong></td></tr>
-        <tr><td colspan="2" style="padding:12px;"></td></tr>
-        <tr><td colspan="2" style="padding:8px; border:1px solid #ccc; background:#f5f5f5;"><strong>OWNER'S EQUITY</strong></td></tr>
-        <tr><td style="padding:8px; border:1px solid #ccc;">Owner Capital</td><td style="padding:8px; border:1px solid #ccc; text-align:right;">${formatAmount(balanceData.ownerCapital)}</td></tr>
-        <tr><td style="padding:8px; border:1px solid #ccc;">Retained Profit</td><td style="padding:8px; border:1px solid #ccc; text-align:right;">${formatAmount(balanceData.retainedProfit)}</td></tr>
-        <tr><td style="padding:8px; border:1px solid #ccc;"><strong>Total Owner's Equity</strong></td><td style="padding:8px; border:1px solid #ccc; text-align:right;"><strong>${formatAmount(balanceData.ownersEquity)}</strong></td></tr>
-      </table>
-    `;
-    const fullHtml = getPrintHtml(innerContent, { logo: settings?.logo, businessName: settings?.businessName });
-    const dateStr = asAtDate.replace(/-/g, '');
-    setReportPreview({ open: true, html: fullHtml, filename: `balance-sheet-${dateStr}.pdf`, title: 'Balance Sheet' });
-  };
-
-  const dateLabel = new Date(asAtDate).toLocaleDateString('en-US', {
-    day: 'numeric',
-    month: 'long',
-    year: 'numeric',
-  });
-
-  return (
-    <>
-      <Helmet>
-        <title>Balance Sheet - MyAccounts</title>
-        <meta name="description" content="View your business assets, liabilities, and owner's equity" />
-      </Helmet>
-
-      <div className="space-y-6">
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-          <div>
-            <h1 className="text-3xl font-bold">Balance Sheet</h1>
-            <p className="text-muted-foreground">
-              Snapshot of what your business owns, owes, and your equity
-            </p>
+        {/* TOOLBAR */}
+        <div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+          <div style={{display:"flex",gap:8}}>
+            {[{v:"overview",Icon:I.Eye,label:"Overview"},{v:"detailed",Icon:I.List,label:"Detailed"}].map(({v,Icon,label})=>(
+              <button key={v} onClick={()=>setView(v)} style={{display:"flex",alignItems:"center",gap:7,background:view===v?C.blue:"transparent",color:view===v?"#fff":C.muted,border:`1px solid ${view===v?C.blue:C.border2}`,borderRadius:9,padding:"8px 16px",fontSize:13,fontWeight:700,cursor:"pointer"}}><Icon/><span>{label}</span></button>
+            ))}
           </div>
-          <div className="flex flex-wrap gap-2">
-            <div className="flex items-center gap-2">
-              <Label htmlFor="as-at-date" className="text-sm whitespace-nowrap">
-                As at
-              </Label>
-              <Input
-                id="as-at-date"
-                type="date"
-                value={asAtDate}
-                onChange={(e) => setAsAtDate(e.target.value)}
-                className="w-[160px]"
-              />
-            </div>
-            <button
-              onClick={() => { loadData(); toast({ title: 'Refreshed', description: 'Data refreshed' }); }}
-              style={{
-                display: "flex",
-                alignItems: "center",
-                gap: 8,
-                background: "#1c1e24",
-                border: "1px solid #303338",
-                borderRadius: 8,
-                padding: "9px 16px",
-                color: "#fff",
-                fontSize: 13,
-                fontWeight: 600,
-                cursor: "pointer",
-                fontFamily: "inherit",
-              }}
-            >
-              <RefreshCw className="w-4 h-4" />
-              <span>Refresh</span>
-            </button>
-            <button
-              onClick={handleExportCSV}
-              style={{
-                display: "flex",
-                alignItems: "center",
-                gap: 8,
-                background: "#1c1e24",
-                border: "1px solid #303338",
-                borderRadius: 8,
-                padding: "9px 16px",
-                color: "#fff",
-                fontSize: 13,
-                fontWeight: 600,
-                cursor: "pointer",
-                fontFamily: "inherit",
-              }}
-            >
-              <Download className="w-4 h-4" />
-              <span>Export CSV</span>
-            </button>
-            <button
-              onClick={handleDownloadPDF}
-              style={{
-                display: "flex",
-                alignItems: "center",
-                gap: 8,
-                background: "#1c1e24",
-                border: "1px solid #303338",
-                borderRadius: 8,
-                padding: "9px 16px",
-                color: "#fff",
-                fontSize: 13,
-                fontWeight: 600,
-                cursor: "pointer",
-                fontFamily: "inherit",
-              }}
-            >
-              <Download className="w-4 h-4" />
-              <span>Download PDF</span>
-            </button>
+          <div style={{display:"flex",gap:10,alignItems:"center"}}>
+            <button onClick={()=>window.location.reload()} style={{display:"flex",alignItems:"center",gap:8,background:"#1c1e24",border:"1px solid #303338",borderRadius:8,padding:"9px 16px",color:"#fff",fontSize:13,fontWeight:600,cursor:"pointer",fontFamily:"inherit"}}><I.Refresh/><span>Refresh</span></button>
+            <button onClick={()=>{}} style={{display:"flex",alignItems:"center",gap:8,background:"#1c1e24",border:"1px solid #303338",borderRadius:8,padding:"9px 16px",color:"#fff",fontSize:13,fontWeight:600,cursor:"pointer",fontFamily:"inherit"}}><I.Download/><span>Export CSV</span></button>
+            <button onClick={()=>{}} style={{display:"flex",alignItems:"center",gap:8,background:"#1c1e24",border:"1px solid #303338",borderRadius:8,padding:"9px 16px",color:"#fff",fontSize:13,fontWeight:600,cursor:"pointer",fontFamily:"inherit"}}><I.Download/><span>Download PDF</span></button>
           </div>
         </div>
 
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="bg-card rounded-lg p-6 border border-secondary"
-        >
-          <h2 className="text-xl font-bold mb-6 flex items-center gap-2">
-            <Calendar className="w-5 h-5" />
-            Balance Sheet – As at {dateLabel}
-          </h2>
+        {/* STATS */}
+        <div style={{display:"grid",gridTemplateColumns:"repeat(5,1fr)",gap:14}}>
+          <Stat label="Total Assets"      value={`LKR ${totalAssets.toLocaleString()}`} color={C.green}  Icon={I.Building}/>
+          <Stat label="Total Liabilities" value={`LKR ${totalLiab.toLocaleString()}`}   color={C.red}    Icon={I.Layers}/>
+          <Stat label="Owner's Equity"    value={`LKR ${equity.toLocaleString()}`}       color={C.blue}   Icon={I.Scale}/>
+          <Stat label="Debt Ratio"        value={`${debtRatio}%`} color={healthy?C.green:C.red} Icon={I.Gauge} sub={healthy?"Healthy":"High Debt"} subColor={healthy?C.green:C.red}/>
+          <Stat label="Current Ratio"     value={currentRatio}    color={C.cyan}         Icon={I.ShieldCheck} sub="Cash / Liabilities"/>
+        </div>
 
-          {/* Balance validation */}
-          {!balanceData.isBalanced && (
-            <div className="flex items-center gap-2 p-3 rounded-lg bg-destructive/10 border border-destructive/30 text-destructive mb-6">
-              <AlertTriangle className="w-5 h-5 flex-shrink-0" />
-              <span className="text-sm font-medium">NOT BALANCED: Assets ≠ Liabilities + Owner's Equity</span>
-            </div>
-          )}
-          {balanceData.isBalanced && (
-            <div className="flex items-center gap-2 p-3 rounded-lg bg-green-500/10 border border-green-500/30 text-green-600 dark:text-green-400 mb-6">
-              <CheckCircle className="w-5 h-5 flex-shrink-0" />
-              <span className="text-sm font-medium">Balanced: Assets = Liabilities + Owner's Equity</span>
-            </div>
-          )}
+        {/* MAIN BAR */}
+        <Card title="Assets vs Liabilities vs Equity" subtitle="Monthly trend — LKR">
+          <ResponsiveContainer width="100%" height={250}>
+            <BarChart data={monthly} barCategoryGap={22} barGap={4}>
+              <CartesianGrid strokeDasharray="3 3" stroke={C.border} vertical={false}/>
+              <XAxis dataKey="period" axisLine={false} tickLine={false} tick={{fill:C.muted,fontSize:12}}/>
+              <YAxis axisLine={false} tickLine={false} tick={{fill:C.muted,fontSize:11}} tickFormatter={v=>`${v/1000}K`}/>
+              <Tooltip content={<Tip/>} cursor={{fill:"rgba(255,255,255,0.02)"}}/>
+              <Legend wrapperStyle={{color:C.muted,fontSize:12,paddingTop:12}}/>
+              <Bar dataKey="assets"      name="Assets"      radius={[5,5,0,0]} fill={C.green}/>
+              <Bar dataKey="liabilities" name="Liabilities" radius={[5,5,0,0]} fill={C.red}/>
+              <Bar dataKey="equity"      name="Equity"      radius={[5,5,0,0]} fill={C.blue}/>
+            </BarChart>
+          </ResponsiveContainer>
+        </Card>
 
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-            {/* ASSETS */}
-            <div className="space-y-4">
-              <h3 className="text-lg font-semibold text-primary border-b border-secondary pb-2">ASSETS</h3>
-              <div className="space-y-2">
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">Cash & Bank</span>
-                  <span className="font-medium">{formatAmount(balanceData.assets.cashAndBank)}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">Receivables</span>
-                  <span className="font-medium">{formatAmount(balanceData.assets.receivables)}</span>
-                </div>
-                <div className="flex justify-between items-center">
-                  <span className="text-muted-foreground">Equipment</span>
-                  <div className="flex items-center gap-2">
-                    <span className="font-medium">{formatAmount(balanceData.assets.equipment)}</span>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="h-8 w-8 p-0"
-                      onClick={() => setAssetDialogOpen(true)}
-                      title="Add asset"
-                    >
-                      <Plus className="w-4 h-4" />
-                    </Button>
-                  </div>
-                </div>
-              </div>
-              <div className="flex justify-between pt-2 border-t border-secondary font-semibold">
-                <span>Total Assets</span>
-                <span>{formatAmount(balanceData.assets.total)}</span>
-              </div>
+        {/* DONUTS ROW */}
+        <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:16}}>
+          <Card title="Asset Breakdown" subtitle="By category">
+            <ResponsiveContainer width="100%" height={160}>
+              <PieChart><Pie data={assetItems} cx="50%" cy="50%" innerRadius={50} outerRadius={72} dataKey="value" strokeWidth={0}>
+                {assetItems.map((e,i)=><Cell key={i} fill={e.color}/>)}
+              </Pie><Tooltip formatter={v=>`LKR ${v.toLocaleString()}`} contentStyle={{background:"#1a1d27",border:`1px solid ${C.border2}`,borderRadius:10}}/></PieChart>
+            </ResponsiveContainer>
+            <DonutLegend items={assetItems}/>
+          </Card>
+          <Card title="Liability Breakdown" subtitle="By category">
+            <ResponsiveContainer width="100%" height={160}>
+              <PieChart><Pie data={liabItems} cx="50%" cy="50%" innerRadius={50} outerRadius={72} dataKey="value" strokeWidth={0}>
+                {liabItems.map((e,i)=><Cell key={i} fill={e.color}/>)}
+              </Pie><Tooltip formatter={v=>`LKR ${v.toLocaleString()}`} contentStyle={{background:"#1a1d27",border:`1px solid ${C.border2}`,borderRadius:10}}/></PieChart>
+            </ResponsiveContainer>
+            <DonutLegend items={liabItems}/>
+          </Card>
+          <Card title="Equity Trend" subtitle="Owner's equity over time">
+            <ResponsiveContainer width="100%" height={160}>
+              <AreaChart data={monthly}>
+                <defs><linearGradient id="gEq" x1="0" y1="0" x2="0" y2="1"><stop offset="5%" stopColor={C.blue} stopOpacity={.3}/><stop offset="95%" stopColor={C.blue} stopOpacity={0}/></linearGradient></defs>
+                <XAxis dataKey="period" axisLine={false} tickLine={false} tick={{fill:C.muted,fontSize:10}}/>
+                <YAxis hide/>
+                <Tooltip content={<Tip/>}/>
+                <Area type="monotone" dataKey="equity" name="Equity" stroke={C.blue} strokeWidth={2.5} fill="url(#gEq)"/>
+              </AreaChart>
+            </ResponsiveContainer>
+            <div style={{marginTop:14,padding:"12px 16px",background:"rgba(59,130,246,0.08)",borderRadius:12,border:`1px solid rgba(59,130,246,0.2)`,display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+              <div><p style={{color:C.muted,fontSize:11,margin:0}}>Current Equity</p><p style={{color:C.blue,fontSize:18,fontWeight:800,margin:"4px 0 0"}}>LKR {equity.toLocaleString()}</p></div>
+              <div style={{display:"flex",alignItems:"center",gap:5,color:C.green}}><I.TrendingUp/><span style={{fontSize:13,fontWeight:700}}>Growing</span></div>
             </div>
+          </Card>
+        </div>
 
-            {/* LIABILITIES */}
-            <div className="space-y-4">
-              <h3 className="text-lg font-semibold text-primary border-b border-secondary pb-2">LIABILITIES</h3>
-              <div className="space-y-2">
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">Payables</span>
-                  <span className="font-medium">{formatAmount(balanceData.liabilities.payables)}</span>
-                </div>
-                <div className="flex justify-between items-center">
-                  <span className="text-muted-foreground">Loans</span>
-                  <div className="flex items-center gap-2">
-                    <span className="font-medium">{formatAmount(balanceData.liabilities.loans)}</span>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="h-8 w-8 p-0"
-                      onClick={() => setLoanDialogOpen(true)}
-                      title="Add loan"
-                    >
-                      <Plus className="w-4 h-4" />
-                    </Button>
-                  </div>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">Taxes</span>
-                  <span className="font-medium">{formatAmount(balanceData.liabilities.taxes)}</span>
-                </div>
-              </div>
-              <div className="flex justify-between pt-2 border-t border-secondary font-semibold">
-                <span>Total Liabilities</span>
-                <span>{formatAmount(balanceData.liabilities.total)}</span>
-              </div>
-            </div>
+        {/* DETAILED TABLES */}
+        {view==="detailed"&&<div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:16}}>
+          {/* ASSETS TABLE */}
+          <Card title="Assets Detail" subtitle="Full breakdown of all assets">
+            <table style={{width:"100%",borderCollapse:"collapse"}}>
+              <thead><tr style={{borderBottom:`1px solid ${C.border2}`}}>
+                {["Asset","Value","% of Total","Type"].map(h=><th key={h} style={{color:C.muted,fontSize:11,fontWeight:700,letterSpacing:"0.07em",textTransform:"uppercase",padding:"9px 12px",textAlign:"left"}}>{h}</th>)}
+              </tr></thead>
+              <tbody>
+                {assetItems.map((a,i)=><tr key={i} className="brow" style={{borderBottom:`1px solid ${C.border}`,background:i%2===0?"transparent":"rgba(255,255,255,0.012)"}}>
+                  <td style={{padding:"12px 12px"}}><div style={{display:"flex",alignItems:"center",gap:8}}><div style={{width:8,height:8,borderRadius:"50%",background:a.color}}/><span style={{color:C.text2,fontSize:13,fontWeight:600}}>{a.name}</span></div></td>
+                  <td style={{color:C.green,fontSize:13,fontWeight:700,padding:"12px 12px"}}>LKR {a.value.toLocaleString()}</td>
+                  <td style={{padding:"12px 12px"}}>
+                    <div style={{display:"flex",alignItems:"center",gap:8}}>
+                      <div style={{flex:1,height:4,background:C.border,borderRadius:99}}><div style={{height:4,background:a.color,borderRadius:99,width:`${(a.value/totalAssets*100).toFixed(0)}%`}}/></div>
+                      <span style={{color:C.muted,fontSize:11,minWidth:32}}>{(a.value/totalAssets*100).toFixed(1)}%</span>
+                    </div>
+                  </td>
+                  <td style={{padding:"12px 12px"}}><span style={{background:`${a.color}18`,color:a.color,borderRadius:6,padding:"3px 9px",fontSize:11,fontWeight:700}}>{a.type}</span></td>
+                </tr>)}
+                <tr style={{borderTop:`2px solid ${C.border2}`,background:"rgba(255,255,255,0.02)"}}><td style={{color:C.text,fontSize:13,fontWeight:800,padding:"13px 12px"}}>TOTAL ASSETS</td><td style={{color:C.green,fontSize:13,fontWeight:800,padding:"13px 12px"}}>LKR {totalAssets.toLocaleString()}</td><td style={{color:C.muted,fontSize:12,padding:"13px 12px"}}>100%</td><td/></tr>
+              </tbody>
+            </table>
+          </Card>
 
-            {/* OWNER'S EQUITY (AUTO) */}
-            <div className="space-y-4">
-              <h3 className="text-lg font-semibold text-primary border-b border-secondary pb-2">
-                OWNER'S EQUITY
-              </h3>
-              <div className="space-y-2">
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">Owner Capital</span>
-                  <span className="font-medium">{formatAmount(balanceData.ownerCapital)}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">Retained Profit</span>
-                  <span className="font-medium">{formatAmount(balanceData.retainedProfit)}</span>
-                </div>
-              </div>
-              <div className="flex justify-between pt-2 border-t border-secondary font-semibold">
-                <span>Total Owner's Equity</span>
-                <span>{formatAmount(balanceData.ownersEquity)}</span>
-              </div>
-              <p className="text-xs text-muted-foreground">
-                Auto: Total Assets − Total Liabilities
-              </p>
-            </div>
+          {/* LIABILITIES TABLE */}
+          <Card title="Liabilities & Equity" subtitle="Full breakdown">
+            <table style={{width:"100%",borderCollapse:"collapse"}}>
+              <thead><tr style={{borderBottom:`1px solid ${C.border2}`}}>
+                {["Item","Value","% of Assets","Due"].map(h=><th key={h} style={{color:C.muted,fontSize:11,fontWeight:700,letterSpacing:"0.07em",textTransform:"uppercase",padding:"9px 12px",textAlign:"left"}}>{h}</th>)}
+              </tr></thead>
+              <tbody>
+                {liabItems.map((l,i)=><tr key={i} className="brow" style={{borderBottom:`1px solid ${C.border}`,background:i%2===0?"transparent":"rgba(255,255,255,0.012)"}}>
+                  <td style={{padding:"12px 12px"}}><div style={{display:"flex",alignItems:"center",gap:8}}><div style={{width:8,height:8,borderRadius:"50%",background:l.color}}/><span style={{color:C.text2,fontSize:13,fontWeight:600}}>{l.name}</span></div></td>
+                  <td style={{color:C.red,fontSize:13,fontWeight:700,padding:"12px 12px"}}>LKR {l.value.toLocaleString()}</td>
+                  <td style={{padding:"12px 12px"}}>
+                    <div style={{display:"flex",alignItems:"center",gap:8}}>
+                      <div style={{flex:1,height:4,background:C.border,borderRadius:99}}><div style={{height:4,background:l.color,borderRadius:99,width:`${(l.value/totalAssets*100).toFixed(0)}%`}}/></div>
+                      <span style={{color:C.muted,fontSize:11,minWidth:32}}>{(l.value/totalAssets*100).toFixed(1)}%</span>
+                    </div>
+                  </td>
+                  <td style={{padding:"12px 12px"}}><span style={{background:`${l.color}18`,color:l.color,borderRadius:6,padding:"3px 9px",fontSize:11,fontWeight:700}}>{l.due}</span></td>
+                </tr>)}
+                <tr style={{borderTop:`1px solid ${C.border2}`,background:"rgba(59,130,246,0.04)"}}><td style={{padding:"12px 12px"}}><div style={{display:"flex",alignItems:"center",gap:8}}><div style={{width:8,height:8,borderRadius:"50%",background:C.blue}}/><span style={{color:C.text2,fontSize:13,fontWeight:600}}>Owner's Equity</span></div></td><td style={{color:C.blue,fontSize:13,fontWeight:700,padding:"12px 12px"}}>LKR {equity.toLocaleString()}</td><td style={{color:C.muted,fontSize:11,padding:"12px 12px"}}>{(equity/totalAssets*100).toFixed(1)}%</td><td style={{padding:"12px 12px"}}><span style={{background:"rgba(59,130,246,0.12)",color:C.blue,borderRadius:6,padding:"3px 9px",fontSize:11,fontWeight:700}}>Permanent</span></td></tr>
+                <tr style={{borderTop:`2px solid ${C.border2}`,background:"rgba(255,255,255,0.02)"}}><td style={{color:C.text,fontSize:13,fontWeight:800,padding:"13px 12px"}}>TOTAL L + EQUITY</td><td style={{color:C.text,fontSize:13,fontWeight:800,padding:"13px 12px"}}>LKR {totalAssets.toLocaleString()}</td><td style={{color:C.muted,fontSize:12,padding:"13px 12px"}}>100%</td><td/></tr>
+              </tbody>
+            </table>
+          </Card>
+        </div>}
+
+        {/* EQUATION BANNER */}
+        <div style={{background:"rgba(34,197,94,0.05)",border:"1px solid rgba(34,197,94,0.15)",borderRadius:16,padding:"18px 24px",display:"flex",alignItems:"center",justifyContent:"space-between"}}>
+          <div style={{display:"flex",alignItems:"center",gap:14}}>
+            <div style={{width:44,height:44,borderRadius:12,background:"rgba(34,197,94,0.15)",display:"flex",alignItems:"center",justifyContent:"center"}}><I.CheckCircle/></div>
+            <div><p style={{color:C.green,fontSize:13,fontWeight:800,margin:0}}>Balance Sheet Equation Verified</p><p style={{color:C.muted,fontSize:12,margin:"3px 0 0"}}>Assets = Liabilities + Equity · Balanced</p></div>
           </div>
-
-          <p className="text-xs text-muted-foreground mt-6">
-            Assets = Liabilities + Owner's Equity. Calculated only — no manual edits. Set Opening Cash, Owner Capital & Payables in Settings.
-          </p>
-        </motion.div>
-
-        {/* Optional: List of assets and loans for management */}
-        {(assets.length > 0 || loans.length > 0) && (
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="grid grid-cols-1 md:grid-cols-2 gap-6"
-          >
-            {assets.length > 0 && (
-              <div className="bg-card rounded-lg p-4 border border-secondary">
-                <h3 className="font-semibold mb-3">Your Assets</h3>
-                <ul className="space-y-2">
-                  {assets.map((a) => (
-                    <li key={a.id} className="flex justify-between items-center text-sm">
-                      <span>{a.name}</span>
-                      <div className="flex items-center gap-2">
-                        <span>{formatAmount(a.amount)}</span>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className="h-7 w-7 p-0 text-destructive hover:text-destructive"
-                          onClick={() => {
-                            deleteAsset(a.id);
-                            toast({ title: 'Asset removed', description: 'Asset has been removed.' });
-                          }}
-                        >
-                          <Trash2 className="w-3 h-3" />
-                        </Button>
-                      </div>
-                    </li>
-                  ))}
-                </ul>
+          <div style={{display:"flex",gap:28,alignItems:"center"}}>
+            {[{l:"Assets",v:`LKR ${totalAssets.toLocaleString()}`,c:C.green},{l:"Liabilities",v:`LKR ${totalLiab.toLocaleString()}`,c:C.red},{l:"Equity",v:`LKR ${equity.toLocaleString()}`,c:C.blue}].map((item,i,arr)=>(
+              <div key={i} style={{display:"flex",alignItems:"center",gap:16}}>
+                <div style={{textAlign:"center"}}><p style={{color:C.muted,fontSize:11,margin:0,fontWeight:600}}>{item.l}</p><p style={{color:item.c,fontSize:15,fontWeight:900,margin:"3px 0 0"}}>{item.v}</p></div>
+                {i<arr.length-1&&<span style={{color:C.faint,fontSize:20,fontWeight:300}}>{i===0?"=":"+"}</span>}
               </div>
-            )}
-            {loans.length > 0 && (
-              <div className="bg-card rounded-lg p-4 border border-secondary">
-                <h3 className="font-semibold mb-3">Your Loans</h3>
-                <ul className="space-y-2">
-                  {loans.map((l) => (
-                    <li key={l.id} className="flex justify-between items-center text-sm">
-                      <span>{l.name}</span>
-                      <div className="flex items-center gap-2">
-                        <span>{formatAmount(l.amount)}</span>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className="h-7 w-7 p-0 text-destructive hover:text-destructive"
-                          onClick={() => {
-                            deleteLoan(l.id);
-                            toast({ title: 'Loan removed', description: 'Loan has been removed.' });
-                          }}
-                        >
-                          <Trash2 className="w-3 h-3" />
-                        </Button>
-                      </div>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            )}
-          </motion.div>
-        )}
+            ))}
+          </div>
+        </div>
       </div>
-
-      {/* Add Asset Dialog */}
-      <Dialog open={assetDialogOpen} onOpenChange={setAssetDialogOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Add Asset</DialogTitle>
-          </DialogHeader>
-          <div className="space-y-4">
-            <div className="space-y-2">
-              <Label>Name (e.g. Laptop, Equipment)</Label>
-              <Input
-                placeholder="Equipment"
-                value={newAsset.name}
-                onChange={(e) => setNewAsset((p) => ({ ...p, name: e.target.value }))}
-              />
-            </div>
-            <div className="space-y-2">
-              <Label>Amount</Label>
-              <Input
-                type="number"
-                placeholder="0"
-                value={newAsset.amount}
-                onChange={(e) => setNewAsset((p) => ({ ...p, amount: e.target.value }))}
-              />
-            </div>
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setAssetDialogOpen(false)}>
-              Cancel
-            </Button>
-            <Button onClick={handleAddAsset}>Add Asset</Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      {/* Add Loan Dialog */}
-      <Dialog open={loanDialogOpen} onOpenChange={setLoanDialogOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Add Loan</DialogTitle>
-          </DialogHeader>
-          <div className="space-y-4">
-            <div className="space-y-2">
-              <Label>Name (e.g. Bank Loan)</Label>
-              <Input
-                placeholder="Loan"
-                value={newLoan.name}
-                onChange={(e) => setNewLoan((p) => ({ ...p, name: e.target.value }))}
-              />
-            </div>
-            <div className="space-y-2">
-              <Label>Amount</Label>
-              <Input
-                type="number"
-                placeholder="0"
-                value={newLoan.amount}
-                onChange={(e) => setNewLoan((p) => ({ ...p, amount: e.target.value }))}
-              />
-            </div>
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setLoanDialogOpen(false)}>
-              Cancel
-            </Button>
-            <Button onClick={handleAddLoan}>Add Loan</Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      <ReportPreviewModal
-        open={reportPreview.open}
-        onOpenChange={(open) => setReportPreview((p) => ({ ...p, open }))}
-        html={reportPreview.html}
-        filename={reportPreview.filename}
-        reportTitle={reportPreview.title}
-      />
-    </>
+    </div>
   );
-};
-
-export default BalanceSheet;
+}

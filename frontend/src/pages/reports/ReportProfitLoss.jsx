@@ -1,417 +1,197 @@
-import React, { useMemo, useState } from 'react';
-import { Helmet } from 'react-helmet';
-import { motion } from 'framer-motion';
-import { Download, RefreshCw, Calendar } from 'lucide-react';
-import { useFinance } from '@/contexts/FinanceContext';
-import ReportPreviewModal from '@/components/ReportPreviewModal';
-import { getPrintHtml } from '@/utils/pdfPrint';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { useToast } from '@/components/ui/use-toast';
+import { useState } from "react";
+import { BarChart, Bar, LineChart, Line, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from "recharts";
 
-const filterByRange = (items, range, dateKey = 'date') => {
-  if (!range) return items;
-  return items.filter((i) => {
-    const d = new Date(i[dateKey]);
-    return d >= range.start && d <= range.end;
-  });
+// ── COLORS ────────────────────────────────────────────────────────────────────
+const C = { bg:"#0c0e14",bg2:"#0f1117",card:"#13161e",border:"#1e2433",border2:"#2a3347",text:"#fff",text2:"#d1d9e6",muted:"#8b9ab0",faint:"#4a5568",green:"#22c55e",red:"#ef4444",blue:"#3b82f6",cyan:"#22d3ee",yellow:"#eab308",purple:"#a78bfa" };
+
+// ── SVG ICONS ─────────────────────────────────────────────────────────────────
+const Svg = ({ d, s=18, c="#fff", sw=2 }) => <svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth={sw} strokeLinecap="round" strokeLinejoin="round" style={{display:"block",flexShrink:0}}><path d={d}/></svg>;
+const I = {
+  Revenue:    ()=><Svg d="M12 1v22M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/>,
+  Expense:    ()=><Svg d="M23 18l-9.5-9.5-5 5L1 6M17 18h6v-6"/>,
+  Profit:     ()=><Svg d="M18 20V10M12 20V4M6 20v-6"/>,
+  Award:      ()=><Svg d="M12 15a7 7 0 100-14 7 7 0 000 14zM8.21 13.89L7 23l5-3 5 3-1.21-9.12"/>,
+  Download:   ()=><Svg d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3"/>,
+  ArrowUp:    ()=><Svg d="M12 19V5M5 12l7-7 7 7"/>,
+  ArrowDown:  ()=><Svg d="M12 5v14M19 12l-7 7-7-7"/>,
+  Calendar:   ()=><Svg d="M3 4h18v18H3V4zM16 2v4M8 2v4M3 10h18"/>,
+  Refresh:    ()=><Svg d="M3 12a9 9 0 019-9 9.75 9.75 0 016.74 2.74L21 8M21 12a9 9 0 01-9 9 9.75 9.75 0 01-6.74-2.74L3 16M3 12h6m12 0h-6" />,
 };
 
-const getDateRange = (option, fromDate, toDate) => {
-  const now = new Date();
-  if (option === 'this_month') {
-    const start = new Date(now.getFullYear(), now.getMonth(), 1);
-    const end = new Date(now.getFullYear(), now.getMonth() + 1, 0);
-    return { start, end };
-  }
-  if (option === 'last_month') {
-    const start = new Date(now.getFullYear(), now.getMonth() - 1, 1);
-    const end = new Date(now.getFullYear(), now.getMonth(), 0);
-    return { start, end };
-  }
-  if (option === 'this_year') {
-    const start = new Date(now.getFullYear(), 0, 1);
-    const end = new Date(now.getFullYear(), 11, 31);
-    return { start, end };
-  }
-  if (option === 'custom' && fromDate && toDate) {
-    return {
-      start: new Date(fromDate + 'T00:00:00'),
-      end: new Date(toDate + 'T23:59:59'),
-    };
-  }
-  return null;
+// ── DATA ──────────────────────────────────────────────────────────────────────
+const monthly = [
+  {month:"Aug",income:45000,expenses:28000,profit:17000},
+  {month:"Sep",income:52000,expenses:31000,profit:21000},
+  {month:"Oct",income:38000,expenses:35000,profit:3000},
+  {month:"Nov",income:61000,expenses:29000,profit:32000},
+  {month:"Dec",income:74000,expenses:42000,profit:32000},
+  {month:"Jan",income:58000,expenses:38000,profit:20000},
+  {month:"Feb",income:32000,expenses:12663,profit:19337},
+];
+const expCats = [
+  {name:"Tools & Software",value:7563,color:C.blue},
+  {name:"Rent / Hosting",value:5000,color:C.purple},
+  {name:"Wi-Fi & Comms",value:1100,color:C.cyan},
+  {name:"Reload & Misc",value:100,color:C.yellow},
+];
+const incSrc = [
+  {name:"Graphic Design",value:18000,color:C.green},
+  {name:"System Dev",value:30000,color:C.blue},
+  {name:"Consulting",value:8000,color:C.cyan},
+  {name:"Other",value:4000,color:C.purple},
+];
+
+// ── SHARED COMPONENTS ─────────────────────────────────────────────────────────
+const Tip = ({active,payload,label})=>{
+  if(!active||!payload?.length)return null;
+  return <div style={{background:"#1a1d27",border:`1px solid ${C.border2}`,borderRadius:12,padding:"12px 16px",boxShadow:"0 8px 32px rgba(0,0,0,0.5)"}}>
+    <p style={{color:C.muted,fontSize:11,margin:"0 0 8px",fontWeight:600}}>{label}</p>
+    {payload.map((p,i)=><div key={i} style={{display:"flex",alignItems:"center",gap:8,marginBottom:3}}>
+      <div style={{width:7,height:7,borderRadius:"50%",background:p.color}}/><span style={{color:C.text2,fontSize:12}}>{p.name}:</span><span style={{color:C.text,fontWeight:700,fontSize:12}}>LKR {Number(p.value).toLocaleString()}</span>
+    </div>)}
+  </div>;
 };
+const Stat = ({label,value,color,Icon,sub,subColor})=>(
+  <div style={{background:C.card,borderRadius:14,border:`1px solid ${C.border}`,padding:"20px 22px",position:"relative",overflow:"hidden"}}>
+    <div style={{position:"absolute",right:14,top:14,width:36,height:36,borderRadius:10,background:`${color||C.blue}18`,display:"flex",alignItems:"center",justifyContent:"center",opacity:0.8}}><Icon/></div>
+    <p style={{color:C.muted,fontSize:10,fontWeight:700,letterSpacing:"0.1em",textTransform:"uppercase",margin:0}}>{label}</p>
+    <p style={{color:color||C.text,fontSize:22,fontWeight:900,margin:"8px 0 0",letterSpacing:"-0.02em"}}>{value}</p>
+    {sub&&<p style={{color:subColor||C.muted,fontSize:12,margin:"5px 0 0",fontWeight:600}}>{sub}</p>}
+    <div style={{position:"absolute",bottom:0,left:0,right:0,height:3,background:`linear-gradient(90deg,${color||C.blue}55,transparent)`}}/>
+  </div>
+);
+const Card = ({title,subtitle,children,right})=>(
+  <div style={{background:C.card,borderRadius:16,border:`1px solid ${C.border}`,padding:"22px 24px"}}>
+    <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:18}}>
+      <div><h3 style={{color:C.text,fontSize:15,fontWeight:800,margin:0}}>{title}</h3>{subtitle&&<p style={{color:C.muted,fontSize:12,margin:"4px 0 0"}}>{subtitle}</p>}</div>
+      {right}
+    </div>
+    {children}
+  </div>
+);
+const Legend2 = ({items})=>(
+  <div style={{display:"flex",flexDirection:"column",gap:9,marginTop:10}}>
+    {items.map((e,i)=><div key={i} style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+      <div style={{display:"flex",alignItems:"center",gap:7}}><div style={{width:8,height:8,borderRadius:"50%",background:e.color}}/><span style={{color:C.text2,fontSize:12}}>{e.name}</span></div>
+      <span style={{color:C.text,fontSize:12,fontWeight:700}}>LKR {e.value.toLocaleString()}</span>
+    </div>)}
+  </div>
+);
 
-const ReportProfitLoss = () => {
-  const { incomes, expenses, settings, loadData } = useFinance();
-  const { toast } = useToast();
-  const [reportPreview, setReportPreview] = useState({ open: false, html: '', filename: '', title: '' });
+export default function ProfitLoss(){
+  const [period,setPeriod]=useState("7M");
+  const totalIncome=monthly.reduce((s,m)=>s+m.income,0);
+  const totalExp=monthly.reduce((s,m)=>s+m.expenses,0);
+  const netProfit=totalIncome-totalExp;
+  const margin=((netProfit/totalIncome)*100).toFixed(1);
+  const best=monthly.reduce((a,b)=>a.profit>b.profit?a:b);
 
-  const [periodOption, setPeriodOption] = useState('this_month');
-  const [fromDate, setFromDate] = useState(() => {
-    const d = new Date();
-    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-01`;
-  });
-  const [toDate, setToDate] = useState(() => {
-    const d = new Date();
-    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
-  });
+  return(
+    <div style={{minHeight:"100vh",background:C.bg,fontFamily:"'DM Sans',-apple-system,sans-serif",color:C.text}}>
+      <style>{`*{box-sizing:border-box;}body{margin:0;}::-webkit-scrollbar{width:4px;}::-webkit-scrollbar-thumb{background:${C.border2};border-radius:99px;}@keyframes fi{from{opacity:0;transform:translateY(10px);}to{opacity:1;transform:translateY(0);}}.row:hover{background:#1a1d27!important;}`}</style>
+      <div style={{padding:"26px 32px",display:"flex",flexDirection:"column",gap:18,animation:"fi .3s ease"}}>
 
-  const range = useMemo(
-    () => getDateRange(periodOption, fromDate, toDate),
-    [periodOption, fromDate, toDate]
-  );
-
-  const plData = useMemo(() => {
-    const filteredIncomes = filterByRange(incomes, range);
-    const filteredExpenses = filterByRange(expenses, range);
-
-    const incomeByCategory = filteredIncomes.reduce((acc, i) => {
-      const name = i.serviceType?.trim() || 'Other';
-      acc[name] = (acc[name] || 0) + i.amount;
-      return acc;
-    }, {});
-
-    const expenseByCategory = filteredExpenses.reduce((acc, e) => {
-      const name = e.category || 'Other';
-      acc[name] = (acc[name] || 0) + e.amount;
-      return acc;
-    }, {});
-
-    const incomeItems = Object.entries(incomeByCategory)
-      .map(([name, amount]) => ({ name, amount }))
-      .sort((a, b) => b.amount - a.amount);
-
-    const expenseItems = Object.entries(expenseByCategory)
-      .map(([name, amount]) => ({ name, amount }))
-      .sort((a, b) => b.amount - a.amount);
-
-    const totalIncome = incomeItems.reduce((s, i) => s + i.amount, 0);
-    const totalExpenses = expenseItems.reduce((s, e) => s + e.amount, 0);
-    const netProfit = totalIncome - totalExpenses;
-
-    return {
-      incomeItems,
-      expenseItems,
-      totalIncome,
-      totalExpenses,
-      netProfit,
-    };
-  }, [incomes, expenses, range]);
-
-  const formatAmount = (n) => `${settings.currency} ${(n ?? 0).toLocaleString()}`;
-
-  const periodLabel = range
-    ? `${range.start.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })} – ${range.end.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}`
-    : 'Select period';
-
-  const handleExportCSV = () => {
-    if (!range) return;
-    const rows = [
-      ['Profit & Loss Report', periodLabel],
-      [],
-      ['INCOME', ''],
-      ...plData.incomeItems.map((i) => [i.name, i.amount]),
-      ['Total Income', plData.totalIncome],
-      [],
-      ['EXPENSES', ''],
-      ...plData.expenseItems.map((e) => [e.name, e.amount]),
-      ['Total Expenses', plData.totalExpenses],
-      [],
-      ['NET PROFIT', plData.netProfit],
-    ];
-    const csvContent = rows.map((r) => r.join(',')).join('\n');
-    const blob = new Blob([csvContent], { type: 'text/csv' });
-    const url = window.URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `profit-loss-${range.start.toISOString().slice(0, 10)}.csv`;
-    a.click();
-    toast({ title: 'Export successful', description: 'Profit & Loss report exported to CSV' });
-  };
-
-  const handleDownloadPDF = () => {
-    if (!range) return;
-    let incomeRows = plData.incomeItems
-      .map((i) => `<tr><td style="padding:8px; border:1px solid #ccc;">${i.name}</td><td style="padding:8px; border:1px solid #ccc; text-align:right;">${formatAmount(i.amount)}</td></tr>`)
-      .join('');
-    let expenseRows = plData.expenseItems
-      .map((e) => `<tr><td style="padding:8px; border:1px solid #ccc;">${e.name}</td><td style="padding:8px; border:1px solid #ccc; text-align:right;">${formatAmount(e.amount)}</td></tr>`)
-      .join('');
-
-    if (plData.incomeItems.length === 0) incomeRows = '<tr><td colspan="2" style="padding:8px; border:1px solid #ccc; color:#888;">No income in this period</td></tr>';
-    if (plData.expenseItems.length === 0) expenseRows = '<tr><td colspan="2" style="padding:8px; border:1px solid #ccc; color:#888;">No expenses in this period</td></tr>';
-
-    const innerContent = `
-      <h1>Profit & Loss Report</h1>
-      <p><strong>Period: ${periodLabel}</strong></p>
-      <table style="width:100%; border-collapse: collapse; margin-top: 24px;">
-        <tr><td colspan="2" style="padding:8px; border:1px solid #ccc; background:#f5f5f5;"><strong>INCOME</strong></td></tr>
-        ${incomeRows}
-        <tr><td style="padding:8px; border:1px solid #ccc;"><strong>Total Income</strong></td><td style="padding:8px; border:1px solid #ccc; text-align:right;"><strong>${formatAmount(plData.totalIncome)}</strong></td></tr>
-        <tr><td colspan="2" style="padding:12px;"></td></tr>
-        <tr><td colspan="2" style="padding:8px; border:1px solid #ccc; background:#f5f5f5;"><strong>EXPENSES</strong></td></tr>
-        ${expenseRows}
-        <tr><td style="padding:8px; border:1px solid #ccc;"><strong>Total Expenses</strong></td><td style="padding:8px; border:1px solid #ccc; text-align:right;"><strong>${formatAmount(plData.totalExpenses)}</strong></td></tr>
-        <tr><td colspan="2" style="padding:12px;"></td></tr>
-        <tr><td style="padding:8px; border:1px solid #ccc; background:#e8f5e9;"><strong>NET PROFIT</strong></td><td style="padding:8px; border:1px solid #ccc; text-align:right; background:#e8f5e9;"><strong>${formatAmount(plData.netProfit)}</strong></td></tr>
-      </table>
-    `;
-    const fullHtml = getPrintHtml(innerContent, { logo: settings?.logo, businessName: settings?.businessName });
-    setReportPreview({ open: true, html: fullHtml, filename: `profit-loss-${range.start.toISOString().slice(0, 10)}.pdf`, title: 'Profit & Loss Report' });
-  };
-
-  return (
-    <>
-      <Helmet>
-        <title>Profit & Loss - MyAccounts</title>
-        <meta name="description" content="Income, expenses, and net profit for a period" />
-      </Helmet>
-
-      <div className="space-y-6">
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-          <div>
-            <h1 className="text-3xl font-bold">Profit & Loss</h1>
-            <p className="text-muted-foreground">
-              Income, expenses, and net profit for a period
-            </p>
+        {/* TOOLBAR */}
+        <div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+          <div style={{display:"flex",gap:6}}>
+            {["3M","6M","7M","YTD"].map(p=><button key={p} onClick={()=>setPeriod(p)} style={{background:period===p?C.blue:"transparent",color:period===p?"#fff":C.muted,border:`1px solid ${period===p?C.blue:C.border2}`,borderRadius:8,padding:"6px 14px",fontSize:12,fontWeight:700,cursor:"pointer"}}>{p}</button>)}
           </div>
-          <div style={{ display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap" }}>
-            <button
-              onClick={() => { loadData(); toast({ title: 'Refreshed', description: 'Data refreshed' }); }}
-              style={{
-                display: "flex",
-                alignItems: "center",
-                gap: 8,
-                background: "#1c1e24",
-                border: "1px solid #303338",
-                borderRadius: 8,
-                padding: "9px 16px",
-                color: "#fff",
-                fontSize: 13,
-                fontWeight: 600,
-                cursor: "pointer",
-                fontFamily: "inherit",
-              }}
-            >
-              <RefreshCw className="w-4 h-4" />
-              <span>Refresh</span>
-            </button>
-            <button
-              onClick={handleExportCSV}
-              disabled={!range}
-              style={{
-                display: "flex",
-                alignItems: "center",
-                gap: 8,
-                background: "#1c1e24",
-                border: "1px solid #303338",
-                borderRadius: 8,
-                padding: "9px 16px",
-                color: "#fff",
-                fontSize: 13,
-                fontWeight: 600,
-                cursor: !range ? "not-allowed" : "pointer",
-                opacity: !range ? 0.5 : 1,
-                fontFamily: "inherit",
-              }}
-            >
-              <Download className="w-4 h-4" />
-              <span>Export CSV</span>
-            </button>
-            <button
-              onClick={handleDownloadPDF}
-              disabled={!range}
-              style={{
-                display: "flex",
-                alignItems: "center",
-                gap: 8,
-                background: "#1c1e24",
-                border: "1px solid #303338",
-                borderRadius: 8,
-                padding: "9px 16px",
-                color: "#fff",
-                fontSize: 13,
-                fontWeight: 600,
-                cursor: !range ? "not-allowed" : "pointer",
-                opacity: !range ? 0.5 : 1,
-                fontFamily: "inherit",
-              }}
-            >
-              <Download className="w-4 h-4" />
-              <span>Download PDF</span>
-            </button>
+          <div style={{display:"flex",gap:10,alignItems:"center"}}>
+            <button onClick={()=>window.location.reload()} style={{display:"flex",alignItems:"center",gap:8,background:"#1c1e24",border:"1px solid #303338",borderRadius:8,padding:"9px 16px",color:"#fff",fontSize:13,fontWeight:600,cursor:"pointer",fontFamily:"inherit"}}><I.Refresh/><span>Refresh</span></button>
+            <button onClick={()=>{}} style={{display:"flex",alignItems:"center",gap:8,background:"#1c1e24",border:"1px solid #303338",borderRadius:8,padding:"9px 16px",color:"#fff",fontSize:13,fontWeight:600,cursor:"pointer",fontFamily:"inherit"}}><I.Download/><span>Export CSV</span></button>
+            <button onClick={()=>{}} style={{display:"flex",alignItems:"center",gap:8,background:"#1c1e24",border:"1px solid #303338",borderRadius:8,padding:"9px 16px",color:"#fff",fontSize:13,fontWeight:600,cursor:"pointer",fontFamily:"inherit"}}><I.Download/><span>Download PDF</span></button>
           </div>
         </div>
 
-        {/* Period selector */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="bg-card rounded-lg p-4 border border-secondary"
-        >
-          <h2 className="text-sm font-semibold mb-3 flex items-center gap-2">
-            <Calendar className="w-4 h-4" />
-            Select Period
-          </h2>
-          <div className="flex flex-wrap gap-4 items-end">
-            <div className="flex flex-wrap gap-3">
-              <label className="flex items-center gap-2 cursor-pointer">
-                <input
-                  type="radio"
-                  name="period"
-                  checked={periodOption === 'this_month'}
-                  onChange={() => setPeriodOption('this_month')}
-                  className="text-primary"
-                />
-                <span>This Month</span>
-              </label>
-              <label className="flex items-center gap-2 cursor-pointer">
-                <input
-                  type="radio"
-                  name="period"
-                  checked={periodOption === 'last_month'}
-                  onChange={() => setPeriodOption('last_month')}
-                  className="text-primary"
-                />
-                <span>Last Month</span>
-              </label>
-              <label className="flex items-center gap-2 cursor-pointer">
-                <input
-                  type="radio"
-                  name="period"
-                  checked={periodOption === 'this_year'}
-                  onChange={() => setPeriodOption('this_year')}
-                  className="text-primary"
-                />
-                <span>This Year</span>
-              </label>
-              <label className="flex items-center gap-2 cursor-pointer">
-                <input
-                  type="radio"
-                  name="period"
-                  checked={periodOption === 'custom'}
-                  onChange={() => setPeriodOption('custom')}
-                  className="text-primary"
-                />
-                <span>Custom</span>
-              </label>
-            </div>
-            {periodOption === 'custom' && (
-              <div className="flex gap-3 items-center">
-                <div className="space-y-1">
-                  <Label className="text-xs">From</Label>
-                  <Input
-                    type="date"
-                    value={fromDate}
-                    onChange={(e) => setFromDate(e.target.value)}
-                    className="w-[140px]"
-                  />
-                </div>
-                <div className="space-y-1">
-                  <Label className="text-xs">To</Label>
-                  <Input
-                    type="date"
-                    value={toDate}
-                    onChange={(e) => setToDate(e.target.value)}
-                    className="w-[140px]"
-                  />
-                </div>
-              </div>
-            )}
-          </div>
-        </motion.div>
+        {/* STATS */}
+        <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:14}}>
+          <Stat label="Total Revenue"  value={`LKR ${totalIncome.toLocaleString()}`}         color={C.green}  Icon={I.Revenue}  sub="7-month total" subColor={C.green}/>
+          <Stat label="Total Expenses" value={`LKR ${totalExp.toLocaleString()}`}            color={C.red}    Icon={I.Expense}  sub="7-month total"/>
+          <Stat label="Net Profit"     value={`LKR ${netProfit.toLocaleString()}`}           color={netProfit>=0?C.green:C.red} Icon={I.Profit} sub={`${margin}% profit margin`} subColor={C.cyan}/>
+          <Stat label="Best Month"     value={`LKR ${best.income.toLocaleString()}`}         color={C.yellow} Icon={I.Award}    sub={`${best.month} — LKR ${best.profit.toLocaleString()} profit`}/>
+        </div>
 
-        {/* P&L Report */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.05 }}
-          className="bg-card rounded-lg p-6 border border-secondary"
-        >
-          <h2 className="text-xl font-bold mb-6">
-            Profit & Loss Report – {periodLabel}
-          </h2>
+        {/* MAIN CHART + DONUT */}
+        <div style={{display:"grid",gridTemplateColumns:"2.2fr 1fr",gap:16}}>
+          <Card title="Income vs Expenses vs Net Profit" subtitle="Monthly breakdown — LKR">
+            <ResponsiveContainer width="100%" height={260}>
+              <BarChart data={monthly} barCategoryGap={24} barGap={4}>
+                <CartesianGrid strokeDasharray="3 3" stroke={C.border} vertical={false}/>
+                <XAxis dataKey="month" axisLine={false} tickLine={false} tick={{fill:C.muted,fontSize:12}}/>
+                <YAxis axisLine={false} tickLine={false} tick={{fill:C.muted,fontSize:11}} tickFormatter={v=>`${v/1000}K`}/>
+                <Tooltip content={<Tip/>} cursor={{fill:"rgba(255,255,255,0.02)"}}/>
+                <Legend wrapperStyle={{color:C.muted,fontSize:12,paddingTop:12}}/>
+                <Bar dataKey="income"   name="Income"   radius={[5,5,0,0]} fill={C.green}/>
+                <Bar dataKey="expenses" name="Expenses" radius={[5,5,0,0]} fill={C.red}/>
+                <Bar dataKey="profit"   name="Profit"   radius={[5,5,0,0]} fill={C.blue}/>
+              </BarChart>
+            </ResponsiveContainer>
+          </Card>
+          <Card title="Expense Breakdown" subtitle="By category">
+            <ResponsiveContainer width="100%" height={180}>
+              <PieChart><Pie data={expCats} cx="50%" cy="50%" innerRadius={52} outerRadius={78} dataKey="value" strokeWidth={0}>
+                {expCats.map((e,i)=><Cell key={i} fill={e.color}/>)}
+              </Pie><Tooltip formatter={v=>`LKR ${v.toLocaleString()}`} contentStyle={{background:"#1a1d27",border:`1px solid ${C.border2}`,borderRadius:10}}/></PieChart>
+            </ResponsiveContainer>
+            <Legend2 items={expCats}/>
+          </Card>
+        </div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-            {/* INCOME */}
-            <div className="space-y-4">
-              <h3 className="text-lg font-semibold text-green-600 dark:text-green-400 border-b border-secondary pb-2">
-                INCOME
-              </h3>
-              <div className="space-y-2">
-                {plData.incomeItems.length === 0 ? (
-                  <p className="text-sm text-muted-foreground">No income in this period</p>
-                ) : (
-                  plData.incomeItems.map((i) => (
-                    <div key={i.name} className="flex justify-between text-sm">
-                      <span className="text-muted-foreground">{i.name}</span>
-                      <span>{formatAmount(i.amount)}</span>
-                    </div>
-                  ))
-                )}
-              </div>
-              <div className="flex justify-between pt-2 border-t border-secondary font-semibold">
-                <span>Total Income</span>
-                <span>{formatAmount(plData.totalIncome)}</span>
-              </div>
-            </div>
+        {/* TREND + INCOME SOURCES */}
+        <div style={{display:"grid",gridTemplateColumns:"1.5fr 1fr",gap:16}}>
+          <Card title="Net Profit Trend" subtitle="Running profit across months">
+            <ResponsiveContainer width="100%" height={200}>
+              <LineChart data={monthly}>
+                <CartesianGrid strokeDasharray="3 3" stroke={C.border} vertical={false}/>
+                <XAxis dataKey="month" axisLine={false} tickLine={false} tick={{fill:C.muted,fontSize:12}}/>
+                <YAxis axisLine={false} tickLine={false} tick={{fill:C.muted,fontSize:11}} tickFormatter={v=>`${v/1000}K`}/>
+                <Tooltip content={<Tip/>}/>
+                <Line type="monotone" dataKey="profit" name="Net Profit" stroke={C.green} strokeWidth={2.5} dot={{fill:C.green,r:4,strokeWidth:0}} activeDot={{r:6}}/>
+              </LineChart>
+            </ResponsiveContainer>
+          </Card>
+          <Card title="Income Sources" subtitle="Revenue by service type">
+            <ResponsiveContainer width="100%" height={160}>
+              <PieChart><Pie data={incSrc} cx="50%" cy="50%" innerRadius={48} outerRadius={72} dataKey="value" strokeWidth={0}>
+                {incSrc.map((e,i)=><Cell key={i} fill={e.color}/>)}
+              </Pie><Tooltip formatter={v=>`LKR ${v.toLocaleString()}`} contentStyle={{background:"#1a1d27",border:`1px solid ${C.border2}`,borderRadius:10}}/></PieChart>
+            </ResponsiveContainer>
+            <Legend2 items={incSrc}/>
+          </Card>
+        </div>
 
-            {/* EXPENSES */}
-            <div className="space-y-4">
-              <h3 className="text-lg font-semibold text-red-600 dark:text-red-400 border-b border-secondary pb-2">
-                EXPENSES
-              </h3>
-              <div className="space-y-2">
-                {plData.expenseItems.length === 0 ? (
-                  <p className="text-sm text-muted-foreground">No expenses in this period</p>
-                ) : (
-                  plData.expenseItems.map((e) => (
-                    <div key={e.name} className="flex justify-between text-sm">
-                      <span className="text-muted-foreground">{e.name}</span>
-                      <span>{formatAmount(e.amount)}</span>
-                    </div>
-                  ))
-                )}
-              </div>
-              <div className="flex justify-between pt-2 border-t border-secondary font-semibold">
-                <span>Total Expenses</span>
-                <span>{formatAmount(plData.totalExpenses)}</span>
-              </div>
-            </div>
-
-            {/* NET PROFIT */}
-            <div className="space-y-4">
-              <h3 className="text-lg font-semibold text-primary border-b border-secondary pb-2">
-                NET PROFIT
-              </h3>
-              <div className="pt-4">
-                <div className="flex justify-between text-lg font-bold">
-                  <span>Net Profit</span>
-                  <span className={plData.netProfit >= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}>
-                    {formatAmount(plData.netProfit)}
-                  </span>
-                </div>
-                <p className="text-xs text-muted-foreground mt-2">
-                  Total Income – Total Expenses
-                </p>
-              </div>
-            </div>
-          </div>
-        </motion.div>
+        {/* TABLE */}
+        <Card title="Monthly P&L Summary" subtitle="Detailed breakdown per month">
+          <table style={{width:"100%",borderCollapse:"collapse"}}>
+            <thead><tr style={{borderBottom:`1px solid ${C.border2}`}}>
+              {["Month","Income","Expenses","Gross Profit","Margin","vs Prev Month"].map(h=><th key={h} style={{color:C.muted,fontSize:11,fontWeight:700,letterSpacing:"0.07em",textTransform:"uppercase",padding:"10px 14px",textAlign:"left"}}>{h}</th>)}
+            </tr></thead>
+            <tbody>
+              {monthly.map((m,i)=>{
+                const prev=monthly[i-1];const diff=prev?m.profit-prev.profit:null;const mg=((m.profit/m.income)*100).toFixed(1);
+                return <tr key={i} className="row" style={{borderBottom:`1px solid ${C.border}`,background:i%2===0?"transparent":"rgba(255,255,255,0.012)",transition:"background .15s"}}>
+                  <td style={{color:C.text2,fontSize:13,padding:"13px 14px",fontWeight:600}}>{m.month} 2025</td>
+                  <td style={{color:C.green,fontSize:13,padding:"13px 14px",fontWeight:600}}>LKR {m.income.toLocaleString()}</td>
+                  <td style={{color:C.red,fontSize:13,padding:"13px 14px"}}>LKR {m.expenses.toLocaleString()}</td>
+                  <td style={{color:m.profit>=0?C.green:C.red,fontSize:13,padding:"13px 14px",fontWeight:700}}>LKR {m.profit.toLocaleString()}</td>
+                  <td style={{padding:"13px 14px"}}><span style={{background:parseFloat(mg)>30?"rgba(34,197,94,0.15)":parseFloat(mg)>10?"rgba(234,179,8,0.15)":"rgba(239,68,68,0.15)",color:parseFloat(mg)>30?C.green:parseFloat(mg)>10?C.yellow:C.red,borderRadius:6,padding:"3px 9px",fontSize:12,fontWeight:700}}>{mg}%</span></td>
+                  <td style={{padding:"13px 14px"}}>
+                    {diff!==null?<div style={{display:"flex",alignItems:"center",gap:5}}><span style={{color:diff>=0?C.green:C.red}}>{diff>=0?<I.ArrowUp/>:<I.ArrowDown/>}</span><span style={{color:diff>=0?C.green:C.red,fontSize:12,fontWeight:700}}>LKR {Math.abs(diff).toLocaleString()}</span></div>:<span style={{color:C.faint}}>—</span>}
+                  </td>
+                </tr>;
+              })}
+            </tbody>
+            <tfoot><tr style={{borderTop:`2px solid ${C.border2}`,background:"rgba(255,255,255,0.02)"}}>
+              <td style={{color:C.text,fontSize:13,padding:"14px 14px",fontWeight:800}}>TOTAL</td>
+              <td style={{color:C.green,fontSize:13,padding:"14px 14px",fontWeight:800}}>LKR {totalIncome.toLocaleString()}</td>
+              <td style={{color:C.red,fontSize:13,padding:"14px 14px",fontWeight:800}}>LKR {totalExp.toLocaleString()}</td>
+              <td style={{color:netProfit>=0?C.green:C.red,fontSize:13,padding:"14px 14px",fontWeight:800}}>LKR {netProfit.toLocaleString()}</td>
+              <td style={{padding:"14px 14px"}}><span style={{color:C.cyan,fontSize:13,fontWeight:800}}>{margin}%</span></td>
+              <td/>
+            </tr></tfoot>
+          </table>
+        </Card>
       </div>
-
-      <ReportPreviewModal
-        open={reportPreview.open}
-        onOpenChange={(open) => setReportPreview((p) => ({ ...p, open }))}
-        html={reportPreview.html}
-        filename={reportPreview.filename}
-        reportTitle={reportPreview.title}
-      />
-    </>
+    </div>
   );
-};
-
-export default ReportProfitLoss;
+}

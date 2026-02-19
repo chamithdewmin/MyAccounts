@@ -1,10 +1,9 @@
 import React, { useMemo, useState } from 'react';
 import { Helmet } from 'react-helmet';
 import { motion } from 'framer-motion';
-import { Plus, Trash2, Calendar, AlertTriangle, CheckCircle } from 'lucide-react';
+import { Download, RefreshCw, Plus, Trash2, Calendar, AlertTriangle, CheckCircle } from 'lucide-react';
 import { useFinance } from '@/contexts/FinanceContext';
 import ReportPreviewModal from '@/components/ReportPreviewModal';
-import ReportToolbar from '@/components/ReportToolbar';
 import { getPrintHtml } from '@/utils/pdfPrint';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -225,7 +224,7 @@ const BalanceSheet = () => {
               Snapshot of what your business owns, owes, and your equity
             </p>
           </div>
-          <div className="flex flex-wrap gap-2 items-center">
+          <div className="flex flex-wrap gap-2">
             <div className="flex items-center gap-2">
               <Label htmlFor="as-at-date" className="text-sm whitespace-nowrap">
                 As at
@@ -238,11 +237,66 @@ const BalanceSheet = () => {
                 className="w-[160px]"
               />
             </div>
-            <ReportToolbar
-              onRefresh={() => { loadData(); toast({ title: 'Refreshed', description: 'Data refreshed' }); }}
-              onExportCSV={handleExportCSV}
-              onDownloadPDF={handleDownloadPDF}
-            />
+            <button
+              onClick={() => { loadData(); toast({ title: 'Refreshed', description: 'Data refreshed' }); }}
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: 8,
+                background: "#1c1e24",
+                border: "1px solid #303338",
+                borderRadius: 8,
+                padding: "9px 16px",
+                color: "#fff",
+                fontSize: 13,
+                fontWeight: 600,
+                cursor: "pointer",
+                fontFamily: "inherit",
+              }}
+            >
+              <RefreshCw className="w-4 h-4" />
+              <span>Refresh</span>
+            </button>
+            <button
+              onClick={handleExportCSV}
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: 8,
+                background: "#1c1e24",
+                border: "1px solid #303338",
+                borderRadius: 8,
+                padding: "9px 16px",
+                color: "#fff",
+                fontSize: 13,
+                fontWeight: 600,
+                cursor: "pointer",
+                fontFamily: "inherit",
+              }}
+            >
+              <Download className="w-4 h-4" />
+              <span>Export CSV</span>
+            </button>
+            <button
+              onClick={handleDownloadPDF}
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: 8,
+                background: "#1c1e24",
+                border: "1px solid #303338",
+                borderRadius: 8,
+                padding: "9px 16px",
+                color: "#fff",
+                fontSize: 13,
+                fontWeight: 600,
+                cursor: "pointer",
+                fontFamily: "inherit",
+              }}
+            >
+              <Download className="w-4 h-4" />
+              <span>Download PDF</span>
+            </button>
           </div>
         </div>
 

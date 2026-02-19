@@ -1,6 +1,7 @@
 import React, { useMemo } from 'react';
 import { Helmet } from 'react-helmet';
 import { motion } from 'framer-motion';
+import { Download, RefreshCw } from 'lucide-react';
 import {
   BarChart,
   Bar,
@@ -17,7 +18,6 @@ import { Button } from '@/components/ui/button';
 import { useToast } from '@/components/ui/use-toast';
 import ExportReportDialog from '@/components/ExportReportDialog';
 import ReportPreviewModal from '@/components/ReportPreviewModal';
-import ReportToolbar from '@/components/ReportToolbar';
 import { getPrintHtml } from '@/utils/pdfPrint';
 
 const filterByRange = (items, range, dateKey = 'date') => {
@@ -155,11 +155,68 @@ const ReportOverview = () => {
               Monthly Summary, Profit & Loss, Cash Flow
             </p>
           </div>
-          <ReportToolbar
-            onRefresh={() => { loadData(); toast({ title: 'Refreshed', description: 'Data refreshed' }); }}
-            onExportCSV={() => setExportOpen(true)}
-            onDownloadPDF={() => setExportOpen(true)}
-          />
+          <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
+            <button
+              onClick={() => { loadData(); toast({ title: 'Refreshed', description: 'Data refreshed' }); }}
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: 8,
+                background: "#1c1e24",
+                border: "1px solid #303338",
+                borderRadius: 8,
+                padding: "9px 16px",
+                color: "#fff",
+                fontSize: 13,
+                fontWeight: 600,
+                cursor: "pointer",
+                fontFamily: "inherit",
+              }}
+            >
+              <RefreshCw className="w-4 h-4" />
+              <span>Refresh</span>
+            </button>
+            <button
+              onClick={() => setExportOpen(true)}
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: 8,
+                background: "#1c1e24",
+                border: "1px solid #303338",
+                borderRadius: 8,
+                padding: "9px 16px",
+                color: "#fff",
+                fontSize: 13,
+                fontWeight: 600,
+                cursor: "pointer",
+                fontFamily: "inherit",
+              }}
+            >
+              <Download className="w-4 h-4" />
+              <span>Export CSV</span>
+            </button>
+            <button
+              onClick={() => setExportOpen(true)}
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: 8,
+                background: "#1c1e24",
+                border: "1px solid #303338",
+                borderRadius: 8,
+                padding: "9px 16px",
+                color: "#fff",
+                fontSize: 13,
+                fontWeight: 600,
+                cursor: "pointer",
+                fontFamily: "inherit",
+              }}
+            >
+              <Download className="w-4 h-4" />
+              <span>Download PDF</span>
+            </button>
+          </div>
         </div>
 
         {/* Summary cards at top */}

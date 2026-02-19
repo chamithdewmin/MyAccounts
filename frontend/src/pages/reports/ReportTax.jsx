@@ -1,10 +1,9 @@
 import React, { useMemo, useState } from 'react';
 import { Helmet } from 'react-helmet';
 import { motion } from 'framer-motion';
-import { Calendar } from 'lucide-react';
+import { Download, RefreshCw, Calendar } from 'lucide-react';
 import { useFinance } from '@/contexts/FinanceContext';
 import ReportPreviewModal from '@/components/ReportPreviewModal';
-import ReportToolbar from '@/components/ReportToolbar';
 import { getPrintHtml } from '@/utils/pdfPrint';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -201,12 +200,72 @@ const ReportTax = () => {
               Tax collected, tax paid, and net tax payable for a period
             </p>
           </div>
-          <ReportToolbar
-            onRefresh={() => { loadData(); toast({ title: 'Refreshed', description: 'Data refreshed' }); }}
-            onExportCSV={handleExportCSV}
-            onDownloadPDF={handleDownloadPDF}
-            disabled={!range}
-          />
+          <div style={{ display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap" }}>
+            <button
+              onClick={() => { loadData(); toast({ title: 'Refreshed', description: 'Data refreshed' }); }}
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: 8,
+                background: "#1c1e24",
+                border: "1px solid #303338",
+                borderRadius: 8,
+                padding: "9px 16px",
+                color: "#fff",
+                fontSize: 13,
+                fontWeight: 600,
+                cursor: "pointer",
+                fontFamily: "inherit",
+              }}
+            >
+              <RefreshCw className="w-4 h-4" />
+              <span>Refresh</span>
+            </button>
+            <button
+              onClick={handleExportCSV}
+              disabled={!range}
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: 8,
+                background: "#1c1e24",
+                border: "1px solid #303338",
+                borderRadius: 8,
+                padding: "9px 16px",
+                color: "#fff",
+                fontSize: 13,
+                fontWeight: 600,
+                cursor: !range ? "not-allowed" : "pointer",
+                opacity: !range ? 0.5 : 1,
+                fontFamily: "inherit",
+              }}
+            >
+              <Download className="w-4 h-4" />
+              <span>Export CSV</span>
+            </button>
+            <button
+              onClick={handleDownloadPDF}
+              disabled={!range}
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: 8,
+                background: "#1c1e24",
+                border: "1px solid #303338",
+                borderRadius: 8,
+                padding: "9px 16px",
+                color: "#fff",
+                fontSize: 13,
+                fontWeight: 600,
+                cursor: !range ? "not-allowed" : "pointer",
+                opacity: !range ? 0.5 : 1,
+                fontFamily: "inherit",
+              }}
+            >
+              <Download className="w-4 h-4" />
+              <span>Download PDF</span>
+            </button>
+          </div>
         </div>
 
         {/* Period selector */}

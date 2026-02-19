@@ -4,9 +4,9 @@
 
 @layer base {
   :root {
-    /* Light theme: clean white, visible borders/outlines for cards and sections */
-    --background: 0 0% 98%;
-    --foreground: 222 47% 11%;
+    /* Light theme: using #0c0e14 background for all pages */
+    --background: 225 25% 6%; /* #0c0e14 */
+    --foreground: 210 40% 96%;
 
     --card: 0 0% 100%;
     --card-foreground: 222 47% 11%;
@@ -39,7 +39,7 @@
 
   .dark {
     /* Dark theme with custom background colors */
-    --background: 225 64% 6%; /* Dark Blue-Grey #0C0E14 for page background */
+    --background: 225 25% 6%; /* #0c0e14 for page background */
     --foreground: 210 40% 96%;
 
     --card: 225 22% 11%; /* Dark Blue-Green #151821 for sidebar and cards */
@@ -113,7 +113,7 @@
   }
   body {
     @apply bg-background text-foreground;
-    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
       'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
       sans-serif;
     -webkit-font-smoothing: antialiased;
@@ -137,6 +137,7 @@
 #root {
   overflow-x: hidden;
   min-width: 0;
+  background-color: hsl(var(--background));
 }
 
 @layer utilities {

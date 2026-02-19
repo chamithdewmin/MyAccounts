@@ -103,7 +103,7 @@ export default function FinanceDashboard() {
       minHeight: "100vh",
       background: "#0c0e14",
       padding: 24,
-      fontFamily: "'DM Sans', -apple-system, BlinkMacSystemFont, sans-serif",
+      fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, sans-serif",
       color: "#fff",
     },
     card: {

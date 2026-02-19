@@ -1,7 +1,6 @@
 import React, { useMemo } from 'react';
 import { Helmet } from 'react-helmet';
 import { motion } from 'framer-motion';
-import { Download, RefreshCw } from 'lucide-react';
 import {
   BarChart,
   Bar,
@@ -19,6 +18,7 @@ import { Button } from '@/components/ui/button';
 import { useToast } from '@/components/ui/use-toast';
 import ExportReportDialog from '@/components/ExportReportDialog';
 import ReportPreviewModal from '@/components/ReportPreviewModal';
+import ReportToolbar from '@/components/ReportToolbar';
 import { getPrintHtml } from '@/utils/pdfPrint';
 
 const filterByRange = (items, range, dateKey = 'date') => {
@@ -117,20 +117,11 @@ const ReportIncome = () => {
             <h1 className="text-3xl font-bold">Income Reports</h1>
             <p className="text-muted-foreground">Income by client, Income by service</p>
           </div>
-          <div className="flex gap-3">
-            <Button variant="outline" onClick={() => { loadData(); toast({ title: 'Refreshed', description: 'Data refreshed' }); }}>
-              <RefreshCw className="w-4 h-4 mr-2" />
-              Refresh
-            </Button>
-            <Button variant="outline" onClick={() => setExportOpen(true)}>
-              <Download className="w-4 h-4 mr-2" />
-              Export CSV
-            </Button>
-            <Button variant="outline" onClick={() => setExportOpen(true)}>
-              <Download className="w-4 h-4 mr-2" />
-              Download PDF
-            </Button>
-          </div>
+          <ReportToolbar
+            onRefresh={() => { loadData(); toast({ title: 'Refreshed', description: 'Data refreshed' }); }}
+            onExportCSV={() => setExportOpen(true)}
+            onDownloadPDF={() => setExportOpen(true)}
+          />
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">

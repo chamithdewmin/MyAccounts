@@ -1,9 +1,10 @@
 import React, { useMemo, useState } from 'react';
 import { Helmet } from 'react-helmet';
 import { motion } from 'framer-motion';
-import { Download, RefreshCw, Plus, Trash2, Calendar, AlertTriangle, CheckCircle } from 'lucide-react';
+import { Plus, Trash2, Calendar, AlertTriangle, CheckCircle } from 'lucide-react';
 import { useFinance } from '@/contexts/FinanceContext';
 import ReportPreviewModal from '@/components/ReportPreviewModal';
+import ReportToolbar from '@/components/ReportToolbar';
 import { getPrintHtml } from '@/utils/pdfPrint';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -224,7 +225,7 @@ const BalanceSheet = () => {
               Snapshot of what your business owns, owes, and your equity
             </p>
           </div>
-          <div className="flex flex-wrap gap-2">
+          <div className="flex flex-wrap gap-2 items-center">
             <div className="flex items-center gap-2">
               <Label htmlFor="as-at-date" className="text-sm whitespace-nowrap">
                 As at
@@ -237,18 +238,11 @@ const BalanceSheet = () => {
                 className="w-[160px]"
               />
             </div>
-            <Button variant="outline" onClick={() => { loadData(); toast({ title: 'Refreshed', description: 'Data refreshed' }); }}>
-              <RefreshCw className="w-4 h-4 mr-2" />
-              Refresh
-            </Button>
-            <Button variant="outline" onClick={handleExportCSV}>
-              <Download className="w-4 h-4 mr-2" />
-              Export CSV
-            </Button>
-            <Button onClick={handleDownloadPDF}>
-              <Download className="w-4 h-4 mr-2" />
-              Download PDF
-            </Button>
+            <ReportToolbar
+              onRefresh={() => { loadData(); toast({ title: 'Refreshed', description: 'Data refreshed' }); }}
+              onExportCSV={handleExportCSV}
+              onDownloadPDF={handleDownloadPDF}
+            />
           </div>
         </div>
 

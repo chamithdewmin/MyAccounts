@@ -1,9 +1,10 @@
 import React, { useMemo, useState } from 'react';
 import { Helmet } from 'react-helmet';
 import { motion } from 'framer-motion';
-import { Download, RefreshCw, Calendar } from 'lucide-react';
+import { Calendar } from 'lucide-react';
 import { useFinance } from '@/contexts/FinanceContext';
 import ReportPreviewModal from '@/components/ReportPreviewModal';
+import ReportToolbar from '@/components/ReportToolbar';
 import { getPrintHtml } from '@/utils/pdfPrint';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -178,20 +179,12 @@ const ReportProfitLoss = () => {
               Income, expenses, and net profit for a period
             </p>
           </div>
-          <div className="flex flex-wrap gap-2">
-            <Button variant="outline" onClick={() => { loadData(); toast({ title: 'Refreshed', description: 'Data refreshed' }); }}>
-              <RefreshCw className="w-4 h-4 mr-2" />
-              Refresh
-            </Button>
-            <Button variant="outline" onClick={handleExportCSV} disabled={!range}>
-              <Download className="w-4 h-4 mr-2" />
-              Export CSV
-            </Button>
-            <Button onClick={handleDownloadPDF} disabled={!range}>
-              <Download className="w-4 h-4 mr-2" />
-              Download PDF
-            </Button>
-          </div>
+          <ReportToolbar
+            onRefresh={() => { loadData(); toast({ title: 'Refreshed', description: 'Data refreshed' }); }}
+            onExportCSV={handleExportCSV}
+            onDownloadPDF={handleDownloadPDF}
+            disabled={!range}
+          />
         </div>
 
         {/* Period selector */}

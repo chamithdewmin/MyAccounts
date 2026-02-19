@@ -183,14 +183,14 @@ const Dashboard = () => {
   // Stat Card Component
   const StatCard = ({ icon, iconBg, label, value, badge, badgeColor }) => (
     <div style={{
-      background: '#13161e',
+      background: '#0C0E14',
       borderRadius: 16,
       padding: '18px 20px',
       display: 'flex',
       alignItems: 'center',
       gap: 16,
       flex: 1,
-      border: '1px solid #1e2433',
+      border: 'none',
     }}>
       <div style={{
         width: 44, height: 44, borderRadius: 12,
@@ -225,6 +225,7 @@ const Dashboard = () => {
         padding: 24,
         fontFamily: "'DM Sans', -apple-system, BlinkMacSystemFont, sans-serif",
         color: '#fff',
+        width: '100%',
       }}>
         {/* HEADER */}
         <div style={{ marginBottom: 6 }}>
@@ -268,9 +269,9 @@ const Dashboard = () => {
           <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
             {/* ANALYTICS */}
             <div style={{
-              background: '#13161e',
+              background: '#0C0E14',
               borderRadius: 20,
-              border: '1px solid #1e2433',
+              border: 'none',
               padding: 20,
             }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
@@ -302,9 +303,9 @@ const Dashboard = () => {
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
               {/* ACTIVITY */}
               <div style={{
-                background: '#13161e',
+                background: '#0C0E14',
                 borderRadius: 20,
-                border: '1px solid #1e2433',
+                border: 'none',
                 padding: 20,
               }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
@@ -333,9 +334,9 @@ const Dashboard = () => {
 
               {/* PAYMENT */}
               <div style={{
-                background: '#13161e',
+                background: '#0C0E14',
                 borderRadius: 20,
-                border: '1px solid #1e2433',
+                border: 'none',
                 padding: 20,
               }}>
                 <h3 style={{ color: '#fff', fontSize: 14, fontWeight: 700, margin: '0 0 14px' }}>Payment</h3>
@@ -365,9 +366,9 @@ const Dashboard = () => {
           <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
             {/* MY CARD */}
             <div style={{
-              background: '#13161e',
+              background: '#0C0E14',
               borderRadius: 20,
-              border: '1px solid #1e2433',
+              border: 'none',
               padding: 20,
             }}>
               <h2 style={{ color: '#fff', fontSize: 16, fontWeight: 700, margin: '0 0 4px' }}>My Card</h2>
@@ -423,9 +424,9 @@ const Dashboard = () => {
 
             {/* ACTIVITY GAUGE */}
             <div style={{
-              background: '#13161e',
+              background: '#0C0E14',
               borderRadius: 20,
-              border: '1px solid #1e2433',
+              border: 'none',
               padding: 20,
             }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>

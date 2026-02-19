@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Search, Menu, Bell, User, LogOut } from 'lucide-react';
+import { Search, Menu, Bell, LogOut } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import {
@@ -10,6 +10,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { SidebarTrigger } from '@/components/ui/sidebar';
 import { ThemeTogglerButton } from '@/components/ThemeTogglerButton';
+import { AvatarLabelGroup } from '@/components/ui/avatar';
 
 const Topbar = () => {
   const { user, logout } = useAuth();
@@ -49,11 +50,14 @@ const Topbar = () => {
             <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-primary rounded-full" />
           </button>
           <DropdownMenu>
-            <DropdownMenuTrigger className="flex items-center gap-2 p-2 min-h-[44px] hover:bg-secondary rounded-lg transition-colors touch-manipulation">
-              <div className="w-8 h-8 bg-primary rounded-full flex items-center justify-center shrink-0">
-                <User className="w-4 h-4 text-white" />
-              </div>
-              <span className="hidden sm:block text-sm font-medium truncate max-w-[120px]">{user?.name}</span>
+            <DropdownMenuTrigger className="flex items-center gap-2 p-2 min-h-[44px] hover:bg-secondary rounded-lg transition-colors touch-manipulation w-full sm:w-auto">
+              <AvatarLabelGroup
+                size="md"
+                title={user?.name || 'User'}
+                subtitle={user?.email}
+                online
+                className="flex-1 sm:flex-initial min-w-0"
+              />
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-48">
               <DropdownMenuItem onClick={handleLogout}>

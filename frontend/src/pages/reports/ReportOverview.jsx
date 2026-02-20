@@ -325,7 +325,7 @@ export default function OverviewReports() {
   }, [plMonthly, totalIncome, worstMonth, cashBalance, incomes, invoices, debtRatio, equity, settings, totalTax, pendingTax]);
 
   return (
-    <div style={{ minHeight:"100vh", background:C.bg, fontFamily:"'Inter', -apple-system, BlinkMacSystemFont, sans-serif", color:C.text }}>
+    <div style={{ minHeight:"100vh", fontFamily:"'Inter', -apple-system, BlinkMacSystemFont, sans-serif", color:C.text }}>
       <style>{`
         * { box-sizing:border-box; }
         body { margin:0; }

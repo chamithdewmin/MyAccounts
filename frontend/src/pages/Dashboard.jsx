@@ -542,8 +542,8 @@ export default function FinanceDashboard() {
       `}</style>
       <div className="dashboard-container" style={s.page}>
       {/* HEADER */}
-      <div style={{ marginBottom: 6 }}>
-        <p style={{ color: "#8b9ab0", fontSize: 13, margin: 0 }}>{getGreeting()}, {userName} 👋</p>
+      <div style={{ marginBottom: 6, marginTop: -4 }}>
+        <p style={{ color: "#8b9ab0", fontSize: 15, margin: 0, fontWeight: 500 }}>{getGreeting()}, {userName} 👋</p>
         <p>  </p>
       </div>
 

@@ -219,27 +219,6 @@ const InvoiceTemplate = ({
           </div>
         </div>
 
-        {/* Bank Details (left) & Notes (right) - same row */}
-        <div className="px-10 py-6 bg-gray-50 grid grid-cols-2 gap-8 avoid-break">
-          <div>
-            <div className="text-xs font-bold text-gray-700 uppercase tracking-wide mb-2">Bank Details</div>
-            {invoice.bankDetails && (invoice.bankDetails.accountNumber || invoice.bankDetails.accountName || invoice.bankDetails.bankName) ? (
-              <div className="text-sm text-gray-600 space-y-1">
-                {invoice.bankDetails.accountName && <p><span className="text-gray-500">Account Name:</span> {invoice.bankDetails.accountName}</p>}
-                {invoice.bankDetails.accountNumber && <p><span className="text-gray-500">Account Number:</span> {invoice.bankDetails.accountNumber}</p>}
-                {invoice.bankDetails.bankName && <p><span className="text-gray-500">Bank:</span> {invoice.bankDetails.bankName}</p>}
-                {invoice.bankDetails.branch && <p><span className="text-gray-500">Branch:</span> {invoice.bankDetails.branch}</p>}
-              </div>
-            ) : (
-              <p className="text-sm text-gray-500">—</p>
-            )}
-          </div>
-          <div>
-            <div className="text-xs font-bold text-gray-700 uppercase tracking-wide mb-2">Notes</div>
-            <p className="text-sm text-gray-600">{invoice.notes || 'Thanks for your business.'}</p>
-          </div>
-        </div>
-
         {/* Signature lines - only when "Add signature area" was used */}
         {invoice.showSignatureArea && (
           <div className="px-10 py-8 flex justify-between gap-16 avoid-break">

@@ -5,6 +5,10 @@ import {
 } from "recharts";
 import { useFinance } from "@/contexts/FinanceContext";
 import { useAuth } from "@/contexts/AuthContext";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import { useToast } from "@/components/ui/use-toast";
 
 // ─── MASTERCARD ───────────────────────────────────────────────────────────────
 const MastercardIcon = () => (
@@ -177,13 +181,52 @@ const StatCard = ({ icon, iconBg, label, value, badge, badgeColor }) => {
 
 // ─── MAIN DASHBOARD ───────────────────────────────────────────────────────────
 export default function FinanceDashboard() {
-  const { incomes, expenses, totals, settings } = useFinance();
+  const { incomes, expenses, totals, settings, addTransfer, loadData } = useFinance();
   const { user } = useAuth();
+  const { toast } = useToast();
   const [activeBar, setActiveBar] = useState(null);
   const [currentCard, setCurrentCard] = useState(0);
   const [prevCard, setPrevCard] = useState(null);
   const [direction, setDirection] = useState("right");
   const [animating, setAnimating] = useState(false);
+  const [bankModalOpen, setBankModalOpen] = useState(false);
+  const [bankModalMode, setBankModalMode] = useState("deposit"); // "deposit" | "withdraw"
+  const [transferAmount, setTransferAmount] = useState("");
+
+  const openBankModal = (mode) => {
+    setBankModalMode(mode);
+    setTransferAmount("");
+    setBankModalOpen(true);
+  };
+
+  const handleTransferSubmit = async (e) => {
+    e.preventDefault();
+    const amount = Number(transferAmount);
+    if (!amount || amount <= 0) {
+      toast({ title: "Invalid amount", description: "Please enter a positive amount.", variant: "destructive" });
+      return;
+    }
+    const bankBal = totals.bankBalance || 0;
+    const cashBal = totals.cashInHand || 0;
+    if (bankModalMode === "deposit") {
+      if (amount > cashBal) {
+        toast({ title: "Not enough cash", description: `Cash in hand is ${formatCurrency(cashBal)}.`, variant: "destructive" });
+        return;
+      }
+      await addTransfer({ fromAccount: "cash", toAccount: "bank", amount, date: new Date().toISOString().slice(0, 10) });
+      toast({ title: "Deposited", description: `${formatCurrency(amount)} deposited to bank.` });
+    } else {
+      if (amount > bankBal) {
+        toast({ title: "Not enough balance", description: `Bank balance is ${formatCurrency(bankBal)}.`, variant: "destructive" });
+        return;
+      }
+      await addTransfer({ fromAccount: "bank", toAccount: "cash", amount, date: new Date().toISOString().slice(0, 10) });
+      toast({ title: "Withdrawn", description: `${formatCurrency(amount)} withdrawn from bank.` });
+    }
+    setBankModalOpen(false);
+    setTransferAmount("");
+    loadData();
+  };
 
   // Get current year for display
   const currentYear = new Date().getFullYear();
@@ -594,7 +637,7 @@ export default function FinanceDashboard() {
       </div>
 
       {/* MAIN GRID */}
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 340px", gap: 16 }}>
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 370px", gap: 16 }}>
         {/* LEFT COLUMN */}
         <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
 
@@ -803,12 +846,16 @@ export default function FinanceDashboard() {
                             <p style={{ color: "#fff", fontSize: 15, fontWeight: 700, margin: 0 }}>Cash in Hand</p>
                           </div>
                         </div>
-                        <button style={{
-                          background: "linear-gradient(135deg, #16a34a, #15803d)",
-                          color: "#fff", border: "none", borderRadius: 10,
-                          padding: "9px 18px", fontSize: 13, fontWeight: 700, cursor: "pointer",
-                          boxShadow: "0 4px 12px rgba(22,163,74,0.35)",
-                        }}>
+                        <button
+                          type="button"
+                          onClick={() => openBankModal("deposit")}
+                          style={{
+                            background: "linear-gradient(135deg, #16a34a, #15803d)",
+                            color: "#fff", border: "none", borderRadius: 10,
+                            padding: "9px 18px", fontSize: 13, fontWeight: 700, cursor: "pointer",
+                            boxShadow: "0 4px 12px rgba(22,163,74,0.35)",
+                          }}
+                        >
                           Deposit →
                         </button>
                       </>
@@ -820,12 +867,16 @@ export default function FinanceDashboard() {
                             <p style={{ color: "#fff", fontSize: 15, fontWeight: 700, margin: 0 }}>Bank Balance</p>
                           </div>
                         </div>
-                        <button style={{
-                          background: "linear-gradient(135deg, #2563eb, #1d4ed8)",
-                          color: "#fff", border: "none", borderRadius: 10,
-                          padding: "9px 18px", fontSize: 13, fontWeight: 700, cursor: "pointer",
-                          boxShadow: "0 4px 12px rgba(37,99,235,0.35)",
-                        }}>
+                        <button
+                          type="button"
+                          onClick={() => openBankModal("withdraw")}
+                          style={{
+                            background: "linear-gradient(135deg, #2563eb, #1d4ed8)",
+                            color: "#fff", border: "none", borderRadius: 10,
+                            padding: "9px 18px", fontSize: 13, fontWeight: 700, cursor: "pointer",
+                            boxShadow: "0 4px 12px rgba(37,99,235,0.35)",
+                          }}
+                        >
                           Manage →
                         </button>
                       </>
@@ -908,6 +959,50 @@ export default function FinanceDashboard() {
         </div>
       </div>
     </div>
+
+    <Dialog open={bankModalOpen} onOpenChange={setBankModalOpen}>
+      <DialogContent className="gap-4">
+        <DialogHeader>
+          <DialogTitle>
+            {bankModalMode === "deposit" ? "Deposit to Bank" : "Withdraw from Bank"}
+          </DialogTitle>
+        </DialogHeader>
+        <form onSubmit={handleTransferSubmit} className="flex flex-col gap-4">
+          <div>
+            <label className="text-sm font-medium text-foreground block mb-2">Amount (LKR)</label>
+            <Input
+              type="number"
+              min="0"
+              step="0.01"
+              placeholder="0"
+              value={transferAmount}
+              onChange={(e) => setTransferAmount(e.target.value)}
+              className="bg-secondary border-border"
+            />
+            <p className="text-xs text-muted-foreground mt-1">
+              {bankModalMode === "deposit"
+                ? `Cash in hand: ${formatCurrency(totals.cashInHand || 0)}`
+                : `Bank balance: ${formatCurrency(totals.bankBalance || 0)}`}
+            </p>
+          </div>
+          <div className="flex justify-end gap-2">
+            <Button type="button" variant="outline" onClick={() => setBankModalOpen(false)}>
+              Cancel
+            </Button>
+            <Button
+              type="submit"
+              style={
+                bankModalMode === "deposit"
+                  ? { background: "linear-gradient(135deg, #16a34a, #15803d)" }
+                  : { background: "linear-gradient(135deg, #2563eb, #1d4ed8)" }
+              }
+            >
+              {bankModalMode === "deposit" ? "Deposit →" : "Withdraw →"}
+            </Button>
+          </div>
+        </form>
+      </DialogContent>
+    </Dialog>
     </>
   );
 }

@@ -545,9 +545,6 @@ export default function FinanceDashboard() {
       {/* HEADER */}
       <div style={{ marginBottom: 6 }}>
         <p style={{ color: "#8b9ab0", fontSize: 13, margin: 0 }}>{getGreeting()}, {userName} 👋</p>
-        <h1 style={{ color: "#fff", fontSize: 20, fontWeight: 800, margin: "2px 0 20px", letterSpacing: "-0.02em" }}>
-          Here's what's happening with your finances today.
-        </h1>
       </div>
 
       {/* TOP STAT CARDS */}

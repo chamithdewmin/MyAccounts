@@ -13,8 +13,8 @@ export function getPrintHtml(innerContent, options = {}) {
   </div>`
     : '';
   const titleHtml = businessName ? `<h1 style="font-size:18px; font-weight:700; margin:0 0 16px; color:#111;">${escapeHtml(businessName)}</h1>` : '';
-  const footer = '<p style="font-size:10px; color:#666; margin-top:32px; padding-top:16px; border-top:1px solid #ddd;">Generated from MyAccounts</p>';
-  return `<div style="padding:24px; font-family:'Inter',-apple-system,sans-serif; color:#111; background:#fff; font-size:14px; line-height:1.5;">${logoHtml}${titleHtml}${innerContent}${footer}</div>`;
+  const footer = '<p style="font-size:10px; color:#666; margin-top:16px; padding-top:12px; border-top:1px solid #ddd;">Generated from MyAccounts</p>';
+  return `<div style="padding:24px; font-family:'Inter',-apple-system,sans-serif; color:#111; background:#fff; font-size:14px; line-height:1.5; max-width:100%;">${logoHtml}${titleHtml}${innerContent}${footer}</div>`;
 }
 
 function escapeHtml(text) {
@@ -108,7 +108,8 @@ export async function downloadReportPdf(html, filename) {
 export async function downloadReportAsPdf(html, filename) {
   const html2pdf = (await import('html2pdf.js')).default;
   const container = document.createElement('div');
-  container.style.cssText = 'position:absolute;left:-9999px;top:0;width:210mm;background:#fff;padding:24px;font-size:14px;color:#111;';
+  // In-viewport but invisible so html2canvas captures correctly (off-screen can yield blank pages)
+  container.style.cssText = 'position:fixed;left:0;top:0;width:190mm;max-width:190mm;background:#fff;font-size:14px;color:#111;opacity:0.01;pointer-events:none;z-index:-1;overflow:visible;box-sizing:border-box;';
   container.innerHTML = html;
   document.body.appendChild(container);
 
@@ -129,8 +130,9 @@ export async function downloadReportAsPdf(html, filename) {
       margin: [10, 10, 14, 10],
       filename,
       image: { type: 'jpeg', quality: 0.98 },
-      html2canvas: { scale: 2, useCORS: true, allowTaint: true, logging: false },
+      html2canvas: { scale: 2, useCORS: true, allowTaint: true, logging: false, backgroundColor: '#ffffff' },
       jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
+      pagebreak: { mode: ['css', 'legacy'], avoid: ['tr', 'table'] },
     };
     await html2pdf().set(opt).from(container).save();
   } finally {

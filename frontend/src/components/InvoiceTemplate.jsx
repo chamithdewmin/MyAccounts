@@ -164,11 +164,11 @@ const InvoiceTemplate = ({
           </div>
         </div>
 
-        {/* Items Table */}
+        {/* Items Table - normal line table with borders */}
         <div className="px-10 py-6">
-          <table className="w-full invoice-table">
+          <table className="w-full invoice-table invoice-table-lines">
             <thead>
-              <tr className="invoice-thead" style={{ backgroundColor: themeColor, color: 'white' }}>
+              <tr>
                 <th className="text-left py-3 px-3 text-xs font-bold uppercase">#</th>
                 <th className="text-left py-3 px-3 text-xs font-bold uppercase">Description</th>
                 <th className="text-center py-3 px-3 text-xs font-bold uppercase">Qty</th>
@@ -178,7 +178,7 @@ const InvoiceTemplate = ({
             </thead>
             <tbody>
               {items.map((item, i) => (
-                <tr key={i} className="border-b border-gray-200 text-black">
+                <tr key={i}>
                   <td className="py-4 px-3 text-sm">{i + 1}</td>
                   <td className="py-4 px-3">
                     <div className="text-sm">{item.description}</div>
@@ -221,7 +221,7 @@ const InvoiceTemplate = ({
 
         {/* Signature lines - only when "Add signature area" was used */}
         {invoice.showSignatureArea && (
-          <div className="px-10 py-8 flex justify-between gap-16 avoid-break">
+          <div className="px-10 pt-16 pb-8 flex justify-between gap-16 avoid-break">
             <div className="flex-1">
               <div className="border-b border-dashed border-gray-400 pb-1 mb-2" />
               <div className="text-xs text-gray-500">Prepared By</div>
@@ -244,19 +244,25 @@ const InvoiceTemplate = ({
         .invoice-table {
           border-collapse: collapse;
         }
-        .invoice-table th {
-          -webkit-print-color-adjust: exact;
-          print-color-adjust: exact;
+        .invoice-table-lines,
+        .invoice-table-lines th,
+        .invoice-table-lines td {
+          border: 1px solid #ddd;
+        }
+        .invoice-table-lines thead th {
+          background: #f5f5f5;
+          color: #111;
+          font-weight: 700;
+        }
+        .invoice-table-lines tbody tr {
+          background: #fff;
+          color: #111;
         }
         tr {
           page-break-inside: avoid;
         }
         .avoid-break {
           page-break-inside: avoid;
-        }
-        .invoice-thead {
-          -webkit-print-color-adjust: exact;
-          print-color-adjust: exact;
         }
         @media print {
           body { background: white; }

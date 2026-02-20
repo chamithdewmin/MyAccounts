@@ -512,7 +512,6 @@ export default function FinanceDashboard() {
   const s = {
     page: {
       minHeight: "100vh",
-      background: "#0c0e14",
       padding: 24,
       fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, sans-serif",
       color: "#fff",
@@ -545,6 +544,7 @@ export default function FinanceDashboard() {
       {/* HEADER */}
       <div style={{ marginBottom: 6 }}>
         <p style={{ color: "#8b9ab0", fontSize: 13, margin: 0 }}>{getGreeting()}, {userName} 👋</p>
+        <p>  </p>
       </div>
 
       {/* TOP STAT CARDS */}

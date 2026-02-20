@@ -89,7 +89,7 @@ function NavItem({ item }) {
         onClick={() => setOpen(false)}
         className={({ isActive }) =>
           cn(
-            'flex w-full items-center gap-2.5 rounded-lg px-2 py-2 min-h-9 text-sm font-medium transition-colors duration-150 touch-manipulation outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2',
+            'flex w-full items-center gap-2.5 rounded-lg px-2 py-2 min-h-9 text-[15px] font-medium transition-colors duration-150 touch-manipulation outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2',
             collapsed && 'justify-center px-2',
             isActive
               ? 'bg-sidebar-active-bg text-sidebar-active-accent [&>svg]:text-sidebar-active-accent'
@@ -98,7 +98,7 @@ function NavItem({ item }) {
         }
       >
         <item.icon className="w-4 h-4 shrink-0" />
-        <span className="sidebar-label text-[14px]">{item.label}</span>
+        <span className="sidebar-label text-[15px]">{item.label}</span>
       </NavLink>
     </SidebarMenuItem>
   );
@@ -124,7 +124,7 @@ function ExpandableNavItem({ item }) {
           type="button"
           onClick={() => setExpanded((p) => !p)}
           className={cn(
-            'flex w-full items-center justify-between gap-2.5 rounded-lg px-2 py-2 min-h-9 text-sm font-medium transition-colors duration-150 touch-manipulation text-left outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2',
+            'flex w-full items-center justify-between gap-2.5 rounded-lg px-2 py-2 min-h-9 text-[15px] font-medium transition-colors duration-150 touch-manipulation text-left outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2',
             collapsed && 'justify-center px-2',
             isActive
               ? 'bg-sidebar-active-bg text-sidebar-active-accent [&_svg]:text-sidebar-active-accent'
@@ -133,7 +133,7 @@ function ExpandableNavItem({ item }) {
         >
           <div className="flex items-center gap-2.5 min-w-0">
             <Icon className="w-4 h-4 shrink-0" />
-            <span className="sidebar-label text-[14px]">{item.label}</span>
+            <span className="sidebar-label text-[15px]">{item.label}</span>
           </div>
           <ChevronDown
             className={cn('sidebar-label w-4 h-4 shrink-0 transition-transform', expanded && 'rotate-180')}
@@ -156,7 +156,7 @@ function ExpandableNavItem({ item }) {
                       onClick={() => setOpen(false)}
                       className={({ isActive: subActive }) =>
                         cn(
-                          'flex w-full items-center gap-2.5 rounded-lg pl-6 pr-2 py-2 text-[13px] transition-colors duration-150 sidebar-label',
+                          'flex w-full items-center gap-2.5 rounded-lg pl-6 pr-2 py-2 text-[14px] transition-colors duration-150 sidebar-label',
                           subActive
                             ? 'bg-sidebar-active-bg text-sidebar-active-accent [&>svg]:text-sidebar-active-accent'
                             : 'text-muted-foreground hover:bg-secondary hover:text-foreground'

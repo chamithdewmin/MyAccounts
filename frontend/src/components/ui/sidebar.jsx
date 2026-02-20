@@ -153,7 +153,7 @@ export function SidebarGroupLabel({ className, ...props }) {
   return (
     <div
       className={cn(
-        'sidebar-label pt-2 px-4 pb-1 text-xs font-semibold uppercase tracking-wider text-muted-foreground',
+        'sidebar-label pt-2 px-4 pb-1 text-sm font-semibold uppercase tracking-wider text-muted-foreground',
         className
       )}
       {...props}
@@ -173,7 +173,7 @@ export const SidebarMenuButton = React.forwardRef(
   ({ className, asChild = false, isActive, children, ...props }, ref) => {
     const comp = asChild ? 'span' : 'button';
     const base = cn(
-      'flex w-full items-center gap-2.5 rounded-lg px-2 py-2 min-h-9 text-sm font-medium transition-colors duration-150 touch-manipulation text-left',
+      'flex w-full items-center gap-2.5 rounded-lg px-2 py-2 min-h-9 text-[15px] font-medium transition-colors duration-150 touch-manipulation text-left',
       isActive
         ? 'bg-sidebar-active-bg text-sidebar-active-accent [&>svg]:text-sidebar-active-accent'
         : 'text-foreground hover:bg-secondary',
@@ -201,7 +201,7 @@ export const SidebarMenuSubButton = React.forwardRef(
   ({ className, asChild = false, isActive, ...props }, ref) => {
     const comp = asChild ? 'span' : 'button';
     const base = cn(
-      'flex w-full items-center gap-2.5 rounded-lg pl-6 pr-2 py-2 text-[13px] transition-colors duration-150',
+      'flex w-full items-center gap-2.5 rounded-lg pl-6 pr-2 py-2 text-[14px] transition-colors duration-150',
       isActive
         ? 'bg-sidebar-active-bg text-sidebar-active-accent [&>svg]:text-sidebar-active-accent'
         : 'text-muted-foreground hover:bg-secondary hover:text-foreground',

@@ -657,7 +657,7 @@ export default function FinanceDashboard() {
             </div>
 
             {/* PAYMENT */}
-            <div style={{ ...s.card, minHeight: 300 }}>
+            <div style={{ ...s.card, minHeight: 330 }}>
               <h3 style={{ color: "#fff", fontSize: 14, fontWeight: 700, margin: "0 0 14px" }}>Payment</h3>
               <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
                 {payments.length > 0 ? payments.map((p, i) => {

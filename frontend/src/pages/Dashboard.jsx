@@ -631,7 +631,7 @@ export default function FinanceDashboard() {
           {/* BOTTOM ROW */}
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
             {/* ACTIVITY */}
-            <div style={s.card}>
+            <div style={{ ...s.card, minHeight: 300 }}>
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
                 <h3 style={{ color: "#fff", fontSize: 14, fontWeight: 700, margin: 0 }}>Activity</h3>
                 <div style={{ display: "flex", gap: 12 }}>
@@ -645,7 +645,7 @@ export default function FinanceDashboard() {
                   </div>
                 </div>
               </div>
-              <ResponsiveContainer width="100%" height={160}>
+              <ResponsiveContainer width="100%" height={220}>
                 <BarChart data={activityData} barGap={2} barCategoryGap={14}>
                   <XAxis dataKey="day" axisLine={false} tickLine={false} tick={{ fill: "#8b9ab0", fontSize: 11 }} />
                   <YAxis axisLine={false} tickLine={false} tick={{ fill: "#8b9ab0", fontSize: 10 }} tickFormatter={v => `${settings.currency || ''}${(v / 1000).toFixed(0)}k`} width={30} />
@@ -657,7 +657,7 @@ export default function FinanceDashboard() {
             </div>
 
             {/* PAYMENT */}
-            <div style={s.card}>
+            <div style={{ ...s.card, minHeight: 300 }}>
               <h3 style={{ color: "#fff", fontSize: 14, fontWeight: 700, margin: "0 0 14px" }}>Payment</h3>
               <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
                 {payments.length > 0 ? payments.map((p, i) => {

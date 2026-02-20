@@ -337,7 +337,7 @@ export default function OverviewReports() {
         .txrow:hover { background:#1a1d27 !important; }
       `}</style>
 
-      <div style={{ padding:"20px 20px", display:"flex", flexDirection:"column", gap:20, animation:"fi .4s ease" }}>
+      <div style={{ padding:"24px 28px", display:"flex", flexDirection:"column", gap:20, animation:"fi .4s ease" }}>
 
         {/* PAGE HEADER */}
         <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-start" }}>

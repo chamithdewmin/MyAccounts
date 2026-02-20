@@ -16,6 +16,7 @@ import {
   X,
   ChevronDown,
   ChevronLeft,
+  ChevronRight,
   ChevronsUpDown,
   CreditCard,
   Sparkles,
@@ -32,7 +33,6 @@ import {
   SidebarHeader,
   SidebarContent,
   SidebarFooter,
-  SidebarRail,
   SidebarMenu,
   SidebarMenuItem,
   SidebarMenuSub,
@@ -205,7 +205,13 @@ export default function Sidebar() {
       </AnimatePresence>
 
       <SidebarRoot collapsible="icon">
-        <SidebarHeader>
+        <SidebarHeader
+          className={cn(
+            collapsed && 'group/header cursor-pointer relative',
+            collapsed && 'lg:flex lg:justify-center lg:items-center'
+          )}
+          {...(collapsed && { onClick: (e) => { if (e.target.closest('button')) return; toggleCollapsed(); } })}
+        >
           <div className={cn('flex items-center gap-2.5 min-w-0 flex-1', collapsed && 'justify-center')}>
             <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-primary/20 text-primary font-bold text-sm">
               <img src={sidebarIcon} alt="" className="h-4 w-4 object-contain" />
@@ -224,7 +230,16 @@ export default function Sidebar() {
               <X className="w-4 h-4" />
             </button>
           )}
-          {collapsed ? null : (
+          {collapsed ? (
+            <button
+              type="button"
+              onClick={toggleCollapsed}
+              aria-label="Expand sidebar"
+              className="hidden lg:flex h-7 w-7 shrink-0 items-center justify-center rounded-md border border-border bg-card hover:bg-secondary transition-all touch-manipulation opacity-0 pointer-events-none group-hover/header:opacity-100 group-hover/header:pointer-events-auto absolute right-1.5 top-1/2 -translate-y-1/2"
+            >
+              <ChevronRight className="w-4 h-4" />
+            </button>
+          ) : (
             <button
               type="button"
               onClick={toggleCollapsed}
@@ -293,8 +308,6 @@ export default function Sidebar() {
                 </DropdownMenuContent>
               </DropdownMenu>
         </SidebarFooter>
-
-        <SidebarRail />
       </SidebarRoot>
     </>
   );

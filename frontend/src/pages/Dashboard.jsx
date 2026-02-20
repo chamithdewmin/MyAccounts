@@ -512,7 +512,7 @@ export default function FinanceDashboard() {
   const s = {
     page: {
       minHeight: "100vh",
-      padding: 16,
+      padding: 22,
       fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, sans-serif",
       color: "#fff",
     },

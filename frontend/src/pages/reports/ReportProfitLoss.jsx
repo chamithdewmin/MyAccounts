@@ -125,7 +125,7 @@ export default function ProfitLoss(){
   return(
     <div style={{minHeight:"100vh",fontFamily:"'Inter', -apple-system, BlinkMacSystemFont, sans-serif",color:C.text}}>
       <style>{`*{box-sizing:border-box;}body{margin:0;}::-webkit-scrollbar{width:4px;}::-webkit-scrollbar-thumb{background:${C.border2};border-radius:99px;}@keyframes fi{from{opacity:0;transform:translateY(10px);}to{opacity:1;transform:translateY(0);}}.row:hover{background:#1a1d27!important;}`}</style>
-      <div style={{padding:"20px 20px",display:"flex",flexDirection:"column",gap:18,animation:"fi .3s ease"}}>
+      <div style={{padding:"24px 28px",display:"flex",flexDirection:"column",gap:18,animation:"fi .3s ease"}}>
 
         {/* TOOLBAR */}
         <div style={{display:"flex",justifyContent:"flex-end",alignItems:"center"}}>

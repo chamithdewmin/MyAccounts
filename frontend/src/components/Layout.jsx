@@ -8,7 +8,7 @@ const Layout = () => {
     <SidebarProvider defaultCollapsed={false}>
       <Sidebar />
       <SidebarInset>
-        <main className="px-5 py-2 sm:px-6 sm:py-3 lg:px-8 lg:py-4 min-w-0 max-w-full flex-1 pt-[env(safe-area-inset-top)] bg-background">
+        <main className="px-6 py-2 sm:px-8 sm:py-3 lg:px-10 lg:py-4 min-w-0 max-w-full flex-1 pt-[env(safe-area-inset-top)] bg-background">
           <Outlet />
         </main>
       </SidebarInset>

@@ -1,6 +1,8 @@
 import { useState, useMemo } from "react";
 import { AreaChart, Area, BarChart, Bar, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from "recharts";
 import { useFinance } from "@/contexts/FinanceContext";
+import { getPrintHtml, downloadReportAsPdf } from "@/utils/pdfPrint";
+import { useToast } from "@/components/ui/use-toast";
 
 const C = { bg:"#0c0e14",bg2:"#0f1117",card:"#13161e",border:"#1e2433",border2:"#2a3347",text:"#fff",text2:"#d1d9e6",muted:"#8b9ab0",faint:"#4a5568",green:"#22c55e",red:"#ef4444",blue:"#3b82f6",cyan:"#22d3ee",yellow:"#eab308" };
 
@@ -52,13 +54,15 @@ const Card=({title,subtitle,children,right})=>(
 );
 
 export default function CashFlowReport(){
-  const { incomes, expenses, invoices, totals, loadData } = useFinance();
+  const { incomes, expenses, invoices, totals, loadData, settings } = useFinance();
+  const { toast } = useToast();
   const [search,setSearch]=useState("");
   const [fType,setFType]=useState("all");
   const [fStatus,setFStatus]=useState("all");
   const [modal,setModal]=useState(null);
   const [form,setForm]=useState({source:"",category:"",amount:"",status:"Received"});
   const [delId,setDelId]=useState(null);
+  const [downloadingPdf, setDownloadingPdf] = useState(false);
 
   // Calculate cash flow data (last 14 days)
   const cfData = useMemo(() => {
@@ -165,6 +169,33 @@ export default function CashFlowReport(){
 
   const selSty={background:C.card,border:`1px solid ${C.border2}`,borderRadius:9,padding:"8px 12px",color:C.text2,fontSize:13,outline:"none",cursor:"pointer"};
 
+  const handleDownloadPdf = async () => {
+    setDownloadingPdf(true);
+    try {
+      const cur = settings?.currency || "LKR";
+      let body = `<h2 style="margin:0 0 16px; font-size:18px; border-bottom:2px solid #111; padding-bottom:8px;">Cash Flow Report</h2>`;
+      body += `<p style="color:#666; font-size:12px; margin:0 0 20px;">${new Date().toLocaleDateString("en-US", { dateStyle: "long" })}</p>`;
+      body += `<table style="width:100%; border-collapse:collapse; margin-bottom:24px;"><tr style="background:#f5f5f5;"><th style="text-align:left; padding:10px 12px; border:1px solid #ddd;">Metric</th><th style="text-align:right; padding:10px 12px; border:1px solid #ddd;">Value</th></tr>`;
+      body += `<tr><td style="padding:10px 12px; border:1px solid #ddd;">Total Money In</td><td style="text-align:right; padding:10px 12px; border:1px solid #ddd;">${cur} ${totalIn.toLocaleString()}</td></tr>`;
+      body += `<tr><td style="padding:10px 12px; border:1px solid #ddd;">Total Money Out</td><td style="text-align:right; padding:10px 12px; border:1px solid #ddd;">${cur} ${totalOut.toLocaleString()}</td></tr>`;
+      body += `<tr><td style="padding:10px 12px; border:1px solid #ddd;">Net Cash Flow</td><td style="text-align:right; padding:10px 12px; border:1px solid #ddd;">${cur} ${net.toLocaleString()}</td></tr>`;
+      body += `<tr><td style="padding:10px 12px; border:1px solid #ddd;">Current Balance</td><td style="text-align:right; padding:10px 12px; border:1px solid #ddd;">${cur} ${(totals.cashInHand || 0).toLocaleString()}</td></tr></table>`;
+      body += `<h3 style="margin:0 0 12px; font-size:14px;">Recent Transactions</h3><table style="width:100%; border-collapse:collapse;"><tr style="background:#f5f5f5;"><th style="text-align:left; padding:8px 12px; border:1px solid #ddd;">Date</th><th style="text-align:left; padding:8px 12px; border:1px solid #ddd;">Source</th><th style="text-align:right; padding:8px 12px; border:1px solid #ddd;">Amount</th><th style="text-align:left; padding:8px 12px; border:1px solid #ddd;">Status</th></tr>`;
+      filtered.slice(0, 20).forEach((t) => {
+        body += `<tr><td style="padding:8px 12px; border:1px solid #ddd;">${t.date}</td><td style="padding:8px 12px; border:1px solid #ddd;">${t.source}</td><td style="text-align:right; padding:8px 12px; border:1px solid #ddd;">${cur} ${Math.abs(t.amount).toLocaleString()}</td><td style="padding:8px 12px; border:1px solid #ddd;">${t.status}</td></tr>`;
+      });
+      body += `</table>`;
+      const fullHtml = getPrintHtml(body, { logo: settings?.logo, businessName: settings?.businessName });
+      const filename = `cash-flow-report-${new Date().toISOString().slice(0, 10)}.pdf`;
+      await downloadReportAsPdf(fullHtml, filename);
+      toast({ title: "PDF downloaded", description: filename });
+    } catch (e) {
+      toast({ title: "Download failed", description: e?.message || "Could not generate PDF", variant: "destructive" });
+    } finally {
+      setDownloadingPdf(false);
+    }
+  };
+
   return(
     <div className="-mx-3 sm:-mx-4 lg:-mx-5" style={{minHeight:"100vh",fontFamily:"'Inter', -apple-system, BlinkMacSystemFont, sans-serif",color:C.text}}>
       <style>{`*{box-sizing:border-box;}body{margin:0;}::-webkit-scrollbar{width:4px;}::-webkit-scrollbar-thumb{background:${C.border2};border-radius:99px;}@keyframes fi{from{opacity:0;transform:translateY(10px);}to{opacity:1;transform:translateY(0);}}@keyframes so{from{opacity:1;transform:translateX(0);}to{opacity:0;transform:translateX(40px);}}.row:hover{background:#1a1d27!important;}`}</style>
@@ -176,7 +207,7 @@ export default function CashFlowReport(){
           <div style={{display:"flex",gap:10,alignItems:"center"}}>
             <button onClick={()=>window.location.reload()} style={{display:"flex",alignItems:"center",gap:8,background:"#1c1e24",border:"1px solid #303338",borderRadius:8,padding:"9px 16px",color:"#fff",fontSize:13,fontWeight:600,cursor:"pointer",fontFamily:"'Inter', sans-serif"}}><I.Refresh/><span>Refresh</span></button>
             <button onClick={()=>{}} style={{display:"flex",alignItems:"center",gap:8,background:"#1c1e24",border:"1px solid #303338",borderRadius:8,padding:"9px 16px",color:"#fff",fontSize:13,fontWeight:600,cursor:"pointer",fontFamily:"'Inter', sans-serif"}}><I.Download/><span>Export CSV</span></button>
-            <button onClick={()=>{}} style={{display:"flex",alignItems:"center",gap:8,background:"#1c1e24",border:"1px solid #303338",borderRadius:8,padding:"9px 16px",color:"#fff",fontSize:13,fontWeight:600,cursor:"pointer",fontFamily:"'Inter', sans-serif"}}><I.Download/><span>Download PDF</span></button>
+            <button onClick={handleDownloadPdf} disabled={downloadingPdf} style={{display:"flex",alignItems:"center",gap:8,background:"#1c1e24",border:"1px solid #303338",borderRadius:8,padding:"9px 16px",color:"#fff",fontSize:13,fontWeight:600,cursor:downloadingPdf?"wait":"pointer",fontFamily:"'Inter', sans-serif"}}><I.Download/><span>{downloadingPdf?"Downloading…":"Download PDF"}</span></button>
           </div>
         </div>
 

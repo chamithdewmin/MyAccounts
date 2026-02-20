@@ -1,6 +1,8 @@
 import { useState, useMemo } from "react";
 import { BarChart, Bar, AreaChart, Area, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from "recharts";
 import { useFinance } from "@/contexts/FinanceContext";
+import { getPrintHtml, downloadReportAsPdf } from "@/utils/pdfPrint";
+import { useToast } from "@/components/ui/use-toast";
 
 const C = { bg:"#0c0e14",bg2:"#0f1117",card:"#13161e",border:"#1e2433",border2:"#2a3347",text:"#fff",text2:"#d1d9e6",muted:"#8b9ab0",faint:"#4a5568",green:"#22c55e",red:"#ef4444",blue:"#3b82f6",cyan:"#22d3ee",yellow:"#eab308",purple:"#a78bfa",orange:"#f97316" };
 
@@ -60,7 +62,9 @@ const DonutLegend=({items})=>(
 
 export default function BalanceSheet(){
   const { assets, loans, invoices, totals, settings } = useFinance();
+  const { toast } = useToast();
   const [view,setView]=useState("overview");
+  const [downloadingPdf, setDownloadingPdf] = useState(false);
 
   // Calculate monthly balance sheet data
   const monthly = useMemo(() => {
@@ -139,6 +143,35 @@ export default function BalanceSheet(){
   const currentRatio = useMemo(() => totalLiab > 0 ? (((totals.cashInHand || 0) / totalLiab).toFixed(2)) : '0.00', [totals, totalLiab]);
   const healthy = useMemo(() => parseFloat(debtRatio) < 40, [debtRatio]);
 
+  const handleDownloadPdf = async () => {
+    setDownloadingPdf(true);
+    try {
+      const cur = settings?.currency || "LKR";
+      let body = `<h2 style="margin:0 0 16px; font-size:18px; border-bottom:2px solid #111; padding-bottom:8px;">Balance Sheet Report</h2>`;
+      body += `<p style="color:#666; font-size:12px; margin:0 0 20px;">${new Date().toLocaleDateString("en-US", { dateStyle: "long" })}</p>`;
+      body += `<table style="width:100%; border-collapse:collapse; margin-bottom:24px;"><tr style="background:#f5f5f5;"><th style="text-align:left; padding:10px 12px; border:1px solid #ddd;">Metric</th><th style="text-align:right; padding:10px 12px; border:1px solid #ddd;">Value</th></tr>`;
+      body += `<tr><td style="padding:10px 12px; border:1px solid #ddd;">Total Assets</td><td style="text-align:right; padding:10px 12px; border:1px solid #ddd;">${cur} ${totalAssets.toLocaleString()}</td></tr>`;
+      body += `<tr><td style="padding:10px 12px; border:1px solid #ddd;">Total Liabilities</td><td style="text-align:right; padding:10px 12px; border:1px solid #ddd;">${cur} ${totalLiab.toLocaleString()}</td></tr>`;
+      body += `<tr><td style="padding:10px 12px; border:1px solid #ddd;">Owner's Equity</td><td style="text-align:right; padding:10px 12px; border:1px solid #ddd;">${cur} ${equity.toLocaleString()}</td></tr>`;
+      body += `<tr><td style="padding:10px 12px; border:1px solid #ddd;">Debt Ratio</td><td style="text-align:right; padding:10px 12px; border:1px solid #ddd;">${debtRatio}%</td></tr>`;
+      body += `<tr><td style="padding:10px 12px; border:1px solid #ddd;">Current Ratio</td><td style="text-align:right; padding:10px 12px; border:1px solid #ddd;">${currentRatio}</td></tr></table>`;
+      body += `<h3 style="margin:0 0 12px; font-size:14px;">Assets</h3><table style="width:100%; border-collapse:collapse; margin-bottom:20px;"><tr style="background:#f5f5f5;"><th style="text-align:left; padding:8px 12px; border:1px solid #ddd;">Item</th><th style="text-align:right; padding:8px 12px; border:1px solid #ddd;">Amount</th></tr>`;
+      assetItems.forEach((a) => { body += `<tr><td style="padding:8px 12px; border:1px solid #ddd;">${a.name}</td><td style="text-align:right; padding:8px 12px; border:1px solid #ddd;">${cur} ${a.value.toLocaleString()}</td></tr>`; });
+      body += `</table>`;
+      body += `<h3 style="margin:0 0 12px; font-size:14px;">Liabilities</h3><table style="width:100%; border-collapse:collapse;"><tr style="background:#f5f5f5;"><th style="text-align:left; padding:8px 12px; border:1px solid #ddd;">Item</th><th style="text-align:right; padding:8px 12px; border:1px solid #ddd;">Amount</th></tr>`;
+      liabItems.forEach((l) => { body += `<tr><td style="padding:8px 12px; border:1px solid #ddd;">${l.name}</td><td style="text-align:right; padding:8px 12px; border:1px solid #ddd;">${cur} ${l.value.toLocaleString()}</td></tr>`; });
+      body += `</table>`;
+      const fullHtml = getPrintHtml(body, { logo: settings?.logo, businessName: settings?.businessName });
+      const filename = `balance-sheet-report-${new Date().toISOString().slice(0, 10)}.pdf`;
+      await downloadReportAsPdf(fullHtml, filename);
+      toast({ title: "PDF downloaded", description: filename });
+    } catch (e) {
+      toast({ title: "Download failed", description: e?.message || "Could not generate PDF", variant: "destructive" });
+    } finally {
+      setDownloadingPdf(false);
+    }
+  };
+
   return(
     <div className="-mx-3 sm:-mx-4 lg:-mx-5" style={{minHeight:"100vh",fontFamily:"'Inter', -apple-system, BlinkMacSystemFont, sans-serif",color:C.text}}>
       <style>{`*{box-sizing:border-box;}body{margin:0;}::-webkit-scrollbar{width:4px;}::-webkit-scrollbar-thumb{background:${C.border2};border-radius:99px;}@keyframes fi{from{opacity:0;transform:translateY(10px);}to{opacity:1;transform:translateY(0);}}.brow:hover td{background:rgba(255,255,255,0.018)!important;}`}</style>
@@ -150,7 +183,7 @@ export default function BalanceSheet(){
           <div style={{display:"flex",gap:10,alignItems:"center"}}>
             <button onClick={()=>window.location.reload()} style={{display:"flex",alignItems:"center",gap:8,background:"#1c1e24",border:"1px solid #303338",borderRadius:8,padding:"9px 16px",color:"#fff",fontSize:13,fontWeight:600,cursor:"pointer",fontFamily:"'Inter', sans-serif"}}><I.Refresh/><span>Refresh</span></button>
             <button onClick={()=>{}} style={{display:"flex",alignItems:"center",gap:8,background:"#1c1e24",border:"1px solid #303338",borderRadius:8,padding:"9px 16px",color:"#fff",fontSize:13,fontWeight:600,cursor:"pointer",fontFamily:"'Inter', sans-serif"}}><I.Download/><span>Export CSV</span></button>
-            <button onClick={()=>{}} style={{display:"flex",alignItems:"center",gap:8,background:"#1c1e24",border:"1px solid #303338",borderRadius:8,padding:"9px 16px",color:"#fff",fontSize:13,fontWeight:600,cursor:"pointer",fontFamily:"'Inter', sans-serif"}}><I.Download/><span>Download PDF</span></button>
+            <button onClick={handleDownloadPdf} disabled={downloadingPdf} style={{display:"flex",alignItems:"center",gap:8,background:"#1c1e24",border:"1px solid #303338",borderRadius:8,padding:"9px 16px",color:"#fff",fontSize:13,fontWeight:600,cursor:downloadingPdf?"wait":"pointer",fontFamily:"'Inter', sans-serif"}}><I.Download/><span>{downloadingPdf?"Downloading…":"Download PDF"}</span></button>
           </div>
         </div>
 

@@ -5,6 +5,8 @@ import {
   Tooltip, ResponsiveContainer, Legend
 } from "recharts";
 import { useFinance } from "@/contexts/FinanceContext";
+import { getPrintHtml, downloadReportAsPdf } from "@/utils/pdfPrint";
+import { useToast } from "@/components/ui/use-toast";
 
 // ─── COLORS ──────────────────────────────────────────────────────────────────
 const C = {
@@ -143,7 +145,9 @@ const MiniRow = ({ label, value, color, Icon, sub }) => (
 // ─── MAIN COMPONENT ───────────────────────────────────────────────────────────
 export default function OverviewReports() {
   const { incomes, expenses, assets, loans, invoices, settings, totals } = useFinance();
+  const { toast } = useToast();
   const [activeInsight, setActiveInsight] = useState(null);
+  const [downloadingPdf, setDownloadingPdf] = useState(false);
 
   // Calculate monthly P&L data (last 7 months)
   const plMonthly = useMemo(() => {
@@ -324,6 +328,35 @@ export default function OverviewReports() {
     ];
   }, [plMonthly, totalIncome, worstMonth, cashBalance, incomes, invoices, debtRatio, equity, settings, totalTax, pendingTax]);
 
+  const handleDownloadPdf = async () => {
+    setDownloadingPdf(true);
+    try {
+      const cur = settings?.currency || "LKR";
+      let body = `<h2 style="margin:0 0 16px; font-size:18px; border-bottom:2px solid #111; padding-bottom:8px;">Business Overview Report</h2>`;
+      body += `<p style="color:#666; font-size:12px; margin:0 0 20px;">${new Date().toLocaleDateString("en-US", { dateStyle: "long" })} · Fiscal Year ${new Date().getFullYear()}</p>`;
+      body += `<table style="width:100%; border-collapse:collapse; margin-bottom:24px;"><tr style="background:#f5f5f5;"><th style="text-align:left; padding:10px 12px; border:1px solid #ddd;">Metric</th><th style="text-align:right; padding:10px 12px; border:1px solid #ddd;">Value</th></tr>`;
+      body += `<tr><td style="padding:10px 12px; border:1px solid #ddd;">Total Revenue (7M)</td><td style="text-align:right; padding:10px 12px; border:1px solid #ddd;">${cur} ${totalIncome.toLocaleString()}</td></tr>`;
+      body += `<tr><td style="padding:10px 12px; border:1px solid #ddd;">Total Expenses (7M)</td><td style="text-align:right; padding:10px 12px; border:1px solid #ddd;">${cur} ${totalExpenses.toLocaleString()}</td></tr>`;
+      body += `<tr><td style="padding:10px 12px; border:1px solid #ddd;">Net Profit</td><td style="text-align:right; padding:10px 12px; border:1px solid #ddd;">${cur} ${netProfit.toLocaleString()} (${profitMargin}% margin)</td></tr>`;
+      body += `<tr><td style="padding:10px 12px; border:1px solid #ddd;">Current Cash</td><td style="text-align:right; padding:10px 12px; border:1px solid #ddd;">${cur} ${cashBalance.toLocaleString()}</td></tr>`;
+      body += `<tr><td style="padding:10px 12px; border:1px solid #ddd;">Owner's Equity</td><td style="text-align:right; padding:10px 12px; border:1px solid #ddd;">${cur} ${equity.toLocaleString()} (Debt: ${debtRatio}%)</td></tr>`;
+      body += `</table>`;
+      body += `<h3 style="margin:0 0 12px; font-size:14px;">Monthly Summary</h3><table style="width:100%; border-collapse:collapse;"><tr style="background:#f5f5f5;"><th style="text-align:left; padding:8px 12px; border:1px solid #ddd;">Month</th><th style="text-align:right; padding:8px 12px; border:1px solid #ddd;">Income</th><th style="text-align:right; padding:8px 12px; border:1px solid #ddd;">Expenses</th><th style="text-align:right; padding:8px 12px; border:1px solid #ddd;">Profit</th></tr>`;
+      plMonthly.forEach((m) => {
+        body += `<tr><td style="padding:8px 12px; border:1px solid #ddd;">${m.month}</td><td style="text-align:right; padding:8px 12px; border:1px solid #ddd;">${cur} ${m.income.toLocaleString()}</td><td style="text-align:right; padding:8px 12px; border:1px solid #ddd;">${cur} ${m.expenses.toLocaleString()}</td><td style="text-align:right; padding:8px 12px; border:1px solid #ddd;">${cur} ${m.profit.toLocaleString()}</td></tr>`;
+      });
+      body += `</table>`;
+      const fullHtml = getPrintHtml(body, { logo: settings?.logo, businessName: settings?.businessName });
+      const filename = `overview-report-${new Date().toISOString().slice(0, 10)}.pdf`;
+      await downloadReportAsPdf(fullHtml, filename);
+      toast({ title: "PDF downloaded", description: filename });
+    } catch (e) {
+      toast({ title: "Download failed", description: e?.message || "Could not generate PDF", variant: "destructive" });
+    } finally {
+      setDownloadingPdf(false);
+    }
+  };
+
   return (
     <div className="-mx-3 sm:-mx-4 lg:-mx-5" style={{ minHeight:"100vh", fontFamily:"'Inter', -apple-system, BlinkMacSystemFont, sans-serif", color:C.text }}>
       <style>{`
@@ -392,7 +425,8 @@ export default function OverviewReports() {
                 <span>Export CSV</span>
               </button>
               <button
-                onClick={() => {}}
+                onClick={handleDownloadPdf}
+                disabled={downloadingPdf}
                 style={{
                   display: "flex",
                   alignItems: "center",
@@ -404,12 +438,12 @@ export default function OverviewReports() {
                   color: "#fff",
                   fontSize: 13,
                   fontWeight: 600,
-                  cursor: "pointer",
+                  cursor: downloadingPdf ? "wait" : "pointer",
                   fontFamily: "'Inter', sans-serif",
                 }}
               >
                 <I.Download />
-                <span>Download PDF</span>
+                <span>{downloadingPdf ? "Downloading…" : "Download PDF"}</span>
               </button>
             </div>
           </div>

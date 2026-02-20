@@ -292,8 +292,6 @@ export default function Sidebar() {
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
-            </div>
-          </div>
         </SidebarFooter>
 
         <SidebarRail />

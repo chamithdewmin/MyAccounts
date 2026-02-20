@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Helmet } from 'react-helmet';
 import { motion } from 'framer-motion';
-import { Search, Plus, RefreshCw, UserPlus, Pencil, Trash2 } from 'lucide-react';
+import { Search, UserPlus, Pencil, Trash2, MoreHorizontal, ChevronLeft, ChevronRight } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/components/ui/use-toast';
@@ -9,6 +9,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { api } from '@/lib/api';
 
 const PROTECTED_EMAIL = 'logozodev@gmail.com';
+const PER_PAGE = 10;
 
 const Users = () => {
   const [users, setUsers] = useState([]);
@@ -18,6 +19,8 @@ const Users = () => {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingUser, setEditingUser] = useState(null);
   const [saving, setSaving] = useState(false);
+  const [selected, setSelected] = useState([]);
+  const [currentPage, setCurrentPage] = useState(1);
   const [form, setForm] = useState({
     name: '',
     email: '',
@@ -58,6 +61,7 @@ const Users = () => {
     } else {
       setFilteredUsers(users);
     }
+    setCurrentPage(1);
   }, [searchQuery, users]);
 
   const handleChange = (field, value) => {
@@ -150,6 +154,37 @@ const Users = () => {
     }
   };
 
+  const toggleSelect = (id) => {
+    setSelected((prev) =>
+      prev.includes(id) ? prev.filter((i) => i !== id) : [...prev, id]
+    );
+  };
+
+  const toggleAll = () => {
+    if (selected.length === pageRows.length) {
+      setSelected([]);
+    } else {
+      setSelected(pageRows.map((u) => u.id));
+    }
+  };
+
+  const totalPages = Math.max(1, Math.ceil(filteredUsers.length / PER_PAGE));
+  const start = (currentPage - 1) * PER_PAGE;
+  const pageRows = filteredUsers.slice(start, start + PER_PAGE);
+
+  const pageNumbers = [];
+  if (totalPages <= 7) {
+    for (let i = 1; i <= totalPages; i++) pageNumbers.push(i);
+  } else {
+    pageNumbers.push(1);
+    if (currentPage > 3) pageNumbers.push('...');
+    for (let i = Math.max(2, currentPage - 1); i <= Math.min(totalPages - 1, currentPage + 1); i++) {
+      if (!pageNumbers.includes(i)) pageNumbers.push(i);
+    }
+    if (currentPage < totalPages - 2) pageNumbers.push('...');
+    if (totalPages > 1) pageNumbers.push(totalPages);
+  }
+
   return (
     <>
       <Helmet>
@@ -160,12 +195,11 @@ const Users = () => {
       <div className="space-y-6">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-3xl font-bold">Users</h1>
+            <h1 className="text-3xl font-bold text-foreground">Users</h1>
             <p className="text-muted-foreground">Add and manage users who can log in to the app.</p>
           </div>
           <div className="flex gap-3">
             <Button variant="outline" onClick={loadUsers} disabled={loading}>
-              <RefreshCw className="w-4 h-4 mr-2" />
               Refresh
             </Button>
             <Button onClick={() => setIsDialogOpen(true)}>
@@ -181,62 +215,107 @@ const Users = () => {
             placeholder="Search by name or email..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="pl-10"
+            className="pl-10 bg-card border-border"
           />
         </div>
 
-        <div className="bg-card rounded-lg border border-secondary overflow-hidden">
+        <div className="w-full max-w-6xl rounded-2xl border border-border bg-card overflow-hidden">
+          {/* Header */}
+          <div className="flex items-center justify-between px-6 py-4 border-b border-border">
+            <div className="flex items-center gap-3">
+              <span className="text-foreground font-semibold text-lg">Users</span>
+              <span className="bg-primary/20 text-primary text-xs font-medium px-2.5 py-0.5 rounded-full border border-primary/40">
+                {filteredUsers.length} users
+              </span>
+            </div>
+            <button className="text-muted-foreground hover:text-foreground transition-colors p-1 rounded hover:bg-secondary" aria-label="More options">
+              <MoreHorizontal className="w-5 h-5" />
+            </button>
+          </div>
+
+          {/* Table */}
           <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead className="bg-secondary">
-                <tr>
-                  <th className="px-4 py-3 text-left text-sm font-semibold">Name</th>
-                  <th className="px-4 py-3 text-left text-sm font-semibold">Email</th>
-                  <th className="px-4 py-3 text-left text-sm font-semibold">Created</th>
-                  <th className="px-4 py-3 text-center text-sm font-semibold uppercase">Actions</th>
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b border-border text-muted-foreground text-xs uppercase tracking-wide">
+                  <th className="w-10 px-4 py-3 text-left">
+                    <input
+                      type="checkbox"
+                      checked={pageRows.length > 0 && selected.length === pageRows.length}
+                      onChange={toggleAll}
+                      className="rounded border-border bg-secondary accent-primary cursor-pointer"
+                    />
+                  </th>
+                  <th className="px-4 py-3 text-left font-medium">Name</th>
+                  <th className="px-4 py-3 text-left font-medium">Status</th>
+                  <th className="px-4 py-3 text-left font-medium">Created</th>
+                  <th className="px-4 py-3 text-left font-medium">Email address</th>
+                  <th className="px-4 py-3 w-24" />
                 </tr>
               </thead>
               <tbody>
                 {loading ? (
                   <tr>
-                    <td colSpan={4} className="px-4 py-8 text-center text-muted-foreground">
+                    <td colSpan={6} className="px-4 py-8 text-center text-muted-foreground">
                       Loading users...
                     </td>
                   </tr>
                 ) : (
-                  filteredUsers.map((user, index) => (
+                  pageRows.map((user, index) => (
                     <motion.tr
                       key={user.id}
                       initial={{ opacity: 0 }}
                       animate={{ opacity: 1 }}
                       transition={{ delay: index * 0.02 }}
-                      className="border-b border-secondary hover:bg-secondary/50 transition-colors"
+                      className={`border-b border-border transition-colors ${
+                        selected.includes(user.id) ? 'bg-secondary/50' : 'hover:bg-secondary/30'
+                      }`}
                     >
-                      <td className="px-4 py-3 text-sm font-medium">{user.name}</td>
-                      <td className="px-4 py-3 text-sm text-muted-foreground">{user.email}</td>
-                      <td className="px-4 py-3 text-sm text-muted-foreground">
-                        {formatDate(user.created_at)}
+                      <td className="px-4 py-3">
+                        <input
+                          type="checkbox"
+                          checked={selected.includes(user.id)}
+                          onChange={() => toggleSelect(user.id)}
+                          className="rounded border-border bg-secondary accent-primary cursor-pointer"
+                        />
                       </td>
                       <td className="px-4 py-3">
-                        <div className="flex items-center justify-center gap-2">
+                        <div className="flex items-center gap-3">
+                          <div className="h-8 w-8 rounded-full bg-primary/20 flex items-center justify-center text-primary font-medium text-sm ring-2 ring-border">
+                            {(user.name || 'U').charAt(0).toUpperCase()}
+                          </div>
+                          <div>
+                            <div className="text-foreground font-medium text-sm">{user.name}</div>
+                            <div className="text-muted-foreground text-xs">{user.email}</div>
+                          </div>
+                        </div>
+                      </td>
+                      <td className="px-4 py-3">
+                        <span className="inline-flex items-center gap-1.5 bg-secondary border border-border text-green-400 text-xs font-medium px-2.5 py-1 rounded-full">
+                          <span className="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse" />
+                          Active
+                        </span>
+                      </td>
+                      <td className="px-4 py-3 text-muted-foreground text-sm">{formatDate(user.created_at)}</td>
+                      <td className="px-4 py-3 text-muted-foreground text-sm">{user.email}</td>
+                      <td className="px-4 py-3">
+                        <div className="flex items-center gap-2 text-muted-foreground">
+                          <button
+                            type="button"
+                            onClick={() => handleDelete(user)}
+                            className="hover:text-destructive transition-colors p-1 rounded hover:bg-secondary"
+                            title="Delete"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
                           <button
                             type="button"
                             onClick={() => openEdit(user)}
-                            className="p-2 hover:bg-secondary rounded-lg transition-colors text-green-500 hover:text-green-400"
+                            className="hover:text-foreground transition-colors p-1 rounded hover:bg-secondary"
                             title="Edit"
                           >
                             <Pencil className="w-4 h-4" />
                           </button>
-                          {user.email !== PROTECTED_EMAIL && (
-                            <button
-                              type="button"
-                              onClick={() => handleDelete(user)}
-                              className="p-2 hover:bg-secondary rounded-lg transition-colors text-red-500 hover:text-red-400"
-                              title="Delete"
-                            >
-                              <Trash2 className="w-4 h-4" />
-                            </button>
-                          )}
                         </div>
                       </td>
                     </motion.tr>
@@ -245,9 +324,52 @@ const Users = () => {
               </tbody>
             </table>
           </div>
+
           {!loading && filteredUsers.length === 0 && (
-            <div className="text-center py-12">
-              <p className="text-muted-foreground">No users found</p>
+            <div className="text-center py-12 text-muted-foreground">No users found</div>
+          )}
+
+          {/* Pagination */}
+          {totalPages > 1 && (
+            <div className="flex items-center justify-between px-6 py-4 border-t border-border">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                disabled={currentPage === 1}
+                className="gap-2 border-border"
+              >
+                <ChevronLeft className="w-4 h-4" />
+                Previous
+              </Button>
+              <div className="flex items-center gap-1">
+                {pageNumbers.map((page, i) => (
+                  <button
+                    key={i}
+                    type="button"
+                    onClick={() => typeof page === 'number' && setCurrentPage(page)}
+                    className={`w-8 h-8 rounded-lg text-sm font-medium transition-colors ${
+                      currentPage === page
+                        ? 'bg-secondary text-foreground'
+                        : page === '...'
+                        ? 'text-muted-foreground cursor-default'
+                        : 'text-muted-foreground hover:text-foreground hover:bg-secondary'
+                    }`}
+                  >
+                    {page}
+                  </button>
+                ))}
+              </div>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+                disabled={currentPage === totalPages}
+                className="gap-2 border-border"
+              >
+                Next
+                <ChevronRight className="w-4 h-4" />
+              </Button>
             </div>
           )}
         </div>

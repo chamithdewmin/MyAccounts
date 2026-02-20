@@ -594,7 +594,7 @@ export default function FinanceDashboard() {
       </div>
 
       {/* MAIN GRID */}
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 370px", gap: 16 }}>
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 340px", gap: 16 }}>
         {/* LEFT COLUMN */}
         <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
 

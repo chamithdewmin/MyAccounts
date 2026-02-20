@@ -137,6 +137,19 @@
     padding-right: env(safe-area-inset-right);
   }
 
+  /* Hide scrollbar on dashboard only */
+  body.dashboard-page,
+  body.dashboard-page main {
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+  }
+  body.dashboard-page::-webkit-scrollbar,
+  body.dashboard-page main::-webkit-scrollbar {
+    display: none;
+    width: 0;
+    height: 0;
+  }
+
   /* Responsive: thinner scrollbar on small screens */
   @media (max-width: 768px) {
     *::-webkit-scrollbar {

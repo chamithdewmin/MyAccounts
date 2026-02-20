@@ -164,37 +164,20 @@ const InvoiceTemplate = ({
           </div>
         </div>
 
-        {/* Items Table - normal line table with borders */}
-        <div className="px-10 py-6">
-          <table className="w-full invoice-table invoice-table-lines">
-            <thead>
-              <tr>
-                <th className="text-left py-3 px-3 text-xs font-bold uppercase">#</th>
-                <th className="text-left py-3 px-3 text-xs font-bold uppercase">Description</th>
-                <th className="text-center py-3 px-3 text-xs font-bold uppercase">Qty</th>
-                <th className="text-right py-3 px-3 text-xs font-bold uppercase">Rate</th>
-                <th className="text-right py-3 px-3 text-xs font-bold uppercase">Amount</th>
-              </tr>
-            </thead>
-            <tbody>
-              {items.map((item, i) => (
-                <tr key={i}>
-                  <td className="py-4 px-3 text-sm">{i + 1}</td>
-                  <td className="py-4 px-3">
-                    <div className="text-sm">{item.description}</div>
-                    {item.sku && <div className="text-xs text-gray-600">SKU: {item.sku}</div>}
-                  </td>
-                  <td className="py-4 px-3 text-sm text-center">{item.quantity ?? 1}</td>
-                  <td className="py-4 px-3 text-sm text-right">
-                    {(item.price || 0).toLocaleString()}
-                  </td>
-                  <td className="py-4 px-3 text-sm font-medium text-right">
-                    {((item.price || 0) * (item.quantity ?? 1)).toLocaleString()}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+        {/* Items as normal text */}
+        <div className="px-10 py-6 space-y-3">
+          {items.map((item, i) => {
+            const qty = item.quantity ?? 1;
+            const rate = item.price || 0;
+            const amount = (rate * qty);
+            return (
+              <div key={i} className="text-sm text-black">
+                <span className="font-medium">{i + 1}. {item.description}</span>
+                {item.sku && <span className="text-gray-600"> (SKU: {item.sku})</span>}
+                <span className="text-gray-600"> — Qty {qty} × {(rate).toLocaleString()} = {(amount).toLocaleString()}</span>
+              </div>
+            );
+          })}
         </div>
 
         {/* Summary: Sub Total, Total, Payment Made, Balance Due - black text */}
@@ -240,26 +223,6 @@ const InvoiceTemplate = ({
           max-width: 182mm;
           margin: auto;
           box-sizing: border-box;
-        }
-        .invoice-table {
-          border-collapse: collapse;
-        }
-        .invoice-table-lines,
-        .invoice-table-lines th,
-        .invoice-table-lines td {
-          border: 1px solid #ddd;
-        }
-        .invoice-table-lines thead th {
-          background: #f5f5f5;
-          color: #111;
-          font-weight: 700;
-        }
-        .invoice-table-lines tbody tr {
-          background: #fff;
-          color: #111;
-        }
-        tr {
-          page-break-inside: avoid;
         }
         .avoid-break {
           page-break-inside: avoid;

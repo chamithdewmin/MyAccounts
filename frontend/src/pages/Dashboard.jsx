@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import {
   BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer,
   Cell, PieChart, Pie
@@ -192,6 +192,11 @@ export default function FinanceDashboard() {
   const [bankModalOpen, setBankModalOpen] = useState(false);
   const [bankModalMode, setBankModalMode] = useState("deposit"); // "deposit" | "withdraw"
   const [transferAmount, setTransferAmount] = useState("");
+
+  useEffect(() => {
+    document.body.classList.add("dashboard-page");
+    return () => document.body.classList.remove("dashboard-page");
+  }, []);
 
   const openBankModal = (mode) => {
     setBankModalMode(mode);

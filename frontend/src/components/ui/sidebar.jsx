@@ -45,7 +45,7 @@ export const Sidebar = React.forwardRef(
         className={cn(
           'fixed top-0 left-0 z-50 flex h-screen flex-col border-r border-border bg-card dark:bg-[#13161e] transition-[width] duration-300 ease-sidebar pt-[env(safe-area-inset-top)]',
           open ? 'translate-x-0' : '-translate-x-full lg:translate-x-0',
-          isIconOnly ? 'w-[52px]' : 'w-[292px] max-w-[85vw]',
+          isIconOnly ? 'w-[56px]' : 'w-[240px] max-w-[85vw]',
           className
         )}
         {...props}
@@ -61,7 +61,7 @@ export function SidebarHeader({ className, ...props }) {
   return (
     <div
       className={cn(
-        'flex shrink-0 items-center gap-2 border-b border-border px-4 py-4',
+        'flex shrink-0 items-center justify-between gap-2 border-b border-border px-3 pt-4 pb-3 min-h-14',
         className
       )}
       {...props}
@@ -74,7 +74,7 @@ export function SidebarContent({ className, ...props }) {
   return (
     <div
       className={cn(
-        'flex flex-1 flex-col gap-0.5 overflow-y-auto overflow-x-hidden px-3 py-4 min-h-0',
+        'flex flex-1 flex-col gap-0.5 overflow-y-auto overflow-x-hidden px-0 py-2 min-h-0',
         'group-data-[state=collapsed]/sidebar-wrapper:[&_.sidebar-label]:hidden',
         className
       )}
@@ -87,7 +87,7 @@ export function SidebarContent({ className, ...props }) {
 export function SidebarFooter({ className, ...props }) {
   return (
     <div
-      className={cn('shrink-0 border-t border-border px-3 py-3', className)}
+      className={cn('shrink-0 border-t border-border p-3', className)}
       {...props}
     />
   );
@@ -117,7 +117,7 @@ export function SidebarInset({ className, ...props }) {
     <main
       className={cn(
         'flex flex-1 flex-col min-w-0 transition-[margin] duration-300 ease-sidebar',
-        'lg:ml-[292px] group-data-[state=collapsed]/sidebar-wrapper:lg:ml-[52px]',
+        'lg:ml-[240px] group-data-[state=collapsed]/sidebar-wrapper:lg:ml-[56px]',
         className
       )}
       {...props}
@@ -153,7 +153,7 @@ export function SidebarGroupLabel({ className, ...props }) {
   return (
     <div
       className={cn(
-        'sidebar-label px-2 py-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground',
+        'sidebar-label pt-2 px-4 pb-1 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground',
         className
       )}
       {...props}
@@ -162,21 +162,21 @@ export function SidebarGroupLabel({ className, ...props }) {
 }
 
 export function SidebarMenu({ className, ...props }) {
-  return <div className={cn('flex flex-col gap-0.5', className)} {...props} />;
+  return <div className={cn('flex flex-col gap-px px-2', className)} {...props} />;
 }
 
 export function SidebarMenuItem({ className, ...props }) {
-  return <div className={cn('relative', className)} {...props} />;
+  return <div className={cn('relative my-px', className)} {...props} />;
 }
 
 export const SidebarMenuButton = React.forwardRef(
   ({ className, asChild = false, isActive, children, ...props }, ref) => {
     const comp = asChild ? 'span' : 'button';
     const base = cn(
-      'flex w-full items-center gap-3 rounded-2xl px-3 py-3 min-h-[44px] transition-all duration-300 ease-sidebar touch-manipulation text-left',
+      'flex w-full items-center gap-2.5 rounded-lg px-2 py-2 min-h-9 text-[13.5px] font-medium transition-colors duration-150 touch-manipulation text-left',
       isActive
-        ? 'bg-sidebar-active-bg text-sidebar-active-accent shadow-lg [&>svg]:text-sidebar-active-accent'
-        : 'text-secondary-foreground hover:bg-secondary hover:translate-x-0.5',
+        ? 'bg-sidebar-active-bg text-sidebar-active-accent [&>svg]:text-sidebar-active-accent'
+        : 'text-foreground hover:bg-secondary',
       className
     );
     return React.createElement(comp, { ref, className: base, ...props }, children);
@@ -201,7 +201,7 @@ export const SidebarMenuSubButton = React.forwardRef(
   ({ className, asChild = false, isActive, ...props }, ref) => {
     const comp = asChild ? 'span' : 'button';
     const base = cn(
-      'flex w-full items-center gap-3 rounded-2xl px-3 py-2 text-sm transition-all duration-300 ease-sidebar',
+      'flex w-full items-center gap-2.5 rounded-lg pl-6 pr-2 py-2 text-sm transition-colors duration-150',
       isActive
         ? 'bg-sidebar-active-bg text-sidebar-active-accent [&>svg]:text-sidebar-active-accent'
         : 'text-muted-foreground hover:bg-secondary hover:text-foreground',

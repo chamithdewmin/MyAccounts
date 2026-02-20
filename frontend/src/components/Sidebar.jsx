@@ -15,6 +15,7 @@ import {
   Settings,
   X,
   ChevronDown,
+  ChevronLeft,
   ChevronsUpDown,
   CreditCard,
   Sparkles,
@@ -25,8 +26,6 @@ import {
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/contexts/AuthContext';
 import { useFinance } from '@/contexts/FinanceContext';
-import sidebarLogo from '@/assets/side bar logo.png';
-import sidebarLogoLight from '@/assets/side-bar-light.png';
 import sidebarIcon from '@/assets/icon.png';
 import {
   Sidebar as SidebarRoot,
@@ -39,6 +38,7 @@ import {
   SidebarMenuSub,
   SidebarMenuSubItem,
   SidebarDivider,
+  SidebarGroupLabel,
   useSidebar,
 } from '@/components/ui/sidebar';
 import {
@@ -89,7 +89,7 @@ function NavItem({ item }) {
         onClick={() => setOpen(false)}
         className={({ isActive }) =>
           cn(
-            'flex w-full items-center gap-3 rounded-md px-3 py-2.5 min-h-10 transition-[background-color,color] duration-100 ease-linear touch-manipulation outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2',
+            'flex w-full items-center gap-2.5 rounded-lg px-2 py-2 min-h-9 text-[13.5px] font-medium transition-colors duration-150 touch-manipulation outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2',
             collapsed && 'justify-center px-2',
             isActive
               ? 'bg-sidebar-active-bg text-sidebar-active-accent [&>svg]:text-sidebar-active-accent'
@@ -97,8 +97,8 @@ function NavItem({ item }) {
           )
         }
       >
-        <item.icon className="w-5 h-5 shrink-0" />
-        <span className="sidebar-label font-medium">{item.label}</span>
+        <item.icon className="w-4 h-4 shrink-0" />
+        <span className="sidebar-label">{item.label}</span>
       </NavLink>
     </SidebarMenuItem>
   );
@@ -124,16 +124,16 @@ function ExpandableNavItem({ item }) {
           type="button"
           onClick={() => setExpanded((p) => !p)}
           className={cn(
-            'flex w-full items-center justify-between gap-3 rounded-md px-3 py-2.5 min-h-10 transition-[background-color,color] duration-100 ease-linear touch-manipulation text-left outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2',
+            'flex w-full items-center justify-between gap-2.5 rounded-lg px-2 py-2 min-h-9 text-[13.5px] font-medium transition-colors duration-150 touch-manipulation text-left outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2',
             collapsed && 'justify-center px-2',
             isActive
               ? 'bg-sidebar-active-bg text-sidebar-active-accent [&_svg]:text-sidebar-active-accent'
               : 'text-foreground hover:bg-secondary'
           )}
         >
-          <div className="flex items-center gap-3 min-w-0">
-            <Icon className="w-5 h-5 shrink-0" />
-            <span className="sidebar-label font-medium">{item.label}</span>
+          <div className="flex items-center gap-2.5 min-w-0">
+            <Icon className="w-4 h-4 shrink-0" />
+            <span className="sidebar-label">{item.label}</span>
           </div>
           <ChevronDown
             className={cn('sidebar-label w-4 h-4 shrink-0 transition-transform', expanded && 'rotate-180')}
@@ -156,7 +156,7 @@ function ExpandableNavItem({ item }) {
                       onClick={() => setOpen(false)}
                       className={({ isActive: subActive }) =>
                         cn(
-                          'flex w-full items-center gap-3 rounded-md pl-9 pr-3 py-2 text-sm transition-[background-color,color] duration-100 ease-linear sidebar-label',
+                          'flex w-full items-center gap-2.5 rounded-lg pl-6 pr-2 py-2 text-sm transition-colors duration-150 sidebar-label',
                           subActive
                             ? 'bg-sidebar-active-bg text-sidebar-active-accent [&>svg]:text-sidebar-active-accent'
                             : 'text-muted-foreground hover:bg-secondary hover:text-foreground'
@@ -181,9 +181,8 @@ export default function Sidebar() {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
   const { settings } = useFinance();
-  const { open, setOpen, collapsed } = useSidebar();
+  const { open, setOpen, collapsed, toggleCollapsed } = useSidebar();
   const canManageUsers = user?.email === ADMIN_EMAIL;
-  const logoSrc = settings?.theme === 'light' ? sidebarLogoLight : sidebarLogo;
 
   const handleLogout = () => {
     logout();
@@ -207,24 +206,38 @@ export default function Sidebar() {
 
       <SidebarRoot collapsible="icon">
         <SidebarHeader>
-          <div className="flex items-center min-w-0 flex-1 justify-center">
-            {collapsed ? (
-              <img src={sidebarIcon} alt="MyAccounts" className="h-8 w-8 object-contain shrink-0" />
-            ) : (
-              <img src={logoSrc} alt="MyAccounts" className="h-8 object-contain" />
+          <div className={cn('flex items-center gap-2.5 min-w-0 flex-1', collapsed && 'justify-center')}>
+            <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-primary/20 text-primary font-bold text-sm">
+              <img src={sidebarIcon} alt="" className="h-4 w-4 object-contain" />
+            </div>
+            {!collapsed && (
+              <span className="sidebar-label text-sm font-semibold text-foreground truncate">MyAccounts</span>
             )}
           </div>
-          <button
-            type="button"
-            onClick={() => setOpen(false)}
-            aria-label="Close menu"
-            className="lg:hidden p-2.5 min-w-[44px] min-h-[44px] flex items-center justify-center hover:bg-secondary rounded-md transition-colors touch-manipulation"
-          >
-            <X className="w-5 h-5" />
-          </button>
+          {!collapsed && (
+            <button
+              type="button"
+              onClick={() => setOpen(false)}
+              aria-label="Close menu"
+              className="lg:hidden h-7 w-7 shrink-0 flex items-center justify-center hover:bg-secondary rounded-md border border-border transition-colors touch-manipulation"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          )}
+          {collapsed ? null : (
+            <button
+              type="button"
+              onClick={toggleCollapsed}
+              aria-label="Collapse sidebar"
+              className="hidden lg:flex h-7 w-7 shrink-0 items-center justify-center rounded-md border border-border hover:bg-secondary transition-colors touch-manipulation"
+            >
+              <ChevronLeft className="w-4 h-4" />
+            </button>
+          )}
         </SidebarHeader>
 
         <SidebarContent>
+          {!collapsed && <SidebarGroupLabel>Menu</SidebarGroupLabel>}
           <SidebarMenu>
             {NAV_ITEMS_WITH_DIVIDERS.map((entry, index) => {
               if (entry.divider) {
@@ -241,32 +254,23 @@ export default function Sidebar() {
         </SidebarContent>
 
         <SidebarFooter>
-          <div className="rounded-lg border border-secondary bg-secondary/30 px-2 py-2">
-            <div className={cn('flex items-center gap-2', collapsed && 'justify-center')}>
-              <DropdownMenu>
-                <DropdownMenuTrigger className={cn(
-                  'flex min-w-0 flex-1 items-center gap-2 rounded-md p-1.5 hover:bg-secondary/50 transition-colors touch-manipulation outline-none focus-visible:ring-2 focus-visible:ring-ring',
-                  collapsed && 'flex-1 justify-center'
-                )}>
-                  {collapsed ? (
-                    <AvatarWithStatus online className="h-10 w-10">
-                      {settings?.profileAvatar && <AvatarImage src={settings.profileAvatar} alt="Profile" />}
-                      <AvatarFallback className="text-base">{(user?.name || 'U').charAt(0).toUpperCase()}</AvatarFallback>
-                    </AvatarWithStatus>
-                  ) : (
-                    <>
-                      <AvatarLabelGroup
-                        size="md"
-                        src={settings?.profileAvatar}
-                        title={user?.name || 'User'}
-                        subtitle={user?.email}
-                        online
-                        className="min-w-0 flex-1"
-                      />
-                      <ChevronsUpDown className="h-5 w-5 shrink-0 text-muted-foreground" />
-                    </>
-                  )}
-                </DropdownMenuTrigger>
+          <DropdownMenu>
+            <DropdownMenuTrigger className={cn(
+              'flex w-full min-w-0 items-center gap-2.5 rounded-lg p-2 hover:bg-secondary transition-colors touch-manipulation outline-none focus-visible:ring-2 focus-visible:ring-ring',
+              collapsed && 'justify-center'
+            )}>
+              <AvatarWithStatus online className="h-7 w-7 shrink-0">
+                {settings?.profileAvatar && <AvatarImage src={settings.profileAvatar} alt="Profile" />}
+                <AvatarFallback className="text-xs">{(user?.name || 'U').charAt(0).toUpperCase()}</AvatarFallback>
+              </AvatarWithStatus>
+              {!collapsed && (
+                <div className="sidebar-label min-w-0 flex-1 text-left">
+                  <div className="text-[13px] font-semibold text-foreground truncate">{user?.name || 'User'}</div>
+                  <div className="text-[11px] text-muted-foreground truncate">{user?.email}</div>
+                </div>
+              )}
+              {!collapsed && <ChevronsUpDown className="h-4 w-4 shrink-0 text-muted-foreground" />}
+            </DropdownMenuTrigger>
                 <DropdownMenuContent align="end" side="top" className="w-56 p-2">
                   <div className="px-3 py-2 mb-1 border-b border-border">
                     <p className="text-sm font-semibold text-foreground">My Account</p>

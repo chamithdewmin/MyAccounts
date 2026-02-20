@@ -540,7 +540,7 @@ export default function FinanceDashboard() {
           height: 0 !important;
         }
       `}</style>
-      <div className="dashboard-container" style={s.page}>
+      <div className="dashboard-container -mx-3 sm:-mx-4 lg:-mx-5" style={s.page}>
       {/* HEADER */}
       <div style={{ marginBottom: 6, marginTop: -4 }}>
         <p style={{ color: "#8b9ab0", fontSize: 15, margin: 0, fontWeight: 500 }}>{getGreeting()}, {userName} 👋</p>

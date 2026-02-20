@@ -19,7 +19,6 @@ const Users = () => {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingUser, setEditingUser] = useState(null);
   const [saving, setSaving] = useState(false);
-  const [selected, setSelected] = useState([]);
   const [currentPage, setCurrentPage] = useState(1);
   const [form, setForm] = useState({
     name: '',
@@ -154,20 +153,6 @@ const Users = () => {
     }
   };
 
-  const toggleSelect = (id) => {
-    setSelected((prev) =>
-      prev.includes(id) ? prev.filter((i) => i !== id) : [...prev, id]
-    );
-  };
-
-  const toggleAll = () => {
-    if (selected.length === pageRows.length) {
-      setSelected([]);
-    } else {
-      setSelected(pageRows.map((u) => u.id));
-    }
-  };
-
   const totalPages = Math.max(1, Math.ceil(filteredUsers.length / PER_PAGE));
   const start = (currentPage - 1) * PER_PAGE;
   const pageRows = filteredUsers.slice(start, start + PER_PAGE);
@@ -238,14 +223,6 @@ const Users = () => {
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-border text-muted-foreground text-xs uppercase tracking-wide">
-                  <th className="w-10 px-4 py-3 text-left">
-                    <input
-                      type="checkbox"
-                      checked={pageRows.length > 0 && selected.length === pageRows.length}
-                      onChange={toggleAll}
-                      className="rounded border-border bg-secondary accent-primary cursor-pointer"
-                    />
-                  </th>
                   <th className="px-4 py-3 text-left font-medium">Name</th>
                   <th className="px-4 py-3 text-left font-medium">Status</th>
                   <th className="px-4 py-3 text-left font-medium">Created</th>
@@ -256,7 +233,7 @@ const Users = () => {
               <tbody>
                 {loading ? (
                   <tr>
-                    <td colSpan={6} className="px-4 py-8 text-center text-muted-foreground">
+                    <td colSpan={5} className="px-4 py-8 text-center text-muted-foreground">
                       Loading users...
                     </td>
                   </tr>
@@ -267,18 +244,8 @@ const Users = () => {
                       initial={{ opacity: 0 }}
                       animate={{ opacity: 1 }}
                       transition={{ delay: index * 0.02 }}
-                      className={`border-b border-border transition-colors ${
-                        selected.includes(user.id) ? 'bg-secondary/50' : 'hover:bg-secondary/30'
-                      }`}
+                      className="border-b border-border transition-colors hover:bg-secondary/30"
                     >
-                      <td className="px-4 py-3">
-                        <input
-                          type="checkbox"
-                          checked={selected.includes(user.id)}
-                          onChange={() => toggleSelect(user.id)}
-                          className="rounded border-border bg-secondary accent-primary cursor-pointer"
-                        />
-                      </td>
                       <td className="px-4 py-3">
                         <div className="flex items-center gap-3">
                           <div className="h-8 w-8 rounded-full bg-primary/20 flex items-center justify-center text-primary font-medium text-sm ring-2 ring-border">

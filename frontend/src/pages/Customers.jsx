@@ -14,7 +14,6 @@ const Customers = () => {
   const [customers, setCustomers] = useState([]);
   const [filteredCustomers, setFilteredCustomers] = useState([]);
   const [searchQuery, setSearchQuery] = useState('');
-  const [selected, setSelected] = useState([]);
   const [currentPage, setCurrentPage] = useState(1);
   const { toast } = useToast();
   const { clients, addClient, updateClient, deleteClient, loadData } = useFinance();
@@ -100,20 +99,6 @@ const Customers = () => {
     if (window.confirm(`Delete client "${customer.name}"?`)) {
       deleteClient(customer.id);
       toast({ title: 'Client deleted', description: 'Client has been removed.' });
-    }
-  };
-
-  const toggleSelect = (id) => {
-    setSelected((prev) =>
-      prev.includes(id) ? prev.filter((i) => i !== id) : [...prev, id]
-    );
-  };
-
-  const toggleAll = () => {
-    if (selected.length === pageRows.length) {
-      setSelected([]);
-    } else {
-      setSelected(pageRows.map((c) => c.id));
     }
   };
 
@@ -219,14 +204,6 @@ const Customers = () => {
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-border text-muted-foreground text-xs uppercase tracking-wide">
-                  <th className="w-10 px-4 py-3 text-left">
-                    <input
-                      type="checkbox"
-                      checked={pageRows.length > 0 && selected.length === pageRows.length}
-                      onChange={toggleAll}
-                      className="rounded border-border bg-secondary accent-primary cursor-pointer"
-                    />
-                  </th>
                   <th className="px-4 py-3 text-left font-medium">Name</th>
                   <th className="px-4 py-3 text-left font-medium">Email address</th>
                   <th className="px-4 py-3 text-left font-medium">Phone</th>
@@ -237,7 +214,7 @@ const Customers = () => {
               <tbody>
                 {pageRows.length === 0 ? (
                   <tr>
-                    <td colSpan={6} className="px-4 py-8 text-center text-muted-foreground">
+                    <td colSpan={5} className="px-4 py-8 text-center text-muted-foreground">
                       No clients found
                     </td>
                   </tr>
@@ -248,18 +225,8 @@ const Customers = () => {
                       initial={{ opacity: 0 }}
                       animate={{ opacity: 1 }}
                       transition={{ delay: index * 0.02 }}
-                      className={`border-b border-border transition-colors ${
-                        selected.includes(customer.id) ? 'bg-secondary/50' : 'hover:bg-secondary/30'
-                      }`}
+                      className="border-b border-border transition-colors hover:bg-secondary/30"
                     >
-                      <td className="px-4 py-3">
-                        <input
-                          type="checkbox"
-                          checked={selected.includes(customer.id)}
-                          onChange={() => toggleSelect(customer.id)}
-                          className="rounded border-border bg-secondary accent-primary cursor-pointer"
-                        />
-                      </td>
                       <td className="px-4 py-3">
                         <div className="flex items-center gap-3">
                           <div className="h-8 w-8 rounded-full bg-primary/20 flex items-center justify-center text-primary font-medium text-sm ring-2 ring-border">

@@ -325,7 +325,7 @@ export default function OverviewReports() {
   }, [plMonthly, totalIncome, worstMonth, cashBalance, incomes, invoices, debtRatio, equity, settings, totalTax, pendingTax]);
 
   return (
-    <div style={{ minHeight:"100vh", fontFamily:"'Inter', -apple-system, BlinkMacSystemFont, sans-serif", color:C.text }}>
+    <div className="-mx-3 sm:-mx-4 lg:-mx-5" style={{ minHeight:"100vh", fontFamily:"'Inter', -apple-system, BlinkMacSystemFont, sans-serif", color:C.text }}>
       <style>{`
         * { box-sizing:border-box; }
         body { margin:0; }
@@ -337,7 +337,7 @@ export default function OverviewReports() {
         .txrow:hover { background:#1a1d27 !important; }
       `}</style>
 
-      <div style={{ padding:"24px 28px", display:"flex", flexDirection:"column", gap:20, animation:"fi .4s ease" }}>
+      <div style={{ padding:"24px 18px", display:"flex", flexDirection:"column", gap:20, animation:"fi .4s ease" }}>
 
         {/* PAGE HEADER */}
         <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-start" }}>

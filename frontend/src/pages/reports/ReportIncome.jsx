@@ -111,7 +111,7 @@ const ReportIncome = () => {
         <meta name="description" content="Income by client, Income by service" />
       </Helmet>
 
-      <div className="space-y-6">
+      <div className="space-y-6" style={{ fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, sans-serif" }}>
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-3xl font-bold">Income Reports</h1>
@@ -132,7 +132,7 @@ const ReportIncome = () => {
                 fontSize: 13,
                 fontWeight: 600,
                 cursor: "pointer",
-                fontFamily: "inherit",
+                fontFamily: "'Inter', sans-serif",
               }}
             >
               <RefreshCw className="w-4 h-4" />
@@ -152,7 +152,7 @@ const ReportIncome = () => {
                 fontSize: 13,
                 fontWeight: 600,
                 cursor: "pointer",
-                fontFamily: "inherit",
+                fontFamily: "'Inter', sans-serif",
               }}
             >
               <Download className="w-4 h-4" />
@@ -172,7 +172,7 @@ const ReportIncome = () => {
                 fontSize: 13,
                 fontWeight: 600,
                 cursor: "pointer",
-                fontFamily: "inherit",
+                fontFamily: "'Inter', sans-serif",
               }}
             >
               <Download className="w-4 h-4" />

@@ -307,9 +307,10 @@ const InvoiceTemplate = ({
             </div>
           </div>
 
-          {/* FOOTER */}
+          {/* FOOTER - Signature area: LogozoDev authorized only */}
           <div style={{ marginTop: 32, position: 'relative', height: 52, background: '#111', display: 'flex', alignItems: 'center', paddingLeft: 28 }}>
             <div style={{ position: 'absolute', right: 0, top: 0, width: 0, height: 0, borderLeft: '52px solid transparent', borderTop: '52px solid #dc2626' }} />
+            <span style={{ color: '#fff', fontSize: 12, fontStyle: 'italic', fontWeight: 600 }}>LogozoDev authorized</span>
           </div>
 
         </div>

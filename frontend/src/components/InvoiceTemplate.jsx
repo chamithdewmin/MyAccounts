@@ -444,10 +444,6 @@ export default function InvoiceTemplate({
                 <div style={invoiceStyles.sigLine} />
                 <div>Prepared By</div>
               </div>
-              <div style={invoiceStyles.sigBlock}>
-                <div style={invoiceStyles.sigLine} />
-                <div>Customer Signature</div>
-              </div>
             </div>
           </div>
         </div>

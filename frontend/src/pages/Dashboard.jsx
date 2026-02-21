@@ -591,14 +591,21 @@ export default function FinanceDashboard() {
     val: { color: "#fff", fontSize: 26, fontWeight: 800, margin: "4px 0 0", letterSpacing: "-0.03em" },
   };
 
+  useEffect(() => {
+    document.body.classList.add("dashboard-no-scrollbar");
+    return () => document.body.classList.remove("dashboard-no-scrollbar");
+  }, []);
+
   return (
     <>
       <style>{`
+        body.dashboard-no-scrollbar,
         .dashboard-container,
         .dashboard-container * {
           scrollbar-width: none !important;
           -ms-overflow-style: none !important;
         }
+        body.dashboard-no-scrollbar::-webkit-scrollbar,
         .dashboard-container *::-webkit-scrollbar {
           display: none !important;
           width: 0 !important;
@@ -681,7 +688,7 @@ export default function FinanceDashboard() {
       </div>
 
       {/* MAIN GRID */}
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 370px", gap: 16 }}>
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 420px", gap: 16 }}>
         {/* LEFT COLUMN */}
         <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
 

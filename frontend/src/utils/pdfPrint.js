@@ -14,7 +14,7 @@ export function getPrintHtml(innerContent, options = {}) {
     : '';
   const titleHtml = businessName ? `<h1 style="font-size:18px; font-weight:700; margin:0 0 16px; color:#111;">${escapeHtml(businessName)}</h1>` : '';
   const footer = '<p style="font-size:10px; color:#666; margin-top:16px; padding-top:12px; border-top:1px solid #ddd;">Generated from MyAccounts</p>';
-  return `<div style="padding:24px; font-family:'Inter',-apple-system,sans-serif; color:#111; background:#fff; font-size:14px; line-height:1.5; max-width:100%;">${logoHtml}${titleHtml}${innerContent}${footer}</div>`;
+  return `<div style="padding:24px; font-family:'Inter',-apple-system,sans-serif; color:#111; background:#fff; font-size:14px; line-height:1.5; max-width:100%; min-height:200px;">${logoHtml}${titleHtml}${innerContent}${footer}</div>`;
 }
 
 function escapeHtml(text) {
@@ -108,8 +108,8 @@ export async function downloadReportPdf(html, filename) {
 export async function downloadReportAsPdf(html, filename) {
   const html2pdf = (await import('html2pdf.js')).default;
   const container = document.createElement('div');
-  // In-viewport but invisible so html2canvas captures correctly (off-screen can yield blank pages)
-  container.style.cssText = 'position:fixed;left:0;top:0;width:190mm;max-width:190mm;background:#fff;font-size:14px;color:#111;opacity:0.01;pointer-events:none;z-index:-1;overflow:visible;box-sizing:border-box;';
+  // In-viewport, high z-index, nearly invisible – ensures html2canvas can capture (z-index:-1 often yields blank)
+  container.style.cssText = 'position:fixed;left:0;top:0;width:190mm;max-width:190mm;min-height:297mm;background:#fff;font-size:14px;color:#111;opacity:0.02;pointer-events:none;z-index:2147483647;overflow:visible;box-sizing:border-box;';
   container.innerHTML = html;
   document.body.appendChild(container);
 
@@ -123,7 +123,7 @@ export async function downloadReportAsPdf(html, filename) {
     });
   }));
 
-  await new Promise((r) => setTimeout(r, 300));
+  await new Promise((r) => setTimeout(r, 500));
 
   try {
     const opt = {
@@ -136,6 +136,6 @@ export async function downloadReportAsPdf(html, filename) {
     };
     await html2pdf().set(opt).from(container).save();
   } finally {
-    document.body.removeChild(container);
+    if (container.parentNode) document.body.removeChild(container);
   }
 }

@@ -22,10 +22,9 @@ const ReportPreviewModal = ({ open, onOpenChange, html, filename, reportTitle = 
     if (!html || !filename) return;
     setDownloading(true);
     try {
-      // Render same HTML in a temporary container (like pdfPrint.downloadReportAsPdf)
-      // so html2canvas captures correctly; capturing inside the dialog often yields blank PDF
+      // Same as pdfPrint: in-viewport, high z-index, nearly invisible so html2canvas captures content
       const container = document.createElement('div');
-      container.style.cssText = 'position:fixed;left:0;top:0;width:190mm;max-width:190mm;background:#fff;font-size:14px;color:#111;opacity:0.01;pointer-events:none;z-index:-1;overflow:visible;box-sizing:border-box;';
+      container.style.cssText = 'position:fixed;left:0;top:0;width:190mm;max-width:190mm;min-height:297mm;background:#fff;font-size:14px;color:#111;opacity:0.02;pointer-events:none;z-index:2147483647;overflow:visible;box-sizing:border-box;';
       container.innerHTML = html;
       document.body.appendChild(container);
 
@@ -39,7 +38,7 @@ const ReportPreviewModal = ({ open, onOpenChange, html, filename, reportTitle = 
         });
       }));
 
-      await new Promise((r) => setTimeout(r, 300));
+      await new Promise((r) => setTimeout(r, 500));
 
       const opt = {
         margin: [10, 10, 14, 10],
@@ -50,7 +49,7 @@ const ReportPreviewModal = ({ open, onOpenChange, html, filename, reportTitle = 
         pagebreak: { mode: ['css', 'legacy'], avoid: ['tr', 'table'] },
       };
       await html2pdf().set(opt).from(container).save();
-      document.body.removeChild(container);
+      if (container.parentNode) document.body.removeChild(container);
     } catch (err) {
       console.error('Report PDF download failed:', err);
     } finally {

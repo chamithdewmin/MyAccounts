@@ -224,9 +224,15 @@ export default function InvoiceTemplate({
     setDlStatus('loading');
     try {
       const filename = `Invoice-${String(inv.invoiceNumber).replace(/^#/, '')}.pdf`;
+      // Screenshot-style: PDF page size = exact invoice view size (no margins, same as screen)
+      const w = element.offsetWidth;
+      const h = element.offsetHeight;
+      const wMm = (w * 25.4) / 96;
+      const hMm = (h * 25.4) / 96;
+
       await html2pdf()
         .set({
-          margin: [12, 15, 12, 15],
+          margin: 0,
           filename,
           image: { type: 'png', quality: 1 },
           html2canvas: {
@@ -236,8 +242,8 @@ export default function InvoiceTemplate({
             logging: false,
             backgroundColor: '#ffffff',
           },
-          jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
-          pagebreak: { mode: ['css', 'legacy'], avoid: ['tr', '.avoid-break'] },
+          jsPDF: { unit: 'mm', format: [wMm, hMm], hotfixes: ['px_scaling'] },
+          pagebreak: { mode: 'avoid', avoid: ['tr', '.avoid-break'] },
         })
         .from(element)
         .save();

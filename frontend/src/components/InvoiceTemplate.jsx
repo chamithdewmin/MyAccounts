@@ -31,6 +31,13 @@ function formatDate(date) {
   return `${months[d.getMonth()]} ${String(d.getDate()).padStart(2, '0')}, ${d.getFullYear()}`;
 }
 
+function formatPhoneDisplay(phone) {
+  if (!phone) return '';
+  const digits = String(phone).replace(/\D/g, '');
+  if (digits.length >= 10) return `${digits.slice(0, 3)} ${digits.slice(3, 6)} ${digits.slice(6)}`;
+  return String(phone).trim();
+}
+
 function normalise(raw = {}, currency = 'LKR', settings = {}) {
   const items = Array.isArray(raw.items) ? raw.items : [];
   const subtotal = raw.subtotal ?? items.reduce((s, i) => s + (parseFloat(i.price || 0) * parseFloat(i.quantity ?? i.qty ?? 1)), 0);
@@ -52,7 +59,7 @@ function normalise(raw = {}, currency = 'LKR', settings = {}) {
     companyName: settings?.businessName || 'COMPANY',
     companyTagline: settings?.businessName ? '' : 'COMPANY TAGLINE HERE',
     companyAddress: settings?.address || '',
-    companyPhone: settings?.phone || '0741525537',
+    companyPhone: formatPhoneDisplay(settings?.phone || '0741525537'),
     companyEmail: settings?.email || 'hello@logozodev.com',
     companyWebsite: settings?.website || 'www.logozodev.com',
 
@@ -77,7 +84,7 @@ function normalise(raw = {}, currency = 'LKR', settings = {}) {
         total: lineTotal,
         rateFormatted: price.toLocaleString(),
         amountFormatted: lineTotal.toLocaleString(),
-        qtyStr: `${qty.toFixed(2)} pcs`,
+        qtyStr: qty.toFixed(2),
       };
     }),
 
@@ -168,6 +175,7 @@ const invoiceStyles = {
   metaSection: { display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', margin: '8px 0 20px' },
   billToLabel: { color: '#555', fontSize: '13px', marginBottom: '4px' },
   billToName: { fontWeight: 'bold', fontSize: '15px' },
+  billToDetail: { fontSize: '13px', color: '#1a1a1a', marginTop: '2px' },
   metaRow: { display: 'flex', justifyContent: 'flex-end', gap: '24px', marginBottom: '4px', fontSize: '13px' },
   metaKey: { color: '#555' },
   metaVal: { color: '#1a1a1a', fontWeight: 500, minWidth: '120px', textAlign: 'right' },
@@ -388,6 +396,9 @@ export default function InvoiceTemplate({
               <div>
                 <div style={invoiceStyles.billToLabel}>Bill To</div>
                 <div style={invoiceStyles.billToName}>{inv.clientName}</div>
+                {inv.clientPhone && (
+                  <div style={invoiceStyles.billToDetail}>{formatPhoneDisplay(inv.clientPhone)}</div>
+                )}
               </div>
               <div style={{ textAlign: 'right' }}>
                 {[

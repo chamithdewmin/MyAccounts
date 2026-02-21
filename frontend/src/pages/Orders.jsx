@@ -399,7 +399,7 @@ const Orders = () => {
                           <button
                             type="button"
                             onClick={() => updateInvoiceStatus(order.id, 'paid')}
-                            className="text-xs px-3 py-1 rounded-full bg-primary text-white hover:bg-primary/90"
+                            className="text-xs px-3 py-1 rounded-full bg-primary !text-white hover:bg-primary/90"
                           >
                             Mark Paid
                           </button>

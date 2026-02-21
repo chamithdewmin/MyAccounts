@@ -14,6 +14,13 @@ import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 
 const DEBOUNCE_MS = 600;
 
+function formatPhoneDisplay(phone) {
+  if (!phone) return '';
+  const digits = String(phone).replace(/\D/g, '');
+  if (digits.length >= 10) return `${digits.slice(0, 3)} ${digits.slice(3, 6)} ${digits.slice(6)}`;
+  return String(phone).trim();
+}
+
 const Profile = () => {
   const { settings, updateSettings, saveBankDetails } = useFinance();
   const { user } = useAuth();
@@ -447,7 +454,7 @@ const Profile = () => {
                 <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mb-2">Invoice From (preview)</p>
                 <p className="font-bold text-lg text-foreground mb-2">{s.businessName || 'Company name'}</p>
                 <div className="text-sm text-muted-foreground space-y-1">
-                  {s.phone && <p>Phone — {s.phone}</p>}
+                  {s.phone && <p>Phone — {formatPhoneDisplay(s.phone)}</p>}
                   {s.companyEmail && <p>Email — {s.companyEmail}</p>}
                   {s.website && <p>Website — {s.website}</p>}
                   {s.address && <p>Address — {s.address}</p>}

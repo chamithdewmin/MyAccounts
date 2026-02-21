@@ -1,3 +1,6 @@
+import html2canvas from 'html2canvas';
+import { jsPDF } from 'jspdf';
+
 /**
  * Wraps report/print content with logo (top-left), optional business name, and "Generated from MyAccounts" footer.
  * Uses the invoice/company logo uploaded in Settings.
@@ -109,8 +112,33 @@ export async function downloadReportPdf(html, filename) {
 }
 
 /**
- * Downloads report as PDF file directly (no print dialog). Uses html2pdf.
- * Includes invoice logo from Settings when provided in the HTML (via getPrintHtml).
+ * Downloads report as a PDF file directly (no print dialog). Captures the given
+ * DOM element with html2canvas and saves via jsPDF. Use the modal's report content element.
+ * @param {HTMLElement} element - The report content div (e.g. modal's contentRef.current)
+ * @param {string} filename - e.g. 'overview-report-2026-02-19.pdf'
+ * @returns {Promise<void>}
+ */
+export async function downloadReportPdfFile(element, filename) {
+  if (!element) throw new Error('No report content to download');
+  const scale = 2;
+  const canvas = await html2canvas(element, {
+    scale,
+    useCORS: true,
+    allowTaint: true,
+    logging: false,
+    backgroundColor: '#ffffff',
+  });
+  const w = element.offsetWidth;
+  const h = element.offsetHeight;
+  const wMm = (w * 25.4) / 96;
+  const hMm = (h * 25.4) / 96;
+  const pdf = new jsPDF({ unit: 'mm', format: [wMm, hMm], hotfixes: ['px_scaling'] });
+  pdf.addImage(canvas.toDataURL('image/png'), 'PNG', 0, 0, wMm, hMm);
+  pdf.save(filename);
+}
+
+/**
+ * Legacy: opens print dialog. Use downloadReportPdfFile for direct PDF download.
  * @param {string} html - Full HTML content (from getPrintHtml)
  * @param {string} filename - e.g. 'overview-report-2026-02-19.pdf'
  * @returns {Promise<void>}

@@ -2,25 +2,46 @@ import React, { useRef, useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Download, Printer } from 'lucide-react';
-import { downloadReportPdf } from '@/utils/pdfPrint';
+import { downloadReportPdf, downloadReportPdfFile } from '@/utils/pdfPrint';
 
 /**
  * Report preview popup (like invoice preview) with Download PDF and Print buttons.
+ * Download PDF = direct file save (no print dialog). Print = system print dialog.
  */
 const ReportPreviewModal = ({ open, onOpenChange, html, filename, reportTitle = 'Report' }) => {
   const contentRef = useRef(null);
   const [loading, setLoading] = useState(false);
+  const [action, setAction] = useState(null);
 
-  const handleDownloadOrPrint = async () => {
+  const handleDownloadPdf = async () => {
+    if (!html || !filename) return;
+    const el = contentRef.current;
+    if (!el) return;
+    setLoading(true);
+    setAction('download');
+    try {
+      await new Promise((r) => setTimeout(r, 150));
+      await downloadReportPdfFile(el, filename);
+    } catch (err) {
+      console.error('Report PDF download failed:', err);
+    } finally {
+      setLoading(false);
+      setAction(null);
+    }
+  };
+
+  const handlePrint = async () => {
     if (!html || !filename) return;
     setLoading(true);
+    setAction('print');
     try {
       await new Promise((r) => setTimeout(r, 100));
       await downloadReportPdf(html, filename);
     } catch (err) {
-      console.error('Report PDF/Print failed:', err);
+      console.error('Report print failed:', err);
     } finally {
       setLoading(false);
+      setAction(null);
     }
   };
 
@@ -41,22 +62,22 @@ const ReportPreviewModal = ({ open, onOpenChange, html, filename, reportTitle = 
             <Button
               size="default"
               variant="outline"
-              onClick={handleDownloadOrPrint}
+              onClick={handleDownloadPdf}
               disabled={loading}
               className="gap-2"
             >
               <Download className="h-4 w-4" />
-              {loading ? 'Opening…' : 'Download PDF'}
+              {loading && action === 'download' ? 'Downloading…' : 'Download PDF'}
             </Button>
             <Button
               size="default"
               variant="outline"
-              onClick={handleDownloadOrPrint}
+              onClick={handlePrint}
               disabled={loading}
               className="gap-2"
             >
               <Printer className="h-4 w-4" />
-              Print
+              {loading && action === 'print' ? 'Opening…' : 'Print'}
             </Button>
           </div>
           <div

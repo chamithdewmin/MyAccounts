@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { Helmet } from 'react-helmet';
 import { Calendar as CalendarIcon, ChevronLeft, ChevronRight, DollarSign, Receipt, FileText, TrendingUp } from 'lucide-react';
 import { useFinance } from '@/contexts/FinanceContext';
@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 
 const Calendar = () => {
-  const { incomes, expenses, invoices, settings } = useFinance();
+  const { incomes, expenses, invoices, settings, loadData } = useFinance();
   const [currentDate, setCurrentDate] = useState(new Date());
   const currency = settings?.currency || 'LKR';
 
@@ -25,9 +25,21 @@ const Calendar = () => {
 
   const weekDays = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
-  // Get transactions for a specific date
+  // Format any date (Date or string from API) as local YYYY-MM-DD so calendar matches DB dates correctly
+  const toLocalDateString = (val) => {
+    if (val == null) return '';
+    const d = val instanceof Date ? val : new Date(val);
+    if (Number.isNaN(d.getTime())) return '';
+    const y = d.getFullYear();
+    const m = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    return `${y}-${m}-${day}`;
+  };
+
+  // Get transactions for a specific date (compare local dates so timezone doesn't shift the day)
   const getTransactionsForDate = (date) => {
-    const dateStr = date.toISOString().split('T')[0];
+    const dateStr = toLocalDateString(date);
+    if (!dateStr) return { incomes: [], expenses: [], invoices: [] };
     const dayTransactions = {
       incomes: [],
       expenses: [],
@@ -35,22 +47,20 @@ const Calendar = () => {
     };
 
     incomes.forEach(income => {
-      const incomeDate = new Date(income.date).toISOString().split('T')[0];
-      if (incomeDate === dateStr) {
+      if (toLocalDateString(income.date) === dateStr) {
         dayTransactions.incomes.push(income);
       }
     });
 
     expenses.forEach(expense => {
-      const expenseDate = new Date(expense.date).toISOString().split('T')[0];
-      if (expenseDate === dateStr) {
+      if (toLocalDateString(expense.date) === dateStr) {
         dayTransactions.expenses.push(expense);
       }
     });
 
     invoices.forEach(invoice => {
-      const invoiceDate = new Date(invoice.dueDate || invoice.createdAt).toISOString().split('T')[0];
-      if (invoiceDate === dateStr) {
+      const invDate = invoice.dueDate ?? invoice.createdAt;
+      if (invDate && toLocalDateString(invDate) === dateStr) {
         dayTransactions.invoices.push(invoice);
       }
     });
@@ -105,6 +115,10 @@ const Calendar = () => {
   const [selectedDate, setSelectedDate] = useState(null);
   const selectedTransactions = selectedDate ? getTransactionsForDate(selectedDate) : null;
   const selectedTotals = selectedDate ? getDateTotals(selectedDate) : null;
+
+  useEffect(() => {
+    loadData?.();
+  }, []);
 
   return (
     <>

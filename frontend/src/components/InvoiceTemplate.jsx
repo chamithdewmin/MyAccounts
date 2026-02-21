@@ -186,6 +186,7 @@ const invoiceStyles = {
     fontSize: '13px',
     verticalAlign: 'top',
     border: 'none',
+    borderBottom: '1px solid #1a1a1a',
     background: '#fff',
     color: '#1a1a1a',
   },

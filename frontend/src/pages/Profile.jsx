@@ -442,6 +442,20 @@ const Profile = () => {
                 <h2 className="text-base sm:text-lg font-semibold">Business Profile</h2>
               </div>
               <p className="text-sm text-muted-foreground mb-4">Your core business information used across invoices and reports.</p>
+              {/* Invoice From preview - how it appears on invoices */}
+              <div className="mb-6 p-4 rounded-lg border border-border bg-muted/30">
+                <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mb-2">Invoice From (preview)</p>
+                <p className="font-bold text-lg text-foreground mb-2">{s.businessName || 'Company name'}</p>
+                <div className="text-sm text-muted-foreground space-y-1">
+                  {s.phone && <p>Phone — {s.phone}</p>}
+                  {s.companyEmail && <p>Email — {s.companyEmail}</p>}
+                  {s.website && <p>Website — {s.website}</p>}
+                  {s.address && <p>Address — {s.address}</p>}
+                  {!s.phone && !s.companyEmail && !s.website && !s.address && (
+                    <p className="text-muted-foreground/80">Add phone, email, and website below to see them here and on invoices.</p>
+                  )}
+                </div>
+              </div>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="company-name">Company Name</Label>

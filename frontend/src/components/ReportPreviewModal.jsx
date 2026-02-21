@@ -15,6 +15,7 @@ const ReportPreviewModal = ({ open, onOpenChange, html, filename, reportTitle = 
     if (!html || !filename) return;
     setLoading(true);
     try {
+      await new Promise((r) => setTimeout(r, 100));
       await downloadReportPdf(html, filename);
     } catch (err) {
       console.error('Report PDF/Print failed:', err);
@@ -25,7 +26,13 @@ const ReportPreviewModal = ({ open, onOpenChange, html, filename, reportTitle = 
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto mx-2 sm:mx-auto w-[95vw]" aria-describedby={undefined}>
+      <DialogContent
+        className="max-w-4xl max-h-[90vh] overflow-y-auto mx-2 sm:mx-auto w-[95vw]"
+        aria-describedby={undefined}
+        onInteractOutside={(e) => {
+          if (loading) e.preventDefault();
+        }}
+      >
         <DialogHeader>
           <DialogTitle>{reportTitle}</DialogTitle>
         </DialogHeader>

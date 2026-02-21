@@ -341,7 +341,7 @@ const Orders = () => {
                       <span className={`px-2 py-1 rounded-full text-xs font-semibold ${
                         order.status === 'paid'
                           ? 'bg-green-500/20 text-green-500'
-                          : 'bg-yellow-500/20 text-yellow-500'
+                          : 'bg-white text-gray-900 border border-border'
                       }`}>
                         {order.status === 'paid' ? 'Paid' : 'Unpaid'}
                       </span>

@@ -179,11 +179,78 @@ const StatCard = ({ icon, iconBg, label, value, badge, badgeColor }) => {
   );
 };
 
+// ─── DATE RANGE HELPERS ───────────────────────────────────────────────────────
+const DATE_RANGES = [
+  { value: "month", label: "This month" },
+  { value: "quarter", label: "This quarter" },
+  { value: "year", label: "This year" },
+];
+
+function getDateRangeForPeriod(period) {
+  const now = new Date();
+  const start = new Date(now);
+  const end = new Date(now);
+  start.setHours(0, 0, 0, 0);
+  end.setHours(23, 59, 59, 999);
+  if (period === "month") {
+    start.setDate(1);
+  } else if (period === "quarter") {
+    const q = Math.floor(now.getMonth() / 3) + 1;
+    start.setMonth((q - 1) * 3, 1);
+    end.setMonth(q * 3, 0);
+  } else {
+    start.setMonth(0, 1);
+    end.setMonth(11, 31);
+  }
+  return { start, end };
+}
+
+function getPreviousDateRange(period) {
+  const now = new Date();
+  const start = new Date(now);
+  const end = new Date(now);
+  if (period === "month") {
+    start.setMonth(now.getMonth() - 1, 1);
+    start.setHours(0, 0, 0, 0);
+    end.setMonth(now.getMonth(), 0);
+    end.setHours(23, 59, 59, 999);
+  } else if (period === "quarter") {
+    const q = Math.floor(now.getMonth() / 3) + 1;
+    const prevQ = q === 1 ? 4 : q - 1;
+    const prevYear = q === 1 ? now.getFullYear() - 1 : now.getFullYear();
+    start.setFullYear(prevYear);
+    start.setMonth((prevQ - 1) * 3, 1);
+    start.setHours(0, 0, 0, 0);
+    end.setFullYear(prevYear);
+    end.setMonth(prevQ * 3, 0);
+    end.setHours(23, 59, 59, 999);
+  } else {
+    start.setFullYear(now.getFullYear() - 1);
+    start.setMonth(0, 1);
+    start.setHours(0, 0, 0, 0);
+    end.setFullYear(now.getFullYear() - 1);
+    end.setMonth(11, 31);
+    end.setHours(23, 59, 59, 999);
+  }
+  return { start, end };
+}
+
+function isDateInRange(dateStr, start, end) {
+  const d = new Date(dateStr);
+  d.setHours(12, 0, 0, 0);
+  const s = new Date(start);
+  s.setHours(0, 0, 0, 0);
+  const e = new Date(end);
+  e.setHours(23, 59, 59, 999);
+  return d >= s && d <= e;
+}
+
 // ─── MAIN DASHBOARD ───────────────────────────────────────────────────────────
 export default function FinanceDashboard() {
   const { incomes, expenses, totals, settings, addTransfer, loadData } = useFinance();
   const { user } = useAuth();
   const { toast } = useToast();
+  const [dateRange, setDateRange] = useState("month");
   const [activeBar, setActiveBar] = useState(null);
   const [currentCard, setCurrentCard] = useState(0);
   const [prevCard, setPrevCard] = useState(null);
@@ -233,196 +300,190 @@ export default function FinanceDashboard() {
     loadData();
   };
 
+  // Current date range bounds
+  const rangeBounds = useMemo(() => getDateRangeForPeriod(dateRange), [dateRange]);
+  const prevRangeBounds = useMemo(() => getPreviousDateRange(dateRange), [dateRange]);
+
   // Get current year for display
   const currentYear = new Date().getFullYear();
 
-  // Calculate monthly analytics for last 8 months
+  // Calculate analytics based on date range: last 8 months, 8 quarters, or 5 years
   const analyticsData = useMemo(() => {
-    const months = [];
     const now = new Date();
-    
-    for (let i = 7; i >= 0; i--) {
-      const date = new Date(now.getFullYear(), now.getMonth() - i, 1);
-      const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
-      const monthLabel = date.toLocaleDateString('en-US', { month: 'short' });
-      
-      let monthIncome = 0;
-      let monthExpense = 0;
-      
-      incomes.forEach(income => {
-        const incomeDate = new Date(income.date);
-        if (incomeDate.getFullYear() === date.getFullYear() && incomeDate.getMonth() === date.getMonth()) {
-          monthIncome += income.amount || 0;
-        }
-      });
-      
-      expenses.forEach(expense => {
-        const expenseDate = new Date(expense.date);
-        if (expenseDate.getFullYear() === date.getFullYear() && expenseDate.getMonth() === date.getMonth()) {
-          monthExpense += expense.amount || 0;
-        }
-      });
-      
-      months.push({
-        month: monthLabel,
-        income: monthIncome,
-        outcome: monthExpense,
-      });
+    let points = [];
+    if (dateRange === "month") {
+      for (let i = 7; i >= 0; i--) {
+        const date = new Date(now.getFullYear(), now.getMonth() - i, 1);
+        const monthLabel = date.toLocaleDateString('en-US', { month: 'short' });
+        let monthIncome = 0, monthExpense = 0;
+        incomes.forEach(income => {
+          const d = new Date(income.date);
+          if (d.getFullYear() === date.getFullYear() && d.getMonth() === date.getMonth())
+            monthIncome += income.amount || 0;
+        });
+        expenses.forEach(expense => {
+          const d = new Date(expense.date);
+          if (d.getFullYear() === date.getFullYear() && d.getMonth() === date.getMonth())
+            monthExpense += expense.amount || 0;
+        });
+        points.push({ month: monthLabel, income: monthIncome, outcome: monthExpense });
+      }
+    } else if (dateRange === "quarter") {
+      for (let i = 7; i >= 0; i--) {
+        const y = now.getFullYear();
+        const m = now.getMonth();
+        const q = Math.floor(m / 3) + 1;
+        const totalQuarters = (y * 4) + q - i;
+        const qYear = Math.floor((totalQuarters - 1) / 4);
+        const qNum = ((totalQuarters - 1) % 4) + 1;
+        const label = `Q${qNum} ${String(qYear).slice(-2)}`;
+        const startMonth = (qNum - 1) * 3;
+        let quarterIncome = 0, quarterExpense = 0;
+        incomes.forEach(income => {
+          const d = new Date(income.date);
+          if (d.getFullYear() === qYear && d.getMonth() >= startMonth && d.getMonth() < startMonth + 3)
+            quarterIncome += income.amount || 0;
+        });
+        expenses.forEach(expense => {
+          const d = new Date(expense.date);
+          if (d.getFullYear() === qYear && d.getMonth() >= startMonth && d.getMonth() < startMonth + 3)
+            quarterExpense += expense.amount || 0;
+        });
+        points.push({ month: label, income: quarterIncome, outcome: quarterExpense });
+      }
+    } else {
+      for (let i = 4; i >= 0; i--) {
+        const y = now.getFullYear() - i;
+        const label = String(y);
+        let yearIncome = 0, yearExpense = 0;
+        incomes.forEach(income => {
+          if (new Date(income.date).getFullYear() === y) yearIncome += income.amount || 0;
+        });
+        expenses.forEach(expense => {
+          if (new Date(expense.date).getFullYear() === y) yearExpense += expense.amount || 0;
+        });
+        points.push({ month: label, income: yearIncome, outcome: yearExpense });
+      }
     }
-    
-    return months;
-  }, [incomes, expenses]);
+    return points;
+  }, [incomes, expenses, dateRange]);
 
-  // Calculate weekly activity (current week)
+  // Activity: for month = current week; for quarter/year = months in period
   const activityData = useMemo(() => {
-    const now = new Date();
-    const dayOfWeek = now.getDay();
-    const startOfWeek = new Date(now);
-    startOfWeek.setDate(now.getDate() - dayOfWeek + (dayOfWeek === 0 ? -6 : 1)); // Monday
-    startOfWeek.setHours(0, 0, 0, 0);
-    
-    const days = ['Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa', 'Su'];
-    const weekData = [];
-    
-    for (let i = 0; i < 7; i++) {
-      const dayStart = new Date(startOfWeek);
-      dayStart.setDate(startOfWeek.getDate() + i);
-      dayStart.setHours(0, 0, 0, 0);
-      
-      const dayEnd = new Date(dayStart);
-      dayEnd.setHours(23, 59, 59, 999);
-      
-      let earning = 0;
-      let spent = 0;
-      
-      incomes.forEach(income => {
-        const incomeDate = new Date(income.date);
-        incomeDate.setHours(0, 0, 0, 0);
-        if (incomeDate >= dayStart && incomeDate <= dayEnd) {
-          earning += income.amount || 0;
-        }
-      });
-      
-      expenses.forEach(expense => {
-        const expenseDate = new Date(expense.date);
-        expenseDate.setHours(0, 0, 0, 0);
-        if (expenseDate >= dayStart && expenseDate <= dayEnd) {
-          spent += expense.amount || 0;
-        }
-      });
-      
-      weekData.push({
-        day: days[i],
-        earning,
-        spent,
-      });
+    if (dateRange === "month") {
+      const now = new Date();
+      const dayOfWeek = now.getDay();
+      const startOfWeek = new Date(now);
+      startOfWeek.setDate(now.getDate() - dayOfWeek + (dayOfWeek === 0 ? -6 : 1));
+      startOfWeek.setHours(0, 0, 0, 0);
+      const days = ['Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa', 'Su'];
+      const weekData = [];
+      for (let i = 0; i < 7; i++) {
+        const dayStart = new Date(startOfWeek);
+        dayStart.setDate(startOfWeek.getDate() + i);
+        dayStart.setHours(0, 0, 0, 0);
+        const dayEnd = new Date(dayStart);
+        dayEnd.setHours(23, 59, 59, 999);
+        let earning = 0, spent = 0;
+        incomes.forEach(income => {
+          const d = new Date(income.date);
+          d.setHours(0, 0, 0, 0);
+          if (d >= dayStart && d <= dayEnd) earning += income.amount || 0;
+        });
+        expenses.forEach(expense => {
+          const d = new Date(expense.date);
+          d.setHours(0, 0, 0, 0);
+          if (d >= dayStart && d <= dayEnd) spent += expense.amount || 0;
+        });
+        weekData.push({ day: days[i], earning, spent });
+      }
+      return weekData;
     }
-    
-    return weekData;
-  }, [incomes, expenses]);
+    const { start, end } = rangeBounds;
+    const months = [];
+    const cur = new Date(start);
+    while (cur <= end) {
+      const monthLabel = cur.toLocaleDateString('en-US', { month: 'short' });
+      const monthEnd = new Date(cur.getFullYear(), cur.getMonth() + 1, 0);
+      monthEnd.setHours(23, 59, 59, 999);
+      let earning = 0, spent = 0;
+      incomes.forEach(income => {
+        const d = new Date(income.date);
+        if (d >= cur && d <= monthEnd) earning += income.amount || 0;
+      });
+      expenses.forEach(expense => {
+        const d = new Date(expense.date);
+        if (d >= cur && d <= monthEnd) spent += expense.amount || 0;
+      });
+      months.push({ day: monthLabel, earning, spent });
+      cur.setMonth(cur.getMonth() + 1, 1);
+      cur.setHours(0, 0, 0, 0);
+    }
+    return months;
+  }, [incomes, expenses, dateRange, rangeBounds]);
 
-  // Calculate expense categories for payments with percentage changes
+  // Expense categories in current date range (with previous period for % change)
   const payments = useMemo(() => {
-    const now = new Date();
-    const thisMonth = now.getMonth();
-    const thisYear = now.getFullYear();
-    const lastMonth = thisMonth === 0 ? 11 : thisMonth - 1;
-    const lastMonthYear = thisMonth === 0 ? thisYear - 1 : thisYear;
-    
+    const { start, end } = rangeBounds;
+    const prev = prevRangeBounds;
     const categoryMap = {};
     const colors = ["#3b82f6", "#22d3ee", "#60a5fa", "#8b5cf6", "#ec4899", "#f59e0b", "#10b981"];
-    
-    // Helper function to determine if payment method is card/bank
-    const isCardPayment = (paymentMethod) => {
-      if (!paymentMethod) return false;
-      const method = String(paymentMethod).toLowerCase().replace(/\s+/g, '_');
-      return ['bank', 'card', 'online', 'online_transfer', 'online_payment'].includes(method);
+    const isCardPayment = (pm) => {
+      if (!pm) return false;
+      const m = String(pm).toLowerCase().replace(/\s+/g, '_');
+      return ['bank', 'card', 'online', 'online_transfer', 'online_payment'].includes(m);
     };
-    
-    // Calculate this month's spending by category and determine payment method
     expenses.forEach(expense => {
-      const expenseDate = new Date(expense.date);
       const category = expense.category || 'Other';
-      
-      if (expenseDate.getMonth() === thisMonth && expenseDate.getFullYear() === thisYear) {
-        if (!categoryMap[category]) {
-          categoryMap[category] = { spent: 0, lastMonthSpent: 0, total: 0, cardAmount: 0, cashAmount: 0 };
-        }
-        categoryMap[category].spent += expense.amount || 0;
-        if (isCardPayment(expense.paymentMethod)) {
-          categoryMap[category].cardAmount += expense.amount || 0;
-        } else {
-          categoryMap[category].cashAmount += expense.amount || 0;
-        }
+      if (!categoryMap[category]) {
+        categoryMap[category] = { spent: 0, lastMonthSpent: 0, total: 0, cardAmount: 0, cashAmount: 0 };
       }
-      
-      // Calculate last month's spending for comparison
-      if (expenseDate.getMonth() === lastMonth && expenseDate.getFullYear() === lastMonthYear) {
-        if (!categoryMap[category]) {
-          categoryMap[category] = { spent: 0, lastMonthSpent: 0, total: 0, cardAmount: 0, cashAmount: 0 };
-        }
+      if (isDateInRange(expense.date, start, end)) {
+        categoryMap[category].spent += expense.amount || 0;
+        if (isCardPayment(expense.paymentMethod)) categoryMap[category].cardAmount += expense.amount || 0;
+        else categoryMap[category].cashAmount += expense.amount || 0;
+      }
+      if (isDateInRange(expense.date, prev.start, prev.end)) {
         categoryMap[category].lastMonthSpent += expense.amount || 0;
       }
     });
-    
-    // Calculate percentage changes and totals
     return Object.entries(categoryMap)
       .map(([category, data]) => {
         const change = data.lastMonthSpent > 0
           ? (((data.spent - data.lastMonthSpent) / data.lastMonthSpent) * 100)
           : (data.spent > 0 ? 100 : 0);
-        
-        // Estimate total as 150% of spent for visualization
-        const total = data.spent * 1.5;
-        
-        // Determine icon based on which payment method is more common
+        const total = Math.max(data.spent * 1.5, data.spent);
         const useCardIcon = data.cardAmount >= data.cashAmount;
-        
         return {
           icon: useCardIcon ? <CardIcon /> : <CashIcon />,
           label: category,
           spent: data.spent,
-          total: total,
+          total,
           color: colors[Object.keys(categoryMap).indexOf(category) % colors.length],
           percentageChange: change,
         };
       })
       .sort((a, b) => b.spent - a.spent)
-      .slice(0, 4); // Top 4 categories
-  }, [expenses]);
+      .slice(0, 4);
+  }, [expenses, rangeBounds, prevRangeBounds]);
 
-  // Calculate activity percentages for gauge
+  // Activity percentages (income vs expense in selected range)
   const activityPercentages = useMemo(() => {
-    const now = new Date();
-    const thisMonth = now.getMonth();
-    const thisYear = now.getFullYear();
-    
-    const monthlyIncome = incomes
-      .filter(i => {
-        const d = new Date(i.date);
-        return d.getMonth() === thisMonth && d.getFullYear() === thisYear;
-      })
+    const { start, end } = rangeBounds;
+    const rangeIncome = incomes
+      .filter(i => isDateInRange(i.date, start, end))
       .reduce((sum, i) => sum + (i.amount || 0), 0);
-    
-    const monthlyExpenses = expenses
-      .filter(e => {
-        const d = new Date(e.date);
-        return d.getMonth() === thisMonth && d.getFullYear() === thisYear;
-      })
+    const rangeExpenses = expenses
+      .filter(e => isDateInRange(e.date, start, end))
       .reduce((sum, e) => sum + (e.amount || 0), 0);
-    
-    const total = monthlyIncome + monthlyExpenses;
+    const total = rangeIncome + rangeExpenses;
     if (total === 0) return { dailyPayment: 0, hobby: 0, total: 0 };
-    
-    const dailyPaymentPercent = total > 0 ? Math.round((monthlyIncome / total) * 100) : 0;
-    const hobbyPercent = total > 0 ? Math.round((monthlyExpenses / total) * 100) : 0;
-    
     return {
-      dailyPayment: dailyPaymentPercent,
-      hobby: hobbyPercent,
-      total: dailyPaymentPercent + hobbyPercent,
+      dailyPayment: Math.round((rangeIncome / total) * 100),
+      hobby: Math.round((rangeExpenses / total) * 100),
+      total: 100,
     };
-  }, [incomes, expenses]);
+  }, [incomes, expenses, rangeBounds]);
 
   // Format currency
   const formatCurrency = (amount) => {
@@ -438,92 +499,48 @@ export default function FinanceDashboard() {
   };
 
   const userName = user?.name || "there";
-  const totalIncome = totals.yearlyIncome || 0;
-  const totalOutcome = totals.yearlyExpenses || 0;
   const bankBalance = totals.bankBalance || 0;
   const cashBalance = totals.cashInHand || 0;
   const cardBalance = bankBalance + cashBalance;
   const pendingPayments = totals.pendingPayments || 0;
 
-  // Calculate monthly profit (this month)
-  const monthlyProfit = useMemo(() => {
-    const now = new Date();
-    const thisMonth = now.getMonth();
-    const thisYear = now.getFullYear();
-    
-    const monthlyIncome = incomes
-      .filter(i => {
-        const d = new Date(i.date);
-        return d.getMonth() === thisMonth && d.getFullYear() === thisYear;
-      })
+  // Totals for selected date range
+  const rangeTotals = useMemo(() => {
+    const { start, end } = rangeBounds;
+    const income = incomes
+      .filter(i => isDateInRange(i.date, start, end))
       .reduce((sum, i) => sum + (i.amount || 0), 0);
-    
-    const monthlyExpenses = expenses
-      .filter(e => {
-        const d = new Date(e.date);
-        return d.getMonth() === thisMonth && d.getFullYear() === thisYear;
-      })
+    const outcome = expenses
+      .filter(e => isDateInRange(e.date, start, end))
       .reduce((sum, e) => sum + (e.amount || 0), 0);
-    
-    return monthlyIncome - monthlyExpenses;
-  }, [incomes, expenses]);
+    return { income, outcome, profit: income - outcome };
+  }, [incomes, expenses, rangeBounds]);
 
-  // Calculate percentage changes (comparing this month to last month)
+  const totalIncome = rangeTotals.income;
+  const totalOutcome = rangeTotals.outcome;
+  const monthlyProfit = rangeTotals.profit;
+
+  // Percentage changes vs previous period
   const monthlyChange = useMemo(() => {
-    const now = new Date();
-    const thisMonth = now.getMonth();
-    const thisYear = now.getFullYear();
-    const lastMonth = thisMonth === 0 ? 11 : thisMonth - 1;
-    const lastMonthYear = thisMonth === 0 ? thisYear - 1 : thisYear;
-    
-    const thisMonthIncome = incomes
-      .filter(i => {
-        const d = new Date(i.date);
-        return d.getMonth() === thisMonth && d.getFullYear() === thisYear;
-      })
+    const prev = prevRangeBounds;
+    const prevIncome = incomes
+      .filter(i => isDateInRange(i.date, prev.start, prev.end))
       .reduce((sum, i) => sum + (i.amount || 0), 0);
-    
-    const lastMonthIncome = incomes
-      .filter(i => {
-        const d = new Date(i.date);
-        return d.getMonth() === lastMonth && d.getFullYear() === lastMonthYear;
-      })
-      .reduce((sum, i) => sum + (i.amount || 0), 0);
-    
-    const thisMonthExpense = expenses
-      .filter(e => {
-        const d = new Date(e.date);
-        return d.getMonth() === thisMonth && d.getFullYear() === thisYear;
-      })
+    const prevOutcome = expenses
+      .filter(e => isDateInRange(e.date, prev.start, prev.end))
       .reduce((sum, e) => sum + (e.amount || 0), 0);
-    
-    const lastMonthExpense = expenses
-      .filter(e => {
-        const d = new Date(e.date);
-        return d.getMonth() === lastMonth && d.getFullYear() === lastMonthYear;
-      })
-      .reduce((sum, e) => sum + (e.amount || 0), 0);
-    
-    const incomeChange = lastMonthIncome > 0 
-      ? (((thisMonthIncome - lastMonthIncome) / lastMonthIncome) * 100).toFixed(2)
+    const incomeChange = prevIncome > 0
+      ? (((totalIncome - prevIncome) / prevIncome) * 100).toFixed(2)
       : "0.00";
-    
-    const expenseChange = lastMonthExpense > 0
-      ? (((thisMonthExpense - lastMonthExpense) / lastMonthExpense) * 100).toFixed(2)
+    const expenseChange = prevOutcome > 0
+      ? (((totalOutcome - prevOutcome) / prevOutcome) * 100).toFixed(2)
       : "0.00";
-    
-    const profitChange = (thisMonthIncome - thisMonthExpense) - (lastMonthIncome - lastMonthExpense);
-    const lastProfit = lastMonthIncome - lastMonthExpense;
+    const lastProfit = prevIncome - prevOutcome;
     const profitChangePercent = lastProfit !== 0
-      ? ((profitChange / Math.abs(lastProfit)) * 100).toFixed(2)
+      ? ((monthlyProfit - lastProfit) / Math.abs(lastProfit) * 100).toFixed(2)
       : "0.00";
-    
-    return {
-      income: incomeChange,
-      expense: expenseChange,
-      profit: profitChangePercent,
-    };
-  }, [incomes, expenses]);
+    return { income: incomeChange, expense: expenseChange, profit: profitChangePercent };
+  }, [incomes, expenses, totalIncome, totalOutcome, monthlyProfit, prevRangeBounds]);
 
   // Calculate percentages for all stat cards
   const statPercentages = useMemo(() => {
@@ -589,10 +606,32 @@ export default function FinanceDashboard() {
         }
       `}</style>
       <div className="dashboard-container -mx-3 sm:-mx-4 lg:-mx-5" style={s.page}>
-      {/* HEADER */}
-      <div style={{ marginBottom: 6, marginTop: -4 }}>
+      {/* HEADER + DATE RANGE TOGGLE */}
+      <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", justifyContent: "space-between", gap: 12, marginBottom: 16, marginTop: -4 }}>
         <p style={{ color: "#8b9ab0", fontSize: 15, margin: 0, fontWeight: 500 }}>{getGreeting()}, {userName} 👋</p>
-        <p>  </p>
+        <div style={{ display: "flex", gap: 6, background: "#1e2433", borderRadius: 10, padding: 4 }}>
+          {DATE_RANGES.map(({ value, label }) => (
+            <button
+              key={value}
+              type="button"
+              onClick={() => setDateRange(value)}
+              style={{
+                padding: "8px 14px",
+                borderRadius: 8,
+                border: "none",
+                cursor: "pointer",
+                fontSize: 13,
+                fontWeight: 600,
+                fontFamily: "'Inter', sans-serif",
+                background: dateRange === value ? "#3b82f6" : "transparent",
+                color: dateRange === value ? "#fff" : "#8b9ab0",
+                transition: "all 0.2s ease",
+              }}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
       </div>
 
       {/* TOP STAT CARDS */}
@@ -616,7 +655,7 @@ export default function FinanceDashboard() {
         <StatCard 
           icon={<UpwardTrendIcon />} 
           iconBg="rgba(34,197,94,0.15)" 
-          label="Net Profit (This Month)" 
+          label={dateRange === "month" ? "Net Profit (This month)" : dateRange === "quarter" ? "Net Profit (This quarter)" : "Net Profit (This year)"} 
           value={formatCurrency(monthlyProfit)} 
           badge={statPercentages.profit !== "0.00" ? `${statPercentages.profit}%` : null}
           badgeColor={parseFloat(statPercentages.profit) >= 0 ? "green" : "red"}
@@ -659,7 +698,9 @@ export default function FinanceDashboard() {
                   <div style={{ width: 8, height: 8, borderRadius: "50%", background: "#22d3ee" }} />
                   <span style={{ color: "#8b9ab0", fontSize: 12 }}>Outcome</span>
                 </div>
-                <div style={{ background: "#1e2433", borderRadius: 8, padding: "4px 12px", fontSize: 12, color: "#8b9ab0" }}>{currentYear} ▾</div>
+                <div style={{ background: "#1e2433", borderRadius: 8, padding: "4px 12px", fontSize: 12, color: "#8b9ab0" }}>
+                {dateRange === "month" ? "Last 8 months" : dateRange === "quarter" ? "Last 8 quarters" : "Last 5 years"}
+              </div>
               </div>
             </div>
             <ResponsiveContainer width="100%" height={220}>

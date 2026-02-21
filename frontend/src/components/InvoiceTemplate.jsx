@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { useFinance } from '@/contexts/FinanceContext';
-import html2pdf from 'html2pdf.js';
+import html2canvas from 'html2canvas';
+import { jsPDF } from 'jspdf';
 
 const DownloadIcon = () => (
   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
@@ -224,29 +225,21 @@ export default function InvoiceTemplate({
     setDlStatus('loading');
     try {
       const filename = `Invoice-${String(inv.invoiceNumber).replace(/^#/, '')}.pdf`;
-      // Screenshot-style: PDF page size = exact invoice view size (no margins, same as screen)
+      const scale = 2;
+      const canvas = await html2canvas(element, {
+        scale,
+        useCORS: true,
+        allowTaint: true,
+        logging: false,
+        backgroundColor: '#ffffff',
+      });
       const w = element.offsetWidth;
       const h = element.offsetHeight;
       const wMm = (w * 25.4) / 96;
       const hMm = (h * 25.4) / 96;
-
-      await html2pdf()
-        .set({
-          margin: 0,
-          filename,
-          image: { type: 'png', quality: 1 },
-          html2canvas: {
-            scale: 2,
-            useCORS: true,
-            allowTaint: true,
-            logging: false,
-            backgroundColor: '#ffffff',
-          },
-          jsPDF: { unit: 'mm', format: [wMm, hMm], hotfixes: ['px_scaling'] },
-          pagebreak: { mode: 'avoid', avoid: ['tr', '.avoid-break'] },
-        })
-        .from(element)
-        .save();
+      const pdf = new jsPDF({ unit: 'mm', format: [wMm, hMm], hotfixes: ['px_scaling'] });
+      pdf.addImage(canvas.toDataURL('image/png'), 'PNG', 0, 0, wMm, hMm);
+      pdf.save(filename);
 
       setDlStatus('done');
       setTimeout(() => setDlStatus('idle'), 2500);

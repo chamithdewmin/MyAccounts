@@ -6,7 +6,8 @@ import { BarChart, Bar, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, R
 import { useFinance } from '@/contexts/FinanceContext';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/components/ui/use-toast';
-import { getPrintHtml, downloadReportAsPdf } from '@/utils/pdfPrint';
+import { getPrintHtml } from '@/utils/pdfPrint';
+import ReportPreviewModal from '@/components/ReportPreviewModal';
 
 const DATE_RANGES = [
   { value: 'month', label: 'This month' },
@@ -45,7 +46,7 @@ function isDateInRange(dateStr, start, end) {
 
 const Reports = () => {
   const [dateRange, setDateRange] = useState('month');
-  const [downloadingPdf, setDownloadingPdf] = useState(false);
+  const [reportPreview, setReportPreview] = useState({ open: false, html: '', filename: '' });
   const { toast } = useToast();
   const { incomes, expenses, totals, settings, loadData } = useFinance();
 
@@ -110,40 +111,32 @@ const Reports = () => {
     });
   };
 
-  const handleDownloadPdf = async () => {
-    setDownloadingPdf(true);
-    try {
-      const cur = settings?.currency || 'LKR';
-      const periodLabel = dateRange === 'month' ? 'This month' : dateRange === 'quarter' ? 'This quarter' : 'This year';
-      let body = `<h2 style="margin:0 0 16px; font-size:18px; border-bottom:2px solid #111; padding-bottom:8px;">Reports &amp; Analytics</h2>`;
-      body += `<p style="color:#666; font-size:12px; margin:0 0 20px;">${new Date().toLocaleDateString('en-US', { dateStyle: 'long' })} · ${periodLabel}</p>`;
-      body += `<h3 style="margin:0 0 12px; font-size:14px;">Summary</h3>`;
-      body += `<table style="width:100%; border-collapse:collapse; margin-bottom:24px;"><tr style="background:#f5f5f5;"><th style="text-align:left; padding:10px 12px; border:1px solid #ddd;">Metric</th><th style="text-align:right; padding:10px 12px; border:1px solid #ddd;">Value</th></tr>`;
-      body += `<tr><td style="padding:10px 12px; border:1px solid #ddd;">Period Profit (${periodLabel})</td><td style="text-align:right; padding:10px 12px; border:1px solid #ddd;">${cur} ${periodProfit.toLocaleString()}</td></tr>`;
-      body += `<tr><td style="padding:10px 12px; border:1px solid #ddd;">Yearly Profit</td><td style="text-align:right; padding:10px 12px; border:1px solid #ddd;">${cur} ${(totals.yearlyProfit ?? 0).toLocaleString()}</td></tr>`;
-      body += `<tr><td style="padding:10px 12px; border:1px solid #ddd;">Estimated Tax (Year)</td><td style="text-align:right; padding:10px 12px; border:1px solid #ddd;">${cur} ${(totals.estimatedTaxYearly ?? 0).toLocaleString()}</td></tr>`;
-      body += `</table>`;
-      body += `<h3 style="margin:0 0 12px; font-size:14px;">Cash Flow (Income vs Expenses)</h3>`;
-      body += `<table style="width:100%; border-collapse:collapse; margin-bottom:24px;"><tr style="background:#f5f5f5;"><th style="text-align:left; padding:8px 12px; border:1px solid #ddd;">Period</th><th style="text-align:right; padding:8px 12px; border:1px solid #ddd;">Income</th><th style="text-align:right; padding:8px 12px; border:1px solid #ddd;">Expenses</th><th style="text-align:right; padding:8px 12px; border:1px solid #ddd;">Profit</th></tr>`;
-      profitTrend.forEach((row) => {
-        body += `<tr><td style="padding:8px 12px; border:1px solid #ddd;">${row.date}</td><td style="text-align:right; padding:8px 12px; border:1px solid #ddd;">${cur} ${(row.income || 0).toLocaleString()}</td><td style="text-align:right; padding:8px 12px; border:1px solid #ddd;">${cur} ${(row.expenses || 0).toLocaleString()}</td><td style="text-align:right; padding:8px 12px; border:1px solid #ddd;">${cur} ${(row.profit || 0).toLocaleString()}</td></tr>`;
-      });
-      body += `</table>`;
-      body += `<h3 style="margin:0 0 12px; font-size:14px;">Expense Breakdown by Category</h3>`;
-      body += `<table style="width:100%; border-collapse:collapse;"><tr style="background:#f5f5f5;"><th style="text-align:left; padding:8px 12px; border:1px solid #ddd;">Category</th><th style="text-align:right; padding:8px 12px; border:1px solid #ddd;">Amount</th></tr>`;
-      expenseByCategory.forEach((row) => {
-        body += `<tr><td style="padding:8px 12px; border:1px solid #ddd;">${row.category}</td><td style="text-align:right; padding:8px 12px; border:1px solid #ddd;">${cur} ${(row.amount || 0).toLocaleString()}</td></tr>`;
-      });
-      body += `</table>`;
-      const fullHtml = getPrintHtml(body, { logo: settings?.logo, businessName: settings?.businessName });
-      const filename = `reports-analytics-${new Date().toISOString().slice(0, 10)}.pdf`;
-      await downloadReportAsPdf(fullHtml, filename);
-      toast({ title: 'PDF downloaded', description: filename });
-    } catch (e) {
-      toast({ title: 'Download failed', description: e?.message || 'Could not generate PDF', variant: 'destructive' });
-    } finally {
-      setDownloadingPdf(false);
-    }
+  const openReportPreview = () => {
+    const cur = settings?.currency || 'LKR';
+    const periodLabel = dateRange === 'month' ? 'This month' : dateRange === 'quarter' ? 'This quarter' : 'This year';
+    let body = `<h2 style="margin:0 0 16px; font-size:18px; border-bottom:2px solid #111; padding-bottom:8px;">Reports &amp; Analytics</h2>`;
+    body += `<p style="color:#666; font-size:12px; margin:0 0 20px;">${new Date().toLocaleDateString('en-US', { dateStyle: 'long' })} · ${periodLabel}</p>`;
+    body += `<h3 style="margin:0 0 12px; font-size:14px;">Summary</h3>`;
+    body += `<table style="width:100%; border-collapse:collapse; margin-bottom:24px;"><tr style="background:#f5f5f5;"><th style="text-align:left; padding:10px 12px; border:1px solid #ddd;">Metric</th><th style="text-align:right; padding:10px 12px; border:1px solid #ddd;">Value</th></tr>`;
+    body += `<tr><td style="padding:10px 12px; border:1px solid #ddd;">Period Profit (${periodLabel})</td><td style="text-align:right; padding:10px 12px; border:1px solid #ddd;">${cur} ${periodProfit.toLocaleString()}</td></tr>`;
+    body += `<tr><td style="padding:10px 12px; border:1px solid #ddd;">Yearly Profit</td><td style="text-align:right; padding:10px 12px; border:1px solid #ddd;">${cur} ${(totals.yearlyProfit ?? 0).toLocaleString()}</td></tr>`;
+    body += `<tr><td style="padding:10px 12px; border:1px solid #ddd;">Estimated Tax (Year)</td><td style="text-align:right; padding:10px 12px; border:1px solid #ddd;">${cur} ${(totals.estimatedTaxYearly ?? 0).toLocaleString()}</td></tr>`;
+    body += `</table>`;
+    body += `<h3 style="margin:0 0 12px; font-size:14px;">Cash Flow (Income vs Expenses)</h3>`;
+    body += `<table style="width:100%; border-collapse:collapse; margin-bottom:24px;"><tr style="background:#f5f5f5;"><th style="text-align:left; padding:8px 12px; border:1px solid #ddd;">Period</th><th style="text-align:right; padding:8px 12px; border:1px solid #ddd;">Income</th><th style="text-align:right; padding:8px 12px; border:1px solid #ddd;">Expenses</th><th style="text-align:right; padding:8px 12px; border:1px solid #ddd;">Profit</th></tr>`;
+    profitTrend.forEach((row) => {
+      body += `<tr><td style="padding:8px 12px; border:1px solid #ddd;">${row.date}</td><td style="text-align:right; padding:8px 12px; border:1px solid #ddd;">${cur} ${(row.income || 0).toLocaleString()}</td><td style="text-align:right; padding:8px 12px; border:1px solid #ddd;">${cur} ${(row.expenses || 0).toLocaleString()}</td><td style="text-align:right; padding:8px 12px; border:1px solid #ddd;">${cur} ${(row.profit || 0).toLocaleString()}</td></tr>`;
+    });
+    body += `</table>`;
+    body += `<h3 style="margin:0 0 12px; font-size:14px;">Expense Breakdown by Category</h3>`;
+    body += `<table style="width:100%; border-collapse:collapse;"><tr style="background:#f5f5f5;"><th style="text-align:left; padding:8px 12px; border:1px solid #ddd;">Category</th><th style="text-align:right; padding:8px 12px; border:1px solid #ddd;">Amount</th></tr>`;
+    expenseByCategory.forEach((row) => {
+      body += `<tr><td style="padding:8px 12px; border:1px solid #ddd;">${row.category}</td><td style="text-align:right; padding:8px 12px; border:1px solid #ddd;">${cur} ${(row.amount || 0).toLocaleString()}</td></tr>`;
+    });
+    body += `</table>`;
+    const fullHtml = getPrintHtml(body, { logo: settings?.logo, businessName: settings?.businessName });
+    const filename = `reports-analytics-${new Date().toISOString().slice(0, 10)}.pdf`;
+    setReportPreview({ open: true, html: fullHtml, filename });
   };
 
   const profitTrend = useMemo(
@@ -204,9 +197,9 @@ const Reports = () => {
               <Download className="w-4 h-4 mr-2" />
               Export CSV
             </Button>
-            <Button variant="outline" onClick={handleDownloadPdf} disabled={downloadingPdf}>
+            <Button variant="outline" onClick={openReportPreview}>
               <Download className="w-4 h-4 mr-2" />
-              {downloadingPdf ? 'Downloading…' : 'Download PDF'}
+              Download PDF
             </Button>
           </div>
         </div>
@@ -304,6 +297,14 @@ const Reports = () => {
           </div>
         </div>
       </div>
+
+      <ReportPreviewModal
+        open={reportPreview.open}
+        onOpenChange={(open) => setReportPreview((p) => ({ ...p, open }))}
+        html={reportPreview.html}
+        filename={reportPreview.filename}
+        reportTitle="Reports & Analytics"
+      />
     </>
   );
 };

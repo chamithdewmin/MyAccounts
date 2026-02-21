@@ -2,56 +2,23 @@ import React, { useRef, useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Download } from 'lucide-react';
-import html2pdf from 'html2pdf.js';
+import { downloadReportPdf } from '@/utils/pdfPrint';
 
 /**
- * Modal that shows report preview with Download PDF button (like invoice popup).
- * @param {object} props
- * @param {boolean} props.open
- * @param {(open: boolean) => void} props.onOpenChange
- * @param {string} props.html - Full report HTML (from getPrintHtml)
- * @param {string} props.filename - e.g. 'profit-loss-2026-02-15.pdf'
- * @param {string} props.reportTitle - e.g. 'Profit & Loss Report'
+ * Modal that shows report preview with Download PDF button.
+ * Uses print window (Save as PDF) so the PDF is never empty.
  */
 const ReportPreviewModal = ({ open, onOpenChange, html, filename, reportTitle = 'Report' }) => {
   const contentRef = useRef(null);
-
   const [downloading, setDownloading] = useState(false);
 
   const handleDownloadPdf = async () => {
     if (!html || !filename) return;
     setDownloading(true);
     try {
-      // Same as pdfPrint: in-viewport, high z-index, nearly invisible so html2canvas captures content
-      const container = document.createElement('div');
-      container.style.cssText = 'position:fixed;left:0;top:0;width:190mm;max-width:190mm;min-height:297mm;background:#fff;font-size:14px;color:#111;opacity:0.02;pointer-events:none;z-index:2147483647;overflow:visible;box-sizing:border-box;';
-      container.innerHTML = html;
-      document.body.appendChild(container);
-
-      const imgs = container.querySelectorAll('img');
-      await Promise.all(Array.from(imgs).map((img) => {
-        if (img.complete) return Promise.resolve();
-        return new Promise((resolve) => {
-          img.onload = resolve;
-          img.onerror = resolve;
-          setTimeout(resolve, 3000);
-        });
-      }));
-
-      await new Promise((r) => setTimeout(r, 500));
-
-      const opt = {
-        margin: [10, 10, 14, 10],
-        filename,
-        image: { type: 'jpeg', quality: 0.98 },
-        html2canvas: { scale: 2, useCORS: true, allowTaint: true, logging: false, backgroundColor: '#ffffff' },
-        jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
-        pagebreak: { mode: ['css', 'legacy'], avoid: ['tr', 'table'] },
-      };
-      await html2pdf().set(opt).from(container).save();
-      if (container.parentNode) document.body.removeChild(container);
+      await downloadReportPdf(html, filename);
     } catch (err) {
-      console.error('Report PDF download failed:', err);
+      console.error('Report PDF failed:', err);
     } finally {
       setDownloading(false);
     }

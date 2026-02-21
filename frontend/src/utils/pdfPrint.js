@@ -106,36 +106,5 @@ export async function downloadReportPdf(html, filename) {
  * @returns {Promise<void>}
  */
 export async function downloadReportAsPdf(html, filename) {
-  const html2pdf = (await import('html2pdf.js')).default;
-  const container = document.createElement('div');
-  // In-viewport, high z-index, nearly invisible – ensures html2canvas can capture (z-index:-1 often yields blank)
-  container.style.cssText = 'position:fixed;left:0;top:0;width:190mm;max-width:190mm;min-height:297mm;background:#fff;font-size:14px;color:#111;opacity:0.02;pointer-events:none;z-index:2147483647;overflow:visible;box-sizing:border-box;';
-  container.innerHTML = html;
-  document.body.appendChild(container);
-
-  const imgs = container.querySelectorAll('img');
-  await Promise.all(Array.from(imgs).map((img) => {
-    if (img.complete) return Promise.resolve();
-    return new Promise((resolve) => {
-      img.onload = resolve;
-      img.onerror = resolve;
-      setTimeout(resolve, 3000);
-    });
-  }));
-
-  await new Promise((r) => setTimeout(r, 500));
-
-  try {
-    const opt = {
-      margin: [10, 10, 14, 10],
-      filename,
-      image: { type: 'jpeg', quality: 0.98 },
-      html2canvas: { scale: 2, useCORS: true, allowTaint: true, logging: false, backgroundColor: '#ffffff' },
-      jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
-      pagebreak: { mode: ['css', 'legacy'], avoid: ['tr', 'table'] },
-    };
-    await html2pdf().set(opt).from(container).save();
-  } finally {
-    if (container.parentNode) document.body.removeChild(container);
-  }
+  await downloadReportPdf(html, filename);
 }

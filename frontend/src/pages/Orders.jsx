@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Helmet } from 'react-helmet';
 import { motion } from 'framer-motion';
-import { Search, Plus, Download, RefreshCw, Pencil, Trash2, Eye, Printer } from 'lucide-react';
+import { Search, Plus, Download, RefreshCw, Pencil, Trash2, Eye, Printer, Loader2 } from 'lucide-react';
 import { useFinance } from '@/contexts/FinanceContext';
 import { api } from '@/lib/api';
 import { Input } from '@/components/ui/input';
@@ -19,6 +19,7 @@ const Orders = () => {
   const [viewedInvoice, setViewedInvoice] = useState(null);
   const [invoiceAction, setInvoiceAction] = useState(null); // 'view' | 'download' | 'print'
   const [isCreateOpen, setIsCreateOpen] = useState(false);
+  const [refreshLoading, setRefreshLoading] = useState(false);
   const { toast } = useToast();
 
   const { invoices, clients, settings, updateInvoiceStatus, addInvoice, deleteInvoice, loadData } = useFinance();
@@ -229,15 +230,25 @@ const Orders = () => {
               variant="outline"
               size="sm"
               className="min-h-[44px] sm:min-h-0"
-              onClick={() => {
-                loadData();
-                toast({
-                  title: 'Refreshed',
-                  description: 'Invoice data has been refreshed.',
-                });
+              disabled={refreshLoading}
+              onClick={async () => {
+                setRefreshLoading(true);
+                try {
+                  await loadData();
+                  toast({
+                    title: 'Refreshed',
+                    description: 'Invoice data has been refreshed.',
+                  });
+                } finally {
+                  setRefreshLoading(false);
+                }
               }}
             >
-              <RefreshCw className="w-4 h-4 mr-2" />
+              {refreshLoading ? (
+                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+              ) : (
+                <RefreshCw className="w-4 h-4 mr-2" />
+              )}
               Refresh
             </Button>
             <Button

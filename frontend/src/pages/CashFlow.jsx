@@ -12,6 +12,7 @@ import {
   Trash2,
   Repeat,
   AlertTriangle,
+  Loader2,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -67,6 +68,7 @@ const CashFlow = () => {
   const [isAddOpen, setIsAddOpen] = useState(false);
   const [addType, setAddType] = useState('inflow'); // inflow | outflow
   const [editingTx, setEditingTx] = useState(null);
+  const [refreshLoading, setRefreshLoading] = useState(false);
   const [form, setForm] = useState({
     source: '',
     category: '',
@@ -593,8 +595,24 @@ const CashFlow = () => {
             </p>
           </div>
           <div className="flex gap-3">
-            <Button variant="outline" onClick={() => { loadData(); toast({ title: 'Refreshed', description: 'Data refreshed.' }); }}>
-              <RefreshCw className="w-4 h-4 mr-2" />
+            <Button
+              variant="outline"
+              disabled={refreshLoading}
+              onClick={async () => {
+                setRefreshLoading(true);
+                try {
+                  await loadData();
+                  toast({ title: 'Refreshed', description: 'Data refreshed.' });
+                } finally {
+                  setRefreshLoading(false);
+                }
+              }}
+            >
+              {refreshLoading ? (
+                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+              ) : (
+                <RefreshCw className="w-4 h-4 mr-2" />
+              )}
               Refresh
             </Button>
             <Button variant="outline" onClick={exportCSV}>

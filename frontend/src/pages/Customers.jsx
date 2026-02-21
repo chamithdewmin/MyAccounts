@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Helmet } from 'react-helmet';
 import { motion } from 'framer-motion';
-import { Search, Plus, Download, RefreshCw, Pencil, Trash2, MoreHorizontal, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Search, Plus, Download, RefreshCw, Pencil, Trash2, MoreHorizontal, ChevronLeft, ChevronRight, Loader2 } from 'lucide-react';
 import { useFinance } from '@/contexts/FinanceContext';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -19,6 +19,7 @@ const Customers = () => {
   const { clients, addClient, updateClient, deleteClient, loadData } = useFinance();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingClient, setEditingClient] = useState(null);
+  const [refreshLoading, setRefreshLoading] = useState(false);
   const [form, setForm] = useState({
     name: '',
     email: '',
@@ -156,12 +157,22 @@ const Customers = () => {
           <div className="flex gap-3">
             <Button
               variant="outline"
-              onClick={() => {
-                loadData();
-                toast({ title: 'Refreshed', description: 'Client data has been refreshed.' });
+              disabled={refreshLoading}
+              onClick={async () => {
+                setRefreshLoading(true);
+                try {
+                  await loadData();
+                  toast({ title: 'Refreshed', description: 'Client data has been refreshed.' });
+                } finally {
+                  setRefreshLoading(false);
+                }
               }}
             >
-              <RefreshCw className="w-4 h-4 mr-2" />
+              {refreshLoading ? (
+                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+              ) : (
+                <RefreshCw className="w-4 h-4 mr-2" />
+              )}
               Refresh
             </Button>
             <Button variant="outline" onClick={handleExportCsv}>

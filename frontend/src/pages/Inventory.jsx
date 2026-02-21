@@ -1,7 +1,7 @@
 import React, { useMemo, useState } from 'react';
 import { Helmet } from 'react-helmet';
 import { motion } from 'framer-motion';
-import { Download, Upload, RefreshCw, Plus, DollarSign, Repeat, PieChart, Pencil, Trash2 } from 'lucide-react';
+import { Download, Upload, RefreshCw, Plus, DollarSign, Repeat, PieChart, Pencil, Trash2, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/components/ui/use-toast';
@@ -32,6 +32,7 @@ const Inventory = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingExpense, setEditingExpense] = useState(null);
+  const [refreshLoading, setRefreshLoading] = useState(false);
   const exportCSV = () => {
     const headers = ['ID', 'Category', 'Amount', 'Date', 'Recurring', 'Notes'];
     const rows = expenses.map(exp => [
@@ -242,15 +243,25 @@ const Inventory = () => {
           <div className="flex gap-3">
             <Button
               variant="outline"
-              onClick={() => {
-                loadData();
-                toast({
-                  title: 'Refreshed',
-                  description: 'Expense data has been refreshed.',
-                });
+              disabled={refreshLoading}
+              onClick={async () => {
+                setRefreshLoading(true);
+                try {
+                  await loadData();
+                  toast({
+                    title: 'Refreshed',
+                    description: 'Expense data has been refreshed.',
+                  });
+                } finally {
+                  setRefreshLoading(false);
+                }
               }}
             >
-              <RefreshCw className="w-4 h-4 mr-2" />
+              {refreshLoading ? (
+                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+              ) : (
+                <RefreshCw className="w-4 h-4 mr-2" />
+              )}
               Refresh
             </Button>
             <Button onClick={exportCSV} variant="outline">

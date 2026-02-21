@@ -27,7 +27,7 @@ const Login = () => {
     try {
       const result = await login(email, password);
       if (result.success) {
-        navigate('/ai-insights');
+        navigate('/dashboard');
       } else {
         setError(result.error || 'Invalid credentials');
       }

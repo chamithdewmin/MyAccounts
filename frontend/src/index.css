@@ -186,6 +186,35 @@ table {
   width: 100%;
 }
 
+/* Report PDF preview: force light theme (white/light gray tables, black text only) */
+.report-preview-content table,
+.report-preview-content thead,
+.report-preview-content tbody tr,
+.report-preview-content tbody tr:nth-child(odd),
+.report-preview-content tbody tr:hover,
+.report-preview-content th,
+.report-preview-content td {
+  background: #ffffff !important;
+  background-color: #ffffff !important;
+  color: #000000 !important;
+  border-color: #ddd !important;
+}
+.report-preview-content thead th {
+  background: #f5f5f5 !important;
+  background-color: #f5f5f5 !important;
+  color: #000000 !important;
+}
+.report-preview-content h1,
+.report-preview-content h2,
+.report-preview-content h3,
+.report-preview-content p {
+  color: #111 !important;
+}
+.report-preview-content p.text-gray-500,
+.report-preview-content .text-muted {
+  color: #666 !important;
+}
+
 .dark table {
   border-color: var(--table-divider);
 }

@@ -98,6 +98,8 @@ export const FinanceProvider = ({ children }) => {
       setClients(Array.isArray(clientsRes) ? clientsRes : []);
       setInvoices(Array.isArray(invoicesRes) ? invoicesRes : []);
       const settingsMerged = settingsRes && typeof settingsRes === 'object' ? { ...getDefaultSettings(), ...settingsRes } : getDefaultSettings();
+      // Always use full default expense categories so Add Expense popup shows all options
+      settingsMerged.expenseCategories = getDefaultSettings().expenseCategories;
       settingsMerged.bankDetails = bankDetailsRes?.bankDetails ?? null;
       setSettings(settingsMerged);
       setAssets(Array.isArray(assetsRes) ? assetsRes : []);

@@ -34,7 +34,12 @@ const toSettings = (row) => {
     openingCash: parseFloat(row.opening_cash) || 0,
     ownerCapital: parseFloat(row.owner_capital) || 0,
     payables: parseFloat(row.payables) || 0,
-    expenseCategories: row.expense_categories || ['Hosting', 'Tools & Subscriptions', 'Advertising & Marketing', 'Transport', 'Office & Utilities', 'Other'],
+    expenseCategories: (() => {
+      let cats = row.expense_categories;
+      if (typeof cats === 'string') try { cats = JSON.parse(cats); } catch (_) { cats = null; }
+      if (Array.isArray(cats) && cats.length > 0) return cats;
+      return ['Hosting', 'Tools & Subscriptions', 'Advertising & Marketing', 'Transport', 'Office & Utilities', 'Personal Use', 'Rent', 'Salaries & Wages', 'Insurance', 'Software & Licenses', 'Travel', 'Meals & Entertainment', 'Supplies & Materials', 'Professional Services', 'Bank & Finance Charges', 'Other'];
+    })(),
     // Additional settings from JSONB
     emailNotifications: additionalSettings.emailNotifications ?? false,
     smsNotifications: additionalSettings.smsNotifications ?? false,
@@ -208,7 +213,7 @@ router.put('/', async (req, res) => {
           placeholderIndex++;
         }
         insertFields.push('invoice_theme_color', 'opening_cash', 'owner_capital', 'payables', 'expense_categories');
-        insertValues.push(invoiceThemeColor, d.openingCash ?? 0, d.ownerCapital ?? 0, d.payables ?? 0, expenseCategoriesJson || '["Hosting","Tools & Subscriptions","Advertising & Marketing","Transport","Office & Utilities","Other"]');
+        insertValues.push(invoiceThemeColor, d.openingCash ?? 0, d.ownerCapital ?? 0, d.payables ?? 0, expenseCategoriesJson || '["Hosting","Tools & Subscriptions","Advertising & Marketing","Transport","Office & Utilities","Personal Use","Rent","Salaries & Wages","Insurance","Software & Licenses","Travel","Meals & Entertainment","Supplies & Materials","Professional Services","Bank & Finance Charges","Other"]');
         valuePlaceholders.push(`$${placeholderIndex}`, `$${placeholderIndex + 1}`, `$${placeholderIndex + 2}`, `$${placeholderIndex + 3}`, `$${placeholderIndex + 4}`);
         placeholderIndex += 5;
         
@@ -275,7 +280,7 @@ router.put('/', async (req, res) => {
           placeholderIndex++;
         }
         insertFields.push('invoice_theme_color', 'opening_cash', 'owner_capital', 'payables', 'expense_categories');
-        insertValues.push(invoiceThemeColor, d.openingCash ?? 0, d.ownerCapital ?? 0, d.payables ?? 0, expenseCategoriesJson || '["Hosting","Tools & Subscriptions","Advertising & Marketing","Transport","Office & Utilities","Other"]');
+        insertValues.push(invoiceThemeColor, d.openingCash ?? 0, d.ownerCapital ?? 0, d.payables ?? 0, expenseCategoriesJson || '["Hosting","Tools & Subscriptions","Advertising & Marketing","Transport","Office & Utilities","Personal Use","Rent","Salaries & Wages","Insurance","Software & Licenses","Travel","Meals & Entertainment","Supplies & Materials","Professional Services","Bank & Finance Charges","Other"]');
         valuePlaceholders.push(`$${placeholderIndex}`, `$${placeholderIndex + 1}`, `$${placeholderIndex + 2}`, `$${placeholderIndex + 3}`, `$${placeholderIndex + 4}`);
         placeholderIndex += 5;
         

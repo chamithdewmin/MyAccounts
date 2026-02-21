@@ -26,6 +26,9 @@ const Profile = () => {
     password: '',
     profileAvatar: settings?.profileAvatar || null,
     phone: settings?.phone || '',
+    companyEmail: settings?.email || '',
+    address: settings?.address || '',
+    website: settings?.website || '',
     openingCash: settings?.openingCash ?? 0,
     ownerCapital: settings?.ownerCapital ?? 0,
     payables: settings?.payables ?? 0,
@@ -55,7 +58,10 @@ const Profile = () => {
         email: user?.email || prev.email || '',
         // Settings from database - always sync these
         profileAvatar: settings.profileAvatar ?? null,
-        phone: phoneValue, // Explicitly set phone value
+        phone: phoneValue,
+        companyEmail: settings.email ?? '',
+        address: settings.address ?? '',
+        website: settings.website ?? '',
         businessName: settings.businessName || 'My Business',
         openingCash: settings.openingCash ?? 0,
         ownerCapital: settings.ownerCapital ?? 0,
@@ -184,7 +190,10 @@ const Profile = () => {
 
   const businessProfileChanged =
     (s.businessName || '').trim() !== (settings?.businessName || '').trim() ||
-    (s.phone || '').trim() !== (settings?.phone || '').trim();
+    (s.phone || '').trim() !== (settings?.phone || '').trim() ||
+    (s.companyEmail || '').trim() !== (settings?.email || '').trim() ||
+    (s.address || '').trim() !== (settings?.address || '').trim() ||
+    (s.website || '').trim() !== (settings?.website || '').trim();
 
   const openingBalancesChanged =
     (s.openingCash ?? 0) !== (settings?.openingCash ?? 0) ||
@@ -201,6 +210,9 @@ const Profile = () => {
         await updateSettings({
           businessName: s.businessName?.trim() || 'My Business',
           phone: s.phone?.trim() || '',
+          email: s.companyEmail?.trim() || '',
+          address: s.address?.trim() || '',
+          website: s.website?.trim() || '',
         });
       }
 
@@ -451,7 +463,41 @@ const Profile = () => {
                     onChange={(e) => {
                       setLocal((prev) => ({ ...prev, phone: e.target.value }));
                     }}
-                    placeholder="+94761234567 or 0761234567"
+                    placeholder="074 1525 537"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="company-email">Company Email</Label>
+                  <Input
+                    id="company-email"
+                    type="email"
+                    value={s.companyEmail ?? ''}
+                    onChange={(e) => {
+                      setLocal((prev) => ({ ...prev, companyEmail: e.target.value }));
+                    }}
+                    placeholder="hello@logozodev.com"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="company-address">Address (optional)</Label>
+                  <Input
+                    id="company-address"
+                    value={s.address ?? ''}
+                    onChange={(e) => {
+                      setLocal((prev) => ({ ...prev, address: e.target.value }));
+                    }}
+                    placeholder="Business address"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="company-website">Website</Label>
+                  <Input
+                    id="company-website"
+                    value={s.website ?? ''}
+                    onChange={(e) => {
+                      setLocal((prev) => ({ ...prev, website: e.target.value }));
+                    }}
+                    placeholder="www.logozodev.com"
                   />
                 </div>
               </div>

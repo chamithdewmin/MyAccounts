@@ -14,6 +14,9 @@ const createId = (prefix) => {
 const getDefaultSettings = () => ({
   businessName: 'My Business',
   phone: '',
+  email: '',
+  address: '',
+  website: '',
   bankDetails: null, // { accountNumber, accountName, bankName, branch? }
   currency: 'LKR',
   taxRate: 10,

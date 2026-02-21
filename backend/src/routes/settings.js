@@ -44,6 +44,9 @@ const toSettings = (row) => {
     numberFormat: additionalSettings.numberFormat || '1,234.56',
     invoiceAutoNumbering: additionalSettings.invoiceAutoNumbering ?? false,
     autoExport: additionalSettings.autoExport ?? false,
+    email: additionalSettings.email ?? '',
+    address: additionalSettings.address ?? '',
+    website: additionalSettings.website ?? '',
   };
   return base;
 };
@@ -126,16 +129,29 @@ router.put('/', async (req, res) => {
     const useSettingsJson = await hasSettingsJsonColumn();
     const expenseCategoriesJson = d.expenseCategories ? JSON.stringify(d.expenseCategories) : null;
 
-    // Prepare additional settings JSONB
+    let existingJson = {};
+    if (useSettingsJson) {
+      const { rows } = await pool.query('SELECT settings_json FROM settings WHERE user_id = $1', [uid]);
+      if (rows[0]?.settings_json) {
+        try {
+          existingJson = typeof rows[0].settings_json === 'string' ? JSON.parse(rows[0].settings_json) : (rows[0].settings_json || {});
+        } catch (_) {}
+      }
+    }
+
+    // Prepare additional settings JSONB (preserve existing email/address/website when not in body)
     const additionalSettings = {
-      emailNotifications: d.emailNotifications ?? false,
-      smsNotifications: d.smsNotifications ?? false,
-      autoSave: d.autoSave ?? false,
-      showCurrencySymbol: d.showCurrencySymbol ?? true,
-      dateFormat: d.dateFormat || 'DD/MM/YYYY',
-      numberFormat: d.numberFormat || '1,234.56',
-      invoiceAutoNumbering: d.invoiceAutoNumbering ?? false,
-      autoExport: d.autoExport ?? false,
+      emailNotifications: d.emailNotifications ?? existingJson.emailNotifications ?? false,
+      smsNotifications: d.smsNotifications ?? existingJson.smsNotifications ?? false,
+      autoSave: d.autoSave ?? existingJson.autoSave ?? false,
+      showCurrencySymbol: d.showCurrencySymbol ?? existingJson.showCurrencySymbol ?? true,
+      dateFormat: d.dateFormat || existingJson.dateFormat || 'DD/MM/YYYY',
+      numberFormat: d.numberFormat || existingJson.numberFormat || '1,234.56',
+      invoiceAutoNumbering: d.invoiceAutoNumbering ?? existingJson.invoiceAutoNumbering ?? false,
+      autoExport: d.autoExport ?? existingJson.autoExport ?? false,
+      email: d.email !== undefined ? d.email : (existingJson.email ?? ''),
+      address: d.address !== undefined ? d.address : (existingJson.address ?? ''),
+      website: d.website !== undefined ? d.website : (existingJson.website ?? ''),
     };
     const settingsJson = useSettingsJson ? JSON.stringify(additionalSettings) : null;
 

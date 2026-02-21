@@ -43,6 +43,13 @@ const BankIcon = () => (
     <line x1="17" y1="12" x2="17" y2="16"/>
   </svg>
 );
+const WebsiteIcon = () => (
+  <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#dc2626" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ display: 'inline', marginRight: 3, verticalAlign: 'middle' }}>
+    <circle cx="12" cy="12" r="10"/>
+    <line x1="2" y1="12" x2="22" y2="12"/>
+    <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/>
+  </svg>
+);
 
 const InvoiceTemplate = ({
   invoice: invoiceProp,
@@ -178,10 +185,6 @@ const InvoiceTemplate = ({
               ) : (
                 <LogoIcon />
               )}
-              <div>
-                <span style={{ color: '#dc2626', fontWeight: 900, fontSize: 20, letterSpacing: 2, display: 'block' }}>{companyName}</span>
-                {tagline && <span style={{ color: '#9ca3af', fontSize: 11, letterSpacing: 2, display: 'block' }}>{tagline}</span>}
-              </div>
             </div>
             <div style={s.blackSide}>
               <div style={{ fontSize: 30, fontWeight: 900, letterSpacing: 6, color: '#fff' }}>INVOICE</div>
@@ -216,9 +219,10 @@ const InvoiceTemplate = ({
               <div style={s.label}>Invoice From</div>
               <span style={{ fontWeight: 700, fontSize: 18, color: '#111827', display: 'block', marginBottom: 4 }}>{companyName}</span>
               <div style={s.contactRow}>
-                {settings?.address && <div><AddressIcon />{settings.address}</div>}
                 {settings?.phone && <div><PhoneIcon />{settings.phone}</div>}
                 {settings?.email && <div><EmailIcon />{settings.email}</div>}
+                {settings?.website && <div><WebsiteIcon />{settings.website}</div>}
+                {settings?.address && <div><AddressIcon />{settings.address}</div>}
               </div>
             </div>
           </div>
@@ -306,9 +310,6 @@ const InvoiceTemplate = ({
           {/* FOOTER */}
           <div style={{ marginTop: 32, position: 'relative', height: 52, background: '#111', display: 'flex', alignItems: 'center', paddingLeft: 28 }}>
             <div style={{ position: 'absolute', right: 0, top: 0, width: 0, height: 0, borderLeft: '52px solid transparent', borderTop: '52px solid #dc2626' }} />
-            <span style={{ color: '#fff', fontSize: 12, fontStyle: 'italic', fontWeight: 600 }}>
-              {invoice.showSignatureArea ? 'Prepared By / Customer Signature' : 'Thank you for your business'}
-            </span>
           </div>
 
         </div>

@@ -83,42 +83,65 @@ function normalise(raw = {}, currency = 'LKR', settings = {}) {
   const total = raw.total ?? (raw.subtotal ?? subtotal) + taxAmount;
   const payment = raw.bankDetails || settings?.bankDetails || {};
 
+  const paymentMadeNum = parseFloat(raw.paymentMade ?? raw.paymentMadeAmount ?? 0) || 0;
+  const totalNum = total;
+  const balanceDueNum = Math.max(0, totalNum - paymentMadeNum);
+
   return {
     invoiceNumber: raw.invoiceNumber || raw.id || '—',
     invoiceDate: formatDate(raw.createdAt || raw.date || raw.invoiceDate),
+    dueDate: formatDate(raw.dueDate || raw.createdAt || raw.date || raw.invoiceDate),
+    termsLabel: raw.terms || 'Due on Receipt',
     currency: currency || settings?.currency || 'LKR',
 
     companyName: settings?.businessName || 'COMPANY',
     companyTagline: settings?.businessName ? '' : 'COMPANY TAGLINE HERE',
     companyAddress: settings?.address || '',
-    companyPhone: settings?.phone || '',
-    companyEmail: settings?.email || '',
-    companyWebsite: settings?.website || '',
+    companyPhone: settings?.phone || '0741525537',
+    companyEmail: settings?.email || 'hello@logozodev.com',
+    companyWebsite: settings?.website || 'www.logozodev.com',
 
     clientName: raw.clientName || raw.customerName || '—',
     clientPhone: raw.clientPhone || '',
     clientEmail: raw.clientEmail || '',
 
-    items: items.map((it, i) => ({
-      no: String(i + 1).padStart(2, '0'),
-      description: it.description || it.name || 'Item',
-      descSub: it.sku || it.note || '',
-      price: parseFloat(it.price || 0),
-      quantity: parseFloat(it.quantity ?? it.qty ?? 1),
-      total: it.total ?? (parseFloat(it.price || 0) * parseFloat(it.quantity ?? it.qty ?? 1)),
-    })),
+    items: items.map((it, i) => {
+      const qty = parseFloat(it.quantity ?? it.qty ?? 1);
+      const price = parseFloat(it.price || 0);
+      const lineTotal = it.total ?? (price * qty);
+      return {
+        id: i + 1,
+        no: String(i + 1).padStart(2, '0'),
+        description: it.description || it.name || 'Item',
+        descSub: it.sku || it.note || '',
+        price,
+        quantity: qty,
+        total: lineTotal,
+        rateFormatted: price.toLocaleString(),
+        amountFormatted: lineTotal.toLocaleString(),
+        qtyStr: `${qty.toFixed(2)} pcs`,
+      };
+    }),
 
     subtotal,
+    subTotalFormatted: (subtotal ?? 0).toLocaleString(),
     taxRate: raw.taxRate ?? settings?.taxRate ?? 0,
     tax: taxAmount,
     total,
+    totalFormatted: `${currency || settings?.currency || 'LKR'} ${(total ?? 0).toLocaleString()}`,
+    paymentMade: paymentMadeNum,
+    paymentMadeFormatted: paymentMadeNum ? `(-) ${paymentMadeNum.toLocaleString()}` : null,
+    balanceDue: balanceDueNum,
+    balanceDueFormatted: `${currency || settings?.currency || 'LKR'} ${balanceDueNum.toLocaleString()}`,
 
     paymentMethod: (raw.paymentMethod || 'bank').toString().toLowerCase(),
     payment,
     showSignatureArea: Boolean(raw.showSignatureArea),
 
     dearClient: raw.notes || 'Thank you for your business. Please contact us if you have any questions.',
+    notes: raw.notes || 'Thanks for your business.',
     terms: 'Payment due on receipt. Thank you for your business.',
+    termsConditions: Array.isArray(raw.termsConditions) ? raw.termsConditions : (raw.terms ? [raw.terms] : ['Payment due on receipt. Thank you for your business.']),
   };
 }
 
@@ -131,12 +154,85 @@ function fmt(amount, currency = 'LKR') {
   }
 }
 
+// Classic (CameraLK-style) template styles
+const classicStyles = {
+  page: {
+    fontFamily: "'Georgia', 'Times New Roman', serif",
+    maxWidth: '100%',
+    margin: 0,
+    padding: '48px 40px',
+    background: '#fff',
+    color: '#1a1a1a',
+    position: 'relative',
+    minHeight: '1100px',
+    boxSizing: 'border-box',
+  },
+  header: { display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '32px' },
+  logo: {
+    background: '#cc0000',
+    color: '#fff',
+    fontFamily: "'Arial Black', 'Arial Bold', sans-serif",
+    fontWeight: 900,
+    fontSize: '28px',
+    padding: '10px 22px',
+    letterSpacing: '-1px',
+    display: 'inline-block',
+    borderRadius: '3px',
+    marginBottom: '12px',
+  },
+  sellerInfo: { fontSize: '13px', lineHeight: '1.7', color: '#333' },
+  sellerName: { fontWeight: 'bold', fontSize: '15px', marginBottom: '2px' },
+  invoiceWord: {
+    fontSize: '48px', fontWeight: 300, letterSpacing: '6px',
+    color: '#1a1a1a', fontFamily: "'Georgia', serif", lineHeight: 1, textAlign: 'right',
+  },
+  invoiceNum: { fontSize: '14px', color: '#555', marginTop: '6px', textAlign: 'right' },
+  balanceDueBox: { textAlign: 'right', marginTop: '14px' },
+  balanceDueLabel: { fontSize: '13px', color: '#555' },
+  balanceDueAmount: { fontSize: '22px', fontWeight: 'bold', color: '#1a1a1a' },
+  metaSection: { display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', margin: '28px 0 20px' },
+  billToLabel: { color: '#555', fontSize: '13px', marginBottom: '4px' },
+  billToName: { fontWeight: 'bold', fontSize: '15px' },
+  metaRow: { display: 'flex', justifyContent: 'flex-end', gap: '24px', marginBottom: '4px', fontSize: '13px' },
+  metaKey: { color: '#555' },
+  metaVal: { color: '#1a1a1a', fontWeight: 500, minWidth: '120px', textAlign: 'right' },
+  table: { width: '100%', borderCollapse: 'collapse', marginTop: '8px' },
+  th: {
+    padding: '10px 14px', fontSize: '13px', fontWeight: 600,
+    textAlign: 'left', letterSpacing: '0.5px', background: '#1a1a1a', color: '#fff',
+  },
+  td: { padding: '14px 14px', fontSize: '13px', verticalAlign: 'top', borderBottom: '1px solid #e8e8e8' },
+  itemTitle: { fontWeight: 600, marginBottom: '2px' },
+  itemSku: { color: '#777', fontSize: '12px', marginTop: '4px' },
+  itemDesc: { color: '#555', fontSize: '12px', marginTop: '3px', lineHeight: 1.5 },
+  totalsSection: { display: 'flex', justifyContent: 'flex-end', marginTop: '10px' },
+  totalsTable: { width: '300px', fontSize: '13px' },
+  totalRow: { display: 'flex', justifyContent: 'space-between', padding: '5px 0', borderBottom: '1px solid #f0f0f0' },
+  totalRowBold: { display: 'flex', justifyContent: 'space-between', padding: '5px 0', borderBottom: '1px solid #f0f0f0', fontWeight: 'bold' },
+  totalRowPayment: { display: 'flex', justifyContent: 'space-between', padding: '5px 0', color: '#cc0000', borderBottom: '1px solid #f0f0f0' },
+  totalRowFinal: { display: 'flex', justifyContent: 'space-between', padding: '8px 0', fontWeight: 'bold', fontSize: '15px', borderTop: '2px solid #1a1a1a', marginTop: '4px' },
+  notes: { marginTop: '48px', fontSize: '13px' },
+  notesTitle: { fontWeight: 'bold', marginBottom: '6px', fontSize: '14px' },
+  terms: { marginTop: '28px', fontSize: '12.5px', color: '#444', lineHeight: 1.8 },
+  termsTitle: { fontWeight: 'bold', marginBottom: '6px', fontSize: '14px', color: '#1a1a1a' },
+  footer: { display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginTop: '48px' },
+  sigBlock: { textAlign: 'center', fontSize: '12px', color: '#555' },
+  sigLine: { borderTop: '1px solid #aaa', width: '140px', margin: '32px auto 4px' },
+  stamp: {
+    width: '90px', height: '90px', border: '3px solid #cc0000', borderRadius: '50%',
+    display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+    fontSize: '10px', fontWeight: 'bold', color: '#cc0000', textAlign: 'center',
+    letterSpacing: '1px', margin: '0 auto',
+  },
+};
+
 export default function InvoiceTemplate({
   invoice: invoiceProp,
   order,
   currency = 'LKR',
   autoAction = null,
   onAutoActionDone,
+  variant = 'default',
 }) {
   const { settings } = useFinance();
   const raw = invoiceProp || order || {};
@@ -206,7 +302,9 @@ export default function InvoiceTemplate({
     <>
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800;900&display=swap');
-        .inv-root * { font-family: 'Poppins', sans-serif !important; box-sizing: border-box; }
+        .inv-root * { box-sizing: border-box; }
+        .inv-root.inv-default * { font-family: 'Poppins', sans-serif !important; }
+        .inv-root.inv-classic * { font-family: 'Georgia', 'Times New Roman', serif !important; }
         @keyframes invoiceSpin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
         @media print {
           body * { visibility: hidden !important; }
@@ -217,7 +315,7 @@ export default function InvoiceTemplate({
         }
       `}</style>
 
-      <div className="inv-root" style={{ background: '#d1d5db', minHeight: '100vh', padding: '32px 16px' }}>
+      <div className={`inv-root ${variant === 'classic' ? 'inv-classic' : 'inv-default'}`} style={{ background: '#d1d5db', minHeight: '100vh', padding: '32px 16px' }}>
 
         <div className="no-print" style={{ display: 'flex', justifyContent: 'flex-end', gap: 10, marginBottom: 20, maxWidth: 680, margin: '0 auto 20px' }}>
           <button
@@ -262,10 +360,123 @@ export default function InvoiceTemplate({
             margin: '0 auto',
             background: '#fff',
             boxShadow: '0 4px 40px rgba(0,0,0,0.18)',
-            fontFamily: "'Poppins', sans-serif",
+            fontFamily: variant === 'classic' ? "'Georgia', 'Times New Roman', serif" : "'Poppins', sans-serif",
             boxSizing: 'border-box',
           }}
         >
+          {variant === 'classic' ? (
+            <div style={classicStyles.page}>
+              <div style={classicStyles.header}>
+                <div>
+                  <div style={classicStyles.logo}>
+                    {inv.companyName}<span style={{ color: '#ff9999', fontSize: '18px' }}>′</span>
+                  </div>
+                  <div style={classicStyles.sellerInfo}>
+                    <div style={classicStyles.sellerName}>{inv.companyName}</div>
+                    {inv.companyAddress && <div>{inv.companyAddress}</div>}
+                    <div>{inv.companyPhone}</div>
+                    <div>{inv.companyEmail}</div>
+                    {inv.companyWebsite && <div>{inv.companyWebsite}</div>}
+                  </div>
+                </div>
+                <div>
+                  <div style={classicStyles.invoiceWord}>INVOICE</div>
+                  <div style={classicStyles.invoiceNum}># {inv.invoiceNumber}</div>
+                  <div style={classicStyles.balanceDueBox}>
+                    <div style={classicStyles.balanceDueLabel}>Balance Due</div>
+                    <div style={classicStyles.balanceDueAmount}>{inv.balanceDueFormatted}</div>
+                  </div>
+                </div>
+              </div>
+
+              <div style={classicStyles.metaSection}>
+                <div>
+                  <div style={classicStyles.billToLabel}>Bill To</div>
+                  <div style={classicStyles.billToName}>{inv.clientName}</div>
+                </div>
+                <div>
+                  <div style={classicStyles.metaRow}>
+                    <span style={classicStyles.metaKey}>Invoice Date :</span>
+                    <span style={classicStyles.metaVal}>{inv.invoiceDate}</span>
+                  </div>
+                  <div style={classicStyles.metaRow}>
+                    <span style={classicStyles.metaKey}>Terms :</span>
+                    <span style={classicStyles.metaVal}>{inv.termsLabel}</span>
+                  </div>
+                  <div style={classicStyles.metaRow}>
+                    <span style={classicStyles.metaKey}>Due Date :</span>
+                    <span style={classicStyles.metaVal}>{inv.dueDate}</span>
+                  </div>
+                </div>
+              </div>
+
+              <table style={classicStyles.table}>
+                <thead>
+                  <tr>
+                    <th style={{ ...classicStyles.th, width: '40px' }}>#</th>
+                    <th style={classicStyles.th}>Item &amp; Description</th>
+                    <th style={{ ...classicStyles.th, textAlign: 'right', width: '80px' }}>Qty</th>
+                    <th style={{ ...classicStyles.th, textAlign: 'right', width: '100px' }}>Rate</th>
+                    <th style={{ ...classicStyles.th, textAlign: 'right', width: '110px' }}>Amount</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {inv.items.map((item) => (
+                    <tr key={item.id} className="avoid-break">
+                      <td style={classicStyles.td}>{item.id}</td>
+                      <td style={classicStyles.td}>
+                        <div style={classicStyles.itemTitle}>{item.description}</div>
+                        {item.descSub && <div style={classicStyles.itemSku}>SKU : {item.descSub}</div>}
+                      </td>
+                      <td style={{ ...classicStyles.td, textAlign: 'right' }}>{item.qtyStr}</td>
+                      <td style={{ ...classicStyles.td, textAlign: 'right' }}>{item.rateFormatted}</td>
+                      <td style={{ ...classicStyles.td, textAlign: 'right' }}>{item.amountFormatted}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+
+              <div style={classicStyles.totalsSection}>
+                <div style={classicStyles.totalsTable}>
+                  <div style={classicStyles.totalRow}><span>Sub Total</span><span>{inv.subTotalFormatted}</span></div>
+                  <div style={classicStyles.totalRowBold}><span>Total</span><span>{inv.totalFormatted}</span></div>
+                  {inv.paymentMadeFormatted && (
+                    <div style={classicStyles.totalRowPayment}><span>Payment Made</span><span>{inv.paymentMadeFormatted}</span></div>
+                  )}
+                  <div style={classicStyles.totalRowFinal}><span>Balance Due</span><span>{inv.balanceDueFormatted}</span></div>
+                </div>
+              </div>
+
+              <div style={classicStyles.notes}>
+                <div style={classicStyles.notesTitle}>Notes</div>
+                <div>{inv.notes}</div>
+              </div>
+
+              <div style={classicStyles.terms}>
+                <div style={classicStyles.termsTitle}>Terms &amp; Conditions</div>
+                {inv.termsConditions.map((t, i) => (
+                  <div key={i}>{i + 1}. {t}</div>
+                ))}
+              </div>
+
+              <div style={classicStyles.footer}>
+                <div style={classicStyles.sigBlock}>
+                  <div style={classicStyles.sigLine} />
+                  <div>Prepared By</div>
+                </div>
+                <div style={classicStyles.stamp}>
+                  <div>{inv.companyName.replace(/\s+/g, ' ').toUpperCase()}</div>
+                  <div style={{ fontSize: '14px', margin: '4px 0' }}>{inv.companyPhone}</div>
+                  <div>NVA</div>
+                </div>
+                <div style={classicStyles.sigBlock}>
+                  <div style={classicStyles.sigLine} />
+                  <div>Customer Signature</div>
+                </div>
+              </div>
+            </div>
+          ) : (
+          <>
           {/* HEADER */}
           <div style={{ display: 'flex', alignItems: 'stretch' }}>
             <div style={{ flex: 1, padding: '26px 30px', display: 'flex', alignItems: 'center', gap: 14, background: '#fff' }}>
@@ -420,6 +631,8 @@ export default function InvoiceTemplate({
           <div style={{ marginTop: 28, position: 'relative', height: 54, background: '#111', width: '100%', minHeight: 54, display: 'flex', alignItems: 'center', paddingLeft: 30 }}>
             <div style={{ position: 'absolute', right: 0, top: 0, width: 0, height: 0, borderLeft: '54px solid transparent', borderTop: '54px solid #dc2626' }} />
           </div>
+          </>
+          )}
         </div>
 
         <div className="no-print" style={{ textAlign: 'center', marginTop: 12, fontSize: 12, color: '#6b7280' }}>

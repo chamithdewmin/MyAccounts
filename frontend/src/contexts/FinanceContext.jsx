@@ -28,15 +28,6 @@ const getDefaultSettings = () => ({
   openingCash: 0, // Opening cash balance at business start
   ownerCapital: 0, // Owner deposits / initial investment
   payables: 0, // Unpaid bills (manual entry until bills feature exists)
-  // Expense categories (descriptions for reference):
-  // Hosting – web/server hosting | Tools & Subscriptions – SaaS, apps, subscriptions
-  // Advertising & Marketing – ads, campaigns | Transport – fuel, fares, vehicle costs
-  // Office & Utilities – office, electricity, internet | Personal use – personal spending
-  // Rent – office or equipment rent | Salaries & Wages – pay to staff
-  // Insurance – any insurance | Software & Licenses – software, licenses, renewals
-  // Travel – business travel | Meals & Entertainment – client meals, team events
-  // Supplies & Materials – office supplies, materials | Professional Services – accountants, lawyers, consultants
-  // Bank & Finance Charges – fees, interest | Other – anything that doesn't fit above
   expenseCategories: [
     'Hosting',
     'Tools & Subscriptions',
@@ -53,8 +44,44 @@ const getDefaultSettings = () => ({
     'Supplies & Materials',
     'Professional Services',
     'Bank & Finance Charges',
+    'Equipment & Hardware',
+    'Training & Education',
+    'Legal & Accounting',
+    'Repairs & Maintenance',
+    'Donations & Gifts',
+    'Taxes & Fees',
+    'Telecommunications',
+    'Postage & Shipping',
+    'Subcontractors',
     'Other',
   ],
+  expenseCategoryDescriptions: {
+    'Hosting': 'web/server hosting',
+    'Tools & Subscriptions': 'SaaS, apps, subscriptions',
+    'Advertising & Marketing': 'ads, campaigns',
+    'Transport': 'fuel, fares, vehicle costs',
+    'Office & Utilities': 'office, electricity, internet, etc.',
+    'Personal use': 'personal spending',
+    'Rent': 'office or equipment rent',
+    'Salaries & Wages': 'pay to staff',
+    'Insurance': 'any insurance',
+    'Software & Licenses': 'software, licenses, renewals',
+    'Travel': 'business travel',
+    'Meals & Entertainment': 'client meals, team events',
+    'Supplies & Materials': 'office supplies, materials',
+    'Professional Services': 'accountants, lawyers, consultants',
+    'Bank & Finance Charges': 'fees, interest',
+    'Equipment & Hardware': 'computers, equipment, hardware',
+    'Training & Education': 'courses, training, education',
+    'Legal & Accounting': 'legal and accounting services',
+    'Repairs & Maintenance': 'repairs, maintenance',
+    'Donations & Gifts': 'donations, gifts',
+    'Taxes & Fees': 'taxes, government fees',
+    'Telecommunications': 'phone, mobile, internet',
+    'Postage & Shipping': 'postage, shipping, delivery',
+    'Subcontractors': 'freelancers, subcontractors',
+    'Other': 'anything that doesn\'t fit above',
+  },
   // Notification settings (off by default)
   emailNotifications: false,
   smsNotifications: false,

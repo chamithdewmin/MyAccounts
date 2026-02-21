@@ -1068,13 +1068,21 @@ const CashFlow = () => {
                       }))
                     }
                   >
-                    {settings.expenseCategories.map((c) => (
-                      <option key={c} value={c}>
-                        {c}
-                      </option>
-                    ))}
+                    {settings.expenseCategories.map((c) => {
+                      const desc = settings.expenseCategoryDescriptions?.[c];
+                      return (
+                        <option key={c} value={c}>
+                          {desc ? `${c} – ${desc}` : c}
+                        </option>
+                      );
+                    })}
                     <option value="Custom">Custom...</option>
                   </select>
+                  {form.category !== 'Custom' && form.category && settings.expenseCategoryDescriptions?.[form.category] && (
+                    <p className="text-xs text-muted-foreground mt-1">
+                      {form.category} – {settings.expenseCategoryDescriptions[form.category]}
+                    </p>
+                  )}
                   {form.category === 'Custom' && (
                     <Input
                       placeholder="Custom category name (e.g. Rent, Salary)"

@@ -34,6 +34,7 @@ const getDefaultSettings = () => ({
     'Advertising & Marketing',
     'Transport',
     'Office & Utilities',
+    'Personal use',
     'Other',
   ],
   // Notification settings (off by default)

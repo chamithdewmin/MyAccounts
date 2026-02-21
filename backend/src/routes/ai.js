@@ -115,7 +115,7 @@ BENEFITS:
 HOW TO RECORD:
 1. Go to "Expenses" in sidebar
 2. Click "Add Expense"
-3. Select category: Hosting / Tools & Subscriptions / Advertising & Marketing / Transport / Office & Utilities / Other
+3. Select category: Hosting / Tools & Subscriptions / Advertising & Marketing / Transport / Office & Utilities / Personal use / Other
 4. Enter amount
 5. Set date
 6. Choose payment method: Cash / Bank / Card / Online

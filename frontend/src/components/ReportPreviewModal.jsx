@@ -1,46 +1,61 @@
 import React, { useRef, useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { Download } from 'lucide-react';
+import { Download, Printer } from 'lucide-react';
 import { downloadReportPdf } from '@/utils/pdfPrint';
 
 /**
- * Modal that shows report preview with Download PDF button.
- * Uses print window (Save as PDF) so the PDF is never empty.
+ * Report preview popup (like invoice preview) with Download PDF and Print buttons.
  */
 const ReportPreviewModal = ({ open, onOpenChange, html, filename, reportTitle = 'Report' }) => {
   const contentRef = useRef(null);
-  const [downloading, setDownloading] = useState(false);
+  const [loading, setLoading] = useState(false);
 
-  const handleDownloadPdf = async () => {
+  const handleDownloadOrPrint = async () => {
     if (!html || !filename) return;
-    setDownloading(true);
+    setLoading(true);
     try {
       await downloadReportPdf(html, filename);
     } catch (err) {
-      console.error('Report PDF failed:', err);
+      console.error('Report PDF/Print failed:', err);
     } finally {
-      setDownloading(false);
+      setLoading(false);
     }
   };
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto" aria-describedby={undefined}>
+      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto mx-2 sm:mx-auto w-[95vw]" aria-describedby={undefined}>
         <DialogHeader>
           <DialogTitle>{reportTitle}</DialogTitle>
         </DialogHeader>
         <div className="space-y-4">
-          <div className="flex justify-end gap-2">
-            <Button size="sm" onClick={handleDownloadPdf} disabled={downloading}>
-              <Download className="h-4 w-4 mr-2" />
-              {downloading ? 'Downloading...' : 'Download PDF'}
+          <div className="flex flex-wrap justify-end gap-2">
+            <Button
+              size="default"
+              variant="outline"
+              onClick={handleDownloadOrPrint}
+              disabled={loading}
+              className="gap-2"
+            >
+              <Download className="h-4 w-4" />
+              {loading ? 'Opening…' : 'Download PDF'}
+            </Button>
+            <Button
+              size="default"
+              variant="outline"
+              onClick={handleDownloadOrPrint}
+              disabled={loading}
+              className="gap-2"
+            >
+              <Printer className="h-4 w-4" />
+              Print
             </Button>
           </div>
           <div
             ref={contentRef}
             key={filename || 'preview'}
-            className="report-preview-content bg-white text-black rounded-lg border border-secondary p-6 min-h-[200px]"
+            className="report-preview-content bg-white text-black rounded-lg border border-secondary p-6 min-h-[200px] shadow-sm"
             style={{ fontFamily: 'sans-serif', fontSize: '14px' }}
             dangerouslySetInnerHTML={{ __html: html || '<p class="text-gray-500">No content to display.</p>' }}
           />

@@ -159,7 +159,7 @@ const AIInsights = () => {
           <div className="flex-shrink-0 p-4 sm:p-6 pt-3 sm:pt-4 border-t border-secondary bg-background/30 pb-[env(safe-area-inset-bottom)]">
             <form onSubmit={handleAsk} className="flex flex-col sm:flex-row gap-2 sm:gap-3">
               <Input
-                placeholder="Ask about money, expenses, tax..."
+                placeholder="Ask about profit, purchases, expenses, or how to..."
                 value={question}
                 onChange={(e) => setQuestion(e.target.value)}
                 className="flex-1 min-w-0 min-h-[44px] sm:min-h-[48px] text-base px-4"

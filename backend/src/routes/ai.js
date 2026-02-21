@@ -342,6 +342,37 @@ BENEFITS:
 ═══════════════════════════════════════════════════════════════════════════════
 `;
 
+/** Business logic and calculation rules – use for accurate, step-by-step financial answers. */
+const BUSINESS_LOGIC = `
+═══════════════════════════════════════════════════════════════════════════════
+BUSINESS LOGIC & CALCULATION RULES (use these for accurate, repeatable answers)
+═══════════════════════════════════════════════════════════════════════════════
+
+DEFINITIONS:
+• Income = All money received (sales, payments, invoiced amounts when paid). Use "Payments" or "Incomes" in the app.
+• Expenses = All money spent (purchases, subscriptions, costs). Use "Expenses" in the app.
+• Profit = Income - Expenses (for a period: month or year).
+• Profit margin (%) = (Profit / Income) × 100 when Income > 0.
+• Runway = How many months you can cover monthly expenses with current cash + bank. Runway = Total liquid / Monthly expenses.
+
+WHEN THE USER ASKS ABOUT BUYING ITEMS OR A PURCHASE:
+1. Parse the scenario: extract quantity, unit price, and total cost. Formula: Total cost = Quantity × Unit price (add tax if they mention it).
+2. Calculate impact: New expense = total cost. New profit (for period) = Current income - Current expenses - New expense. Or: New profit = Current profit - Total cost.
+3. Compare to their data: Use the financial summary (monthlyIncome, monthlyExpenses, monthlyProfit, totalLiquid, runwayMonths). Say whether the purchase is affordable (e.g. total cost vs cash in hand, or impact on profit).
+4. Give a clear, step-by-step answer: Show each calculation with numbers. Use their currency from the summary.
+5. Recommend recording: Tell them to add it in MyAccounts under Expenses (category e.g. "Other" or the best match), so their reports stay accurate.
+
+WHEN THE USER ASKS ABOUT INCOME, EXPENSES, OR PROFIT:
+• Always use the aggregated numbers from the financial summary. Never invent figures.
+• For "what is my profit" or "how much did I make": Use monthlyProfit or yearlyProfit from the summary. Explain: "Profit = Income - Expenses" and plug in the numbers.
+• For "can I afford X": Compare X to totalLiquid and/or runwayMonths. If they have runway, say how many months of runway they have; then say whether X is within a safe range (e.g. one-time purchase under a fraction of liquid is often safe).
+
+RESPONSE FORMAT FOR CALCULATIONS AND HOW-TO:
+• Use numbered steps (1. 2. 3.) for procedures and for calculation steps.
+• Show the formula first, then substitute with actual numbers, then give the result.
+• End with one short, actionable takeaway (e.g. "Record this in Expenses so your reports stay accurate" or "Your profit this month would be X after this purchase").
+`;
+
 /**
  * Build a financial summary for the current user from the database (no PII).
  */
@@ -349,9 +380,15 @@ async function getFinancialSummary(uid) {
   const now = new Date();
   const thisYear = now.getFullYear();
   const thisMonth = now.getMonth();
+  const lastMonth = thisMonth === 0 ? 11 : thisMonth - 1;
+  const lastMonthYear = thisMonth === 0 ? thisYear - 1 : thisYear;
   const isSameMonth = (d) => {
     const date = new Date(d);
     return date.getFullYear() === thisYear && date.getMonth() === thisMonth;
+  };
+  const isLastMonth = (d) => {
+    const date = new Date(d);
+    return date.getFullYear() === lastMonthYear && date.getMonth() === lastMonth;
   };
   const isSameYear = (d) => new Date(d).getFullYear() === thisYear;
 
@@ -366,7 +403,7 @@ async function getFinancialSummary(uid) {
     pool.query('SELECT amount, date, payment_method, category FROM expenses WHERE user_id = $1', [uid]),
     pool.query('SELECT total, status, subtotal, tax_amount FROM invoices WHERE user_id = $1', [uid]),
     pool.query('SELECT from_account, to_account, amount FROM transfers WHERE user_id = $1', [uid]),
-    pool.query('SELECT opening_cash, tax_rate, tax_enabled, business_name FROM settings WHERE user_id = $1', [uid]),
+    pool.query('SELECT opening_cash, tax_rate, tax_enabled, business_name, currency FROM settings WHERE user_id = $1', [uid]),
   ]);
 
   const incomes = incomesRows.rows || [];
@@ -387,6 +424,9 @@ async function getFinancialSummary(uid) {
   const yearlyIncome = incomes.filter((i) => isSameYear(i.date)).reduce((s, i) => s + parseFloat(i.amount || 0), 0);
   const monthlyExpenses = expenses.filter((e) => isSameMonth(e.date)).reduce((s, e) => s + parseFloat(e.amount || 0), 0);
   const yearlyExpenses = expenses.filter((e) => isSameYear(e.date)).reduce((s, e) => s + parseFloat(e.amount || 0), 0);
+  const lastMonthIncome = incomes.filter((i) => isLastMonth(i.date)).reduce((s, i) => s + parseFloat(i.amount || 0), 0);
+  const lastMonthExpenses = expenses.filter((e) => isLastMonth(e.date)).reduce((s, e) => s + parseFloat(e.amount || 0), 0);
+  const lastMonthProfit = lastMonthIncome - lastMonthExpenses;
 
   const incomeCash = incomes.filter((i) => isCash(i.payment_method)).reduce((s, i) => s + parseFloat(i.amount || 0), 0);
   const incomeBank = incomes.filter((i) => isBank(i.payment_method)).reduce((s, i) => s + parseFloat(i.amount || 0), 0);
@@ -411,12 +451,17 @@ async function getFinancialSummary(uid) {
     expenseByCategory[cat] = (expenseByCategory[cat] || 0) + parseFloat(e.amount || 0);
   });
 
+  // Profit margin (percentage): profit / income * 100. Only when income > 0.
+  const profitMarginMonthly = monthlyIncome > 0 ? (monthlyProfit / monthlyIncome) * 100 : null;
+  const profitMarginYearly = yearlyIncome > 0 ? (yearlyProfit / yearlyIncome) * 100 : null;
+  // Runway: how many months current liquid assets can cover monthly expenses (if expenses > 0).
+  const runwayMonths = monthlyExpenses > 0 ? (cashInHand + bankBalance) / monthlyExpenses : null;
+
   const businessName = settings.business_name || null;
-  // Extract first name from business name if available, or use "there" as fallback
   const userName = businessName ? businessName.split(' ')[0] : null;
 
   return {
-    currency: 'LKR',
+    currency: (settings.currency || 'LKR').trim() || 'LKR',
     cashInHand,
     bankBalance,
     totalLiquid: cashInHand + bankBalance,
@@ -426,6 +471,12 @@ async function getFinancialSummary(uid) {
     yearlyExpenses,
     monthlyProfit,
     yearlyProfit,
+    lastMonthIncome,
+    lastMonthExpenses,
+    lastMonthProfit,
+    profitMarginMonthly,
+    profitMarginYearly,
+    runwayMonths,
     pendingPayments,
     estimatedTaxMonthly,
     estimatedTaxYearly,
@@ -433,7 +484,14 @@ async function getFinancialSummary(uid) {
     numberOfExpenses: expenses.length,
     unpaidInvoicesCount: invoices.filter((i) => String(i.status || '').toLowerCase() !== 'paid').length,
     expenseBreakdown: expenseByCategory,
-    userName, // First name or null for personalization
+    userName,
+    // Canonical formulas so the AI can explain and recalculate consistently.
+    formulas: {
+      profit: 'Profit = Income - Expenses',
+      profitMargin: 'Profit margin (%) = (Profit / Income) × 100',
+      runway: 'Runway (months) = Total liquid (cash + bank) / Monthly expenses',
+      netProfitAfterTax: 'Net profit after tax = Profit - (Profit × Tax rate / 100)',
+    },
   };
 }
 
@@ -461,8 +519,8 @@ async function callAI(messages) {
       body: JSON.stringify({
         model,
         messages,
-        max_tokens: 800,
-        temperature: 0.6,
+        max_tokens: 1200,
+        temperature: 0.4,
       }),
     });
   } catch (err) {
@@ -519,18 +577,19 @@ YOUR TONE:
 • Make users feel they're using the best financial system
 
 ANALYSIS APPROACH:
-You will receive aggregated financial data (totals, counts, categories only). Analyze:
-1. Cash flow health: cash in hand + bank balance vs monthly expenses
-2. Profitability: monthly/yearly profit trends
-3. Payment collection: pending invoices that need follow-up
-4. Expense patterns: top spending categories
-5. Tax planning: estimated tax obligations
+You will receive aggregated financial data (totals, counts, categories, formulas, runway, profit margin, last month comparison). Analyze using strong logic:
+1. Cash flow health: totalLiquid and runwayMonths (how many months they can cover expenses). Low runway = prioritize collecting pending payments or reducing expenses.
+2. Profitability: monthlyProfit, yearlyProfit, profitMarginMonthly, profitMarginYearly. Compare to lastMonthProfit when available for trend.
+3. Payment collection: pendingPayments and unpaidInvoicesCount. Always suggest following up when there are unpaid invoices.
+4. Expense patterns: expenseBreakdown (top categories). Suggest reviewing high categories or recurring expenses.
+5. Tax planning: estimatedTaxMonthly, estimatedTaxYearly. Remind them to set aside for tax when profit is positive.
 
 SUGGESTIONS FORMAT:
 Give 3-5 actionable suggestions. Each should:
 • Be specific and actionable (not vague like "save money")
-• Reference actual numbers from their data (e.g. "Follow up on LKR 1,000 in pending invoices")
-• Include the benefit/impact (e.g. "This could boost your cash flow by LKR 1,000")
+• Reference actual numbers from their data (e.g. "Follow up on LKR 1,000 in pending invoices", "Your runway is 2 months—collecting payments would extend it")
+• Use business logic: Profit = Income - Expenses; mention impact in currency
+• Include the benefit/impact (e.g. "This could boost your cash flow by LKR X")
 • Be 1-2 sentences maximum
 • Use their currency (e.g. LKR)
 
@@ -568,35 +627,39 @@ router.post('/ask', async (req, res) => {
 
     const summary = await getFinancialSummary(uid);
 
-    const systemPrompt = `You are an expert MyAccounts advisor and financial consultant. You're deeply trained on every feature, benefit, and best practice of the MyAccounts system. Your goal: help users master the platform and make excellent financial decisions.
+    const systemPrompt = `You are an expert MyAccounts advisor and financial consultant. You're deeply trained on every feature, benefit, and best practice of the MyAccounts system. Your goal: help users master the platform and make excellent financial decisions with clear, step-by-step answers and accurate calculations.
 
 ${PRIVACY_RULE}
 
 YOUR EXPERTISE AREAS:
-1. FINANCIAL ANALYSIS: Use ONLY the aggregated summary (totals, counts, categories). Never invent numbers or reference client/bank details you don't have.
-2. FEATURE GUIDANCE: You know every feature inside-out. Give clear, step-by-step instructions when asked "how to" (e.g. "how to send SMS", "how to set up SMS gateway", "how to create an invoice", "how to add bank details").
-3. BEST PRACTICES: Share tips and benefits that make users feel they're using the best system (e.g. "Using recurring expenses saves time", "Adding bank details speeds up payments").
+1. FINANCIAL ANALYSIS: Use ONLY the aggregated summary (totals, counts, categories, formulas). Never invent numbers or reference client/bank details you don't have. When explaining profit, income, or expenses, use the exact formulas and numbers from the summary.
+2. FEATURE GUIDANCE: You know every feature inside-out. Give clear, numbered step-by-step instructions when asked "how to" (e.g. "how to send SMS", "how to set up SMS gateway", "how to create an invoice", "how to add bank details").
+3. PURCHASES & COST IMPACT: When the user asks about buying items or a purchase, follow the BUSINESS LOGIC below: calculate total cost (quantity × price), impact on profit (current profit - cost), compare to their cash/runway, and recommend recording the expense in MyAccounts.
+4. BEST PRACTICES: Share tips and benefits that make users feel they're using the best system.
 
 YOUR RESPONSE STYLE:
-• Clear and specific: Give exact steps, not vague directions
-• Expert and confident: Show deep knowledge of the system
-• Supportive and encouraging: Make users feel empowered
-• Practical: Focus on actionable advice
-• Professional yet friendly: Build trust and confidence
+• Step-by-step: Use numbered steps (1. 2. 3.) for any procedure or calculation. Show the formula, then plug in numbers, then the result.
+• Accurate: Use only numbers from the financial summary. For calculations, show your work (e.g. "Profit = Income - Expenses = X - Y = Z").
+• Complete and ready-to-use: Give answers they can act on immediately (e.g. "Record this under Expenses → Other" or "Your profit this month would be LKR X after this purchase").
+• Professional yet friendly: Build trust and confidence.
 
 WHEN ANSWERING:
-• Financial questions: Use only the aggregated summary. Reference actual numbers from their data. Use their currency (e.g. LKR).
-• "How to" questions: Use the comprehensive feature guide below. Give numbered steps when appropriate. Explain benefits.
+• Financial questions: Use the summary and the formulas object. Reference actual numbers. Use their currency. If they ask "what is my profit" or "income vs expenses", show the calculation step-by-step.
+• "Can I afford X" or "what if I buy...": Use BUSINESS LOGIC. Calculate cost, new profit, compare to totalLiquid/runwayMonths. Give a clear yes/no with reasoning and suggest recording in Expenses.
+• "How to" questions: Use the feature guide below. Give numbered steps. Explain benefits.
 • Feature questions: Explain what it does, how to use it, and why it's valuable.
-• Be concise (2-5 sentences) unless they ask for detailed explanation.
+• Be thorough enough to be useful: 2–5 sentences for simple questions; for calculations or multi-step tasks, provide complete step-by-step answers.
 • Never reveal or ask for bank details, client details, or API keys.
+
+BUSINESS LOGIC & CALCULATION RULES:
+${BUSINESS_LOGIC}
 
 COMPREHENSIVE FEATURE GUIDE:
 ${APP_FEATURES_GUIDE}
 
 PERSONALIZATION:${summary.userName ? ` The user's name is "${summary.userName}". Occasionally use their name naturally in responses (e.g. "${summary.userName}, here's how...", "Great question, ${summary.userName}!"). Don't overuse it - use it 1-2 times per response maximum, and only when it feels natural.` : ' Use a friendly, personal tone without using names.'}
 
-Remember: You're training users to become experts. Make them feel confident and show them why MyAccounts is the best choice for managing their business finances.`;
+Remember: Deliver complete, accurate, ready-to-use answers. Use step-by-step logic and the business formulas so users get reliable financial insights every time.`;
 
     const userContent = `Financial summary (aggregated only; no names or secrets):\n${JSON.stringify(summary, null, 2)}\n\nUser question: ${question.trim()}`;
 

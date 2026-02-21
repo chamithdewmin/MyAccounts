@@ -63,11 +63,14 @@ function normalise(raw = {}, currency = 'LKR', settings = {}) {
       const qty = parseFloat(it.quantity ?? it.qty ?? 1);
       const price = parseFloat(it.price || 0);
       const lineTotal = it.total ?? (price * qty);
+      const title = it.name || it.description || 'Item';
+      const detail = (it.description || it.name || '').trim();
       return {
         id: i + 1,
         no: String(i + 1).padStart(2, '0'),
-        description: it.description || it.name || 'Item',
+        description: title,
         descSub: it.sku || it.note || '',
+        itemDetail: detail && detail !== title ? detail : '',
         price,
         quantity: qty,
         total: lineTotal,
@@ -273,33 +276,53 @@ export default function InvoiceTemplate({
 
       <div className="inv-root inv-classic" style={{ background: '#d1d5db', minHeight: '100vh', padding: '32px 16px' }}>
 
-        <div className="no-print" style={{ display: 'flex', justifyContent: 'flex-end', gap: 10, marginBottom: 20, maxWidth: 680, margin: '0 auto 20px' }}>
+        <div className="no-print" style={{ maxWidth: 680, margin: '0 auto 16px', display: 'flex', justifyContent: 'flex-end', gap: 10 }}>
           <button
             onClick={handleDownloadPdf}
             disabled={dlStatus === 'loading'}
             style={{
-              display: 'flex', alignItems: 'center', gap: 7,
-              background: dlStatus === 'loading' ? '#7f1d1d' : dlStatus === 'done' ? '#166534' : dlStatus === 'error' ? '#7f1d1d' : '#dc2626',
-              color: '#fff', border: 'none', borderRadius: 6,
-              padding: '9px 18px', fontWeight: 600, fontSize: 13,
+              fontFamily: "'Montserrat', sans-serif",
+              fontWeight: 600,
+              fontSize: 14,
+              background: dlStatus === 'loading' ? '#7f1d1d' : dlStatus === 'done' ? '#166534' : '#1a1a1a',
+              color: '#fff',
+              border: 'none',
+              borderRadius: 8,
+              padding: '12px 28px',
               cursor: dlStatus === 'loading' ? 'wait' : 'pointer',
-              fontFamily: 'inherit', transition: 'background 0.2s', letterSpacing: 0.3,
-              boxShadow: '0 2px 8px rgba(220,38,38,0.3)',
+              display: 'flex',
+              alignItems: 'center',
+              gap: 8,
+              boxShadow: '0 2px 12px rgba(0,0,0,0.18)',
+              transition: 'background 0.2s',
             }}
+            onMouseEnter={(e) => { if (dlStatus === 'idle') e.currentTarget.style.background = '#cc0000'; }}
+            onMouseLeave={(e) => { if (dlStatus === 'idle') e.currentTarget.style.background = '#1a1a1a'; }}
           >
             {dlStatus === 'loading' ? <SpinIcon /> : <DownloadIcon />}
-            {dlStatus === 'loading' ? 'Generating PDF…' : dlStatus === 'done' ? '✓ Downloaded!' : dlStatus === 'error' ? '✗ Failed – Retry' : 'Download PDF'}
+            {dlStatus === 'loading' ? 'Generating…' : dlStatus === 'done' ? '✓ Downloaded!' : dlStatus === 'error' ? 'Retry' : 'Download PDF (A4)'}
           </button>
           <button
             onClick={handlePrint}
             disabled={prtStatus === 'loading'}
             style={{
-              display: 'flex', alignItems: 'center', gap: 7,
-              background: '#1f2937', color: '#fff', border: 'none', borderRadius: 6,
-              padding: '9px 18px', fontWeight: 600, fontSize: 13,
-              cursor: 'pointer', fontFamily: 'inherit', transition: 'background 0.2s', letterSpacing: 0.3,
-              boxShadow: '0 2px 8px rgba(0,0,0,0.2)',
+              fontFamily: "'Montserrat', sans-serif",
+              fontWeight: 600,
+              fontSize: 14,
+              background: '#1a1a1a',
+              color: '#fff',
+              border: 'none',
+              borderRadius: 8,
+              padding: '12px 28px',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              gap: 8,
+              boxShadow: '0 2px 12px rgba(0,0,0,0.18)',
+              transition: 'background 0.2s',
             }}
+            onMouseEnter={(e) => { e.currentTarget.style.background = '#cc0000'; }}
+            onMouseLeave={(e) => { e.currentTarget.style.background = '#1a1a1a'; }}
           >
             <PrintIcon />
             Print
@@ -383,7 +406,8 @@ export default function InvoiceTemplate({
                     <td style={invoiceStyles.td}>{item.id}</td>
                     <td style={invoiceStyles.td}>
                       <div style={invoiceStyles.itemTitle}>{item.description}</div>
-                      {item.descSub && <div style={invoiceStyles.itemSku}>SKU : {item.descSub}</div>}
+                      {item.descSub ? <div style={invoiceStyles.itemSku}>SKU : {item.descSub}</div> : null}
+                      {item.itemDetail ? <div style={invoiceStyles.itemDesc}>{item.itemDetail}</div> : null}
                     </td>
                     <td style={{ ...invoiceStyles.td, textAlign: 'right' }}>{item.qtyStr}</td>
                     <td style={{ ...invoiceStyles.td, textAlign: 'right' }}>{item.rateFormatted}</td>
@@ -396,7 +420,9 @@ export default function InvoiceTemplate({
             <div style={invoiceStyles.totalsSection}>
               <div style={invoiceStyles.totalsTable}>
                 <div style={invoiceStyles.row()}><span>Sub Total</span><span>{inv.subTotalFormatted}</span></div>
-                <div style={invoiceStyles.row({ fontWeight: 'bold' })}><span>Total</span><span>{inv.totalFormatted}</span></div>
+                <div style={invoiceStyles.row({ fontWeight: 'bold', fontSize: '15px', borderTop: '2px solid #1a1a1a', borderBottom: 'none', marginTop: '4px', paddingTop: '8px' })}>
+                  <span>Total</span><span>{inv.totalFormatted}</span>
+                </div>
               </div>
             </div>
 

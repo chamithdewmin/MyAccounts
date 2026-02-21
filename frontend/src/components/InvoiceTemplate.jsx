@@ -156,7 +156,7 @@ export default function InvoiceTemplate({
       const filename = `Invoice-${String(inv.invoiceNumber).replace(/^#/, '')}.pdf`;
       await html2pdf()
         .set({
-          margin: [10, 12, 10, 12],
+          margin: [12, 15, 12, 15],
           filename,
           image: { type: 'png', quality: 1 },
           html2canvas: {
@@ -211,15 +211,15 @@ export default function InvoiceTemplate({
         @media print {
           body * { visibility: hidden !important; }
           .inv-print-area, .inv-print-area * { visibility: visible !important; }
-          .inv-print-area { position: fixed !important; left: 0; top: 0; width: 210mm !important; min-height: 297mm !important; background: #fff !important; box-shadow: none !important; }
+          .inv-print-area { position: fixed !important; left: 0; top: 0; width: 180mm !important; max-width: 180mm !important; min-height: 297mm !important; background: #fff !important; box-shadow: none !important; margin: 0 auto !important; }
           .no-print { display: none !important; }
-          @page { size: A4 portrait; margin: 12mm; }
+          @page { size: A4 portrait; margin: 15mm; }
         }
       `}</style>
 
       <div className="inv-root" style={{ background: '#d1d5db', minHeight: '100vh', padding: '32px 16px' }}>
 
-        <div className="no-print" style={{ display: 'flex', justifyContent: 'flex-end', gap: 10, marginBottom: 20, maxWidth: 794, margin: '0 auto 20px' }}>
+        <div className="no-print" style={{ display: 'flex', justifyContent: 'flex-end', gap: 10, marginBottom: 20, maxWidth: 680, margin: '0 auto 20px' }}>
           <button
             onClick={handleDownloadPdf}
             disabled={dlStatus === 'loading'}
@@ -256,12 +256,14 @@ export default function InvoiceTemplate({
           ref={printAreaRef}
           className="inv-print-area"
           style={{
-            width: 794,
-            minWidth: 794,
+            width: 680,
+            maxWidth: 680,
+            minWidth: 680,
             margin: '0 auto',
             background: '#fff',
             boxShadow: '0 4px 40px rgba(0,0,0,0.18)',
             fontFamily: "'Poppins', sans-serif",
+            boxSizing: 'border-box',
           }}
         >
           {/* HEADER */}
@@ -279,19 +281,20 @@ export default function InvoiceTemplate({
             </div>
             <div style={{
               background: '#111', color: '#fff',
-              padding: '22px 30px 22px 46px', minWidth: 280,
+              padding: '22px 28px 22px 40px', minWidth: 260,
               clipPath: 'polygon(8% 0, 100% 0, 100% 100%, 0% 100%)',
               display: 'flex', flexDirection: 'column', justifyContent: 'center',
+              boxSizing: 'border-box',
             }}>
               <div style={{ fontSize: 32, fontWeight: 900, letterSpacing: 7, color: '#fff', lineHeight: 1 }}>INVOICE</div>
-              <div style={{ fontSize: 11, marginTop: 10, lineHeight: 1.9 }}>
-                <div style={{ display: 'flex', gap: 8 }}>
-                  <span style={{ color: '#6b7280', width: 120 }}>Invoice Number:</span>
-                  <span style={{ color: '#fff', fontWeight: 600 }}>{inv.invoiceNumber}</span>
+              <div style={{ fontSize: 11, marginTop: 10, lineHeight: 1.9, minWidth: 0 }}>
+                <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+                  <span style={{ color: '#6b7280', flexShrink: 0 }}>Invoice Number:</span>
+                  <span style={{ color: '#fff', fontWeight: 600, minWidth: 0 }}>{inv.invoiceNumber}</span>
                 </div>
-                <div style={{ display: 'flex', gap: 8 }}>
-                  <span style={{ color: '#6b7280', width: 120 }}>Invoice Date:</span>
-                  <span style={{ color: '#fff' }}>{inv.invoiceDate}</span>
+                <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+                  <span style={{ color: '#6b7280', flexShrink: 0 }}>Invoice Date:</span>
+                  <span style={{ color: '#fff', minWidth: 0 }}>{inv.invoiceDate}</span>
                 </div>
               </div>
             </div>
@@ -314,10 +317,10 @@ export default function InvoiceTemplate({
               <div style={{ fontSize: 9, fontWeight: 700, color: '#9ca3af', textTransform: 'uppercase', letterSpacing: 2.5, marginBottom: 7 }}>Invoice From</div>
               <div style={{ fontSize: 16, fontWeight: 700, color: '#111827', marginBottom: 6 }}>{inv.companyName}</div>
               <div style={{ fontSize: 11, color: '#4b5563', lineHeight: 1.9 }}>
-                {inv.companyPhone && <div><PhoneIcon />{inv.companyPhone}</div>}
-                {inv.companyEmail && <div><EmailIcon />{inv.companyEmail}</div>}
-                {inv.companyWebsite && <div><WebsiteIcon />{inv.companyWebsite}</div>}
-                {inv.companyAddress && <div><AddressIcon />{inv.companyAddress}</div>}
+                <div><PhoneIcon />{inv.companyPhone || '—'}</div>
+                <div><EmailIcon />{inv.companyEmail || '—'}</div>
+                <div><WebsiteIcon />{inv.companyWebsite || '—'}</div>
+                {inv.companyAddress ? <div><AddressIcon />{inv.companyAddress}</div> : null}
               </div>
             </div>
           </div>

@@ -19,18 +19,38 @@ const ReportPreviewModal = ({ open, onOpenChange, html, filename, reportTitle = 
   const [downloading, setDownloading] = useState(false);
 
   const handleDownloadPdf = async () => {
-    const el = contentRef.current;
-    if (!el) return;
+    if (!html || !filename) return;
     setDownloading(true);
     try {
+      // Render same HTML in a temporary container (like pdfPrint.downloadReportAsPdf)
+      // so html2canvas captures correctly; capturing inside the dialog often yields blank PDF
+      const container = document.createElement('div');
+      container.style.cssText = 'position:fixed;left:0;top:0;width:190mm;max-width:190mm;background:#fff;font-size:14px;color:#111;opacity:0.01;pointer-events:none;z-index:-1;overflow:visible;box-sizing:border-box;';
+      container.innerHTML = html;
+      document.body.appendChild(container);
+
+      const imgs = container.querySelectorAll('img');
+      await Promise.all(Array.from(imgs).map((img) => {
+        if (img.complete) return Promise.resolve();
+        return new Promise((resolve) => {
+          img.onload = resolve;
+          img.onerror = resolve;
+          setTimeout(resolve, 3000);
+        });
+      }));
+
+      await new Promise((r) => setTimeout(r, 300));
+
       const opt = {
-        margin: [12, 12, 12, 12],
+        margin: [10, 10, 14, 10],
         filename,
         image: { type: 'jpeg', quality: 0.98 },
-        html2canvas: { scale: 2, useCORS: true, allowTaint: true, logging: false },
+        html2canvas: { scale: 2, useCORS: true, allowTaint: true, logging: false, backgroundColor: '#ffffff' },
         jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
+        pagebreak: { mode: ['css', 'legacy'], avoid: ['tr', 'table'] },
       };
-      await html2pdf().set(opt).from(el).save();
+      await html2pdf().set(opt).from(container).save();
+      document.body.removeChild(container);
     } catch (err) {
       console.error('Report PDF download failed:', err);
     } finally {
@@ -53,9 +73,10 @@ const ReportPreviewModal = ({ open, onOpenChange, html, filename, reportTitle = 
           </div>
           <div
             ref={contentRef}
-            className="report-preview-content bg-white text-black rounded-lg border border-secondary p-6"
+            key={filename || 'preview'}
+            className="report-preview-content bg-white text-black rounded-lg border border-secondary p-6 min-h-[200px]"
             style={{ fontFamily: 'sans-serif', fontSize: '14px' }}
-            dangerouslySetInnerHTML={{ __html: html || '' }}
+            dangerouslySetInnerHTML={{ __html: html || '<p class="text-gray-500">No content to display.</p>' }}
           />
         </div>
       </DialogContent>

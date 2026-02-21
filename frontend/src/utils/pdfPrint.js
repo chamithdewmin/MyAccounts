@@ -51,51 +51,61 @@ function getReportDocumentHtml(html, filename) {
 }
 
 /**
- * Downloads report as PDF. Opens print dialog with report content - user selects
- * "Save as PDF" or "Print to PDF" to get the file. This reliably shows the same
- * report design as on screen.
+ * Opens print dialog for the report (no new tab). User selects "Save as PDF"
+ * or "Print" in the dialog. Uses a hidden iframe so the page does not navigate.
  * @param {string} html - Full HTML content (from getPrintHtml)
  * @param {string} filename - e.g. 'balance-sheet-20260206.pdf'
  * @returns {Promise<void>}
  */
 export async function downloadReportPdf(html, filename) {
   const fullDoc = getReportDocumentHtml(html, filename);
-  const printWindow = window.open('', '_blank');
-  if (!printWindow) {
-    throw new Error('Please allow pop-ups to download the report. You can also use Ctrl+P to print this page.');
-  }
+  const blob = new Blob([fullDoc], { type: 'text/html;charset=utf-8' });
+  const url = URL.createObjectURL(blob);
 
-  printWindow.document.write(fullDoc);
-  printWindow.document.close();
+  const iframe = document.createElement('iframe');
+  iframe.setAttribute('style', 'position:absolute;width:0;height:0;border:0;visibility:hidden;');
+  iframe.src = url;
+  document.body.appendChild(iframe);
 
-  await new Promise((resolve) => {
-    if (printWindow.document.readyState === 'complete') {
-      resolve();
-    } else {
-      printWindow.onload = () => resolve();
-      setTimeout(resolve, 600);
-    }
-  });
+  const cleanup = () => {
+    try {
+      document.body.removeChild(iframe);
+      URL.revokeObjectURL(url);
+    } catch (_) {}
+  };
 
-  const doc = printWindow.document;
-  const imgs = doc.querySelectorAll('img');
-  await Promise.all(Array.from(imgs).map((img) => {
-    if (img.complete) return Promise.resolve();
-    return new Promise((resolve) => {
-      img.onload = resolve;
-      img.onerror = resolve;
-      setTimeout(resolve, 2500);
+  try {
+    await new Promise((resolve, reject) => {
+      iframe.onload = () => resolve();
+      iframe.onerror = () => reject(new Error('Failed to load report for print'));
+      setTimeout(resolve, 800);
     });
-  }));
 
-  await new Promise((r) => setTimeout(r, 400));
-  printWindow.focus();
-  printWindow.print();
+    const doc = iframe.contentDocument || iframe.contentWindow?.document;
+    if (!doc) {
+      cleanup();
+      throw new Error('Could not access report content');
+    }
 
-  printWindow.onafterprint = () => printWindow.close();
-  setTimeout(() => {
-    if (!printWindow.closed) printWindow.close();
-  }, 2000);
+    const imgs = doc.querySelectorAll('img');
+    await Promise.all(Array.from(imgs).map((img) => {
+      if (img.complete) return Promise.resolve();
+      return new Promise((resolve) => {
+        img.onload = resolve;
+        img.onerror = resolve;
+        setTimeout(resolve, 2500);
+      });
+    }));
+
+    await new Promise((r) => setTimeout(r, 300));
+    iframe.contentWindow.print();
+
+    iframe.contentWindow.onafterprint = cleanup;
+    setTimeout(cleanup, 3000);
+  } catch (err) {
+    cleanup();
+    throw err;
+  }
 }
 
 /**

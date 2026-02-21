@@ -170,10 +170,25 @@ const invoiceStyles = {
   metaRow: { display: 'flex', justifyContent: 'flex-end', gap: '24px', marginBottom: '4px', fontSize: '13px' },
   metaKey: { color: '#555' },
   metaVal: { color: '#1a1a1a', fontWeight: 500, minWidth: '120px', textAlign: 'right' },
-  table: { width: '100%', borderCollapse: 'collapse', marginTop: '8px' },
-  th: { padding: '10px 14px', fontSize: '13px', fontWeight: 600, textAlign: 'left', background: '#1a1a1a', color: '#fff' },
-  td: { padding: '14px 14px', fontSize: '13px', verticalAlign: 'top', borderBottom: '1px solid #e8e8e8' },
-  itemTitle: { fontWeight: 600, marginBottom: '2px' },
+  table: { width: '100%', borderCollapse: 'collapse', marginTop: '8px', border: 'none' },
+  th: {
+    padding: '10px 14px',
+    fontSize: '13px',
+    fontWeight: 600,
+    textAlign: 'left',
+    background: '#111',
+    color: '#fff',
+    border: 'none',
+  },
+  td: {
+    padding: '14px 14px',
+    fontSize: '13px',
+    verticalAlign: 'top',
+    border: 'none',
+    borderBottom: '1px solid #e8e8e8',
+    background: '#fff',
+  },
+  itemTitle: { fontWeight: 600, marginBottom: '2px', fontSize: '13px' },
   itemSku: { color: '#777', fontSize: '12px', marginTop: '4px' },
   itemDesc: { color: '#555', fontSize: '12px', marginTop: '3px', lineHeight: 1.5 },
   totalsSection: { display: 'flex', justifyContent: 'flex-end', marginTop: '10px' },
@@ -181,8 +196,6 @@ const invoiceStyles = {
   row: (extra = {}) => ({ display: 'flex', justifyContent: 'space-between', padding: '5px 0', borderBottom: '1px solid #f0f0f0', ...extra }),
   notes: { marginTop: '40px', fontSize: '13px' },
   notesTitle: { fontWeight: 'bold', marginBottom: '6px', fontSize: '14px' },
-  terms: { marginTop: '24px', fontSize: '12px', color: '#444', lineHeight: 1.8 },
-  termsTitle: { fontWeight: 'bold', marginBottom: '6px', fontSize: '14px', color: '#1a1a1a' },
   footer: { display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginTop: '48px' },
   sigBlock: { textAlign: 'center', fontSize: '12px', color: '#555' },
   sigLine: { borderTop: '1px solid #aaa', width: '140px', margin: '32px auto 4px' },
@@ -389,15 +402,11 @@ export default function InvoiceTemplate({
             <table style={invoiceStyles.table}>
               <thead>
                 <tr>
-                  {[
-                    ['#', '40px', 'left'],
-                    ['Description', 'auto', 'left'],
-                    ['Qty', '80px', 'right'],
-                    ['Rate', '100px', 'right'],
-                    ['Amount', '110px', 'right'],
-                  ].map(([label, w, align]) => (
-                    <th key={label} style={{ ...invoiceStyles.th, width: w, textAlign: align }}>{label}</th>
-                  ))}
+                  <th style={{ ...invoiceStyles.th, width: '40px' }}>#</th>
+                  <th style={{ ...invoiceStyles.th }}>Description</th>
+                  <th style={{ ...invoiceStyles.th, width: '80px', textAlign: 'right' }}>Qty</th>
+                  <th style={{ ...invoiceStyles.th, width: '100px', textAlign: 'right' }}>Rate</th>
+                  <th style={{ ...invoiceStyles.th, width: '110px', textAlign: 'right' }}>Amount</th>
                 </tr>
               </thead>
               <tbody>
@@ -429,13 +438,6 @@ export default function InvoiceTemplate({
             <div style={invoiceStyles.notes}>
               <div style={invoiceStyles.notesTitle}>Notes</div>
               <div>{inv.notes}</div>
-            </div>
-
-            <div style={invoiceStyles.terms}>
-              <div style={invoiceStyles.termsTitle}>Terms &amp; Conditions</div>
-              {inv.termsConditions.map((t, i) => (
-                <div key={i}>{i + 1}. {t}</div>
-              ))}
             </div>
 
             <div style={invoiceStyles.footer}>

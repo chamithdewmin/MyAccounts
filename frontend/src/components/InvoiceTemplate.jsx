@@ -1,14 +1,6 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { useFinance } from '@/contexts/FinanceContext';
-
-function loadScript(src) {
-  return new Promise((resolve, reject) => {
-    if (document.querySelector(`script[src="${src}"]`)) { resolve(); return; }
-    const s = document.createElement('script');
-    s.src = src; s.onload = resolve; s.onerror = reject;
-    document.head.appendChild(s);
-  });
-}
+import html2pdf from 'html2pdf.js';
 
 const PhoneIcon = () => (
   <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#dc2626" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ display: 'inline', marginRight: 4, verticalAlign: 'middle', flexShrink: 0 }}>
@@ -161,16 +153,14 @@ export default function InvoiceTemplate({
 
     setDlStatus('loading');
     try {
-      await loadScript('https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js');
       const filename = `Invoice-${String(inv.invoiceNumber).replace(/^#/, '')}.pdf`;
-
-      await window.html2pdf()
+      await html2pdf()
         .set({
           margin: [10, 12, 10, 12],
           filename,
           image: { type: 'png', quality: 1 },
           html2canvas: {
-            scale: 2.5,
+            scale: 2,
             useCORS: true,
             allowTaint: true,
             logging: false,
@@ -283,7 +273,7 @@ export default function InvoiceTemplate({
                 <LogoMark />
               )}
               <div>
-                <div style={{ fontSize: 20, fontWeight: 900, color: '#dc2626', letterSpacing: 3, lineHeight: 1.1 }}>{inv.companyName}</div>
+                <div style={{ fontSize: 20, fontWeight: 900, color: '#111827', letterSpacing: 3, lineHeight: 1.1 }}>{inv.companyName}</div>
                 {inv.companyTagline && <div style={{ fontSize: 9, color: '#9ca3af', letterSpacing: 2, marginTop: 2 }}>{inv.companyTagline}</div>}
               </div>
             </div>
@@ -414,19 +404,17 @@ export default function InvoiceTemplate({
             )}
           </div>
 
-          {/* SIGNATURE: only when "Add signature area" was used */}
-          {inv.showSignatureArea && (
-            <div style={{ padding: '28px 30px 0', display: 'flex', alignItems: 'flex-end' }}>
-              <div style={{ width: 200 }}>
-                <div style={{ borderTop: '1.5px solid #111827', marginBottom: 6 }} />
-                <div style={{ fontSize: 11, fontWeight: 700, color: '#111827', letterSpacing: 0.5 }}>LogozoDev authorized</div>
-                <div style={{ fontSize: 10, color: '#9ca3af', marginTop: 2 }}>Authorized Signature</div>
-              </div>
+          {/* SIGNATURE: line + LogozoDev authorized + Authorized Signature */}
+          <div style={{ padding: '28px 30px 0', display: 'flex', alignItems: 'flex-end' }}>
+            <div style={{ width: 220 }}>
+              <div style={{ borderTop: '1.5px solid #111827', marginBottom: 6 }} />
+              <div style={{ fontSize: 11, fontWeight: 700, color: '#111827', letterSpacing: 0.5 }}>LogozoDev authorized</div>
+              <div style={{ fontSize: 10, color: '#9ca3af', marginTop: 2 }}>Authorized Signature</div>
             </div>
-          )}
+          </div>
 
-          {/* FOOTER */}
-          <div style={{ marginTop: 28, position: 'relative', height: 54, background: '#111', display: 'flex', alignItems: 'center', paddingLeft: 30 }}>
+          {/* FOOTER: black bar at bottom of A4 sheet */}
+          <div style={{ marginTop: 28, position: 'relative', height: 54, background: '#111', width: '100%', minHeight: 54, display: 'flex', alignItems: 'center', paddingLeft: 30 }}>
             <div style={{ position: 'absolute', right: 0, top: 0, width: 0, height: 0, borderLeft: '54px solid transparent', borderTop: '54px solid #dc2626' }} />
           </div>
         </div>

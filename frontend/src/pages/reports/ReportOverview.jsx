@@ -306,16 +306,6 @@ export default function OverviewReports() {
   const pendingTax = useMemo(() => totalTax - paidTax, [totalTax, paidTax]);
   const bestMonth = useMemo(() => plMonthly.reduce((a, b) => a.profit > b.profit ? a : b, plMonthly[0] || { month: 'N/A', profit: 0 }), [plMonthly]);
   const worstMonth = useMemo(() => plMonthly.reduce((a, b) => a.profit < b.profit ? a : b, plMonthly[0] || { month: 'N/A', profit: 0 }), [plMonthly]);
-  // Quarterly data for reference "Quarterly Performance" section (group 7 months into Q1/Q2/Q3)
-  const quarterData = useMemo(() => {
-    const q = [{ quarter: "Q1", revenue: 0, profit: 0 }, { quarter: "Q2", revenue: 0, profit: 0 }, { quarter: "Q3", revenue: 0, profit: 0 }, { quarter: "Q4", revenue: 0, profit: 0 }];
-    plMonthly.forEach((m, i) => {
-      const qIdx = Math.min(Math.floor(i / 3), 3);
-      q[qIdx].revenue += m.income || 0;
-      q[qIdx].profit += m.profit || 0;
-    });
-    return q;
-  }, [plMonthly]);
   const healthScore = useMemo(() => {
     const marginScore = parseFloat(profitMargin) > 0 ? Math.min(30, (parseFloat(profitMargin) / 50) * 30) : 0;
     const debtScore = totalAssets > 0 ? Math.min(25, ((1 - totalLiab / totalAssets) * 25)) : 0;
@@ -369,34 +359,100 @@ export default function OverviewReports() {
         .ins { transition:transform .2s, box-shadow .2s, border-color .2s; cursor:pointer; }
         .ins:hover { transform:translateY(-2px); box-shadow:0 8px 24px rgba(0,0,0,.3); }
         .txrow:hover { background:#1a1d27 !important; }
-        @media (max-width: 900px) { .overview-two-col { grid-template-columns: 1fr !important; } }
       `}</style>
 
       <div style={{ padding:"24px 18px", display:"flex", flexDirection:"column", gap:20, animation:"fi .4s ease" }}>
 
-        {/* HEADER ROW — title + subtitle left, actions right (biz-insight-hub style) */}
-        <div style={{ display: "flex", flexWrap: "wrap", justifyContent: "space-between", alignItems: "flex-start", gap: 16 }}>
+        {/* PAGE HEADER (Lovable-style) + TOOLBAR — keep existing three buttons, Download opens existing popup */}
+        <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-start", flexWrap:"wrap", gap:16 }}>
           <div>
-            <h1 style={{ color: C.text, fontSize: 26, fontWeight: 800, margin: 0, letterSpacing: "-0.02em" }}>Overview Reports</h1>
-            <p style={{ color: C.muted, fontSize: 14, margin: "6px 0 0" }}>Complete business performance summary — FY 2024</p>
+            <h1 style={{ fontSize:28, fontWeight:800, margin:0, color:C.text, letterSpacing:"-0.02em" }}>Overview Reports</h1>
+            <p style={{ fontSize:14, color:C.muted, margin:"4px 0 0" }}>Complete business performance summary — FY 2024</p>
           </div>
-          <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
-            <button type="button" onClick={() => window.location.reload()} style={{ display: "flex", alignItems: "center", gap: 8, background: "#1c1e24", border: "1px solid #303338", borderRadius: 8, padding: "9px 16px", color: "#fff", fontSize: 13, fontWeight: 600, cursor: "pointer", fontFamily: "'Inter', sans-serif" }}><I.Refresh /><span>Refresh</span></button>
-            <button type="button" onClick={() => {}} style={{ display: "flex", alignItems: "center", gap: 8, background: "#1c1e24", border: "1px solid #303338", borderRadius: 8, padding: "9px 16px", color: "#fff", fontSize: 13, fontWeight: 600, cursor: "pointer", fontFamily: "'Inter', sans-serif" }}><I.Download /><span>Export CSV</span></button>
-            <button type="button" onClick={openReportPreview} style={{ display: "flex", alignItems: "center", gap: 8, background: "#1c1e24", border: "1px solid #303338", borderRadius: 8, padding: "9px 16px", color: "#fff", fontSize: 13, fontWeight: 600, cursor: "pointer", fontFamily: "'Inter', sans-serif" }}><I.Download /><span>Download PDF</span></button>
+          <div style={{ display:"flex", gap:10, alignItems:"center", justifyContent:"flex-end" }}>
+            {/* Action buttons */}
+            <div style={{ display:"flex", gap:10, alignItems:"center" }}>
+              <button
+                onClick={() => window.location.reload()}
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 8,
+                  background: "#1c1e24",
+                  border: "1px solid #303338",
+                  borderRadius: 8,
+                  padding: "9px 16px",
+                  color: "#fff",
+                  fontSize: 13,
+                  fontWeight: 600,
+                  cursor: "pointer",
+                  fontFamily: "'Inter', sans-serif",
+                }}
+              >
+                <I.Refresh />
+                <span>Refresh</span>
+              </button>
+              <button
+                onClick={() => {}}
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 8,
+                  background: "#1c1e24",
+                  border: "1px solid #303338",
+                  borderRadius: 8,
+                  padding: "9px 16px",
+                  color: "#fff",
+                  fontSize: 13,
+                  fontWeight: 600,
+                  cursor: "pointer",
+                  fontFamily: "'Inter', sans-serif",
+                }}
+              >
+                <I.Download />
+                <span>Export CSV</span>
+              </button>
+              <button
+                onClick={openReportPreview}
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 8,
+                  background: "#1c1e24",
+                  border: "1px solid #303338",
+                  borderRadius: 8,
+                  padding: "9px 16px",
+                  color: "#fff",
+                  fontSize: 13,
+                  fontWeight: 600,
+                  cursor: "pointer",
+                  fontFamily: "'Inter', sans-serif",
+                }}
+              >
+                <I.Download />
+                <span>Download PDF</span>
+              </button>
+            </div>
           </div>
         </div>
 
-        {/* STATS — reference: Total Revenue, Net Profit, Total Expenses, Profit Margin (with "vs last period") */}
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: 16 }}>
-          <KpiCard label="Total Revenue" value={`${(settings?.currency || "LKR")} ${totalIncome.toLocaleString()}`} color={C.green} Icon={I.DollarSign} sub="vs last period" delay={0} />
-          <KpiCard label="Net Profit" value={`${(settings?.currency || "LKR")} ${netProfit.toLocaleString()}`} color={netProfit >= 0 ? C.green : C.red} Icon={I.BarChart2} sub="vs last period" delay={0.05} />
-          <KpiCard label="Total Expenses" value={`${(settings?.currency || "LKR")} ${totalExpenses.toLocaleString()}`} color={C.red} Icon={I.TrendingDown} sub="vs last period" delay={0.1} />
-          <KpiCard label="Profit Margin" value={`${profitMargin}%`} color={C.blue} Icon={I.TrendingUp} sub="vs last period" delay={0.15} />
+        {/* TOP KPI ROW */}
+        <div style={{ display:"grid", gridTemplateColumns:"repeat(5,1fr)", gap:14 }}>
+          <KpiCard label="Total Revenue (7M)"  value={`LKR ${totalIncome.toLocaleString()}`}   color={C.green}  Icon={I.DollarSign}   sub="7-month total"         delay={0}   />
+          <KpiCard label="Total Expenses (7M)" value={`LKR ${totalExpenses.toLocaleString()}`} color={C.red}    Icon={I.TrendingDown} sub="7-month total"         delay={0.05}/>
+          <KpiCard label="Net Profit"          value={`LKR ${netProfit.toLocaleString()}`}     color={netProfit>=0?C.green:C.red} Icon={I.BarChart2} sub={`${profitMargin}% margin`} delay={0.1}/>
+          <KpiCard label="Current Cash"        value={`LKR ${cashBalance.toLocaleString()}`}   color={C.blue}   Icon={I.Wallet}       sub="As of Feb 18"          delay={0.15}/>
+          <KpiCard label="Owner's Equity"      value={`LKR ${equity.toLocaleString()}`}        color={C.purple} Icon={I.Scale}        sub={`Debt: ${debtRatio}%`} delay={0.2} />
         </div>
 
-        {/* Revenue vs Expenses — reference section */}
-        <Card title="Revenue vs Expenses" sub="Monthly comparison for the fiscal year">
+        {/* MAIN 2-COLUMN LAYOUT */}
+        <div style={{ display:"grid", gridTemplateColumns:"2fr 1fr", gap:18 }}>
+
+          {/* LEFT */}
+          <div style={{ display:"flex", flexDirection:"column", gap:16 }}>
+
+            {/* P&L AREA CHART */}
+            <Card title="Revenue & Profit Trend" sub="Monthly income, expenses & profit — from P&L Report">
               <ResponsiveContainer width="100%" height={220}>
                 <AreaChart data={plMonthly}>
                   <defs>
@@ -416,69 +472,6 @@ export default function OverviewReports() {
               </ResponsiveContainer>
             </Card>
 
-        {/* Two columns: Quarterly Performance + Revenue Breakdown (reference layout) */}
-        <div className="overview-two-col" style={{ display: "grid", gridTemplateColumns: "minmax(0,1fr) minmax(0,1fr)", gap: 20 }}>
-          <Card title="Quarterly Performance" sub="Revenue and profit by quarter">
-            <ResponsiveContainer width="100%" height={280}>
-              <BarChart data={quarterData} barCategoryGap={24} barGap={4}>
-                <CartesianGrid strokeDasharray="3 3" stroke={C.border} vertical={false} />
-                <XAxis dataKey="quarter" axisLine={false} tickLine={false} tick={{ fill: C.muted, fontSize: 12 }} />
-                <YAxis axisLine={false} tickLine={false} tick={{ fill: C.muted, fontSize: 11 }} tickFormatter={v => `${v / 1000}K`} />
-                <Tooltip content={<Tip />} cursor={{ fill: "rgba(255,255,255,0.02)" }} />
-                <Legend wrapperStyle={{ color: C.muted, fontSize: 12, paddingTop: 12 }} />
-                <Bar dataKey="revenue" name="Revenue" radius={[5, 5, 0, 0]} fill={C.green} />
-                <Bar dataKey="profit" name="Profit" radius={[5, 5, 0, 0]} fill={C.blue} />
-              </BarChart>
-            </ResponsiveContainer>
-          </Card>
-          <Card title="Revenue Breakdown" sub="Revenue by category">
-            <ResponsiveContainer width="100%" height={280}>
-              <PieChart>
-                <Pie data={incomeSources} cx="50%" cy="50%" innerRadius={60} outerRadius={100} dataKey="value" strokeWidth={0} label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}>
-                  {incomeSources.map((e, i) => <Cell key={i} fill={e.color} />)}
-                </Pie>
-                <Tooltip formatter={v => `${(settings?.currency || "LKR")} ${Number(v).toLocaleString()}`} contentStyle={{ background: "#1a1d27", border: `1px solid ${C.border2}`, borderRadius: 10 }} />
-              </PieChart>
-            </ResponsiveContainer>
-          </Card>
-        </div>
-
-        {/* Key Financial Metrics — reference table */}
-        <Card title="Key Financial Metrics" sub="Current vs previous period">
-          <div style={{ overflowX: "auto" }}>
-            <table style={{ width: "100%", borderCollapse: "collapse" }}>
-              <thead>
-                <tr style={{ borderBottom: `1px solid ${C.border2}` }}>
-                  <th style={{ color: C.muted, fontSize: 11, fontWeight: 700, letterSpacing: "0.07em", textTransform: "uppercase", padding: "12px 14px", textAlign: "left" }}>Metric</th>
-                  <th style={{ color: C.muted, fontSize: 11, fontWeight: 700, letterSpacing: "0.07em", textTransform: "uppercase", padding: "12px 14px", textAlign: "right" }}>Current</th>
-                  <th style={{ color: C.muted, fontSize: 11, fontWeight: 700, letterSpacing: "0.07em", textTransform: "uppercase", padding: "12px 14px", textAlign: "right" }}>Previous</th>
-                  <th style={{ color: C.muted, fontSize: 11, fontWeight: 700, letterSpacing: "0.07em", textTransform: "uppercase", padding: "12px 14px", textAlign: "right" }}>Change</th>
-                </tr>
-              </thead>
-              <tbody>
-                {[
-                  { metric: "Gross Margin", current: `${profitMargin}%`, previous: "—", change: "—" },
-                  { metric: "Operating Income", current: `${(settings?.currency || "LKR")} ${netProfit.toLocaleString()}`, previous: "—", change: "—" },
-                  { metric: "Working Capital", current: `${(settings?.currency || "LKR")} ${cashBalance.toLocaleString()}`, previous: "—", change: "—" },
-                  { metric: "Current Ratio", current: totalExpenses > 0 ? (totalIncome / totalExpenses).toFixed(1) : "—", previous: "—", change: "—" },
-                  { metric: "Return on Equity", current: totalAssets > 0 ? `${((netProfit / totalAssets) * 100).toFixed(1)}%` : "—", previous: "—", change: "—" },
-                ].map((row, i) => (
-                  <tr key={i} style={{ borderBottom: `1px solid ${C.border}` }}>
-                    <td style={{ color: C.text2, fontSize: 13, padding: "12px 14px", fontWeight: 600 }}>{row.metric}</td>
-                    <td style={{ color: C.text, fontSize: 13, padding: "12px 14px", textAlign: "right", fontFamily: "monospace" }}>{row.current}</td>
-                    <td style={{ color: C.muted, fontSize: 13, padding: "12px 14px", textAlign: "right", fontFamily: "monospace" }}>{row.previous}</td>
-                    <td style={{ color: C.muted, fontSize: 13, padding: "12px 14px", textAlign: "right" }}>{row.change}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </Card>
-
-        {/* MAIN 2-COLUMN LAYOUT (additional detail) */}
-        <div style={{ display:"grid", gridTemplateColumns:"2fr 1fr", gap:18 }}>
-          {/* LEFT */}
-          <div style={{ display:"flex", flexDirection:"column", gap:16 }}>
             {/* MINI CHARTS ROW */}
             <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:14 }}>
               <Card title="Assets vs Liabilities" sub="From Balance Sheet">

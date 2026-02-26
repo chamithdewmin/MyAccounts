@@ -3,8 +3,48 @@ import { BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Toolti
 import { useFinance } from "@/contexts/FinanceContext";
 import { getPrintHtml } from "@/utils/pdfPrint";
 import ReportPreviewModal from "@/components/ReportPreviewModal";
-import { ReportPageLayout, Stat, Card, ChartTooltip, C, I } from "@/components/reports/ReportUI";
 
+const C = { bg:"#0c0e14",bg2:"#0f1117",card:"#13161e",border:"#1e2433",border2:"#2a3347",text:"#fff",text2:"#d1d9e6",muted:"#8b9ab0",faint:"#4a5568",green:"#22c55e",red:"#ef4444",blue:"#3b82f6",cyan:"#22d3ee",yellow:"#eab308",purple:"#a78bfa",orange:"#f97316" };
+
+const Svg=({d,s=18,c="#fff",sw=2})=><svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth={sw} strokeLinecap="round" strokeLinejoin="round" style={{display:"block",flexShrink:0}}><path d={d}/></svg>;
+const I={
+  Receipt:      ()=><Svg d="M4 2v20l2-1 2 1 2-1 2 1 2-1 2 1 2-1 2 1V2l-2 1-2-1-2 1-2-1-2 1-2-1-2 1-2-1zM8 9h8M8 13h6"/>,
+  FileText:     ()=><Svg d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8l-6-6zM14 2v6h6M16 13H8M16 17H8M10 9H8"/>,
+  Scissors:     ()=><Svg d="M6 9a3 3 0 100-6 3 3 0 000 6zM6 15a3 3 0 100 6 3 3 0 000-6zM20 4L8.12 15.88M14.47 14.48L20 20M8.12 8.12L12 12"/>,
+  CheckCircle:  ()=><Svg d="M22 11.08V12a10 10 0 11-5.93-9.14M22 4L12 14.01l-3-3"/>,
+  AlertTriangle:()=><Svg d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0zM12 9v4M12 17h.01"/>,
+  Target:       ()=><Svg d="M12 22a10 10 0 110-20 10 10 0 010 20zM12 18a6 6 0 110-12 6 6 0 010 12zM12 14a2 2 0 110-4 2 2 0 010 4z"/>,
+  Download:     ()=><Svg d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3"/>,
+  Clock:        ()=><Svg d="M12 22a10 10 0 110-20 10 10 0 010 20zM12 6v6l4 2"/>,
+  PieChart:     ()=><Svg d="M21.21 15.89A10 10 0 118 2.83M22 12A10 10 0 0012 2v10z"/>,
+  Refresh:      ()=><Svg d="M3 12a9 9 0 019-9 9.75 9.75 0 016.74 2.74L21 8M21 12a9 9 0 01-9 9 9.75 9.75 0 01-6.74-2.74L3 16M3 12h6m12 0h-6" />,
+};
+
+
+const Tip=({active,payload,label})=>{
+  if(!active||!payload?.length)return null;
+  return <div style={{background:"#1a1d27",border:`1px solid ${C.border2}`,borderRadius:12,padding:"12px 16px"}}>
+    <p style={{color:C.muted,fontSize:11,margin:"0 0 8px",fontWeight:600}}>{label}</p>
+    {payload.map((p,i)=><div key={i} style={{display:"flex",alignItems:"center",gap:8,marginBottom:3}}>
+      <div style={{width:7,height:7,borderRadius:"50%",background:p.color}}/><span style={{color:C.text2,fontSize:12}}>{p.name}:</span><span style={{color:C.text,fontWeight:700,fontSize:12}}>LKR {Number(p.value).toLocaleString()}</span>
+    </div>)}
+  </div>;
+};
+const Stat=({label,value,color,Icon,sub,subColor})=>(
+  <div style={{background:C.card,borderRadius:14,border:`1px solid ${C.border}`,padding:"20px 22px",position:"relative",overflow:"hidden"}}>
+    <div style={{position:"absolute",right:14,top:14,width:36,height:36,borderRadius:10,background:`${color||C.blue}18`,display:"flex",alignItems:"center",justifyContent:"center",opacity:0.8}}><Icon/></div>
+    <p style={{color:C.muted,fontSize:10,fontWeight:700,letterSpacing:"0.1em",textTransform:"uppercase",margin:0}}>{label}</p>
+    <p style={{color:color||C.text,fontSize:22,fontWeight:900,margin:"8px 0 0",letterSpacing:"-0.02em",fontFamily:"monospace"}}>{value}</p>
+    {sub&&<p style={{color:subColor||C.muted,fontSize:12,margin:"5px 0 0",fontWeight:600}}>{sub}</p>}
+    <div style={{position:"absolute",bottom:0,left:0,right:0,height:3,background:`linear-gradient(90deg,${color||C.blue}55,transparent)`}}/>
+  </div>
+);
+const Card=({title,subtitle,children})=>(
+  <div style={{background:C.card,borderRadius:16,border:`1px solid ${C.border}`,padding:"22px 24px"}}>
+    <div style={{marginBottom:18}}><h3 style={{color:C.text,fontSize:15,fontWeight:800,margin:0}}>{title}</h3>{subtitle&&<p style={{color:C.muted,fontSize:12,margin:"4px 0 0"}}>{subtitle}</p>}</div>
+    {children}
+  </div>
+);
 const StatusBadge=({paid,status})=>{
   const s=paid?{bg:"rgba(34,197,94,0.15)",c:C.green}:{bg:"rgba(234,179,8,0.15)",c:C.yellow};
   return <span style={{background:s.bg,color:s.c,borderRadius:6,padding:"3px 10px",fontSize:11,fontWeight:700,display:"inline-flex",alignItems:"center",gap:5}}><span style={{width:5,height:5,borderRadius:"50%",background:s.c,display:"inline-block"}}/>{status}</span>;
@@ -109,11 +149,25 @@ export default function TaxReports(){
     setReportPreview({ open: true, html: fullHtml, filename });
   };
 
-  const cur = settings?.currency || "LKR";
+  return(
+    <div className="-mx-3 sm:-mx-4 lg:-mx-5" style={{minHeight:"100vh",fontFamily:"'Inter', -apple-system, BlinkMacSystemFont, sans-serif",color:C.text}}>
+      <style>{`*{box-sizing:border-box;}body{margin:0;}::-webkit-scrollbar{width:4px;}::-webkit-scrollbar-thumb{background:${C.border2};border-radius:99px;}@keyframes fi{from{opacity:0;transform:translateY(10px);}to{opacity:1;transform:translateY(0);}}.qrow:hover td{background:rgba(255,255,255,0.018)!important;}`}</style>
 
-  return (
-    <>
-      <ReportPageLayout title="Tax Reports" subtitle="Tax obligations and compliance summary — FY 2024" onDownloadPdf={openReportPreview}>
+      <div style={{padding:"24px 18px",display:"flex",flexDirection:"column",gap:18,animation:"fi .3s ease"}}>
+
+        {/* PAGE HEADER (Lovable-style) + TOOLBAR — keep existing three buttons, Download opens existing popup */}
+        <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",flexWrap:"wrap",gap:16}}>
+          <div>
+            <h1 style={{fontSize:28,fontWeight:800,margin:0,color:C.text,letterSpacing:"-0.02em"}}>Tax Reports</h1>
+            <p style={{fontSize:14,color:C.muted,margin:"4px 0 0"}}>Tax obligations and compliance summary — FY 2024</p>
+          </div>
+          <div style={{display:"flex",gap:10,alignItems:"center"}}>
+            <button onClick={()=>window.location.reload()} style={{display:"flex",alignItems:"center",gap:8,background:"#1c1e24",border:"1px solid #303338",borderRadius:8,padding:"9px 16px",color:"#fff",fontSize:13,fontWeight:600,cursor:"pointer",fontFamily:"'Inter', sans-serif"}}><I.Refresh/><span>Refresh</span></button>
+            <button onClick={()=>{}} style={{display:"flex",alignItems:"center",gap:8,background:"#1c1e24",border:"1px solid #303338",borderRadius:8,padding:"9px 16px",color:"#fff",fontSize:13,fontWeight:600,cursor:"pointer",fontFamily:"'Inter', sans-serif"}}><I.Download/><span>Export CSV</span></button>
+            <button onClick={openReportPreview} style={{display:"flex",alignItems:"center",gap:8,background:"#1c1e24",border:"1px solid #303338",borderRadius:8,padding:"9px 16px",color:"#fff",fontSize:13,fontWeight:600,cursor:"pointer",fontFamily:"'Inter', sans-serif"}}><I.Download/><span>Download PDF</span></button>
+          </div>
+        </div>
+
         {/* STATS */}
         <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:14}}>
           <Stat label="Total Gross Income" value={`LKR ${totalGross.toLocaleString()}`} Icon={I.FileText}      color={C.text2}/>
@@ -130,7 +184,7 @@ export default function TaxReports(){
                 <CartesianGrid strokeDasharray="3 3" stroke={C.border} vertical={false}/>
                 <XAxis dataKey="quarter" axisLine={false} tickLine={false} tick={{fill:C.muted,fontSize:12}}/>
                 <YAxis axisLine={false} tickLine={false} tick={{fill:C.muted,fontSize:11}} tickFormatter={v=>`${v/1000}K`}/>
-                <Tooltip content={(props) => <ChartTooltip {...props} currency={cur} />} cursor={{ fill: "rgba(255,255,255,0.02)" }} />
+                <Tooltip content={<Tip/>} cursor={{fill:"rgba(255,255,255,0.02)"}}/>
                 <Legend wrapperStyle={{color:C.muted,fontSize:12,paddingTop:12}}/>
                 <Bar dataKey="gross"   name="Gross Income"   radius={[5,5,0,0]} fill={C.blue}   opacity={.5}/>
                 <Bar dataKey="taxable" name="Taxable Income" radius={[5,5,0,0]} fill={C.yellow}/>
@@ -208,8 +262,8 @@ export default function TaxReports(){
             </tr></tfoot>
           </table>
         </Card>
-      </ReportPageLayout>
+      </div>
       <ReportPreviewModal open={reportPreview.open} onOpenChange={(open)=>setReportPreview(p=>({...p,open}))} html={reportPreview.html} filename={reportPreview.filename} reportTitle="Tax Report" />
-    </>
+    </div>
   );
 }

@@ -71,7 +71,7 @@ const NAV_ITEMS_WITH_DIVIDERS = [
   { label: 'Expenses', href: '/expenses', icon: Receipt },
   { label: 'Cash Flow', href: '/cash-flow', icon: TrendingUp },
   { label: 'Calendar', href: '/calendar', icon: Calendar },
-  { label: 'Reports', icon: BarChart3, href: '/reports/overview', items: reportSubItems },
+  { label: 'Analytics', icon: BarChart3, href: '/reports/overview', items: reportSubItems },
   { divider: true },
   { label: 'Reminders', href: '/reminders', icon: Bell },
   { label: 'Messages', href: '/sms', icon: MessageSquare },

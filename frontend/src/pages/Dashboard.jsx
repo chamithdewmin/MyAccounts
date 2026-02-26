@@ -169,7 +169,7 @@ const StatCard = ({ icon, iconBg, label, value, badge, badgeColor }) => {
               padding: "4px 10px",
               borderRadius: 20,
               boxShadow: badgeGlow,
-              fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
+              fontFamily: "'Inter', sans-serif",
             }}>{badge}</span>
           )}
         </div>
@@ -578,7 +578,7 @@ export default function FinanceDashboard() {
     page: {
       minHeight: "100vh",
       padding: 22,
-      fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
+      fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, sans-serif",
       color: "#fff",
     },
     card: {
@@ -629,7 +629,7 @@ export default function FinanceDashboard() {
                 cursor: "pointer",
                 fontSize: 13,
                 fontWeight: 600,
-                fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
+                fontFamily: "'Inter', sans-serif",
                 background: dateRange === value ? "#3b82f6" : "transparent",
                 color: dateRange === value ? "#fff" : "#8b9ab0",
                 transition: "all 0.2s ease",

@@ -120,10 +120,10 @@ function fmt(amount, currency = 'LKR') {
   }
 }
 
-// Invoice template styles (SF / system font)
+// Montserrat invoice template styles (logo + company details)
 const invoiceStyles = {
   page: {
-    fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
+    fontFamily: "'Montserrat', sans-serif",
     maxWidth: '100%',
     margin: 0,
     padding: '48px 40px',
@@ -155,12 +155,12 @@ const invoiceStyles = {
     background: '#fafafa',
     color: '#aaa',
     fontSize: '12px',
-    fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
+    fontFamily: "'Montserrat', sans-serif",
   },
   logoRed: {
     background: '#cc0000',
     color: '#fff',
-    fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
+    fontFamily: "'Montserrat', sans-serif",
     fontWeight: 900,
     fontSize: '26px',
     padding: '10px 20px',
@@ -171,7 +171,7 @@ const invoiceStyles = {
   },
   sellerInfo: { fontSize: '13px', lineHeight: '1.7', color: '#333' },
   sellerName: { fontWeight: 'bold', fontSize: '15px', marginBottom: '2px' },
-  invoiceWord: { fontSize: '46px', fontWeight: 600, letterSpacing: '6px', color: '#1a1a1a', lineHeight: 1, textAlign: 'right', fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" },
+  invoiceWord: { fontSize: '46px', fontWeight: 600, letterSpacing: '6px', color: '#1a1a1a', lineHeight: 1, textAlign: 'right', fontFamily: "'Montserrat', sans-serif" },
   invoiceNum: { fontSize: '14px', color: '#555', marginTop: '6px', textAlign: 'right' },
   metaSection: { display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', margin: '8px 0 20px' },
   billToLabel: { color: '#555', fontSize: '13px', marginBottom: '4px' },
@@ -287,8 +287,9 @@ export default function InvoiceTemplate({
   return (
     <>
       <style>{`
+        @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600;700;900&display=swap');
         .inv-root * { box-sizing: border-box; }
-        .inv-root * { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif !important; }
+        .inv-root * { font-family: 'Montserrat', sans-serif !important; }
         @keyframes invoiceSpin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
         @media print {
           body * { visibility: hidden !important; }
@@ -306,7 +307,7 @@ export default function InvoiceTemplate({
             onClick={handleDownloadPdf}
             disabled={dlStatus === 'loading'}
             style={{
-              fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
+              fontFamily: "'Montserrat', sans-serif",
               fontWeight: 600,
               fontSize: 14,
               background: dlStatus === 'loading' ? '#7f1d1d' : dlStatus === 'done' ? '#166534' : '#1a1a1a',
@@ -331,7 +332,7 @@ export default function InvoiceTemplate({
             onClick={handlePrint}
             disabled={prtStatus === 'loading'}
             style={{
-              fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
+              fontFamily: "'Montserrat', sans-serif",
               fontWeight: 600,
               fontSize: 14,
               background: '#1a1a1a',
@@ -364,7 +365,7 @@ export default function InvoiceTemplate({
             margin: '0 auto',
             background: '#fff',
             boxShadow: '0 4px 40px rgba(0,0,0,0.18)',
-            fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
+            fontFamily: "'Montserrat', sans-serif",
             boxSizing: 'border-box',
           }}
         >

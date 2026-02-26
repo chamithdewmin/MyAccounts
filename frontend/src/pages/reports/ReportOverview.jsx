@@ -349,7 +349,7 @@ export default function OverviewReports() {
   };
 
   return (
-    <div className="-mx-3 sm:-mx-4 lg:-mx-5" style={{ minHeight:"100vh", fontFamily:"'Inter', -apple-system, BlinkMacSystemFont, sans-serif", color:C.text }}>
+    <div className="-mx-3 sm:-mx-4 lg:-mx-5" style={{ minHeight:"100vh", fontFamily:"-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif", color:C.text }}>
       <style>{`
         * { box-sizing:border-box; }
         body { margin:0; }
@@ -389,7 +389,7 @@ export default function OverviewReports() {
                   fontSize: 13,
                   fontWeight: 600,
                   cursor: "pointer",
-                  fontFamily: "'Inter', sans-serif",
+                  fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
                 }}
               >
                 <I.Refresh />
@@ -409,7 +409,7 @@ export default function OverviewReports() {
                   fontSize: 13,
                   fontWeight: 600,
                   cursor: "pointer",
-                  fontFamily: "'Inter', sans-serif",
+                  fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
                 }}
               >
                 <I.Download />
@@ -429,7 +429,7 @@ export default function OverviewReports() {
                   fontSize: 13,
                   fontWeight: 600,
                   cursor: "pointer",
-                  fontFamily: "'Inter', sans-serif",
+                  fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
                 }}
               >
                 <I.Download />

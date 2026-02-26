@@ -3,9 +3,6 @@ import { AreaChart, Area, BarChart, Bar, LineChart, Line, XAxis, YAxis, Cartesia
 import { useFinance } from "@/contexts/FinanceContext";
 import { getPrintHtml } from "@/utils/pdfPrint";
 import ReportPreviewModal from "@/components/ReportPreviewModal";
-import ReportLayout from "@/components/ReportLayout";
-import StatCard from "@/components/StatCard";
-import { ArrowDownToLine, ArrowUpFromLine, Wallet, TrendingUp } from "lucide-react";
 
 const C = { bg:"#0c0e14",bg2:"#0f1117",card:"#13161e",border:"#1e2433",border2:"#2a3347",text:"#fff",text2:"#d1d9e6",muted:"#8b9ab0",faint:"#4a5568",green:"#22c55e",red:"#ef4444",blue:"#3b82f6",cyan:"#22d3ee",yellow:"#eab308" };
 
@@ -38,6 +35,15 @@ const Tip=({active,payload,label})=>{
     </div>)}
   </div>;
 };
+const Stat=({label,value,color,Icon,sub})=>(
+  <div style={{background:C.card,borderRadius:14,border:`1px solid ${C.border}`,padding:"20px 22px",position:"relative",overflow:"hidden"}}>
+    <div style={{position:"absolute",right:14,top:14,width:36,height:36,borderRadius:10,background:`${color||C.blue}18`,display:"flex",alignItems:"center",justifyContent:"center",opacity:0.8}}><Icon/></div>
+    <p style={{color:C.muted,fontSize:10,fontWeight:700,letterSpacing:"0.1em",textTransform:"uppercase",margin:0}}>{label}</p>
+    <p style={{color:color||C.text,fontSize:22,fontWeight:900,margin:"8px 0 0",letterSpacing:"-0.02em",fontFamily:"monospace"}}>{value}</p>
+    {sub&&<p style={{color:C.muted,fontSize:12,margin:"5px 0 0",fontWeight:600}}>{sub}</p>}
+    <div style={{position:"absolute",bottom:0,left:0,right:0,height:3,background:`linear-gradient(90deg,${color||C.blue}55,transparent)`}}/>
+  </div>
+);
 const Card=({title,subtitle,children,right})=>(
   <div style={{background:C.card,borderRadius:16,border:`1px solid ${C.border}`,padding:"22px 24px"}}>
     <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:18}}>
@@ -181,17 +187,27 @@ export default function CashFlowReport(){
     setReportPreview({ open: true, html: fullHtml, filename });
   };
 
-  const cur = settings?.currency || "LKR";
+  return(
+    <div className="-mx-3 sm:-mx-4 lg:-mx-5" style={{minHeight:"100vh",fontFamily:"'Inter', -apple-system, BlinkMacSystemFont, sans-serif",color:C.text}}>
+      <style>{`*{box-sizing:border-box;}body{margin:0;}::-webkit-scrollbar{width:4px;}::-webkit-scrollbar-thumb{background:${C.border2};border-radius:99px;}@keyframes fi{from{opacity:0;transform:translateY(10px);}to{opacity:1;transform:translateY(0);}}@keyframes so{from{opacity:1;transform:translateX(0);}to{opacity:0;transform:translateX(40px);}}.row:hover{background:#1a1d27!important;}`}</style>
 
-  return (
-    <ReportLayout title="Cash Flow" subtitle="Cash income, outgoing, and net profit — FY 2024" onDownloadPdf={openReportPreview}>
-      <style>{`@keyframes fi{from{opacity:0;transform:translateY(10px);}to{opacity:1;transform:translateY(0);}}@keyframes so{from{opacity:1;transform:translateX(0);}to{opacity:0;transform:translateX(40px);}}.row:hover{background:#1a1d27!important;}`}</style>
-      <div className="space-y-6">
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          <StatCard label="Cash Income" value={totalIn.toLocaleString()} change={14.2} icon={<ArrowDownToLine className="h-5 w-5" />} prefix={`${cur} `} />
-          <StatCard label="Cash Outgoing" value={totalOut.toLocaleString()} change={-4.8} icon={<ArrowUpFromLine className="h-5 w-5" />} prefix={`${cur} `} />
-          <StatCard label="Net Profit" value={net.toLocaleString()} change={22.5} icon={<Wallet className="h-5 w-5" />} prefix={`${cur} `} />
-          <StatCard label="Net Margin" value={totalIn > 0 ? `${((net / totalIn) * 100).toFixed(1)}%` : "0%"} change={5.1} icon={<TrendingUp className="h-5 w-5" />} prefix="" />
+      <div style={{padding:"24px 18px",display:"flex",flexDirection:"column",gap:18,animation:"fi .3s ease"}}>
+
+        {/* TOOLBAR */}
+        <div style={{display:"flex",justifyContent:"flex-end",alignItems:"center",gap:10}}>
+          <div style={{display:"flex",gap:10,alignItems:"center"}}>
+            <button onClick={()=>window.location.reload()} style={{display:"flex",alignItems:"center",gap:8,background:"#1c1e24",border:"1px solid #303338",borderRadius:8,padding:"9px 16px",color:"#fff",fontSize:13,fontWeight:600,cursor:"pointer",fontFamily:"'Inter', sans-serif"}}><I.Refresh/><span>Refresh</span></button>
+            <button onClick={()=>{}} style={{display:"flex",alignItems:"center",gap:8,background:"#1c1e24",border:"1px solid #303338",borderRadius:8,padding:"9px 16px",color:"#fff",fontSize:13,fontWeight:600,cursor:"pointer",fontFamily:"'Inter', sans-serif"}}><I.Download/><span>Export CSV</span></button>
+            <button onClick={openReportPreview} style={{display:"flex",alignItems:"center",gap:8,background:"#1c1e24",border:"1px solid #303338",borderRadius:8,padding:"9px 16px",color:"#fff",fontSize:13,fontWeight:600,cursor:"pointer",fontFamily:"'Inter', sans-serif"}}><I.Download/><span>Download PDF</span></button>
+          </div>
+        </div>
+
+        {/* STATS */}
+        <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:14}}>
+          <Stat label="Total Money In"  value={`LKR ${totalIn.toLocaleString()}`}  color={C.green} Icon={I.ArrowUp}   sub={`${tx.filter(t=>t.type==="in").length} transactions`}/>
+          <Stat label="Total Money Out" value={`LKR ${totalOut.toLocaleString()}`} color={C.red}   Icon={I.ArrowDown} sub={`${tx.filter(t=>t.type==="out").length} transactions`}/>
+          <Stat label="Net Cash Flow"   value={`LKR ${net.toLocaleString()}`}      color={net>=0?C.green:C.red} Icon={I.BarChart}/>
+          <Stat label="Current Balance" value={`LKR ${(totals.cashInHand || 0).toLocaleString()}`}      color={C.blue}  Icon={I.Wallet}    sub={`As of ${new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}`}/>
         </div>
 
         {/* AREA + LINE */}
@@ -305,6 +321,6 @@ export default function CashFlowReport(){
         </div>
       </div>}
       <ReportPreviewModal open={reportPreview.open} onOpenChange={(open)=>setReportPreview(p=>({...p,open}))} html={reportPreview.html} filename={reportPreview.filename} reportTitle="Cash Flow Report" />
-    </ReportLayout>
+    </div>
   );
 }

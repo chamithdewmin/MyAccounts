@@ -166,22 +166,6 @@
   background-color: hsl(var(--background));
 }
 
-/* Report pages: card and stat change colors (Lovable-style) */
-.report-card {
-  @apply rounded-xl border p-6 transition-all duration-200;
-  background-color: hsl(var(--card));
-  border-color: hsl(var(--border));
-}
-.dark .report-card:hover {
-  border-color: hsl(var(--primary) / 0.3);
-}
-.stat-change-positive {
-  color: hsl(142 71% 45%);
-}
-.stat-change-negative {
-  color: hsl(0 72% 51%);
-}
-
 @layer utilities {
   .glass-effect {
     backdrop-filter: blur(10px);

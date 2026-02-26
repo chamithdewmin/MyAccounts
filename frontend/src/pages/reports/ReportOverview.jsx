@@ -7,9 +7,6 @@ import {
 import { useFinance } from "@/contexts/FinanceContext";
 import { getPrintHtml } from "@/utils/pdfPrint";
 import ReportPreviewModal from "@/components/ReportPreviewModal";
-import ReportLayout from "@/components/ReportLayout";
-import StatCard from "@/components/StatCard";
-import { BarChart3, TrendingUp, DollarSign, Percent } from "lucide-react";
 
 // ─── COLORS ──────────────────────────────────────────────────────────────────
 const C = {
@@ -351,25 +348,104 @@ export default function OverviewReports() {
     setReportPreview({ open: true, html: fullHtml, filename });
   };
 
-  const cur = settings?.currency || "LKR";
-
   return (
-    <ReportLayout
-      title="Overview Reports"
-      subtitle="Complete business performance summary — FY 2024"
-      onDownloadPdf={openReportPreview}
-    >
+    <div className="-mx-3 sm:-mx-4 lg:-mx-5" style={{ minHeight:"100vh", fontFamily:"'Inter', -apple-system, BlinkMacSystemFont, sans-serif", color:C.text }}>
       <style>{`
+        * { box-sizing:border-box; }
+        body { margin:0; }
+        ::-webkit-scrollbar { width:4px; }
+        ::-webkit-scrollbar-thumb { background:${C.border2}; border-radius:99px; }
+        @keyframes fi { from { opacity:0; transform:translateY(12px); } to { opacity:1; transform:translateY(0); } }
         .ins { transition:transform .2s, box-shadow .2s, border-color .2s; cursor:pointer; }
         .ins:hover { transform:translateY(-2px); box-shadow:0 8px 24px rgba(0,0,0,.3); }
         .txrow:hover { background:#1a1d27 !important; }
       `}</style>
-      <div className="space-y-6">
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          <StatCard label="Total Revenue" value={totalIncome.toLocaleString()} change={14.2} icon={<BarChart3 className="h-5 w-5" />} prefix={`${cur} `} />
-          <StatCard label="Net Profit" value={netProfit.toLocaleString()} change={18.5} icon={<TrendingUp className="h-5 w-5" />} prefix={`${cur} `} />
-          <StatCard label="Total Expenses" value={totalExpenses.toLocaleString()} change={-3.2} icon={<DollarSign className="h-5 w-5" />} prefix={`${cur} `} />
-          <StatCard label="Profit Margin" value={`${profitMargin}%`} change={5.1} icon={<Percent className="h-5 w-5" />} prefix="" />
+
+      <div style={{ padding:"24px 18px", display:"flex", flexDirection:"column", gap:20, animation:"fi .4s ease" }}>
+
+        {/* PAGE HEADER */}
+        <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-start" }}>
+          <div>
+            <p style={{ color:C.muted, fontSize:11, fontWeight:700, letterSpacing:"0.1em", textTransform:"uppercase", margin:"0 0 6px" }}>
+              {new Date().toLocaleDateString('en-US', { month: 'short', year: 'numeric' })} · Fiscal Year {new Date().getFullYear()}
+            </p>
+            <h1 style={{ color:C.text, fontSize:28, fontWeight:900, margin:0, letterSpacing:"-0.03em" }}>Business Overview</h1>
+            <p style={{ color:C.muted, fontSize:14, margin:"6px 0 0" }}>Unified snapshot across P&L, Cash Flow, Balance Sheet &amp; Tax reports.</p>
+          </div>
+          <div style={{ display:"flex", gap:10, alignItems:"center", justifyContent:"flex-end" }}>
+            {/* Action buttons */}
+            <div style={{ display:"flex", gap:10, alignItems:"center" }}>
+              <button
+                onClick={() => window.location.reload()}
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 8,
+                  background: "#1c1e24",
+                  border: "1px solid #303338",
+                  borderRadius: 8,
+                  padding: "9px 16px",
+                  color: "#fff",
+                  fontSize: 13,
+                  fontWeight: 600,
+                  cursor: "pointer",
+                  fontFamily: "'Inter', sans-serif",
+                }}
+              >
+                <I.Refresh />
+                <span>Refresh</span>
+              </button>
+              <button
+                onClick={() => {}}
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 8,
+                  background: "#1c1e24",
+                  border: "1px solid #303338",
+                  borderRadius: 8,
+                  padding: "9px 16px",
+                  color: "#fff",
+                  fontSize: 13,
+                  fontWeight: 600,
+                  cursor: "pointer",
+                  fontFamily: "'Inter', sans-serif",
+                }}
+              >
+                <I.Download />
+                <span>Export CSV</span>
+              </button>
+              <button
+                onClick={openReportPreview}
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 8,
+                  background: "#1c1e24",
+                  border: "1px solid #303338",
+                  borderRadius: 8,
+                  padding: "9px 16px",
+                  color: "#fff",
+                  fontSize: 13,
+                  fontWeight: 600,
+                  cursor: "pointer",
+                  fontFamily: "'Inter', sans-serif",
+                }}
+              >
+                <I.Download />
+                <span>Download PDF</span>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        {/* TOP KPI ROW */}
+        <div style={{ display:"grid", gridTemplateColumns:"repeat(5,1fr)", gap:14 }}>
+          <KpiCard label="Total Revenue (7M)"  value={`LKR ${totalIncome.toLocaleString()}`}   color={C.green}  Icon={I.DollarSign}   sub="7-month total"         delay={0}   />
+          <KpiCard label="Total Expenses (7M)" value={`LKR ${totalExpenses.toLocaleString()}`} color={C.red}    Icon={I.TrendingDown} sub="7-month total"         delay={0.05}/>
+          <KpiCard label="Net Profit"          value={`LKR ${netProfit.toLocaleString()}`}     color={netProfit>=0?C.green:C.red} Icon={I.BarChart2} sub={`${profitMargin}% margin`} delay={0.1}/>
+          <KpiCard label="Current Cash"        value={`LKR ${cashBalance.toLocaleString()}`}   color={C.blue}   Icon={I.Wallet}       sub="As of Feb 18"          delay={0.15}/>
+          <KpiCard label="Owner's Equity"      value={`LKR ${equity.toLocaleString()}`}        color={C.purple} Icon={I.Scale}        sub={`Debt: ${debtRatio}%`} delay={0.2} />
         </div>
 
         {/* MAIN 2-COLUMN LAYOUT */}
@@ -584,6 +660,6 @@ export default function OverviewReports() {
         filename={reportPreview.filename}
         reportTitle="Business Overview Report"
       />
-    </ReportLayout>
+    </div>
   );
 }

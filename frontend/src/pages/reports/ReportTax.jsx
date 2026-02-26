@@ -3,6 +3,9 @@ import { BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Toolti
 import { useFinance } from "@/contexts/FinanceContext";
 import { getPrintHtml } from "@/utils/pdfPrint";
 import ReportPreviewModal from "@/components/ReportPreviewModal";
+import ReportLayout from "@/components/ReportLayout";
+import StatCard from "@/components/StatCard";
+import { Receipt, Percent, Calendar, AlertTriangle } from "lucide-react";
 
 const C = { bg:"#0c0e14",bg2:"#0f1117",card:"#13161e",border:"#1e2433",border2:"#2a3347",text:"#fff",text2:"#d1d9e6",muted:"#8b9ab0",faint:"#4a5568",green:"#22c55e",red:"#ef4444",blue:"#3b82f6",cyan:"#22d3ee",yellow:"#eab308",purple:"#a78bfa",orange:"#f97316" };
 
@@ -30,15 +33,6 @@ const Tip=({active,payload,label})=>{
     </div>)}
   </div>;
 };
-const Stat=({label,value,color,Icon,sub,subColor})=>(
-  <div style={{background:C.card,borderRadius:14,border:`1px solid ${C.border}`,padding:"20px 22px",position:"relative",overflow:"hidden"}}>
-    <div style={{position:"absolute",right:14,top:14,width:36,height:36,borderRadius:10,background:`${color||C.blue}18`,display:"flex",alignItems:"center",justifyContent:"center",opacity:0.8}}><Icon/></div>
-    <p style={{color:C.muted,fontSize:10,fontWeight:700,letterSpacing:"0.1em",textTransform:"uppercase",margin:0}}>{label}</p>
-    <p style={{color:color||C.text,fontSize:22,fontWeight:900,margin:"8px 0 0",letterSpacing:"-0.02em",fontFamily:"monospace"}}>{value}</p>
-    {sub&&<p style={{color:subColor||C.muted,fontSize:12,margin:"5px 0 0",fontWeight:600}}>{sub}</p>}
-    <div style={{position:"absolute",bottom:0,left:0,right:0,height:3,background:`linear-gradient(90deg,${color||C.blue}55,transparent)`}}/>
-  </div>
-);
 const Card=({title,subtitle,children})=>(
   <div style={{background:C.card,borderRadius:16,border:`1px solid ${C.border}`,padding:"22px 24px"}}>
     <div style={{marginBottom:18}}><h3 style={{color:C.text,fontSize:15,fontWeight:800,margin:0}}>{title}</h3>{subtitle&&<p style={{color:C.muted,fontSize:12,margin:"4px 0 0"}}>{subtitle}</p>}</div>
@@ -149,27 +143,17 @@ export default function TaxReports(){
     setReportPreview({ open: true, html: fullHtml, filename });
   };
 
-  return(
-    <div className="-mx-3 sm:-mx-4 lg:-mx-5" style={{minHeight:"100vh",fontFamily:"'Inter', -apple-system, BlinkMacSystemFont, sans-serif",color:C.text}}>
-      <style>{`*{box-sizing:border-box;}body{margin:0;}::-webkit-scrollbar{width:4px;}::-webkit-scrollbar-thumb{background:${C.border2};border-radius:99px;}@keyframes fi{from{opacity:0;transform:translateY(10px);}to{opacity:1;transform:translateY(0);}}.qrow:hover td{background:rgba(255,255,255,0.018)!important;}`}</style>
+  const cur = settings?.currency || "LKR";
 
-      <div style={{padding:"24px 18px",display:"flex",flexDirection:"column",gap:18,animation:"fi .3s ease"}}>
-
-        {/* TOOLBAR */}
-        <div style={{display:"flex",justifyContent:"flex-end",alignItems:"center"}}>
-          <div style={{display:"flex",gap:10,alignItems:"center"}}>
-            <button onClick={()=>window.location.reload()} style={{display:"flex",alignItems:"center",gap:8,background:"#1c1e24",border:"1px solid #303338",borderRadius:8,padding:"9px 16px",color:"#fff",fontSize:13,fontWeight:600,cursor:"pointer",fontFamily:"'Inter', sans-serif"}}><I.Refresh/><span>Refresh</span></button>
-            <button onClick={()=>{}} style={{display:"flex",alignItems:"center",gap:8,background:"#1c1e24",border:"1px solid #303338",borderRadius:8,padding:"9px 16px",color:"#fff",fontSize:13,fontWeight:600,cursor:"pointer",fontFamily:"'Inter', sans-serif"}}><I.Download/><span>Export CSV</span></button>
-            <button onClick={openReportPreview} style={{display:"flex",alignItems:"center",gap:8,background:"#1c1e24",border:"1px solid #303338",borderRadius:8,padding:"9px 16px",color:"#fff",fontSize:13,fontWeight:600,cursor:"pointer",fontFamily:"'Inter', sans-serif"}}><I.Download/><span>Download PDF</span></button>
-          </div>
-        </div>
-
-        {/* STATS */}
-        <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:14}}>
-          <Stat label="Total Gross Income" value={`LKR ${totalGross.toLocaleString()}`} Icon={I.FileText}      color={C.text2}/>
-          <Stat label="Total Tax Owed"     value={`LKR ${totalTax.toLocaleString()}`}   Icon={I.Receipt}       color={C.red}   sub={`${rate}% effective rate`}/>
-          <Stat label="Total Deductions"   value={`LKR ${totalDed.toLocaleString()}`}   Icon={I.Scissors}      color={C.green} sub="Tax savings" subColor={C.green}/>
-          <Stat label="Tax Paid (Q1–Q3)"   value={`LKR ${paidTax.toLocaleString()}`}    Icon={I.CheckCircle}   color={C.blue}  sub={`LKR ${pendingTax.toLocaleString()} pending`} subColor={C.yellow}/>
+  return (
+    <ReportLayout title="Tax Reports" subtitle="Tax obligations and compliance summary — FY 2024" onDownloadPdf={openReportPreview}>
+      <style>{`@keyframes fi{from{opacity:0;transform:translateY(10px);}to{opacity:1;transform:translateY(0);}}.qrow:hover td{background:rgba(255,255,255,0.018)!important;}`}</style>
+      <div className="space-y-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          <StatCard label="Total Tax Liability" value={totalTax.toLocaleString()} change={8.4} icon={<Receipt className="h-5 w-5" />} prefix={`${cur} `} />
+          <StatCard label="Effective Tax Rate" value={`${rate}%`} change={2.1} icon={<Percent className="h-5 w-5" />} prefix="" />
+          <StatCard label="Tax Deductions" value={totalDed.toLocaleString()} change={12.3} icon={<Calendar className="h-5 w-5" />} prefix={`${cur} `} />
+          <StatCard label="Tax Credits Used" value={paidTax.toLocaleString()} change={15.0} icon={<AlertTriangle className="h-5 w-5" />} prefix={`${cur} `} />
         </div>
 
         {/* QUARTERLY BAR + DONUT */}
@@ -260,6 +244,6 @@ export default function TaxReports(){
         </Card>
       </div>
       <ReportPreviewModal open={reportPreview.open} onOpenChange={(open)=>setReportPreview(p=>({...p,open}))} html={reportPreview.html} filename={reportPreview.filename} reportTitle="Tax Report" />
-    </div>
+    </ReportLayout>
   );
 }

@@ -155,12 +155,8 @@ export default function TaxReports(){
 
       <div style={{padding:"24px 18px",display:"flex",flexDirection:"column",gap:18,animation:"fi .3s ease"}}>
 
-        {/* PAGE HEADER (Lovable-style) + TOOLBAR — keep existing three buttons, Download opens existing popup */}
-        <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",flexWrap:"wrap",gap:16}}>
-          <div>
-            <h1 style={{fontSize:28,fontWeight:800,margin:0,color:C.text,letterSpacing:"-0.02em"}}>Tax Reports</h1>
-            <p style={{fontSize:14,color:C.muted,margin:"4px 0 0"}}>Tax obligations and compliance summary — FY 2024</p>
-          </div>
+        {/* TOOLBAR */}
+        <div style={{display:"flex",justifyContent:"flex-end",alignItems:"center"}}>
           <div style={{display:"flex",gap:10,alignItems:"center"}}>
             <button onClick={()=>window.location.reload()} style={{display:"flex",alignItems:"center",gap:8,background:"#1c1e24",border:"1px solid #303338",borderRadius:8,padding:"9px 16px",color:"#fff",fontSize:13,fontWeight:600,cursor:"pointer",fontFamily:"'Inter', sans-serif"}}><I.Refresh/><span>Refresh</span></button>
             <button onClick={()=>{}} style={{display:"flex",alignItems:"center",gap:8,background:"#1c1e24",border:"1px solid #303338",borderRadius:8,padding:"9px 16px",color:"#fff",fontSize:13,fontWeight:600,cursor:"pointer",fontFamily:"'Inter', sans-serif"}}><I.Download/><span>Export CSV</span></button>

@@ -363,11 +363,14 @@ export default function OverviewReports() {
 
       <div style={{ padding:"24px 18px", display:"flex", flexDirection:"column", gap:20, animation:"fi .4s ease" }}>
 
-        {/* PAGE HEADER (Lovable-style) + TOOLBAR — keep existing three buttons, Download opens existing popup */}
-        <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-start", flexWrap:"wrap", gap:16 }}>
+        {/* PAGE HEADER */}
+        <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-start" }}>
           <div>
-            <h1 style={{ fontSize:28, fontWeight:800, margin:0, color:C.text, letterSpacing:"-0.02em" }}>Overview Reports</h1>
-            <p style={{ fontSize:14, color:C.muted, margin:"4px 0 0" }}>Complete business performance summary — FY 2024</p>
+            <p style={{ color:C.muted, fontSize:11, fontWeight:700, letterSpacing:"0.1em", textTransform:"uppercase", margin:"0 0 6px" }}>
+              {new Date().toLocaleDateString('en-US', { month: 'short', year: 'numeric' })} · Fiscal Year {new Date().getFullYear()}
+            </p>
+            <h1 style={{ color:C.text, fontSize:28, fontWeight:900, margin:0, letterSpacing:"-0.03em" }}>Business Overview</h1>
+            <p style={{ color:C.muted, fontSize:14, margin:"6px 0 0" }}>Unified snapshot across P&L, Cash Flow, Balance Sheet &amp; Tax reports.</p>
           </div>
           <div style={{ display:"flex", gap:10, alignItems:"center", justifyContent:"flex-end" }}>
             {/* Action buttons */}

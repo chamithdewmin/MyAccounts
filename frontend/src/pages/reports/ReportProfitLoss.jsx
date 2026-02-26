@@ -3,68 +3,10 @@ import { BarChart, Bar, LineChart, Line, PieChart, Pie, Cell, XAxis, YAxis, Cart
 import { useFinance } from "@/contexts/FinanceContext";
 import { getPrintHtml } from "@/utils/pdfPrint";
 import ReportPreviewModal from "@/components/ReportPreviewModal";
-import { useToast } from "@/components/ui/use-toast";
-
-// ── COLORS ────────────────────────────────────────────────────────────────────
-const C = { bg:"#0c0e14",bg2:"#0f1117",card:"#13161e",border:"#1e2433",border2:"#2a3347",text:"#fff",text2:"#d1d9e6",muted:"#8b9ab0",faint:"#4a5568",green:"#22c55e",red:"#ef4444",blue:"#3b82f6",cyan:"#22d3ee",yellow:"#eab308",purple:"#a78bfa" };
-
-// ── SVG ICONS ─────────────────────────────────────────────────────────────────
-const Svg = ({ d, s=18, c="#fff", sw=2 }) => <svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth={sw} strokeLinecap="round" strokeLinejoin="round" style={{display:"block",flexShrink:0}}><path d={d}/></svg>;
-const I = {
-  Revenue:    ()=><Svg d="M12 1v22M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/>,
-  Expense:    ()=><Svg d="M23 18l-9.5-9.5-5 5L1 6M17 18h6v-6"/>,
-  Profit:     ()=><Svg d="M18 20V10M12 20V4M6 20v-6"/>,
-  Award:      ()=><Svg d="M12 15a7 7 0 100-14 7 7 0 000 14zM8.21 13.89L7 23l5-3 5 3-1.21-9.12"/>,
-  Download:   ()=><Svg d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3"/>,
-  ArrowUp:    ()=><Svg d="M12 19V5M5 12l7-7 7 7"/>,
-  ArrowDown:  ()=><Svg d="M12 5v14M19 12l-7 7-7-7"/>,
-  Calendar:   ()=><Svg d="M3 4h18v18H3V4zM16 2v4M8 2v4M3 10h18"/>,
-  Refresh:    ()=><Svg d="M3 12a9 9 0 019-9 9.75 9.75 0 016.74 2.74L21 8M21 12a9 9 0 01-9 9 9.75 9.75 0 01-6.74-2.74L3 16M3 12h6m12 0h-6" />,
-};
-
-// ── DATA ──────────────────────────────────────────────────────────────────────
-
-// ── SHARED COMPONENTS ─────────────────────────────────────────────────────────
-const Tip = ({active,payload,label})=>{
-  if(!active||!payload?.length)return null;
-  return <div style={{background:"#1a1d27",border:`1px solid ${C.border2}`,borderRadius:12,padding:"12px 16px",boxShadow:"0 8px 32px rgba(0,0,0,0.5)"}}>
-    <p style={{color:C.muted,fontSize:11,margin:"0 0 8px",fontWeight:600}}>{label}</p>
-    {payload.map((p,i)=><div key={i} style={{display:"flex",alignItems:"center",gap:8,marginBottom:3}}>
-      <div style={{width:7,height:7,borderRadius:"50%",background:p.color}}/><span style={{color:C.text2,fontSize:12}}>{p.name}:</span><span style={{color:C.text,fontWeight:700,fontSize:12}}>LKR {Number(p.value).toLocaleString()}</span>
-    </div>)}
-  </div>;
-};
-const Stat = ({label,value,color,Icon,sub,subColor})=>(
-  <div style={{background:C.card,borderRadius:14,border:`1px solid ${C.border}`,padding:"20px 22px",position:"relative",overflow:"hidden"}}>
-    <div style={{position:"absolute",right:14,top:14,width:36,height:36,borderRadius:10,background:`${color||C.blue}18`,display:"flex",alignItems:"center",justifyContent:"center",opacity:0.8}}><Icon/></div>
-    <p style={{color:C.muted,fontSize:10,fontWeight:700,letterSpacing:"0.1em",textTransform:"uppercase",margin:0}}>{label}</p>
-    <p style={{color:color||C.text,fontSize:22,fontWeight:900,margin:"8px 0 0",letterSpacing:"-0.02em",fontFamily:"monospace"}}>{value}</p>
-    {sub&&<p style={{color:subColor||C.muted,fontSize:12,margin:"5px 0 0",fontWeight:600}}>{sub}</p>}
-    <div style={{position:"absolute",bottom:0,left:0,right:0,height:3,background:`linear-gradient(90deg,${color||C.blue}55,transparent)`}}/>
-  </div>
-);
-const Card = ({title,subtitle,children,right})=>(
-  <div style={{background:C.card,borderRadius:16,border:`1px solid ${C.border}`,padding:"22px 24px"}}>
-    <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:18}}>
-      <div><h3 style={{color:C.text,fontSize:15,fontWeight:800,margin:0}}>{title}</h3>{subtitle&&<p style={{color:C.muted,fontSize:12,margin:"4px 0 0"}}>{subtitle}</p>}</div>
-      {right}
-    </div>
-    {children}
-  </div>
-);
-const Legend2 = ({items})=>(
-  <div style={{display:"flex",flexDirection:"column",gap:9,marginTop:10}}>
-    {items.map((e,i)=><div key={i} style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}>
-      <div style={{display:"flex",alignItems:"center",gap:7}}><div style={{width:8,height:8,borderRadius:"50%",background:e.color}}/><span style={{color:C.text2,fontSize:12}}>{e.name}</span></div>
-      <span style={{color:C.text,fontSize:12,fontWeight:700}}>LKR {e.value.toLocaleString()}</span>
-    </div>)}
-  </div>
-);
+import { ReportPageLayout, Stat, Card, ChartTooltip, LegendList, C, I } from "@/components/reports/ReportUI";
 
 export default function ProfitLoss(){
-  const { incomes, expenses, totals, settings } = useFinance();
-  const { toast } = useToast();
-  const [period,setPeriod]=useState("7M");
+  const { incomes, expenses, settings } = useFinance();
   const [reportPreview, setReportPreview] = useState({ open: false, html: "", filename: "" });
 
   // Calculate monthly data (last 7 months)
@@ -148,25 +90,8 @@ export default function ProfitLoss(){
   const cur = settings?.currency || "LKR";
 
   return (
-    <div className="-mx-3 sm:-mx-4 lg:-mx-5" style={{ minHeight: "100vh", fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, sans-serif", color: C.text }}>
-      <style>{`*{box-sizing:border-box;}body{margin:0;}::-webkit-scrollbar{width:4px;}::-webkit-scrollbar-thumb{background:${C.border2};border-radius:99px;}@keyframes fi{from{opacity:0;transform:translateY(10px);}to{opacity:1;transform:translateY(0);}}.row:hover{background:#1a1d27!important;}@media(max-width:900px){.report-two-col{grid-template-columns:1fr!important;}}`}</style>
-      <div style={{ padding: "24px 18px", display: "flex", flexDirection: "column", gap: 24, animation: "fi .3s ease" }}>
-
-        {/* PAGE HEADER — same as reference: Profit & Loss + subtitle */}
-        <div style={{ marginBottom: 4 }}>
-          <h1 style={{ color: C.text, fontSize: 26, fontWeight: 800, margin: 0, letterSpacing: "-0.02em" }}>Profit & Loss</h1>
-          <p style={{ color: C.muted, fontSize: 14, margin: "6px 0 0" }}>Income statement analysis — FY 2024</p>
-        </div>
-
-        {/* TOOLBAR — keep existing three buttons; Download PDF opens existing popup */}
-        <div style={{ display: "flex", justifyContent: "flex-end", alignItems: "center" }}>
-          <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
-            <button type="button" onClick={() => window.location.reload()} style={{ display: "flex", alignItems: "center", gap: 8, background: "#1c1e24", border: "1px solid #303338", borderRadius: 8, padding: "9px 16px", color: "#fff", fontSize: 13, fontWeight: 600, cursor: "pointer", fontFamily: "'Inter', sans-serif" }}><I.Refresh /><span>Refresh</span></button>
-            <button type="button" onClick={() => {}} style={{ display: "flex", alignItems: "center", gap: 8, background: "#1c1e24", border: "1px solid #303338", borderRadius: 8, padding: "9px 16px", color: "#fff", fontSize: 13, fontWeight: 600, cursor: "pointer", fontFamily: "'Inter', sans-serif" }}><I.Download /><span>Export CSV</span></button>
-            <button type="button" onClick={openReportPreview} style={{ display: "flex", alignItems: "center", gap: 8, background: "#1c1e24", border: "1px solid #303338", borderRadius: 8, padding: "9px 16px", color: "#fff", fontSize: 13, fontWeight: 600, cursor: "pointer", fontFamily: "'Inter', sans-serif" }}><I.Download /><span>Download PDF</span></button>
-          </div>
-        </div>
-
+    <>
+      <ReportPageLayout title="Profit & Loss" subtitle="Income statement analysis — FY 2024" onDownloadPdf={openReportPreview}>
         {/* STATS — reference-style: Total Revenue, Cost of Goods (Expenses), Gross Profit (Net Profit), Net Margin */}
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: 16 }}>
           <Stat label="Total Revenue" value={`${cur} ${totalIncome.toLocaleString()}`} color={C.green} Icon={I.Revenue} sub="vs last period" subColor={C.muted} />
@@ -182,7 +107,7 @@ export default function ProfitLoss(){
               <CartesianGrid strokeDasharray="3 3" stroke={C.border} vertical={false} />
               <XAxis dataKey="month" axisLine={false} tickLine={false} tick={{ fill: C.muted, fontSize: 12 }} />
               <YAxis axisLine={false} tickLine={false} tick={{ fill: C.muted, fontSize: 11 }} tickFormatter={v => `${v / 1000}K`} />
-              <Tooltip content={<Tip />} />
+              <Tooltip content={(props) => <ChartTooltip {...props} currency={cur} />} />
               <Line type="monotone" dataKey="profit" name="Net Income" stroke={C.green} strokeWidth={2.5} dot={{ fill: C.green, r: 4, strokeWidth: 0 }} activeDot={{ r: 6 }} />
             </LineChart>
           </ResponsiveContainer>
@@ -196,7 +121,7 @@ export default function ProfitLoss(){
                 <CartesianGrid strokeDasharray="3 3" stroke={C.border} vertical={false} />
                 <XAxis dataKey="month" axisLine={false} tickLine={false} tick={{ fill: C.muted, fontSize: 12 }} />
                 <YAxis axisLine={false} tickLine={false} tick={{ fill: C.muted, fontSize: 11 }} tickFormatter={v => `${v / 1000}K`} />
-                <Tooltip content={<Tip />} cursor={{ fill: "rgba(255,255,255,0.02)" }} />
+                <Tooltip content={(props) => <ChartTooltip {...props} currency={cur} />} cursor={{ fill: "rgba(255,255,255,0.02)" }} />
                 <Legend wrapperStyle={{ color: C.muted, fontSize: 12, paddingTop: 12 }} />
                 <Bar dataKey="income" name="Revenue" radius={[5, 5, 0, 0]} fill={C.green} />
                 <Bar dataKey="expenses" name="Expenses" radius={[5, 5, 0, 0]} fill={C.red} />
@@ -213,7 +138,7 @@ export default function ProfitLoss(){
                 <Tooltip formatter={v => `${cur} ${Number(v).toLocaleString()}`} contentStyle={{ background: "#1a1d27", border: `1px solid ${C.border2}`, borderRadius: 10 }} />
               </PieChart>
             </ResponsiveContainer>
-            <Legend2 items={expCats} />
+            <LegendList items={expCats} currency={cur} />
           </Card>
         </div>
 
@@ -258,7 +183,7 @@ export default function ProfitLoss(){
             </table>
           </div>
         </Card>
-      </div>
+      </ReportPageLayout>
       <ReportPreviewModal
         open={reportPreview.open}
         onOpenChange={(open) => setReportPreview((p) => ({ ...p, open }))}
@@ -266,6 +191,6 @@ export default function ProfitLoss(){
         filename={reportPreview.filename}
         reportTitle="Profit & Loss Report"
       />
-    </div>
+    </>
   );
 }

@@ -374,14 +374,12 @@ export default function OverviewReports() {
 
       <div style={{ padding:"24px 18px", display:"flex", flexDirection:"column", gap:20, animation:"fi .4s ease" }}>
 
-        {/* PAGE HEADER — same as reference: Overview Reports + subtitle */}
-        <div style={{ marginBottom: 4 }}>
-          <h1 style={{ color:C.text, fontSize: 26, fontWeight: 800, margin: 0, letterSpacing: "-0.02em" }}>Overview Reports</h1>
-          <p style={{ color:C.muted, fontSize: 14, margin: "6px 0 0" }}>Complete business performance summary — FY 2024</p>
-        </div>
-
-        {/* TOOLBAR — Refresh, Export CSV, Download PDF (same as reference) */}
-        <div style={{ display: "flex", justifyContent: "flex-end", alignItems: "center" }}>
+        {/* HEADER ROW — title + subtitle left, actions right (biz-insight-hub style) */}
+        <div style={{ display: "flex", flexWrap: "wrap", justifyContent: "space-between", alignItems: "flex-start", gap: 16 }}>
+          <div>
+            <h1 style={{ color: C.text, fontSize: 26, fontWeight: 800, margin: 0, letterSpacing: "-0.02em" }}>Overview Reports</h1>
+            <p style={{ color: C.muted, fontSize: 14, margin: "6px 0 0" }}>Complete business performance summary — FY 2024</p>
+          </div>
           <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
             <button type="button" onClick={() => window.location.reload()} style={{ display: "flex", alignItems: "center", gap: 8, background: "#1c1e24", border: "1px solid #303338", borderRadius: 8, padding: "9px 16px", color: "#fff", fontSize: 13, fontWeight: 600, cursor: "pointer", fontFamily: "'Inter', sans-serif" }}><I.Refresh /><span>Refresh</span></button>
             <button type="button" onClick={() => {}} style={{ display: "flex", alignItems: "center", gap: 8, background: "#1c1e24", border: "1px solid #303338", borderRadius: 8, padding: "9px 16px", color: "#fff", fontSize: 13, fontWeight: 600, cursor: "pointer", fontFamily: "'Inter', sans-serif" }}><I.Download /><span>Export CSV</span></button>

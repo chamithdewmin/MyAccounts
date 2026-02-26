@@ -3,62 +3,20 @@ import { BarChart, Bar, AreaChart, Area, PieChart, Pie, Cell, XAxis, YAxis, Cart
 import { useFinance } from "@/contexts/FinanceContext";
 import { getPrintHtml } from "@/utils/pdfPrint";
 import ReportPreviewModal from "@/components/ReportPreviewModal";
+import { ReportPageLayout, Stat, Card, ChartTooltip, C, I } from "@/components/reports/ReportUI";
 
-const C = { bg:"#0c0e14",bg2:"#0f1117",card:"#13161e",border:"#1e2433",border2:"#2a3347",text:"#fff",text2:"#d1d9e6",muted:"#8b9ab0",faint:"#4a5568",green:"#22c55e",red:"#ef4444",blue:"#3b82f6",cyan:"#22d3ee",yellow:"#eab308",purple:"#a78bfa",orange:"#f97316" };
-
-const Svg=({d,s=18,c="#fff",sw=2})=><svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth={sw} strokeLinecap="round" strokeLinejoin="round" style={{display:"block",flexShrink:0}}><path d={d}/></svg>;
-const I={
-  Building:    ()=><Svg d="M3 21h18M3 7l9-4 9 4M4 7v14M20 7v14M9 21v-4a2 2 0 014 0v4"/>,
-  Layers:      ()=><Svg d="M12 2l9 4.5-9 4.5-9-4.5L12 2zM3 11.5l9 4.5 9-4.5M3 16.5l9 4.5 9-4.5"/>,
-  Scale:       ()=><Svg d="M16 16l3-8 3 8c-.87.65-1.92 1-3 1s-2.13-.35-3-1zM2 16l3-8 3 8c-.87.65-1.92 1-3 1s-2.13-.35-3-1zM7 21h10M12 3v18M3 7h18"/>,
-  Gauge:       ()=><Svg d="M12 2a10 10 0 100 20 10 10 0 000-20zM12 6v2M6 12H4M20 12h-2M7.76 7.76l-1.41-1.42M17.66 7.76l1.41-1.41M12 18a6 6 0 010-12"/>,
-  ShieldCheck: ()=><Svg d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10zM9 12l2 2 4-4"/>,
-  CheckCircle: ()=><Svg d="M22 11.08V12a10 10 0 11-5.93-9.14M22 4L12 14.01l-3-3"/>,
-  TrendingUp:  ()=><Svg d="M23 6l-9.5 9.5-5-5L1 18M17 6h6v6"/>,
-  Download:    ()=><Svg d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3"/>,
-  Eye:         ()=><Svg d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8zM12 9a3 3 0 100 6 3 3 0 000-6z"/>,
-  List:        ()=><Svg d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/>,
-  Monitor:     ()=><Svg d="M2 3h20v14H2V3zM8 21h8M12 17v4"/>,
-  Package:     ()=><Svg d="M16.5 9.4l-9-5.19M21 16V8a2 2 0 00-1-1.73l-7-4a2 2 0 00-2 0l-7 4A2 2 0 003 8v8a2 2 0 001 1.73l7 4a2 2 0 002 0l7-4A2 2 0 0021 16zM3.27 6.96L12 12.01l8.73-5.05M12 22.08V12"/>,
-  CreditCard:  ()=><Svg d="M1 4h22v16H1V4zM1 10h22"/>,
-  Receipt:     ()=><Svg d="M4 2v20l2-1 2 1 2-1 2 1 2-1 2 1 2-1 2 1V2l-2 1-2-1-2 1-2-1-2 1-2-1-2 1-2-1zM8 9h8M8 13h6"/>,
-  FileText:    ()=><Svg d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8l-6-6zM14 2v6h6"/>,
-  Refresh:     ()=><Svg d="M3 12a9 9 0 019-9 9.75 9.75 0 016.74 2.74L21 8M21 12a9 9 0 01-9 9 9.75 9.75 0 01-6.74-2.74L3 16M3 12h6m12 0h-6" />,
-};
-
-
-const Tip=({active,payload,label})=>{
-  if(!active||!payload?.length)return null;
-  return <div style={{background:"#1a1d27",border:`1px solid ${C.border2}`,borderRadius:12,padding:"12px 16px"}}>
-    <p style={{color:C.muted,fontSize:11,margin:"0 0 8px",fontWeight:600}}>{label}</p>
-    {payload.map((p,i)=><div key={i} style={{display:"flex",alignItems:"center",gap:8,marginBottom:3}}>
-      <div style={{width:7,height:7,borderRadius:"50%",background:p.color}}/><span style={{color:C.text2,fontSize:12}}>{p.name}:</span><span style={{color:C.text,fontWeight:700,fontSize:12}}>LKR {Number(p.value).toLocaleString()}</span>
-    </div>)}
-  </div>;
-};
-const Stat=({label,value,color,Icon,sub,subColor})=>(
-  <div style={{background:C.card,borderRadius:14,border:`1px solid ${C.border}`,padding:"20px 22px",position:"relative",overflow:"hidden"}}>
-    <div style={{position:"absolute",right:14,top:14,width:36,height:36,borderRadius:10,background:`${color||C.blue}18`,display:"flex",alignItems:"center",justifyContent:"center",opacity:0.8}}><Icon/></div>
-    <p style={{color:C.muted,fontSize:10,fontWeight:700,letterSpacing:"0.1em",textTransform:"uppercase",margin:0}}>{label}</p>
-    <p style={{color:color||C.text,fontSize:20,fontWeight:900,margin:"8px 0 0",letterSpacing:"-0.02em",fontFamily:"monospace"}}>{value}</p>
-    {sub&&<p style={{color:subColor||C.muted,fontSize:12,margin:"5px 0 0",fontWeight:600}}>{sub}</p>}
-    <div style={{position:"absolute",bottom:0,left:0,right:0,height:3,background:`linear-gradient(90deg,${color||C.blue}55,transparent)`}}/>
+const DonutLegend = ({ items, currency = "LKR" }) => (
+  <div style={{ display: "flex", flexDirection: "column", gap: 10, marginTop: 10 }}>
+    {items.map((e, i) => (
+      <div key={i} style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 8 }}><div style={{ width: 8, height: 8, borderRadius: "50%", background: e.color }} /><span style={{ color: C.text2, fontSize: 12 }}>{e.name}</span></div>
+        <div style={{ textAlign: "right" }}><p style={{ color: C.text, fontSize: 12, fontWeight: 700, margin: 0 }}>{currency} {e.value.toLocaleString()}</p><p style={{ color: C.muted, fontSize: 10, margin: 0 }}>{((e.value / items.reduce((s, x) => s + x.value, 0)) * 100).toFixed(1)}%</p></div>
+      </div>
+    ))}
   </div>
 );
-const Card=({title,subtitle,children})=>(
-  <div style={{background:C.card,borderRadius:16,border:`1px solid ${C.border}`,padding:"22px 24px"}}>
-    <div style={{marginBottom:18}}><h3 style={{color:C.text,fontSize:15,fontWeight:800,margin:0}}>{title}</h3>{subtitle&&<p style={{color:C.muted,fontSize:12,margin:"4px 0 0"}}>{subtitle}</p>}</div>
-    {children}
-  </div>
-);
-const DonutLegend=({items})=>(
-  <div style={{display:"flex",flexDirection:"column",gap:10,marginTop:10}}>
-    {items.map((e,i)=><div key={i} style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}>
-      <div style={{display:"flex",alignItems:"center",gap:8}}><div style={{width:8,height:8,borderRadius:"50%",background:e.color}}/><span style={{color:C.text2,fontSize:12}}>{e.name}</span></div>
-      <div style={{textAlign:"right"}}><p style={{color:C.text,fontSize:12,fontWeight:700,margin:0}}>LKR {e.value.toLocaleString()}</p><p style={{color:C.muted,fontSize:10,margin:0}}>{((e.value/items.reduce((s,x)=>s+x.value,0))*100).toFixed(1)}%</p></div>
-    </div>)}
-  </div>
-);
+
+const Svg = ({ d, s = 14 }) => <svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" style={{ display: "block", flexShrink: 0 }}><path d={d} /></svg>;
 
 export default function BalanceSheet(){
   const { assets, loans, invoices, totals, settings } = useFinance();
@@ -163,21 +121,11 @@ export default function BalanceSheet(){
     setReportPreview({ open: true, html: fullHtml, filename });
   };
 
-  return(
-    <div className="-mx-3 sm:-mx-4 lg:-mx-5" style={{minHeight:"100vh",fontFamily:"'Inter', -apple-system, BlinkMacSystemFont, sans-serif",color:C.text}}>
-      <style>{`*{box-sizing:border-box;}body{margin:0;}::-webkit-scrollbar{width:4px;}::-webkit-scrollbar-thumb{background:${C.border2};border-radius:99px;}@keyframes fi{from{opacity:0;transform:translateY(10px);}to{opacity:1;transform:translateY(0);}}.brow:hover td{background:rgba(255,255,255,0.018)!important;}`}</style>
+  const cur = settings?.currency || "LKR";
 
-      <div style={{padding:"24px 18px",display:"flex",flexDirection:"column",gap:18,animation:"fi .3s ease"}}>
-
-        {/* TOOLBAR */}
-        <div style={{display:"flex",justifyContent:"flex-end",alignItems:"center"}}>
-          <div style={{display:"flex",gap:10,alignItems:"center"}}>
-            <button onClick={()=>window.location.reload()} style={{display:"flex",alignItems:"center",gap:8,background:"#1c1e24",border:"1px solid #303338",borderRadius:8,padding:"9px 16px",color:"#fff",fontSize:13,fontWeight:600,cursor:"pointer",fontFamily:"'Inter', sans-serif"}}><I.Refresh/><span>Refresh</span></button>
-            <button onClick={()=>{}} style={{display:"flex",alignItems:"center",gap:8,background:"#1c1e24",border:"1px solid #303338",borderRadius:8,padding:"9px 16px",color:"#fff",fontSize:13,fontWeight:600,cursor:"pointer",fontFamily:"'Inter', sans-serif"}}><I.Download/><span>Export CSV</span></button>
-            <button onClick={openReportPreview} style={{display:"flex",alignItems:"center",gap:8,background:"#1c1e24",border:"1px solid #303338",borderRadius:8,padding:"9px 16px",color:"#fff",fontSize:13,fontWeight:600,cursor:"pointer",fontFamily:"'Inter', sans-serif"}}><I.Download/><span>Download PDF</span></button>
-          </div>
-        </div>
-
+  return (
+    <>
+      <ReportPageLayout title="Balance Sheet" subtitle="Financial position statement — As of Dec 31, 2024" onDownloadPdf={openReportPreview}>
         {/* STATS */}
         <div style={{display:"grid",gridTemplateColumns:"repeat(5,1fr)",gap:14}}>
           <Stat label="Total Assets"      value={`LKR ${totalAssets.toLocaleString()}`} color={C.green}  Icon={I.Building}/>
@@ -194,7 +142,7 @@ export default function BalanceSheet(){
               <CartesianGrid strokeDasharray="3 3" stroke={C.border} vertical={false}/>
               <XAxis dataKey="period" axisLine={false} tickLine={false} tick={{fill:C.muted,fontSize:12}}/>
               <YAxis axisLine={false} tickLine={false} tick={{fill:C.muted,fontSize:11}} tickFormatter={v=>`${v/1000}K`}/>
-              <Tooltip content={<Tip/>} cursor={{fill:"rgba(255,255,255,0.02)"}}/>
+              <Tooltip content={(props) => <ChartTooltip {...props} currency={cur} />} cursor={{ fill: "rgba(255,255,255,0.02)" }} />
               <Legend wrapperStyle={{color:C.muted,fontSize:12,paddingTop:12}}/>
               <Bar dataKey="assets"      name="Assets"      radius={[5,5,0,0]} fill={C.green}/>
               <Bar dataKey="liabilities" name="Liabilities" radius={[5,5,0,0]} fill={C.red}/>
@@ -211,7 +159,7 @@ export default function BalanceSheet(){
                 {assetItems.map((e,i)=><Cell key={i} fill={e.color}/>)}
               </Pie><Tooltip formatter={v=>`LKR ${v.toLocaleString()}`} contentStyle={{background:"#1a1d27",border:`1px solid ${C.border2}`,borderRadius:10}}/></PieChart>
             </ResponsiveContainer>
-            <DonutLegend items={assetItems}/>
+            <DonutLegend items={assetItems} currency={cur} />
           </Card>
           <Card title="Liability Breakdown" subtitle="By category">
             <ResponsiveContainer width="100%" height={160}>
@@ -219,7 +167,7 @@ export default function BalanceSheet(){
                 {liabItems.map((e,i)=><Cell key={i} fill={e.color}/>)}
               </Pie><Tooltip formatter={v=>`LKR ${v.toLocaleString()}`} contentStyle={{background:"#1a1d27",border:`1px solid ${C.border2}`,borderRadius:10}}/></PieChart>
             </ResponsiveContainer>
-            <DonutLegend items={liabItems}/>
+            <DonutLegend items={liabItems} currency={cur} />
           </Card>
           <Card title="Equity Trend" subtitle="Owner's equity over time">
             <ResponsiveContainer width="100%" height={160}>
@@ -227,7 +175,7 @@ export default function BalanceSheet(){
                 <defs><linearGradient id="gEq" x1="0" y1="0" x2="0" y2="1"><stop offset="5%" stopColor={C.blue} stopOpacity={.3}/><stop offset="95%" stopColor={C.blue} stopOpacity={0}/></linearGradient></defs>
                 <XAxis dataKey="period" axisLine={false} tickLine={false} tick={{fill:C.muted,fontSize:10}}/>
                 <YAxis hide/>
-                <Tooltip content={<Tip/>}/>
+                <Tooltip content={(props) => <ChartTooltip {...props} currency={cur} />} />
                 <Area type="monotone" dataKey="equity" name="Equity" stroke={C.blue} strokeWidth={2.5} fill="url(#gEq)"/>
               </AreaChart>
             </ResponsiveContainer>
@@ -303,8 +251,8 @@ export default function BalanceSheet(){
             ))}
           </div>
         </div>
-      </div>
+      </ReportPageLayout>
       <ReportPreviewModal open={reportPreview.open} onOpenChange={(open)=>setReportPreview(p=>({...p,open}))} html={reportPreview.html} filename={reportPreview.filename} reportTitle="Balance Sheet Report" />
-    </div>
+    </>
   );
 }

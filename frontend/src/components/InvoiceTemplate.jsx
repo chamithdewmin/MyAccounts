@@ -467,12 +467,14 @@ export default function InvoiceTemplate({
               <div>{inv.notes}</div>
             </div>
 
-            <div style={invoiceStyles.footer}>
-              <div style={invoiceStyles.sigBlock}>
-                <div style={invoiceStyles.sigLine} />
-                <div>Prepared By</div>
+            {inv.showSignatureArea && (
+              <div style={invoiceStyles.footer}>
+                <div style={invoiceStyles.sigBlock}>
+                  <div style={invoiceStyles.sigLine} />
+                  <div>Prepared By</div>
+                </div>
               </div>
-            </div>
+            )}
           </div>
         </div>
 

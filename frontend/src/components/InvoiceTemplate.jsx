@@ -89,7 +89,7 @@ function normalise(raw = {}, currency = 'LKR', settings = {}) {
         total: lineTotal,
         rateFormatted: price.toLocaleString(),
         amountFormatted: lineTotal.toLocaleString(),
-        qtyStr: qty.toFixed(2),
+        qtyStr: Number.isInteger(qty) ? String(qty) : String(Number(qty.toFixed(2))),
       };
     }),
 

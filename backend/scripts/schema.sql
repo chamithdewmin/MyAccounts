@@ -63,6 +63,7 @@ CREATE TABLE IF NOT EXISTS invoices (
   client_phone VARCHAR(50) DEFAULT '',
   items JSONB DEFAULT '[]',
   subtotal DECIMAL(15,2) DEFAULT 0,
+  discount_percentage DECIMAL(5,2) DEFAULT 0,
   tax_rate DECIMAL(5,2) DEFAULT 0,
   tax_amount DECIMAL(15,2) DEFAULT 0,
   total DECIMAL(15,2) DEFAULT 0,

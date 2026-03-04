@@ -32,6 +32,7 @@ const Orders = () => {
     paymentMethod: 'bank',
     dueDate: '',
     notes: '',
+    discountPercentage: '',
     bankDetails: null,
     showSignatureArea: false,
     items: [
@@ -82,6 +83,15 @@ const Orders = () => {
     [form.items],
   );
 
+  const discountPct = useMemo(() => Math.min(100, Math.max(0, Number(form.discountPercentage) || 0)), [form.discountPercentage]);
+  const discountAmount = useMemo(() => subtotal * (discountPct / 100), [subtotal, discountPct]);
+  const amountAfterDiscount = useMemo(() => subtotal - discountAmount, [subtotal, discountAmount]);
+  const invoiceTotal = useMemo(() => {
+    const taxRate = settings?.taxEnabled ? (Number(settings.taxRate) || 0) : 0;
+    const tax = amountAfterDiscount * (taxRate / 100);
+    return amountAfterDiscount + tax;
+  }, [amountAfterDiscount, settings?.taxEnabled, settings?.taxRate]);
+
   const handleCreateInvoice = async (e) => {
     e.preventDefault();
 
@@ -117,6 +127,8 @@ const Orders = () => {
       : new Date().toISOString();
 
     try {
+      const taxRate = settings?.taxEnabled ? (Number(settings.taxRate) || 0) : 0;
+      const taxAmount = amountAfterDiscount * (taxRate / 100);
       const invoice = await addInvoice({
         clientId: selectedClient?.id || null,
         clientName: selectedClient?.name || form.clientName,
@@ -124,6 +136,9 @@ const Orders = () => {
         clientPhone: selectedClient?.phone || form.clientPhone,
         items: normalizedItems,
         subtotal,
+        discountPercentage: discountPct,
+        taxAmount,
+        total: invoiceTotal,
         paymentMethod: form.paymentMethod,
         dueDate: dueDateIso,
         notes: form.notes,
@@ -144,6 +159,7 @@ const Orders = () => {
         paymentMethod: 'bank',
         dueDate: '',
         notes: '',
+        discountPercentage: '',
         bankDetails: null,
         showSignatureArea: false,
         items: [
@@ -254,10 +270,11 @@ const Orders = () => {
             <Button
               variant="outline"
               onClick={() => {
-                const headers = ['Invoice #', 'Client', 'Total', 'Status', 'Payment', 'Date'];
+                const headers = ['Invoice #', 'Client', 'Discount %', 'Total', 'Status', 'Payment', 'Date'];
                 const rows = invoices.map((inv) => [
                   inv.invoiceNumber,
                   inv.clientName,
+                  inv.discountPercentage ?? '',
                   inv.total,
                   inv.status,
                   inv.paymentMethod,
@@ -314,6 +331,7 @@ const Orders = () => {
                   <th className="px-3 sm:px-4 py-2 sm:py-3 text-left text-xs sm:text-sm font-semibold">Client</th>
                   <th className="px-3 sm:px-4 py-2 sm:py-3 text-left text-xs sm:text-sm font-semibold">Date</th>
                   <th className="px-3 sm:px-4 py-2 sm:py-3 text-left text-xs sm:text-sm font-semibold">Items</th>
+                  <th className="px-3 sm:px-4 py-2 sm:py-3 text-left text-xs sm:text-sm font-semibold">Discount %</th>
                   <th className="px-3 sm:px-4 py-2 sm:py-3 text-left text-xs sm:text-sm font-semibold">Total</th>
                   <th className="px-3 sm:px-4 py-2 sm:py-3 text-left text-xs sm:text-sm font-semibold">Payment</th>
                   <th className="px-3 sm:px-4 py-2 sm:py-3 text-left text-xs sm:text-sm font-semibold">Status</th>
@@ -333,6 +351,9 @@ const Orders = () => {
                     <td className="px-4 py-3 text-sm">{order.clientName}</td>
                     <td className="px-4 py-3 text-sm text-muted-foreground">{formatDate(order.createdAt)}</td>
                     <td className="px-4 py-3 text-sm">{order.items.length}</td>
+                    <td className="px-4 py-3 text-sm text-muted-foreground">
+                      {Number(order.discountPercentage || 0) > 0 ? `${order.discountPercentage}%` : '—'}
+                    </td>
                     <td className="px-4 py-3 text-sm font-semibold text-primary">
                       {settings.currency} {Number(order.total || 0).toLocaleString()}
                     </td>
@@ -603,12 +624,29 @@ const Orders = () => {
               />
             </div>
 
-            <div className="flex items-center justify-between pt-2">
-              <div className="text-sm text-muted-foreground">
-                Subtotal:{' '}
-                <span className="font-semibold text-primary">
-                  {settings.currency} {subtotal.toLocaleString()}
-                </span>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2">
+              <div className="space-y-2">
+                <Label className="text-sm font-medium">Discount %</Label>
+                <Input
+                  type="number"
+                  min="0"
+                  max="100"
+                  step="0.5"
+                  placeholder="0"
+                  value={form.discountPercentage}
+                  onChange={(e) => handleChange('discountPercentage', e.target.value)}
+                  className="w-full"
+                />
+              </div>
+            </div>
+
+            <div className="flex flex-wrap items-center justify-between gap-4 pt-2">
+              <div className="space-y-1 text-sm text-muted-foreground">
+                <div>Subtotal: <span className="font-semibold text-primary">{settings.currency} {subtotal.toLocaleString()}</span></div>
+                {discountPct > 0 && (
+                  <div>Discount ({discountPct}%): <span className="font-medium">- {settings.currency} {discountAmount.toLocaleString()}</span></div>
+                )}
+                <div>Total: <span className="font-semibold text-primary">{settings.currency} {invoiceTotal.toLocaleString()}</span></div>
               </div>
               <div className="flex gap-2">
                 <Button

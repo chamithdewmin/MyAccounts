@@ -42,8 +42,12 @@ function formatPhoneDisplay(phone) {
 function normalise(raw = {}, currency = 'LKR', settings = {}) {
   const items = Array.isArray(raw.items) ? raw.items : [];
   const subtotal = raw.subtotal ?? items.reduce((s, i) => s + (parseFloat(i.price || 0) * parseFloat(i.quantity ?? i.qty ?? 1)), 0);
-  const taxAmount = raw.taxAmount ?? raw.tax ?? 0;
-  const total = raw.total ?? (raw.subtotal ?? subtotal) + taxAmount;
+  const discountPercentage = Math.min(100, Math.max(0, parseFloat(raw.discountPercentage) || 0));
+  const discountAmount = subtotal * (discountPercentage / 100);
+  const amountAfterDiscount = subtotal - discountAmount;
+  const taxRate = raw.taxRate ?? settings?.taxRate ?? 0;
+  const taxAmount = raw.taxAmount ?? raw.tax ?? (amountAfterDiscount * (taxRate / 100));
+  const total = raw.total ?? amountAfterDiscount + taxAmount;
   const payment = raw.bankDetails || settings?.bankDetails || {};
 
   const paymentMadeNum = parseFloat(raw.paymentMade ?? raw.paymentMadeAmount ?? 0) || 0;
@@ -91,6 +95,10 @@ function normalise(raw = {}, currency = 'LKR', settings = {}) {
 
     subtotal,
     subTotalFormatted: (subtotal ?? 0).toLocaleString(),
+    discountPercentage,
+    discountAmount,
+    discountFormatted: discountAmount > 0 ? `(-) ${(discountAmount ?? 0).toLocaleString()}` : null,
+    amountAfterDiscount,
     taxRate: raw.taxRate ?? settings?.taxRate ?? 0,
     tax: taxAmount,
     total,
@@ -445,6 +453,9 @@ export default function InvoiceTemplate({
             <div style={invoiceStyles.totalsSection}>
               <div style={invoiceStyles.totalsTable}>
                 <div style={invoiceStyles.row()}><span>Sub Total</span><span>{inv.subTotalFormatted}</span></div>
+                {inv.discountPercentage > 0 && (
+                  <div style={invoiceStyles.row()}><span>Discount ({inv.discountPercentage}%)</span><span>{inv.discountFormatted}</span></div>
+                )}
                 <div style={invoiceStyles.row({ fontWeight: 'bold', fontSize: '15px', borderTop: '2px solid #1a1a1a', borderBottom: 'none', marginTop: '4px', paddingTop: '8px' })}>
                   <span>Total</span><span>{inv.totalFormatted}</span>
                 </div>

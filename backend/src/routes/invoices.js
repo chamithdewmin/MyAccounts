@@ -65,6 +65,7 @@ const toInvoice = (row) => {
     clientPhone: row.client_phone || '',
     items: row.items || [],
     subtotal: parseFloat(row.subtotal),
+    discountPercentage: parseFloat(row.discount_percentage) || 0,
     taxRate: parseFloat(row.tax_rate),
     taxAmount: parseFloat(row.tax_amount),
     total: parseFloat(row.total),
@@ -116,9 +117,12 @@ router.post('/', async (req, res) => {
     }
     const id = await generateInvoiceNumber(pool, uid, email, businessName);
     const subtotal = Number(d.subtotal) || 0;
+    const discountPercentage = Math.min(100, Math.max(0, Number(d.discountPercentage) || 0));
+    const discountAmount = subtotal * (discountPercentage / 100);
+    const amountAfterDiscount = subtotal - discountAmount;
     const taxRate = Number(d.taxRate) ?? 10;
-    const taxAmount = d.taxAmount != null ? Number(d.taxAmount) : subtotal * (taxRate / 100);
-    const total = Number(d.total) || subtotal + taxAmount;
+    const taxAmount = d.taxAmount != null ? Number(d.taxAmount) : amountAfterDiscount * (taxRate / 100);
+    const total = Number(d.total) || amountAfterDiscount + taxAmount;
 
     let dueDateVal = d.dueDate || null;
     if (dueDateVal && typeof dueDateVal === 'string') {
@@ -137,8 +141,8 @@ router.post('/', async (req, res) => {
     const bankDetailsEncrypted = bankObj ? encrypt(JSON.stringify(bankObj)) : null;
     const showSignatureArea = Boolean(d.showSignatureArea);
     await pool.query(
-      `INSERT INTO invoices (id, user_id, invoice_number, client_id, client_name, client_email, client_phone, items, subtotal, tax_rate, tax_amount, total, payment_method, status, due_date, notes, bank_details_encrypted, show_signature_area)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18)`,
+      `INSERT INTO invoices (id, user_id, invoice_number, client_id, client_name, client_email, client_phone, items, subtotal, discount_percentage, tax_rate, tax_amount, total, payment_method, status, due_date, notes, bank_details_encrypted, show_signature_area)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19)`,
       [
         id,
         uid,
@@ -149,6 +153,7 @@ router.post('/', async (req, res) => {
         d.clientPhone || '',
         JSON.stringify(d.items || []),
         subtotal,
+        discountPercentage,
         taxRate,
         taxAmount,
         total,

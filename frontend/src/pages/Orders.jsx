@@ -19,10 +19,11 @@ const Orders = () => {
   const [viewedInvoice, setViewedInvoice] = useState(null);
   const [invoiceAction, setInvoiceAction] = useState(null); // 'view' | 'download' | 'print'
   const [isCreateOpen, setIsCreateOpen] = useState(false);
+  const [editingInvoice, setEditingInvoice] = useState(null);
   const [refreshLoading, setRefreshLoading] = useState(false);
   const { toast } = useToast();
 
-  const { invoices, clients, settings, updateInvoiceStatus, addInvoice, deleteInvoice, loadData } = useFinance();
+  const { invoices, clients, settings, updateInvoiceStatus, addInvoice, updateInvoice, deleteInvoice, loadData } = useFinance();
 
   const [form, setForm] = useState({
     clientId: '',
@@ -71,6 +72,49 @@ const Orders = () => {
       ...prev,
       items: prev.items.filter((_, i) => i !== index),
     }));
+  };
+
+  const toDateInputValue = (value) => {
+    if (!value) return '';
+    const d = new Date(value);
+    if (Number.isNaN(d.getTime())) return '';
+    const year = d.getFullYear();
+    const month = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  };
+
+  const openEditInvoice = (invoice) => {
+    setEditingInvoice(invoice);
+    setForm({
+      clientId: invoice.clientId || '',
+      clientName: invoice.clientName || '',
+      clientEmail: invoice.clientEmail || '',
+      clientPhone: invoice.clientPhone || '',
+      paymentMethod: invoice.paymentMethod || 'bank',
+      dueDate: toDateInputValue(invoice.dueDate || invoice.createdAt),
+      notes: invoice.notes || '',
+      discountPercentage:
+        invoice.discountPercentage != null && !Number.isNaN(Number(invoice.discountPercentage))
+          ? String(invoice.discountPercentage)
+          : '',
+      bankDetails: invoice.bankDetails || null,
+      showSignatureArea: Boolean(invoice.showSignatureArea),
+      items:
+        (invoice.items && invoice.items.length
+          ? invoice.items
+          : [{ description: '', price: '', quantity: 1 }]).map((item) => ({
+          description: item.description || item.name || '',
+          price:
+            item.price != null
+              ? String(item.price)
+              : item.amount != null
+                ? String(item.amount)
+                : '',
+          quantity: item.quantity ?? item.qty ?? 1,
+        })),
+    });
+    setIsCreateOpen(true);
   };
 
   const subtotal = useMemo(
@@ -129,7 +173,7 @@ const Orders = () => {
     try {
       const taxRate = settings?.taxEnabled ? (Number(settings.taxRate) || 0) : 0;
       const taxAmount = amountAfterDiscount * (taxRate / 100);
-      const invoice = await addInvoice({
+      const payload = {
         clientId: selectedClient?.id || null,
         clientName: selectedClient?.name || form.clientName,
         clientEmail: selectedClient?.email || form.clientEmail,
@@ -144,13 +188,24 @@ const Orders = () => {
         notes: form.notes,
         bankDetails: form.bankDetails,
         showSignatureArea: form.showSignatureArea,
-      });
+      };
 
-      toast({
-        title: 'Invoice created',
-        description: `Invoice ${invoice.invoiceNumber || invoice.id} has been created.`,
-      });
+      let invoice;
+      if (editingInvoice) {
+        invoice = await updateInvoice(editingInvoice.id || editingInvoice.invoiceNumber, payload);
+        toast({
+          title: 'Invoice updated',
+          description: `Invoice ${invoice.invoiceNumber || invoice.id} has been updated.`,
+        });
+      } else {
+        invoice = await addInvoice(payload);
+        toast({
+          title: 'Invoice created',
+          description: `Invoice ${invoice.invoiceNumber || invoice.id} has been created.`,
+        });
+      }
 
+      setEditingInvoice(null);
       setForm({
         clientId: '',
         clientName: '',
@@ -296,7 +351,28 @@ const Orders = () => {
               <Download className="w-4 h-4 mr-2" />
               Export CSV
             </Button>
-            <Button onClick={() => setIsCreateOpen(true)} className="min-h-[44px] sm:min-h-0">
+            <Button
+              onClick={() => {
+                setEditingInvoice(null);
+                setForm({
+                  clientId: '',
+                  clientName: '',
+                  clientEmail: '',
+                  clientPhone: '',
+                  paymentMethod: 'bank',
+                  dueDate: '',
+                  notes: '',
+                  discountPercentage: '',
+                  bankDetails: null,
+                  showSignatureArea: false,
+                  items: [
+                    { description: '', price: '', quantity: 1 },
+                  ],
+                });
+                setIsCreateOpen(true);
+              }}
+              className="min-h-[44px] sm:min-h-0"
+            >
               <Plus className="w-4 h-4 mr-2" />
               Create Invoice
             </Button>
@@ -404,10 +480,7 @@ const Orders = () => {
                         </button>
                         <button
                           type="button"
-                          onClick={() => {
-                            setSelectedOrder(order);
-                            setInvoiceAction('view');
-                          }}
+                          onClick={() => openEditInvoice(order)}
                           className="p-2 hover:bg-secondary rounded-lg transition-colors text-green-500 hover:text-green-400"
                           title="Edit"
                         >
@@ -477,11 +550,34 @@ const Orders = () => {
         </DialogContent>
       </Dialog>
 
-      {/* Create invoice */}
-      <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
+      {/* Create / edit invoice */}
+      <Dialog
+        open={isCreateOpen}
+        onOpenChange={(open) => {
+          setIsCreateOpen(open);
+          if (!open) {
+            setEditingInvoice(null);
+            setForm({
+              clientId: '',
+              clientName: '',
+              clientEmail: '',
+              clientPhone: '',
+              paymentMethod: 'bank',
+              dueDate: '',
+              notes: '',
+              discountPercentage: '',
+              bankDetails: null,
+              showSignatureArea: false,
+              items: [
+                { description: '', price: '', quantity: 1 },
+              ],
+            });
+          }
+        }}
+      >
         <DialogContent className="w-[95vw] max-w-2xl max-h-[90vh] overflow-y-auto mx-2 sm:mx-auto" aria-describedby={undefined}>
           <DialogHeader>
-            <DialogTitle>Create Invoice</DialogTitle>
+            <DialogTitle>{editingInvoice ? 'Edit Invoice' : 'Create Invoice'}</DialogTitle>
           </DialogHeader>
           <form onSubmit={handleCreateInvoice} className="space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -652,12 +748,14 @@ const Orders = () => {
                 <Button
                   type="button"
                   variant="outline"
-                  onClick={() => setIsCreateOpen(false)}
+                  onClick={() => {
+                    setIsCreateOpen(false);
+                  }}
                 >
                   Cancel
                 </Button>
                 <Button type="submit">
-                  Save Invoice
+                  {editingInvoice ? 'Update Invoice' : 'Save Invoice'}
                 </Button>
               </div>
             </div>

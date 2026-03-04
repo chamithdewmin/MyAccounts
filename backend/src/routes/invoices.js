@@ -174,6 +174,89 @@ router.post('/', async (req, res) => {
   }
 });
 
+router.put('/:id', async (req, res) => {
+  try {
+    const uid = req.user.id;
+    const { id } = req.params;
+    const d = req.body;
+
+    const subtotal = Number(d.subtotal) || 0;
+    const discountPercentage = Math.min(100, Math.max(0, Number(d.discountPercentage) || 0));
+    const discountAmount = subtotal * (discountPercentage / 100);
+    const amountAfterDiscount = subtotal - discountAmount;
+    const taxRate = Number(d.taxRate) ?? 10;
+    const taxAmount = d.taxAmount != null ? Number(d.taxAmount) : amountAfterDiscount * (taxRate / 100);
+    const total = Number(d.total) || amountAfterDiscount + taxAmount;
+
+    let dueDateVal = d.dueDate || null;
+    if (dueDateVal && typeof dueDateVal === 'string') {
+      const m = dueDateVal.match(/^(\d{4}-\d{2}-\d{2})/);
+      dueDateVal = m ? m[1] : dueDateVal;
+    }
+    if (dueDateVal === '') {
+      dueDateVal = null;
+    }
+
+    const bankObj = d.bankDetails && (d.bankDetails.accountNumber || d.bankDetails.accountName || d.bankDetails.bankName)
+      ? {
+          accountNumber: String(d.bankDetails.accountNumber || '').trim(),
+          accountName: String(d.bankDetails.accountName || '').trim(),
+          bankName: String(d.bankDetails.bankName || '').trim(),
+          branch: String(d.bankDetails.branch || '').trim() || null,
+        }
+      : null;
+    const bankDetailsEncrypted = bankObj ? encrypt(JSON.stringify(bankObj)) : null;
+    const showSignatureArea = Boolean(d.showSignatureArea);
+
+    const { rows } = await pool.query(
+      `UPDATE invoices
+       SET client_id = $3,
+           client_name = $4,
+           client_email = $5,
+           client_phone = $6,
+           items = $7,
+           subtotal = $8,
+           discount_percentage = $9,
+           tax_rate = $10,
+           tax_amount = $11,
+           total = $12,
+           payment_method = $13,
+           due_date = $14,
+           notes = $15,
+           bank_details_encrypted = $16,
+           show_signature_area = $17
+       WHERE (id = $1 OR invoice_number = $1) AND user_id = $2
+       RETURNING *`,
+      [
+        id,
+        uid,
+        d.clientId || null,
+        d.clientName || '',
+        d.clientEmail || '',
+        d.clientPhone || '',
+        JSON.stringify(d.items || []),
+        subtotal,
+        discountPercentage,
+        taxRate,
+        taxAmount,
+        total,
+        d.paymentMethod || 'bank',
+        dueDateVal,
+        d.notes || '',
+        bankDetailsEncrypted,
+        showSignatureArea,
+      ]
+    );
+
+    if (!rows[0]) return res.status(404).json({ error: 'Not found' });
+    res.json(toInvoice(rows[0]));
+  } catch (err) {
+    console.error('[invoices PUT]', err);
+    const msg = process.env.NODE_ENV === 'development' ? err.message : 'Server error';
+    res.status(500).json({ error: msg });
+  }
+});
+
 router.patch('/:id/status', async (req, res) => {
   try {
     const uid = req.user.id;

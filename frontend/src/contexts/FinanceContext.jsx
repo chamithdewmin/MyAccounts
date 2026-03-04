@@ -183,6 +183,49 @@ export const FinanceProvider = ({ children }) => {
     return invoice;
   };
 
+  const updateInvoice = async (id, data) => {
+    const inv = { ...data, taxRate: settings.taxEnabled ? settings.taxRate : 0, taxAmount: data.taxAmount ?? (settings.taxEnabled ? (Number(data.subtotal) || 0) * (settings.taxRate / 100) : 0), total: data.total || Number(data.subtotal) + (data.taxAmount ?? 0), bankDetails: data.bankDetails || null, showSignatureArea: Boolean(data.showSignatureArea) };
+    if (hasToken()) {
+      const updated = await api.invoices.update(id, inv);
+      setInvoices((prev) => prev.map((invoice) => (invoice.id === id || invoice.invoiceNumber === id ? updated : invoice)));
+      return updated;
+    }
+
+    let updatedLocal = null;
+    setInvoices((prev) =>
+      prev.map((invoice) => {
+        if (invoice.id === id || invoice.invoiceNumber === id) {
+          const subtotal = Number(data.subtotal ?? invoice.subtotal) || 0;
+          const discountPercentage = Number(data.discountPercentage ?? invoice.discountPercentage ?? 0) || 0;
+          const taxAmount = inv.taxAmount;
+          const total = Number(inv.total) || subtotal + taxAmount;
+          const next = {
+            ...invoice,
+            clientId: data.clientId ?? invoice.clientId,
+            clientName: (data.clientName ?? invoice.clientName)?.trim(),
+            clientEmail: (data.clientEmail ?? invoice.clientEmail)?.trim(),
+            clientPhone: (data.clientPhone ?? invoice.clientPhone)?.trim(),
+            items: data.items ?? invoice.items,
+            subtotal,
+            discountPercentage,
+            taxRate: settings.taxEnabled ? settings.taxRate : invoice.taxRate,
+            taxAmount,
+            total,
+            paymentMethod: data.paymentMethod ?? invoice.paymentMethod,
+            dueDate: data.dueDate ?? invoice.dueDate,
+            notes: data.notes ?? invoice.notes,
+            bankDetails: data.bankDetails ?? invoice.bankDetails,
+            showSignatureArea: data.showSignatureArea != null ? Boolean(data.showSignatureArea) : invoice.showSignatureArea,
+          };
+          updatedLocal = next;
+          return next;
+        }
+        return invoice;
+      }),
+    );
+    return updatedLocal;
+  };
+
   const updateInvoiceStatus = async (invoiceId, status) => {
     if (hasToken()) await api.invoices.updateStatus(invoiceId, status);
     setInvoices((prev) => prev.map((inv) => (inv.id === invoiceId || inv.invoiceNumber === invoiceId ? { ...inv, status } : inv)));
@@ -391,6 +434,7 @@ export const FinanceProvider = ({ children }) => {
     addIncome,
     addExpense,
     addInvoice,
+    updateInvoice,
     updateIncome,
     deleteIncome,
     updateExpense,

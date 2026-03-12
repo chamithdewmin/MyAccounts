@@ -193,7 +193,9 @@ function getDateRangeForPeriod(period) {
   start.setHours(0, 0, 0, 0);
   end.setHours(23, 59, 59, 999);
   if (period === "month") {
+    // Use the full calendar month: from the 1st to the last day
     start.setDate(1);
+    end.setMonth(now.getMonth() + 1, 0);
   } else if (period === "quarter") {
     const q = Math.floor(now.getMonth() / 3) + 1;
     start.setMonth((q - 1) * 3, 1);

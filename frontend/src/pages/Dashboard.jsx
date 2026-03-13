@@ -743,7 +743,7 @@ export default function FinanceDashboard() {
               <ResponsiveContainer width="100%" height={220}>
                 <BarChart data={activityData} barGap={2} barCategoryGap={14}>
                   <XAxis dataKey="day" axisLine={false} tickLine={false} tick={{ fill: "#8b9ab0", fontSize: 11 }} />
-                  <YAxis axisLine={false} tickLine={false} tick={{ fill: "#8b9ab0", fontSize: 10 }} tickFormatter={v => `${settings.currency || ''}${(v / 1000).toFixed(0)}k`} width={30} />
+                  <YAxis axisLine={false} tickLine={false} tick={{ fill: "#8b9ab0", fontSize: 11 }} tickFormatter={v => `${(v / 1000).toFixed(0)}k`} width={40} />
                   <Tooltip content={<CustomTooltip currency={settings.currency || ''} />} cursor={{ fill: "rgba(255,255,255,0.03)" }} />
                   <Bar dataKey="earning" radius={[4, 4, 0, 0]} fill="#0e5cff" />
                   <Bar dataKey="spent" radius={[4, 4, 0, 0]} fill="#22d3ee" opacity={0.7} />

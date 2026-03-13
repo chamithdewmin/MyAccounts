@@ -1,8 +1,9 @@
 import express from 'express';
 import pool from '../config/db.js';
-import auth from '../middleware/auth.js';
+import { authMiddleware } from '../middleware/auth.js';
 
 const router = express.Router();
+router.use(authMiddleware);
 
 const ADMIN_EMAIL = 'logozodev@gmail.com';
 
@@ -29,7 +30,7 @@ const TABLES = [
   'bank_details',
 ];
 
-router.get('/info', auth, requireAdmin, async (req, res) => {
+router.get('/info', requireAdmin, async (req, res) => {
   try {
     const dbResult = await pool.query('SELECT current_database()');
     const dbName = dbResult.rows[0]?.current_database || 'unknown';
@@ -74,7 +75,7 @@ router.get('/info', auth, requireAdmin, async (req, res) => {
   }
 });
 
-router.get('/history', auth, requireAdmin, async (req, res) => {
+router.get('/history', requireAdmin, async (req, res) => {
   try {
     const result = await pool.query(`
       SELECT id, filename, size_bytes, tables_count, rows_count, created_at, status
@@ -90,7 +91,7 @@ router.get('/history', auth, requireAdmin, async (req, res) => {
   }
 });
 
-router.post('/create', auth, requireAdmin, async (req, res) => {
+router.post('/create', requireAdmin, async (req, res) => {
   try {
     const backupData = {
       version: '1.0',
@@ -151,7 +152,7 @@ router.post('/create', auth, requireAdmin, async (req, res) => {
   }
 });
 
-router.get('/download/:id', auth, requireAdmin, async (req, res) => {
+router.get('/download/:id', requireAdmin, async (req, res) => {
   try {
     const { id } = req.params;
     const result = await pool.query(
@@ -174,7 +175,7 @@ router.get('/download/:id', auth, requireAdmin, async (req, res) => {
   }
 });
 
-router.post('/restore', auth, requireAdmin, async (req, res) => {
+router.post('/restore', requireAdmin, async (req, res) => {
   try {
     const { backupData } = req.body;
 
@@ -230,7 +231,7 @@ router.post('/restore', auth, requireAdmin, async (req, res) => {
   }
 });
 
-router.delete('/:id', auth, requireAdmin, async (req, res) => {
+router.delete('/:id', requireAdmin, async (req, res) => {
   try {
     const { id } = req.params;
     await pool.query('DELETE FROM backup_history WHERE id = $1', [id]);

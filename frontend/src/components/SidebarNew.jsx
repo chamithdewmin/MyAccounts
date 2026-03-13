@@ -373,21 +373,6 @@ export default function SidebarNew() {
               </span>
             </a>
           )}
-          {collapsed && (
-            <div
-              style={{
-                width: 32,
-                height: 32,
-                borderRadius: 8,
-                background: "rgba(14,92,255,0.2)",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-              }}
-            >
-              <img src={sidebarIcon} alt="" style={{ width: 18, height: 18, objectFit: "contain" }} />
-            </div>
-          )}
           <button
             onClick={() => setCollapsed((c) => !c)}
             style={{

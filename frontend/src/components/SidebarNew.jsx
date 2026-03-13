@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, createContext, useContext } from "react";
 import { NavLink, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { useFinance } from "@/contexts/FinanceContext";
@@ -24,6 +24,10 @@ import {
   Menu,
   X,
 } from "lucide-react";
+
+// Sidebar context to share collapsed state
+const SidebarContext = createContext({ collapsed: false, setCollapsed: () => {} });
+export const useSidebarState = () => useContext(SidebarContext);
 
 const ADMIN_EMAIL = "logozodev@gmail.com";
 
@@ -81,7 +85,7 @@ function MenuPopupItem({ icon, label, onClick }) {
   );
 }
 
-function SubItem({ to, label, onClick }) {
+function SubItem({ to, label }) {
   const location = useLocation();
   const isActive = location.pathname === to;
   const [hovered, setHovered] = useState(false);
@@ -89,7 +93,6 @@ function SubItem({ to, label, onClick }) {
   return (
     <NavLink
       to={to}
-      onClick={onClick}
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
       style={{
@@ -125,7 +128,6 @@ function NavItem({
   chevron,
   onChevronOpen,
   onClick,
-  setMobileOpen,
 }) {
   const [hovered, setHovered] = useState(false);
   const [tooltipPos, setTooltipPos] = useState({ x: 0, y: 0 });
@@ -239,7 +241,7 @@ function NavItem({
 
   if (href && !chevron) {
     return (
-      <NavLink to={href} style={{ textDecoration: "none" }} onClick={() => setMobileOpen?.(false)}>
+      <NavLink to={href} style={{ textDecoration: "none" }}>
         {content}
       </NavLink>
     );
@@ -248,14 +250,42 @@ function NavItem({
   return content;
 }
 
+// Provider component to wrap the app
+export function SidebarProvider({ children }) {
+  const [collapsed, setCollapsed] = useState(() => {
+    // Start collapsed on mobile/tablet screens
+    if (typeof window !== 'undefined') {
+      return window.innerWidth < 1024;
+    }
+    return false;
+  });
+
+  // Handle window resize
+  useEffect(() => {
+    const handleResize = () => {
+      if (window.innerWidth < 768) {
+        setCollapsed(true);
+      }
+    };
+    
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+  
+  return (
+    <SidebarContext.Provider value={{ collapsed, setCollapsed }}>
+      {children}
+    </SidebarContext.Provider>
+  );
+}
+
 export default function SidebarNew() {
   const { user, logout } = useAuth();
   const { settings } = useFinance();
   const navigate = useNavigate();
   const location = useLocation();
+  const { collapsed, setCollapsed } = useSidebarState();
 
-  const [mini, setMini] = useState(false);
-  const [mobileOpen, setMobileOpen] = useState(false);
   const [analyticsOpen, setAnalyticsOpen] = useState(false);
   const [hoverUser, setHoverUser] = useState(false);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
@@ -273,72 +303,47 @@ export default function SidebarNew() {
     }
   }, [location.pathname]);
 
-  useEffect(() => {
-    setMobileOpen(false);
-  }, [location.pathname]);
-
   const isActive = (href) => location.pathname === href;
   const isAnalyticsActive = location.pathname.startsWith("/reports");
 
+  // Sidebar widths
+  const EXPANDED_WIDTH = 260;
+  const COLLAPSED_WIDTH = 68;
+  const currentWidth = collapsed ? COLLAPSED_WIDTH : EXPANDED_WIDTH;
+
   return (
     <>
-      {/* Mobile overlay */}
-      {mobileOpen && (
-        <div
-          onClick={() => setMobileOpen(false)}
-          style={{
-            position: "fixed",
-            inset: 0,
-            background: "rgba(0,0,0,0.5)",
-            zIndex: 40,
-          }}
-          className="lg:hidden"
-        />
-      )}
-
-      {/* Mobile toggle button */}
-      <button
-        onClick={() => setMobileOpen(true)}
-        className="lg:hidden fixed top-4 left-4 z-50 p-2 rounded-lg bg-[#0a0a0a] border border-[#171717]"
-        style={{ display: mobileOpen ? "none" : "flex" }}
-      >
-        <Menu size={20} color="#fff" />
-      </button>
-
       {/* Sidebar */}
       <div
         style={{
-          width: mini ? 64 : 260,
-          minWidth: mini ? 64 : 260,
+          width: currentWidth,
+          minWidth: currentWidth,
           height: "100vh",
           background: "#0a0a0a",
-          border: "1px solid #171717",
-          borderRadius: 0,
+          borderRight: "1px solid #171717",
           display: "flex",
           flexDirection: "column",
-          transition: "width 0.28s cubic-bezier(0.4,0,0.2,1), min-width 0.28s cubic-bezier(0.4,0,0.2,1), transform 0.28s ease",
+          transition: "width 0.3s cubic-bezier(0.4,0,0.2,1), min-width 0.3s cubic-bezier(0.4,0,0.2,1)",
           overflow: "hidden",
           position: "fixed",
           top: 0,
           left: 0,
           zIndex: 50,
           fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, sans-serif",
-          transform: mobileOpen ? "translateX(0)" : "translateX(-100%)",
         }}
-        className="lg:translate-x-0"
       >
         {/* Header */}
         <div
           style={{
             display: "flex",
             alignItems: "center",
-            justifyContent: mini ? "center" : "space-between",
-            padding: mini ? "16px 12px" : "16px 16px",
+            justifyContent: collapsed ? "center" : "space-between",
+            padding: collapsed ? "16px 12px" : "16px 16px",
             borderBottom: "1px solid #171717",
             minHeight: 64,
           }}
         >
-          {!mini && (
+          {!collapsed && (
             <a
               href="/dashboard"
               style={{
@@ -368,7 +373,7 @@ export default function SidebarNew() {
               </span>
             </a>
           )}
-          {mini && (
+          {collapsed && (
             <div
               style={{
                 width: 32,
@@ -384,8 +389,7 @@ export default function SidebarNew() {
             </div>
           )}
           <button
-            onClick={() => setMini((m) => !m)}
-            className="hidden lg:flex"
+            onClick={() => setCollapsed((c) => !c)}
             style={{
               background: "none",
               border: "none",
@@ -401,28 +405,11 @@ export default function SidebarNew() {
           >
             <Menu size={18} />
           </button>
-          <button
-            onClick={() => setMobileOpen(false)}
-            className="lg:hidden"
-            style={{
-              background: "none",
-              border: "none",
-              cursor: "pointer",
-              padding: 6,
-              color: "#8b9ab0",
-              borderRadius: 6,
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-            }}
-          >
-            <X size={18} />
-          </button>
         </div>
 
         {/* Nav */}
         <nav style={{ flex: 1, padding: "8px 10px", overflowY: "auto", overflowX: "hidden" }}>
-          {!mini && (
+          {!collapsed && (
             <div
               style={{
                 fontSize: 11,
@@ -453,14 +440,14 @@ export default function SidebarNew() {
                     icon={item.icon}
                     label={item.label}
                     active={isAnalyticsActive}
-                    mini={mini}
+                    mini={collapsed}
                     chevron={analyticsOpen}
                     onChevronOpen={() => setAnalyticsOpen((o) => !o)}
                     onClick={() => {
-                      if (!mini) setAnalyticsOpen((o) => !o);
+                      if (!collapsed) setAnalyticsOpen((o) => !o);
                     }}
                   />
-                  {!mini && (
+                  {!collapsed && (
                     <div
                       style={{
                         overflow: "hidden",
@@ -474,7 +461,6 @@ export default function SidebarNew() {
                           key={sub.to}
                           to={sub.to}
                           label={sub.label}
-                          onClick={() => setMobileOpen(false)}
                         />
                       ))}
                     </div>
@@ -489,8 +475,7 @@ export default function SidebarNew() {
                 label={item.label}
                 href={item.href}
                 active={isActive(item.href)}
-                mini={mini}
-                setMobileOpen={setMobileOpen}
+                mini={collapsed}
               />
             );
           })}
@@ -510,7 +495,8 @@ export default function SidebarNew() {
                   position: "absolute",
                   bottom: "calc(100% + 8px)",
                   left: 10,
-                  right: 10,
+                  right: collapsed ? -140 : 10,
+                  width: collapsed ? 200 : "auto",
                   background: "#0a0a0a",
                   border: "1px solid #171717",
                   borderRadius: 10,
@@ -529,7 +515,6 @@ export default function SidebarNew() {
                   label="Profile"
                   onClick={() => {
                     setUserMenuOpen(false);
-                    setMobileOpen(false);
                     navigate("/profile");
                   }}
                 />
@@ -559,7 +544,7 @@ export default function SidebarNew() {
               background: userMenuOpen || hoverUser ? "rgba(255,255,255,0.06)" : "transparent",
               transition: "background 0.2s",
               overflow: "hidden",
-              justifyContent: mini ? "center" : "flex-start",
+              justifyContent: collapsed ? "center" : "flex-start",
             }}
           >
             <div
@@ -594,7 +579,7 @@ export default function SidebarNew() {
                 }}
               />
             </div>
-            {!mini && (
+            {!collapsed && (
               <>
                 <div style={{ flex: 1, overflow: "hidden" }}>
                   <div

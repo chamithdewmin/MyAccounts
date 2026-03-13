@@ -192,7 +192,7 @@ const Customers = () => {
             placeholder="Search by name, email, or phone..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="pl-10 bg-[#0a0a0a] border-0"
+            className="pl-10 bg-[#1e293b] border-0"
           />
         </div>
 

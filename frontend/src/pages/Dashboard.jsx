@@ -429,7 +429,7 @@ export default function FinanceDashboard() {
     const { start, end } = rangeBounds;
     const prev = prevRangeBounds;
     const categoryMap = {};
-    const colors = ["#3b82f6", "#22d3ee", "#60a5fa", "#8b5cf6", "#ec4899", "#f59e0b", "#10b981"];
+    const colors = ["#0e5cff", "#22d3ee", "#60a5fa", "#8b5cf6", "#ec4899", "#f59e0b", "#10b981"];
     const isCardPayment = (pm) => {
       if (!pm) return false;
       const m = String(pm).toLowerCase().replace(/\s+/g, '_');
@@ -632,7 +632,7 @@ export default function FinanceDashboard() {
                 fontSize: 13,
                 fontWeight: 600,
                 fontFamily: "'Inter', sans-serif",
-                background: dateRange === value ? "#3b82f6" : "transparent",
+                background: dateRange === value ? "#0e5cff" : "transparent",
                 color: dateRange === value ? "#fff" : "#8b9ab0",
                 transition: "all 0.2s ease",
               }}
@@ -700,7 +700,7 @@ export default function FinanceDashboard() {
               <h2 style={{ color: "#fff", fontSize: 16, fontWeight: 700, margin: 0 }}>Analytics</h2>
               <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
                 <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                  <div style={{ width: 8, height: 8, borderRadius: "50%", background: "#3b82f6" }} />
+                  <div style={{ width: 8, height: 8, borderRadius: "50%", background: "#0e5cff" }} />
                   <span style={{ color: "#8b9ab0", fontSize: 12 }}>Income</span>
                 </div>
                 <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
@@ -717,7 +717,7 @@ export default function FinanceDashboard() {
                 <XAxis dataKey="month" axisLine={false} tickLine={false} tick={{ fill: "#8b9ab0", fontSize: 12 }} />
                 <YAxis axisLine={false} tickLine={false} tick={{ fill: "#8b9ab0", fontSize: 11 }} tickFormatter={v => `${(v / 1000).toFixed(0)}K`} />
                 <Tooltip content={<CustomTooltip currency={settings.currency || ''} />} cursor={{ fill: "rgba(255,255,255,0.03)" }} />
-                <Bar dataKey="income" radius={[6, 6, 0, 0]} fill="#3b82f6" />
+                <Bar dataKey="income" radius={[6, 6, 0, 0]} fill="#0e5cff" />
                 <Bar dataKey="outcome" radius={[6, 6, 0, 0]} fill="#22d3ee" opacity={0.7} />
               </BarChart>
             </ResponsiveContainer>
@@ -731,7 +731,7 @@ export default function FinanceDashboard() {
                 <h3 style={{ color: "#fff", fontSize: 14, fontWeight: 700, margin: 0 }}>Activity</h3>
                 <div style={{ display: "flex", gap: 12 }}>
                   <div style={{ display: "flex", alignItems: "center", gap: 5 }}>
-                    <div style={{ width: 7, height: 7, borderRadius: "50%", background: "#3b82f6" }} />
+                    <div style={{ width: 7, height: 7, borderRadius: "50%", background: "#0e5cff" }} />
                     <span style={{ color: "#8b9ab0", fontSize: 11 }}>Earning</span>
                   </div>
                   <div style={{ display: "flex", alignItems: "center", gap: 5 }}>
@@ -745,7 +745,7 @@ export default function FinanceDashboard() {
                   <XAxis dataKey="day" axisLine={false} tickLine={false} tick={{ fill: "#8b9ab0", fontSize: 11 }} />
                   <YAxis axisLine={false} tickLine={false} tick={{ fill: "#8b9ab0", fontSize: 10 }} tickFormatter={v => `${settings.currency || ''}${(v / 1000).toFixed(0)}k`} width={30} />
                   <Tooltip content={<CustomTooltip currency={settings.currency || ''} />} cursor={{ fill: "rgba(255,255,255,0.03)" }} />
-                  <Bar dataKey="earning" radius={[4, 4, 0, 0]} fill="#3b82f6" />
+                  <Bar dataKey="earning" radius={[4, 4, 0, 0]} fill="#0e5cff" />
                   <Bar dataKey="spent" radius={[4, 4, 0, 0]} fill="#22d3ee" opacity={0.7} />
                 </BarChart>
               </ResponsiveContainer>
@@ -798,8 +798,8 @@ export default function FinanceDashboard() {
                   amount: formatCurrency(bankBalance),
                   number: settings.bankDetails?.accountNumber?.replace(/(.{4})/g, '$1 ').trim() || '**** **** **** ****',
                   expiry: new Date().toLocaleDateString('en-US', { month: '2-digit', year: '2-digit' }),
-                  gradient: "linear-gradient(135deg, #2563eb 0%, #1d4ed8 50%, #3b82f6 100%)",
-                  shadow: "rgba(37,99,235,0.45)",
+                  gradient: "linear-gradient(135deg, #0e5cff 0%, #0a4acc 50%, #0839a3 100%)",
+                  shadow: "rgba(14,92,255,0.45)",
                   showMastercard: true,
                 },
                 {
@@ -874,7 +874,7 @@ export default function FinanceDashboard() {
                           padding: 0,
                           transition: "all 0.3s ease",
                           background: currentCard === i
-                            ? (c.id === 1 ? "#16a34a" : "#3b82f6")
+                            ? (c.id === 1 ? "#16a34a" : "#0e5cff")
                             : "#000000",
                         }}
                       />
@@ -926,7 +926,7 @@ export default function FinanceDashboard() {
                           type="button"
                           onClick={() => openBankModal("withdraw")}
                           style={{
-                            background: "linear-gradient(135deg, #2563eb, #1d4ed8)",
+                            background: "linear-gradient(135deg, #0e5cff, #0a4acc)",
                             color: "#fff", border: "none", borderRadius: 10,
                             padding: "9px 18px", fontSize: 13, fontWeight: 700, cursor: "pointer",
                             boxShadow: "0 4px 12px rgba(37,99,235,0.35)",
@@ -986,7 +986,7 @@ export default function FinanceDashboard() {
                   dataKey="value" 
                   strokeWidth={0}
                 >
-                  <Cell fill="#3b82f6" />
+                  <Cell fill="#0e5cff" />
                   <Cell fill="#22d3ee" opacity={0.25} />
                 </Pie>
               </PieChart>
@@ -997,7 +997,7 @@ export default function FinanceDashboard() {
             <div style={{ display: "flex", justifyContent: "space-around" }}>
               <div style={{ textAlign: "center" }}>
                 <div style={{ display: "flex", alignItems: "center", gap: 6, justifyContent: "center" }}>
-                  <div style={{ width: 8, height: 8, borderRadius: "50%", background: "#3b82f6" }} />
+                  <div style={{ width: 8, height: 8, borderRadius: "50%", background: "#0e5cff" }} />
                   <span style={{ color: "#8b9ab0", fontSize: 12 }}>Income</span>
                 </div>
                 <p style={{ color: "#fff", fontWeight: 700, fontSize: 16, margin: "4px 0 0" }}>{activityPercentages.dailyPayment || 0}%</p>
@@ -1032,7 +1032,7 @@ export default function FinanceDashboard() {
               placeholder="0"
               value={transferAmount}
               onChange={(e) => setTransferAmount(e.target.value)}
-              className="bg-[#0a0a0a] border-0"
+              className="bg-[#1e293b] border-0"
             />
             <p className="text-xs text-muted-foreground mt-1">
               {bankModalMode === "deposit"
@@ -1049,7 +1049,7 @@ export default function FinanceDashboard() {
               style={
                 bankModalMode === "deposit"
                   ? { background: "linear-gradient(135deg, #16a34a, #15803d)" }
-                  : { background: "linear-gradient(135deg, #2563eb, #1d4ed8)" }
+                  : { background: "linear-gradient(135deg, #0e5cff, #0a4acc)" }
               }
             >
               {bankModalMode === "deposit" ? "Deposit →" : "Withdraw →"}

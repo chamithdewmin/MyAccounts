@@ -4,7 +4,7 @@ import { useFinance } from "@/contexts/FinanceContext";
 import { getPrintHtml } from "@/utils/pdfPrint";
 import ReportPreviewModal from "@/components/ReportPreviewModal";
 
-const C = { bg:"#000000",bg2:"#000000",card:"#0a0a0a",border:"#000000",border2:"#000000",text:"#fff",text2:"#d1d9e6",muted:"#8b9ab0",faint:"#4a5568",green:"#22c55e",red:"#ef4444",blue:"#3b82f6",cyan:"#22d3ee",yellow:"#eab308" };
+const C = { bg:"#000000",bg2:"#000000",card:"#0a0a0a",border:"#000000",border2:"#000000",text:"#fff",text2:"#d1d9e6",muted:"#8b9ab0",faint:"#4a5568",green:"#22c55e",red:"#ef4444",blue:"#0e5cff",cyan:"#22d3ee",yellow:"#eab308" };
 
 const Svg=({d,s=18,c="#fff",sw=2})=><svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth={sw} strokeLinecap="round" strokeLinejoin="round" style={{display:"block",flexShrink:0}}><path d={d}/></svg>;
 const I={
@@ -24,7 +24,7 @@ const I={
   Refresh:    ()=><Svg d="M3 12a9 9 0 019-9 9.75 9.75 0 016.74 2.74L21 8M21 12a9 9 0 01-9 9 9.75 9.75 0 01-6.74-2.74L3 16M3 12h6m12 0h-6" />,
 };
 
-const sMap={Received:{bg:"rgba(34,197,94,0.15)",c:"#22c55e"},Paid:{bg:"rgba(59,130,246,0.15)",c:"#3b82f6"},Overdue:{bg:"rgba(239,68,68,0.15)",c:"#ef4444"},Pending:{bg:"rgba(234,179,8,0.15)",c:"#eab308"}};
+const sMap={Received:{bg:"rgba(34,197,94,0.15)",c:"#22c55e"},Paid:{bg:"rgba(59,130,246,0.15)",c:"#0e5cff"},Overdue:{bg:"rgba(239,68,68,0.15)",c:"#ef4444"},Pending:{bg:"rgba(234,179,8,0.15)",c:"#eab308"}};
 
 const Tip=({active,payload,label})=>{
   if(!active||!payload?.length)return null;

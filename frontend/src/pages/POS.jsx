@@ -303,7 +303,7 @@ const POS = () => {
           <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
             <div className="flex flex-wrap gap-3">
               <select
-                className="px-3 py-2 bg-[#0a0a0a] border-0 rounded-lg text-sm"
+                className="px-3 py-2 bg-[#1e293b] border-0 rounded-lg text-sm"
                 value={filters.period}
                 onChange={(e) => handleFilterChange('period', e.target.value)}
               >
@@ -312,7 +312,7 @@ const POS = () => {
                 <option value="all">All time</option>
               </select>
               <select
-                className="px-3 py-2 bg-[#0a0a0a] border-0 rounded-lg text-sm"
+                className="px-3 py-2 bg-[#1e293b] border-0 rounded-lg text-sm"
                 value={filters.paymentMethod}
                 onChange={(e) => handleFilterChange('paymentMethod', e.target.value)}
               >
@@ -410,7 +410,7 @@ const POS = () => {
               <div className="space-y-2">
                 <Label className="text-sm font-medium">Client</Label>
                 <select
-                  className="w-full px-3 py-2 bg-[#0a0a0a] border-0 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+                  className="w-full px-3 py-2 bg-[#1e293b] border-0 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary"
                   value={form.clientId}
                   onChange={(e) => handleChange('clientId', e.target.value)}
                 >
@@ -450,7 +450,7 @@ const POS = () => {
               <div className="space-y-2">
                 <Label className="text-sm font-medium">Payment Method</Label>
                 <select
-                  className="w-full px-3 py-2 bg-[#0a0a0a] border-0 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+                  className="w-full px-3 py-2 bg-[#1e293b] border-0 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary"
                   value={form.paymentMethod}
                   onChange={(e) => handleChange('paymentMethod', e.target.value)}
                 >
@@ -470,7 +470,7 @@ const POS = () => {
               <div className="space-y-2 md:col-span-2">
                 <Label className="text-sm font-medium">Notes</Label>
                 <textarea
-                  className="w-full px-3 py-2 bg-[#0a0a0a] border-0 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary min-h-[60px]"
+                  className="w-full px-3 py-2 bg-[#1e293b] border-0 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary min-h-[60px]"
                   placeholder="Optional notes about this payment"
                   value={form.notes}
                   onChange={(e) => handleChange('notes', e.target.value)}

@@ -11,7 +11,7 @@
     --card: 0 0% 100%;
     --card-foreground: 222 47% 11%;
 
-    --primary: 220 100% 50%; /* #0053ff blue */
+    --primary: 221 100% 53%; /* #0e5cff blue */
     --primary-foreground: 0 0% 100%;
 
     /* Slightly darker so border-secondary and bg-secondary are visible vs white */
@@ -21,7 +21,7 @@
     --muted: 214 20% 92%;
     --muted-foreground: 215 15% 35%;
 
-    --accent: 220 100% 50%; /* #0053ff blue */
+    --accent: 221 100% 53%; /* #0e5cff blue */
     --accent-foreground: 0 0% 100%;
 
     --destructive: 0 72% 51%;
@@ -30,11 +30,11 @@
     /* Visible borders for cards, inputs, dividers */
     --border: 214 20% 86%;
     --input: 214 20% 88%;
-    --ring: 220 100% 50%;
+    --ring: 221 100% 53%; /* #0e5cff */
 
     /* Sidebar active state: dark blue with blue accent */
-    --sidebar-active-bg: 220 100% 20%;
-    --sidebar-active-accent: 220 100% 50%;
+    --sidebar-active-bg: 221 55% 22%;
+    --sidebar-active-accent: 221 100% 53%; /* #0e5cff */
   }
 
   .dark {
@@ -45,7 +45,7 @@
     --card: 0 0% 4%; /* #0a0a0a for sidebar and cards */
     --card-foreground: 210 40% 96%;
 
-    --primary: 220 100% 50%; /* #0053ff blue */
+    --primary: 221 100% 53%; /* #0e5cff blue */
     --primary-foreground: 0 0% 100%;
 
     --secondary: 210 25% 18%;
@@ -54,21 +54,21 @@
     --muted: 210 25% 18%;
     --muted-foreground: 210 30% 80%;
 
-    --accent: 220 100% 50%; /* #0053ff blue */
+    --accent: 221 100% 53%; /* #0e5cff blue */
     --accent-foreground: 0 0% 100%;
 
     --destructive: 0 72% 51%;
     --destructive-foreground: 0 0% 100%;
 
     --border: 216 19% 15%;
-    --input: 0 0% 4%; /* #0a0a0a - dark black for inputs */
+    --input: 217 33% 17%; /* #1e293b - dark blue-gray for inputs */
     
-    --secondary: 0 0% 4%; /* #0a0a0a - dark black */
+    --secondary: 217 33% 17%; /* #1e293b - dark blue-gray */
     --secondary-foreground: 210 30% 80%;
-    --ring: 220 100% 50%;
+    --ring: 221 100% 53%; /* #0e5cff */
 
-    --sidebar-active-bg: 220 100% 20%;
-    --sidebar-active-accent: 220 100% 50%;
+    --sidebar-active-bg: 221 55% 22%;
+    --sidebar-active-accent: 221 100% 53%; /* #0e5cff */
 
     /* Table color scheme */
     --table-header-bg: #000000;

@@ -226,7 +226,7 @@ const Reports = () => {
                 />
                 <Line type="monotone" dataKey="income" stroke="#22c55e" strokeWidth={2} name="Income" />
                 <Line type="monotone" dataKey="expenses" stroke="#ef4444" strokeWidth={2} name="Expenses" />
-                <Line type="monotone" dataKey="profit" stroke="#3b82f6" strokeWidth={2} name="Profit" />
+                <Line type="monotone" dataKey="profit" stroke="#0e5cff" strokeWidth={2} name="Profit" />
               </LineChart>
             </ResponsiveContainer>
           </motion.div>

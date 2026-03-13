@@ -28,7 +28,7 @@
     --destructive-foreground: 0 0% 100%;
 
     /* Visible borders for cards, inputs, dividers */
-    --border: 214 20% 86%;
+    --border: 0 0% 9%; /* #171717 */
     --input: 214 20% 88%;
     --ring: 221 100% 53%; /* #0e5cff */
 
@@ -60,7 +60,7 @@
     --destructive: 0 72% 51%;
     --destructive-foreground: 0 0% 100%;
 
-    --border: 216 19% 15%;
+    --border: 0 0% 9%; /* #171717 */
     --input: 217 33% 17%; /* #1e293b - dark blue-gray for inputs */
     
     --secondary: 217 33% 17%; /* #1e293b - dark blue-gray */

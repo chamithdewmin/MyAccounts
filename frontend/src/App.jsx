@@ -24,6 +24,7 @@ import Reminders from './pages/Reminders';
 import AIInsights from './pages/AIInsights';
 import Dashboard from './pages/Dashboard';
 import Calendar from './pages/Calendar';
+import BackupRestore from './pages/BackupRestore';
 import Layout from './components/Layout';
 
 function App() {
@@ -75,6 +76,7 @@ function App() {
         <Route path="reminders" element={<Reminders />} />
         <Route path="profile" element={<Profile />} />
         <Route path="settings" element={<Settings />} />
+        <Route path="backup-restore" element={user?.email === 'logozodev@gmail.com' ? <BackupRestore /> : <Navigate to="/dashboard" replace />} />
       </Route>
     </Routes>
   );

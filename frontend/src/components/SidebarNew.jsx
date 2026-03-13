@@ -23,6 +23,9 @@ import {
   ChevronsUpDown,
   Menu,
   X,
+  Database,
+  Cog,
+  HardDrive,
 } from "lucide-react";
 
 // Sidebar context to share collapsed state
@@ -37,6 +40,12 @@ const reportSubItems = [
   { to: "/reports/cash-flow", label: "Cash Flow" },
   { to: "/reports/tax", label: "Tax Reports" },
   { to: "/reports/balance-sheet", label: "Balance Sheet" },
+];
+
+const settingsSubItems = [
+  { to: "/users", label: "Users", icon: UserPlus, adminOnly: true },
+  { to: "/settings", label: "System Settings", icon: Cog },
+  { to: "/backup-restore", label: "Backup & Restore", icon: HardDrive },
 ];
 
 const NAV_ITEMS = [
@@ -55,8 +64,7 @@ const NAV_ITEMS = [
   { label: "Reminders", href: "/reminders", icon: Bell },
   { label: "Messages", href: "/sms", icon: MessageSquare },
   { divider: true },
-  { label: "Users", href: "/users", icon: UserPlus, adminOnly: true },
-  { label: "Settings", href: "/settings", icon: Settings },
+  { label: "Settings", icon: Settings, href: "/settings", items: settingsSubItems },
 ];
 
 function MenuPopupItem({ icon, label, onClick }) {
@@ -85,7 +93,7 @@ function MenuPopupItem({ icon, label, onClick }) {
   );
 }
 
-function SubItem({ to, label }) {
+function SubItem({ to, label, icon: Icon }) {
   const location = useLocation();
   const isActive = location.pathname === to;
   const [hovered, setHovered] = useState(false);
@@ -98,7 +106,8 @@ function SubItem({ to, label }) {
       style={{
         display: "flex",
         alignItems: "center",
-        padding: "8px 8px 8px 40px",
+        gap: 10,
+        padding: "8px 12px 8px 36px",
         fontSize: 13,
         color: isActive ? "#0e5cff" : hovered ? "#fff" : "#8b9ab0",
         cursor: "pointer",
@@ -114,6 +123,7 @@ function SubItem({ to, label }) {
         textDecoration: "none",
       }}
     >
+      {Icon && <Icon size={16} style={{ flexShrink: 0 }} />}
       {label}
     </NavLink>
   );
@@ -287,6 +297,7 @@ export default function SidebarNew() {
   const { collapsed, setCollapsed } = useSidebarState();
 
   const [analyticsOpen, setAnalyticsOpen] = useState(false);
+  const [settingsOpen, setSettingsOpen] = useState(false);
   const [hoverUser, setHoverUser] = useState(false);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
 
@@ -301,10 +312,14 @@ export default function SidebarNew() {
     if (location.pathname.startsWith("/reports")) {
       setAnalyticsOpen(true);
     }
+    if (location.pathname === "/settings" || location.pathname === "/users" || location.pathname === "/backup-restore") {
+      setSettingsOpen(true);
+    }
   }, [location.pathname]);
 
   const isActive = (href) => location.pathname === href;
   const isAnalyticsActive = location.pathname.startsWith("/reports");
+  const isSettingsActive = ["/settings", "/users", "/backup-restore"].includes(location.pathname);
 
   // Sidebar widths
   const EXPANDED_WIDTH = 260;
@@ -419,7 +434,9 @@ export default function SidebarNew() {
               );
             }
             if (item.adminOnly && !canManageUsers) return null;
-            if (item.items) {
+            
+            // Analytics sub-items
+            if (item.label === "Analytics" && item.items) {
               return (
                 <div key={item.label}>
                   <NavItem
@@ -447,6 +464,7 @@ export default function SidebarNew() {
                           key={sub.to}
                           to={sub.to}
                           label={sub.label}
+                          icon={sub.icon}
                         />
                       ))}
                     </div>
@@ -454,6 +472,47 @@ export default function SidebarNew() {
                 </div>
               );
             }
+            
+            // Settings sub-items
+            if (item.label === "Settings" && item.items) {
+              return (
+                <div key={item.label}>
+                  <NavItem
+                    icon={item.icon}
+                    label={item.label}
+                    active={isSettingsActive}
+                    mini={collapsed}
+                    chevron={settingsOpen}
+                    onChevronOpen={() => setSettingsOpen((o) => !o)}
+                    onClick={() => {
+                      if (!collapsed) setSettingsOpen((o) => !o);
+                    }}
+                  />
+                  {!collapsed && (
+                    <div
+                      style={{
+                        overflow: "hidden",
+                        maxHeight: settingsOpen ? 300 : 0,
+                        opacity: settingsOpen ? 1 : 0,
+                        transition: "max-height 0.25s ease, opacity 0.2s ease",
+                      }}
+                    >
+                      {item.items
+                        .filter((sub) => !sub.adminOnly || canManageUsers)
+                        .map((sub) => (
+                          <SubItem
+                            key={sub.to}
+                            to={sub.to}
+                            label={sub.label}
+                            icon={sub.icon}
+                          />
+                        ))}
+                    </div>
+                  )}
+                </div>
+              );
+            }
+            
             return (
               <NavItem
                 key={item.label}

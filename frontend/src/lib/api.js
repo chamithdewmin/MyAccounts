@@ -125,6 +125,14 @@ export const api = {
     getSuggestions: () => request('/ai/suggestions', { method: 'POST', body: JSON.stringify({}) }),
     ask: (question) => request('/ai/ask', { method: 'POST', body: JSON.stringify({ question: question.trim() }) }),
   },
+  backup: {
+    getInfo: () => request('/backup/info'),
+    getHistory: () => request('/backup/history'),
+    create: () => request('/backup/create', { method: 'POST' }),
+    download: (id) => `${API_BASE}/backup/download/${id}`,
+    restore: (backupData) => request('/backup/restore', { method: 'POST', body: JSON.stringify({ backupData }) }),
+    delete: (id) => request(`/backup/${id}`, { method: 'DELETE' }),
+  },
 };
 
 export const useApi = () => !!import.meta.env.VITE_API_URL || window.location.origin.includes('myaccounts.logozodev.com');

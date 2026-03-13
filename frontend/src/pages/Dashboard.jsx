@@ -116,7 +116,7 @@ const CashIcon = () => (
 const CustomTooltip = ({ active, payload, label, currency = "" }) => {
   if (active && payload && payload.length) {
     return (
-      <div style={{ background: "#000000", border: "1px solid #000000", borderRadius: 10, padding: "10px 14px" }}>
+      <div style={{ background: "#000000", border: "1px solid #101010", borderRadius: 10, padding: "10px 14px" }}>
         <p style={{ color: "#fff", fontWeight: 700, marginBottom: 4, fontSize: 13 }}>{label}</p>
         {payload.map((p, i) => (
           <p key={i} style={{ color: p.color, fontSize: 12, margin: "2px 0" }}>
@@ -149,7 +149,7 @@ const StatCard = ({ icon, iconBg, label, value, badge, badgeColor }) => {
       alignItems: "center",
       gap: 16,
       flex: 1,
-      border: "1px solid #000000",
+      border: "1px solid #101010",
     }}>
       <div style={{
         width: 44, height: 44, borderRadius: 12,
@@ -586,7 +586,7 @@ export default function FinanceDashboard() {
     card: {
       background: "#0a0a0a",
       borderRadius: 20,
-      border: "1px solid #000000",
+      border: "1px solid #101010",
       padding: 20,
     },
     label: { color: "#8b9ab0", fontSize: 12, fontWeight: 500, margin: 0 },
@@ -886,7 +886,7 @@ export default function FinanceDashboard() {
                     background: "#0a0a0a",
                     borderRadius: 14,
                     padding: "14px 18px",
-                    border: "1px solid #000000",
+                    border: "1px solid #101010",
                     display: "flex",
                     alignItems: "center",
                     justifyContent: "space-between",

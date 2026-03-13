@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useState } from 'react';
 import { Helmet } from 'react-helmet';
 import { motion } from 'framer-motion';
 import { Download, RefreshCw } from 'lucide-react';
@@ -20,6 +20,7 @@ import { useToast } from '@/components/ui/use-toast';
 import ExportReportDialog from '@/components/ExportReportDialog';
 import ReportPreviewModal from '@/components/ReportPreviewModal';
 import { getPrintHtml } from '@/utils/pdfPrint';
+import MonthYearFilter, { filterDataByMonth, getMonthName } from '@/components/MonthYearFilter';
 
 const filterByRange = (items, range, dateKey = 'date') => {
   if (!range) return items;
@@ -36,24 +37,34 @@ const ReportIncome = () => {
   const { toast } = useToast();
   const [exportOpen, setExportOpen] = React.useState(false);
   const [reportPreview, setReportPreview] = React.useState({ open: false, html: '', filename: '', title: '' });
+  
+  // Month/Year filter state
+  const now = new Date();
+  const [selectedMonth, setSelectedMonth] = useState(now.getMonth());
+  const [selectedYear, setSelectedYear] = useState(now.getFullYear());
+
+  // Filter data by selected month/year
+  const filteredIncomes = useMemo(() => filterDataByMonth(incomes, selectedMonth, selectedYear), [incomes, selectedMonth, selectedYear]);
 
   const byClient = useMemo(() => {
     const map = {};
-    incomes.forEach((i) => {
+    filteredIncomes.forEach((i) => {
       const name = i.clientName || 'Unknown';
       map[name] = (map[name] || 0) + i.amount;
     });
     return Object.entries(map).map(([name, amount]) => ({ name, amount })).sort((a, b) => b.amount - a.amount);
-  }, [incomes]);
+  }, [filteredIncomes]);
 
   const byService = useMemo(() => {
     const map = {};
-    incomes.forEach((i) => {
+    filteredIncomes.forEach((i) => {
       const name = i.serviceType || 'Other';
       map[name] = (map[name] || 0) + i.amount;
     });
     return Object.entries(map).map(([name, amount]) => ({ name, amount })).sort((a, b) => b.amount - a.amount);
-  }, [incomes]);
+  }, [filteredIncomes]);
+  
+  const totalIncome = useMemo(() => filteredIncomes.reduce((s, i) => s + (i.amount || 0), 0), [filteredIncomes]);
 
   const handleExport = (range) => {
     const filtered = filterByRange(incomes, range);
@@ -74,22 +85,23 @@ const ReportIncome = () => {
     toast({ title: 'Export successful', description: 'Income report exported to CSV' });
   };
 
-  const handlePDF = (range) => {
-    const filtered = filterByRange(incomes, range);
-    const total = filtered.reduce((s, i) => s + i.amount, 0);
-    const byClientData = filtered.reduce((acc, i) => {
-      const n = i.clientName || 'Unknown';
-      acc[n] = (acc[n] || 0) + i.amount;
-      return acc;
-    }, {});
-    const byServiceData = filtered.reduce((acc, i) => {
-      const n = i.serviceType || 'Other';
-      acc[n] = (acc[n] || 0) + i.amount;
-      return acc;
-    }, {});
+  const handlePDF = () => {
+    const monthName = getMonthName(selectedMonth);
+    const byClientData = byClient.reduce((acc, i) => { acc[i.name] = i.amount; return acc; }, {});
+    const byServiceData = byService.reduce((acc, i) => { acc[i.name] = i.amount; return acc; }, {});
 
-    let table = '<h1>Income Report</h1><p>Period: ' + range.start.toLocaleDateString() + ' - ' + range.end.toLocaleDateString() + '</p>';
-    table += '<p><strong>Total: ' + settings.currency + ' ' + total.toLocaleString() + '</strong></p>';
+    let table = '<h1>Income Report</h1><p>Period: ' + monthName + ' ' + selectedYear + '</p>';
+    table += '<p><strong>Total: ' + settings.currency + ' ' + totalIncome.toLocaleString() + '</strong></p>';
+    
+    // Detail table
+    if (filteredIncomes.length > 0) {
+      table += '<h3>Income Details</h3><table style="width:100%; border-collapse: collapse;"><tr style="background:#f5f5f5;"><th style="border:1px solid #ccc; padding:8px;">Date</th><th style="border:1px solid #ccc; padding:8px;">Client</th><th style="border:1px solid #ccc; padding:8px;">Service</th><th style="border:1px solid #ccc; padding:8px; text-align:right;">Amount</th></tr>';
+      filteredIncomes.forEach((inc) => {
+        table += `<tr><td style="border:1px solid #ccc; padding:8px;">${new Date(inc.date).toLocaleDateString()}</td><td style="border:1px solid #ccc; padding:8px;">${inc.clientName || '-'}</td><td style="border:1px solid #ccc; padding:8px;">${inc.serviceType || '-'}</td><td style="border:1px solid #ccc; padding:8px; text-align:right;">${settings.currency} ${(inc.amount || 0).toLocaleString()}</td></tr>`;
+      });
+      table += '</table>';
+    }
+    
     table += '<h3>By Client</h3><table style="width:100%; border-collapse: collapse;"><tr><th style="border:1px solid #ccc; padding:8px;">Client</th><th style="border:1px solid #ccc; padding:8px;">Amount</th></tr>';
     Object.entries(byClientData).forEach(([k, v]) => {
       table += `<tr><td style="border:1px solid #ccc; padding:8px;">${k}</td><td style="border:1px solid #ccc; padding:8px;">${settings.currency} ${v.toLocaleString()}</td></tr>`;
@@ -101,7 +113,7 @@ const ReportIncome = () => {
     table += '</table>';
 
     const fullHtml = getPrintHtml(table, { logo: settings?.logo, businessName: settings?.businessName });
-    setReportPreview({ open: true, html: fullHtml, filename: `income-report-${range.start.toISOString().slice(0, 10)}.pdf`, title: 'Income Report' });
+    setReportPreview({ open: true, html: fullHtml, filename: `income-report-${monthName}-${selectedYear}.pdf`, title: 'Income Report' });
   };
 
   return (
@@ -112,72 +124,32 @@ const ReportIncome = () => {
       </Helmet>
 
       <div className="space-y-6" style={{ fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, sans-serif" }}>
-        <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-3xl font-bold">Income Reports</h1>
+          <p className="text-muted-foreground">Income by client, Income by service</p>
+        </div>
+        
+        {/* Filter */}
+        <div style={{ background: "#0a0a0a", borderRadius: 12, border: "1px solid #171717", padding: "16px 20px" }}>
+          <MonthYearFilter
+            selectedMonth={selectedMonth}
+            selectedYear={selectedYear}
+            onMonthChange={setSelectedMonth}
+            onYearChange={setSelectedYear}
+            onDownload={handlePDF}
+            autoDownload={true}
+          />
+        </div>
+        
+        {/* Summary */}
+        <div style={{ background: "#0a0a0a", borderRadius: 12, border: "1px solid #171717", padding: "20px", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
           <div>
-            <h1 className="text-3xl font-bold">Income Reports</h1>
-            <p className="text-muted-foreground">Income by client, Income by service</p>
+            <p style={{ color: "#8b9ab0", fontSize: 12, fontWeight: 600, textTransform: "uppercase", margin: 0 }}>Total Income</p>
+            <p style={{ color: "#22c55e", fontSize: 28, fontWeight: 900, margin: "8px 0 0", fontFamily: "monospace" }}>{settings.currency} {totalIncome.toLocaleString()}</p>
           </div>
-          <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
-            <button
-              onClick={() => { loadData(); toast({ title: 'Refreshed', description: 'Data refreshed' }); }}
-              style={{
-                display: "flex",
-                alignItems: "center",
-                gap: 8,
-                background: "#0a0a0a",
-                border: "1px solid #171717",
-                borderRadius: 8,
-                padding: "9px 16px",
-                color: "#fff",
-                fontSize: 13,
-                fontWeight: 600,
-                cursor: "pointer",
-                fontFamily: "'Inter', sans-serif",
-              }}
-            >
-              <RefreshCw className="w-4 h-4" />
-              <span>Refresh</span>
-            </button>
-            <button
-              onClick={() => setExportOpen(true)}
-              style={{
-                display: "flex",
-                alignItems: "center",
-                gap: 8,
-                background: "#0a0a0a",
-                border: "1px solid #171717",
-                borderRadius: 8,
-                padding: "9px 16px",
-                color: "#fff",
-                fontSize: 13,
-                fontWeight: 600,
-                cursor: "pointer",
-                fontFamily: "'Inter', sans-serif",
-              }}
-            >
-              <Download className="w-4 h-4" />
-              <span>Export CSV</span>
-            </button>
-            <button
-              onClick={() => setExportOpen(true)}
-              style={{
-                display: "flex",
-                alignItems: "center",
-                gap: 8,
-                background: "#0a0a0a",
-                border: "1px solid #171717",
-                borderRadius: 8,
-                padding: "9px 16px",
-                color: "#fff",
-                fontSize: 13,
-                fontWeight: 600,
-                cursor: "pointer",
-                fontFamily: "'Inter', sans-serif",
-              }}
-            >
-              <Download className="w-4 h-4" />
-              <span>Download PDF</span>
-            </button>
+          <div style={{ textAlign: "right" }}>
+            <p style={{ color: "#8b9ab0", fontSize: 12, margin: 0 }}>{filteredIncomes.length} transactions</p>
+            <p style={{ color: "#0e5cff", fontSize: 14, fontWeight: 600, margin: "4px 0 0" }}>{getMonthName(selectedMonth)} {selectedYear}</p>
           </div>
         </div>
 

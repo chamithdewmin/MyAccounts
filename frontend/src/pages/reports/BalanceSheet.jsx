@@ -3,6 +3,7 @@ import { BarChart, Bar, AreaChart, Area, PieChart, Pie, Cell, XAxis, YAxis, Cart
 import { useFinance } from "@/contexts/FinanceContext";
 import { getPrintHtml } from "@/utils/pdfPrint";
 import ReportPreviewModal from "@/components/ReportPreviewModal";
+import MonthYearFilter, { getMonthName } from "@/components/MonthYearFilter";
 
 const C = { bg:"#000000",bg2:"#000000",card:"#0a0a0a",border:"#171717",border2:"#171717",text:"#fff",text2:"#d1d9e6",muted:"#8b9ab0",faint:"#4a5568",green:"#22c55e",red:"#ef4444",blue:"#0e5cff",cyan:"#22d3ee",yellow:"#eab308",purple:"#a78bfa",orange:"#f97316" };
 
@@ -64,6 +65,11 @@ export default function BalanceSheet(){
   const { assets, loans, invoices, totals, settings } = useFinance();
   const [view,setView]=useState("overview");
   const [reportPreview, setReportPreview] = useState({ open: false, html: "", filename: "" });
+  
+  // Month/Year filter state
+  const now = new Date();
+  const [selectedMonth, setSelectedMonth] = useState(now.getMonth());
+  const [selectedYear, setSelectedYear] = useState(now.getFullYear());
 
   // Calculate monthly balance sheet data
   const monthly = useMemo(() => {
@@ -144,8 +150,9 @@ export default function BalanceSheet(){
 
   const openReportPreview = () => {
     const cur = settings?.currency || "LKR";
+    const monthName = getMonthName(selectedMonth);
     let body = `<h2 style="margin:0 0 16px; font-size:18px; border-bottom:2px solid #111; padding-bottom:8px;">Balance Sheet Report</h2>`;
-    body += `<p style="color:#666; font-size:12px; margin:0 0 20px;">${new Date().toLocaleDateString("en-US", { dateStyle: "long" })}</p>`;
+    body += `<p style="color:#666; font-size:12px; margin:0 0 20px;">As of ${monthName} ${selectedYear}</p>`;
     body += `<table style="width:100%; border-collapse:collapse; margin-bottom:24px;"><tr style="background:#f5f5f5;"><th style="text-align:left; padding:10px 12px; border:1px solid #ddd;">Metric</th><th style="text-align:right; padding:10px 12px; border:1px solid #ddd;">Value</th></tr>`;
     body += `<tr><td style="padding:10px 12px; border:1px solid #ddd;">Total Assets</td><td style="text-align:right; padding:10px 12px; border:1px solid #ddd;">${cur} ${totalAssets.toLocaleString()}</td></tr>`;
     body += `<tr><td style="padding:10px 12px; border:1px solid #ddd;">Total Liabilities</td><td style="text-align:right; padding:10px 12px; border:1px solid #ddd;">${cur} ${totalLiab.toLocaleString()}</td></tr>`;
@@ -159,7 +166,7 @@ export default function BalanceSheet(){
     liabItems.forEach((l) => { body += `<tr><td style="padding:8px 12px; border:1px solid #ddd;">${l.name}</td><td style="text-align:right; padding:8px 12px; border:1px solid #ddd;">${cur} ${l.value.toLocaleString()}</td></tr>`; });
     body += `</table>`;
     const fullHtml = getPrintHtml(body, { logo: settings?.logo, businessName: settings?.businessName });
-    const filename = `balance-sheet-report-${new Date().toISOString().slice(0, 10)}.pdf`;
+    const filename = `balance-sheet-report-${monthName}-${selectedYear}.pdf`;
     setReportPreview({ open: true, html: fullHtml, filename });
   };
 
@@ -169,13 +176,16 @@ export default function BalanceSheet(){
 
       <div style={{padding:"24px 18px",display:"flex",flexDirection:"column",gap:18,animation:"fi .3s ease"}}>
 
-        {/* TOOLBAR */}
-        <div style={{display:"flex",justifyContent:"flex-end",alignItems:"center"}}>
-          <div style={{display:"flex",gap:10,alignItems:"center"}}>
-            <button onClick={()=>window.location.reload()} style={{display:"flex",alignItems:"center",gap:8,background:"#0a0a0a",border:"1px solid #171717",borderRadius:8,padding:"9px 16px",color:"#fff",fontSize:13,fontWeight:600,cursor:"pointer",fontFamily:"'Inter', sans-serif"}}><I.Refresh/><span>Refresh</span></button>
-            <button onClick={()=>{}} style={{display:"flex",alignItems:"center",gap:8,background:"#0a0a0a",border:"1px solid #171717",borderRadius:8,padding:"9px 16px",color:"#fff",fontSize:13,fontWeight:600,cursor:"pointer",fontFamily:"'Inter', sans-serif"}}><I.Download/><span>Export CSV</span></button>
-            <button onClick={openReportPreview} style={{display:"flex",alignItems:"center",gap:8,background:"#0a0a0a",border:"1px solid #171717",borderRadius:8,padding:"9px 16px",color:"#fff",fontSize:13,fontWeight:600,cursor:"pointer",fontFamily:"'Inter', sans-serif"}}><I.Download/><span>Download PDF</span></button>
-          </div>
+        {/* FILTER */}
+        <div style={{background:C.card,borderRadius:12,border:`1px solid ${C.border}`,padding:"16px 20px"}}>
+          <MonthYearFilter
+            selectedMonth={selectedMonth}
+            selectedYear={selectedYear}
+            onMonthChange={setSelectedMonth}
+            onYearChange={setSelectedYear}
+            onDownload={openReportPreview}
+            autoDownload={true}
+          />
         </div>
 
         {/* STATS */}

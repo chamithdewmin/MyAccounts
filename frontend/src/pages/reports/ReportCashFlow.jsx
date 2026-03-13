@@ -3,6 +3,7 @@ import { AreaChart, Area, BarChart, Bar, LineChart, Line, XAxis, YAxis, Cartesia
 import { useFinance } from "@/contexts/FinanceContext";
 import { getPrintHtml } from "@/utils/pdfPrint";
 import ReportPreviewModal from "@/components/ReportPreviewModal";
+import MonthYearFilter, { filterDataByMonth, getMonthName } from "@/components/MonthYearFilter";
 
 const C = { bg:"#000000",bg2:"#000000",card:"#0a0a0a",border:"#171717",border2:"#171717",text:"#fff",text2:"#d1d9e6",muted:"#8b9ab0",faint:"#4a5568",green:"#22c55e",red:"#ef4444",blue:"#0e5cff",cyan:"#22d3ee",yellow:"#eab308" };
 
@@ -62,6 +63,15 @@ export default function CashFlowReport(){
   const [form,setForm]=useState({source:"",category:"",amount:"",status:"Received"});
   const [delId,setDelId]=useState(null);
   const [reportPreview, setReportPreview] = useState({ open: false, html: "", filename: "" });
+  
+  // Month/Year filter state
+  const now = new Date();
+  const [selectedMonth, setSelectedMonth] = useState(now.getMonth());
+  const [selectedYear, setSelectedYear] = useState(now.getFullYear());
+
+  // Filter data by selected month/year
+  const filteredIncomes = useMemo(() => filterDataByMonth(incomes, selectedMonth, selectedYear), [incomes, selectedMonth, selectedYear]);
+  const filteredExpenses = useMemo(() => filterDataByMonth(expenses, selectedMonth, selectedYear), [expenses, selectedMonth, selectedYear]);
 
   // Calculate cash flow data (last 14 days)
   const cfData = useMemo(() => {
@@ -95,10 +105,10 @@ export default function CashFlowReport(){
     return data;
   }, [incomes, expenses, totals.cashInHand]);
 
-  // Build transactions list from database
+  // Build transactions list from filtered database
   const tx = useMemo(() => {
     const allTx = [];
-    incomes.forEach(income => {
+    filteredIncomes.forEach(income => {
       const date = new Date(income.date);
       allTx.push({
         id: income.id,
@@ -111,7 +121,7 @@ export default function CashFlowReport(){
         sortDate: date
       });
     });
-    expenses.forEach(expense => {
+    filteredExpenses.forEach(expense => {
       const date = new Date(expense.date);
       allTx.push({
         id: expense.id,
@@ -124,7 +134,11 @@ export default function CashFlowReport(){
         sortDate: date
       });
     });
-    invoices.filter(inv => inv.status !== 'paid').forEach(invoice => {
+    // Filter invoices by month/year
+    invoices.filter(inv => {
+      const invDate = new Date(inv.dueDate || inv.createdAt);
+      return invDate.getMonth() === selectedMonth && invDate.getFullYear() === selectedYear && inv.status !== 'paid';
+    }).forEach(invoice => {
       const date = new Date(invoice.dueDate || invoice.createdAt);
       allTx.push({
         id: invoice.id || invoice.invoiceNumber,
@@ -138,7 +152,7 @@ export default function CashFlowReport(){
       });
     });
     return allTx.sort((a, b) => b.sortDate - a.sortDate);
-  }, [incomes, expenses, invoices]);
+  }, [filteredIncomes, filteredExpenses, invoices, selectedMonth, selectedYear]);
 
   const totalIn = useMemo(() => tx.filter(t => t.type === "in").reduce((s, t) => s + t.amount, 0), [tx]);
   const totalOut = useMemo(() => Math.abs(tx.filter(t => t.type === "out").reduce((s, t) => s + t.amount, 0)), [tx]);
@@ -170,20 +184,39 @@ export default function CashFlowReport(){
 
   const openReportPreview = () => {
     const cur = settings?.currency || "LKR";
+    const monthName = getMonthName(selectedMonth);
     let body = `<h2 style="margin:0 0 16px; font-size:18px; border-bottom:2px solid #111; padding-bottom:8px;">Cash Flow Report</h2>`;
-    body += `<p style="color:#666; font-size:12px; margin:0 0 20px;">${new Date().toLocaleDateString("en-US", { dateStyle: "long" })}</p>`;
+    body += `<p style="color:#666; font-size:12px; margin:0 0 20px;">${monthName} ${selectedYear}</p>`;
     body += `<table style="width:100%; border-collapse:collapse; margin-bottom:24px;"><tr style="background:#f5f5f5;"><th style="text-align:left; padding:10px 12px; border:1px solid #ddd;">Metric</th><th style="text-align:right; padding:10px 12px; border:1px solid #ddd;">Value</th></tr>`;
     body += `<tr><td style="padding:10px 12px; border:1px solid #ddd;">Total Money In</td><td style="text-align:right; padding:10px 12px; border:1px solid #ddd;">${cur} ${totalIn.toLocaleString()}</td></tr>`;
     body += `<tr><td style="padding:10px 12px; border:1px solid #ddd;">Total Money Out</td><td style="text-align:right; padding:10px 12px; border:1px solid #ddd;">${cur} ${totalOut.toLocaleString()}</td></tr>`;
     body += `<tr><td style="padding:10px 12px; border:1px solid #ddd;">Net Cash Flow</td><td style="text-align:right; padding:10px 12px; border:1px solid #ddd;">${cur} ${net.toLocaleString()}</td></tr>`;
     body += `<tr><td style="padding:10px 12px; border:1px solid #ddd;">Current Balance</td><td style="text-align:right; padding:10px 12px; border:1px solid #ddd;">${cur} ${(totals.cashInHand || 0).toLocaleString()}</td></tr></table>`;
+    
+    // Income details
+    if (filteredIncomes.length > 0) {
+      body += `<h3 style="margin:20px 0 12px; font-size:14px;">Money In - ${monthName} ${selectedYear}</h3><table style="width:100%; border-collapse:collapse;"><tr style="background:#f5f5f5;"><th style="border:1px solid #ddd; padding:8px;">Date</th><th style="border:1px solid #ddd; padding:8px;">Source</th><th style="border:1px solid #ddd; padding:8px;">Category</th><th style="border:1px solid #ddd; padding:8px; text-align:right;">Amount</th></tr>`;
+      filteredIncomes.forEach((inc) => {
+        body += `<tr><td style="border:1px solid #ddd; padding:8px;">${new Date(inc.date).toLocaleDateString()}</td><td style="border:1px solid #ddd; padding:8px;">${inc.clientName || '-'}</td><td style="border:1px solid #ddd; padding:8px;">${inc.serviceType || '-'}</td><td style="border:1px solid #ddd; padding:8px; text-align:right;">${cur} ${(inc.amount || 0).toLocaleString()}</td></tr>`;
+      });
+      body += `</table>`;
+    }
+    
+    // Expense details
+    if (filteredExpenses.length > 0) {
+      body += `<h3 style="margin:20px 0 12px; font-size:14px;">Money Out - ${monthName} ${selectedYear}</h3><table style="width:100%; border-collapse:collapse;"><tr style="background:#f5f5f5;"><th style="border:1px solid #ddd; padding:8px;">Date</th><th style="border:1px solid #ddd; padding:8px;">Category</th><th style="border:1px solid #ddd; padding:8px;">Description</th><th style="border:1px solid #ddd; padding:8px; text-align:right;">Amount</th></tr>`;
+      filteredExpenses.forEach((exp) => {
+        body += `<tr><td style="border:1px solid #ddd; padding:8px;">${new Date(exp.date).toLocaleDateString()}</td><td style="border:1px solid #ddd; padding:8px;">${exp.category || '-'}</td><td style="border:1px solid #ddd; padding:8px;">${exp.description || '-'}</td><td style="border:1px solid #ddd; padding:8px; text-align:right;">${cur} ${(exp.amount || 0).toLocaleString()}</td></tr>`;
+      });
+      body += `</table>`;
+    }
     body += `<h3 style="margin:0 0 12px; font-size:14px;">Recent Transactions</h3><table style="width:100%; border-collapse:collapse;"><tr style="background:#f5f5f5;"><th style="text-align:left; padding:8px 12px; border:1px solid #ddd;">Date</th><th style="text-align:left; padding:8px 12px; border:1px solid #ddd;">Source</th><th style="text-align:right; padding:8px 12px; border:1px solid #ddd;">Amount</th><th style="text-align:left; padding:8px 12px; border:1px solid #ddd;">Status</th></tr>`;
     filtered.slice(0, 20).forEach((t) => {
       body += `<tr><td style="padding:8px 12px; border:1px solid #ddd;">${t.date}</td><td style="padding:8px 12px; border:1px solid #ddd;">${t.source}</td><td style="text-align:right; padding:8px 12px; border:1px solid #ddd;">${cur} ${Math.abs(t.amount).toLocaleString()}</td><td style="padding:8px 12px; border:1px solid #ddd;">${t.status}</td></tr>`;
     });
     body += `</table>`;
     const fullHtml = getPrintHtml(body, { logo: settings?.logo, businessName: settings?.businessName });
-    const filename = `cash-flow-report-${new Date().toISOString().slice(0, 10)}.pdf`;
+    const filename = `cash-flow-report-${monthName}-${selectedYear}.pdf`;
     setReportPreview({ open: true, html: fullHtml, filename });
   };
 
@@ -193,18 +226,21 @@ export default function CashFlowReport(){
 
       <div style={{padding:"24px 18px",display:"flex",flexDirection:"column",gap:18,animation:"fi .3s ease"}}>
 
-        {/* TOOLBAR */}
-        <div style={{display:"flex",justifyContent:"flex-end",alignItems:"center",gap:10}}>
-          <div style={{display:"flex",gap:10,alignItems:"center"}}>
-            <button onClick={()=>window.location.reload()} style={{display:"flex",alignItems:"center",gap:8,background:"#0a0a0a",border:"1px solid #171717",borderRadius:8,padding:"9px 16px",color:"#fff",fontSize:13,fontWeight:600,cursor:"pointer",fontFamily:"'Inter', sans-serif"}}><I.Refresh/><span>Refresh</span></button>
-            <button onClick={()=>{}} style={{display:"flex",alignItems:"center",gap:8,background:"#0a0a0a",border:"1px solid #171717",borderRadius:8,padding:"9px 16px",color:"#fff",fontSize:13,fontWeight:600,cursor:"pointer",fontFamily:"'Inter', sans-serif"}}><I.Download/><span>Export CSV</span></button>
-            <button onClick={openReportPreview} style={{display:"flex",alignItems:"center",gap:8,background:"#0a0a0a",border:"1px solid #171717",borderRadius:8,padding:"9px 16px",color:"#fff",fontSize:13,fontWeight:600,cursor:"pointer",fontFamily:"'Inter', sans-serif"}}><I.Download/><span>Download PDF</span></button>
-          </div>
+        {/* FILTER */}
+        <div style={{background:C.card,borderRadius:12,border:`1px solid ${C.border}`,padding:"16px 20px"}}>
+          <MonthYearFilter
+            selectedMonth={selectedMonth}
+            selectedYear={selectedYear}
+            onMonthChange={setSelectedMonth}
+            onYearChange={setSelectedYear}
+            onDownload={openReportPreview}
+            autoDownload={true}
+          />
         </div>
 
         {/* STATS */}
         <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:14}}>
-          <Stat label="Total Money In"  value={`LKR ${totalIn.toLocaleString()}`}  color={C.green} Icon={I.ArrowUp}   sub={`${tx.filter(t=>t.type==="in").length} transactions`}/>
+          <Stat label="Total Money In"  value={`LKR ${totalIn.toLocaleString()}`}  color={C.green} Icon={I.ArrowUp}   sub={`${getMonthName(selectedMonth)} ${selectedYear}`}/>
           <Stat label="Total Money Out" value={`LKR ${totalOut.toLocaleString()}`} color={C.red}   Icon={I.ArrowDown} sub={`${tx.filter(t=>t.type==="out").length} transactions`}/>
           <Stat label="Net Cash Flow"   value={`LKR ${net.toLocaleString()}`}      color={net>=0?C.green:C.red} Icon={I.BarChart}/>
           <Stat label="Current Balance" value={`LKR ${(totals.cashInHand || 0).toLocaleString()}`}      color={C.blue}  Icon={I.Wallet}    sub={`As of ${new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}`}/>

@@ -3,6 +3,7 @@ import { BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Toolti
 import { useFinance } from "@/contexts/FinanceContext";
 import { getPrintHtml } from "@/utils/pdfPrint";
 import ReportPreviewModal from "@/components/ReportPreviewModal";
+import MonthYearFilter, { filterDataByMonth, getMonthName } from "@/components/MonthYearFilter";
 
 const C = { bg:"#000000",bg2:"#000000",card:"#0a0a0a",border:"#171717",border2:"#171717",text:"#fff",text2:"#d1d9e6",muted:"#8b9ab0",faint:"#4a5568",green:"#22c55e",red:"#ef4444",blue:"#0e5cff",cyan:"#22d3ee",yellow:"#eab308",purple:"#a78bfa",orange:"#f97316" };
 
@@ -54,12 +55,20 @@ export default function TaxReports(){
   const { incomes, expenses, settings, totals } = useFinance();
   const [activeQ,setActiveQ]=useState(null);
   const [reportPreview, setReportPreview] = useState({ open: false, html: "", filename: "" });
+  
+  // Month/Year filter state
+  const now = new Date();
+  const [selectedMonth, setSelectedMonth] = useState(now.getMonth());
+  const [selectedYear, setSelectedYear] = useState(now.getFullYear());
+
+  // Filter data by selected month/year
+  const filteredIncomes = useMemo(() => filterDataByMonth(incomes, selectedMonth, selectedYear), [incomes, selectedMonth, selectedYear]);
+  const filteredExpenses = useMemo(() => filterDataByMonth(expenses, selectedMonth, selectedYear), [expenses, selectedMonth, selectedYear]);
 
   // Calculate quarterly data
   const quarterly = useMemo(() => {
     if (!settings.taxEnabled) return [];
-    const now = new Date();
-    const currentYear = now.getFullYear();
+    const currentYear = selectedYear;
     const quarters = [];
     for (let q = 1; q <= 4; q++) {
       const quarterStart = new Date(currentYear, (q - 1) * 3, 1);
@@ -95,24 +104,24 @@ export default function TaxReports(){
     return quarters;
   }, [incomes, expenses, settings]);
 
-  // Income split
+  // Income split (for selected month)
   const incSplit = useMemo(() => {
-    const totalIncome = incomes.reduce((s, i) => s + (i.amount || 0), 0);
-    const totalExp = expenses.reduce((s, e) => s + (e.amount || 0), 0);
+    const totalIncome = filteredIncomes.reduce((s, i) => s + (i.amount || 0), 0);
+    const totalExp = filteredExpenses.reduce((s, e) => s + (e.amount || 0), 0);
     const taxable = Math.max(0, totalIncome - totalExp);
-    const nonTaxable = 0; // Assuming all income is taxable unless specified
+    const nonTaxable = 0;
     return [
       { name: "Taxable Income", value: taxable, color: C.red },
       { name: "Non-Taxable", value: nonTaxable, color: C.green },
       { name: "Deductions", value: totalExp, color: C.blue },
     ];
-  }, [incomes, expenses]);
+  }, [filteredIncomes, filteredExpenses]);
 
-  // Income categories
+  // Income categories (for selected month)
   const categories = useMemo(() => {
     const catMap = {};
     const colors = [C.orange, C.yellow, C.blue, C.green, C.purple, C.cyan];
-    incomes.forEach(income => {
+    filteredIncomes.forEach(income => {
       const cat = income.serviceType || 'Other';
       if (!catMap[cat]) {
         catMap[cat] = { name: cat, taxable: true, value: 0, color: colors[Object.keys(catMap).length % colors.length] };
@@ -120,7 +129,13 @@ export default function TaxReports(){
       catMap[cat].value += income.amount || 0;
     });
     return Object.values(catMap).sort((a, b) => b.value - a.value).slice(0, 4);
-  }, [incomes]);
+  }, [filteredIncomes]);
+  
+  // Monthly totals
+  const monthlyIncome = useMemo(() => filteredIncomes.reduce((s, i) => s + (i.amount || 0), 0), [filteredIncomes]);
+  const monthlyExpense = useMemo(() => filteredExpenses.reduce((s, e) => s + (e.amount || 0), 0), [filteredExpenses]);
+  const monthlyTaxable = useMemo(() => Math.max(0, monthlyIncome - monthlyExpense), [monthlyIncome, monthlyExpense]);
+  const monthlyTax = useMemo(() => monthlyTaxable * ((settings.taxRate || 0) / 100), [monthlyTaxable, settings.taxRate]);
 
   const totalGross = useMemo(() => quarterly.reduce((s, q) => s + q.gross, 0), [quarterly]);
   const totalTax = useMemo(() => quarterly.reduce((s, q) => s + q.taxOwed, 0), [quarterly]);
@@ -131,21 +146,35 @@ export default function TaxReports(){
 
   const openReportPreview = () => {
     const cur = settings?.currency || "LKR";
+    const monthName = getMonthName(selectedMonth);
     let body = `<h2 style="margin:0 0 16px; font-size:18px; border-bottom:2px solid #111; padding-bottom:8px;">Tax Report</h2>`;
-    body += `<p style="color:#666; font-size:12px; margin:0 0 20px;">${new Date().toLocaleDateString("en-US", { dateStyle: "long" })} · Year ${new Date().getFullYear()}</p>`;
+    body += `<p style="color:#666; font-size:12px; margin:0 0 20px;">${monthName} ${selectedYear}</p>`;
+    
+    // Monthly Summary
+    body += `<h3 style="margin:20px 0 12px; font-size:14px;">Monthly Summary - ${monthName} ${selectedYear}</h3>`;
     body += `<table style="width:100%; border-collapse:collapse; margin-bottom:24px;"><tr style="background:#f5f5f5;"><th style="text-align:left; padding:10px 12px; border:1px solid #ddd;">Metric</th><th style="text-align:right; padding:10px 12px; border:1px solid #ddd;">Value</th></tr>`;
-    body += `<tr><td style="padding:10px 12px; border:1px solid #ddd;">Total Gross Income</td><td style="text-align:right; padding:10px 12px; border:1px solid #ddd;">${cur} ${totalGross.toLocaleString()}</td></tr>`;
-    body += `<tr><td style="padding:10px 12px; border:1px solid #ddd;">Total Deductions</td><td style="text-align:right; padding:10px 12px; border:1px solid #ddd;">${cur} ${totalDed.toLocaleString()}</td></tr>`;
-    body += `<tr><td style="padding:10px 12px; border:1px solid #ddd;">Tax Owed (${rate}%)</td><td style="text-align:right; padding:10px 12px; border:1px solid #ddd;">${cur} ${totalTax.toLocaleString()}</td></tr>`;
-    body += `<tr><td style="padding:10px 12px; border:1px solid #ddd;">Tax Paid</td><td style="text-align:right; padding:10px 12px; border:1px solid #ddd;">${cur} ${paidTax.toLocaleString()}</td></tr>`;
-    body += `<tr><td style="padding:10px 12px; border:1px solid #ddd;">Pending</td><td style="text-align:right; padding:10px 12px; border:1px solid #ddd;">${cur} ${pendingTax.toLocaleString()}</td></tr></table>`;
-    body += `<h3 style="margin:0 0 12px; font-size:14px;">Quarterly Summary</h3><table style="width:100%; border-collapse:collapse;"><tr style="background:#f5f5f5;"><th style="text-align:left; padding:8px 12px; border:1px solid #ddd;">Quarter</th><th style="text-align:right; padding:8px 12px; border:1px solid #ddd;">Gross</th><th style="text-align:right; padding:8px 12px; border:1px solid #ddd;">Tax Owed</th><th style="text-align:left; padding:8px 12px; border:1px solid #ddd;">Status</th></tr>`;
+    body += `<tr><td style="padding:10px 12px; border:1px solid #ddd;">Gross Income</td><td style="text-align:right; padding:10px 12px; border:1px solid #ddd;">${cur} ${monthlyIncome.toLocaleString()}</td></tr>`;
+    body += `<tr><td style="padding:10px 12px; border:1px solid #ddd;">Deductions</td><td style="text-align:right; padding:10px 12px; border:1px solid #ddd;">${cur} ${monthlyExpense.toLocaleString()}</td></tr>`;
+    body += `<tr><td style="padding:10px 12px; border:1px solid #ddd;">Taxable Income</td><td style="text-align:right; padding:10px 12px; border:1px solid #ddd;">${cur} ${monthlyTaxable.toLocaleString()}</td></tr>`;
+    body += `<tr><td style="padding:10px 12px; border:1px solid #ddd;">Estimated Tax (${settings.taxRate || 0}%)</td><td style="text-align:right; padding:10px 12px; border:1px solid #ddd;">${cur} ${monthlyTax.toLocaleString()}</td></tr></table>`;
+    
+    // Income details
+    if (filteredIncomes.length > 0) {
+      body += `<h3 style="margin:20px 0 12px; font-size:14px;">Income Details</h3><table style="width:100%; border-collapse:collapse;"><tr style="background:#f5f5f5;"><th style="border:1px solid #ddd; padding:8px;">Date</th><th style="border:1px solid #ddd; padding:8px;">Client</th><th style="border:1px solid #ddd; padding:8px;">Service</th><th style="border:1px solid #ddd; padding:8px; text-align:right;">Amount</th></tr>`;
+      filteredIncomes.forEach((inc) => {
+        body += `<tr><td style="border:1px solid #ddd; padding:8px;">${new Date(inc.date).toLocaleDateString()}</td><td style="border:1px solid #ddd; padding:8px;">${inc.clientName || '-'}</td><td style="border:1px solid #ddd; padding:8px;">${inc.serviceType || '-'}</td><td style="border:1px solid #ddd; padding:8px; text-align:right;">${cur} ${(inc.amount || 0).toLocaleString()}</td></tr>`;
+      });
+      body += `</table>`;
+    }
+    
+    // Year Summary
+    body += `<h3 style="margin:20px 0 12px; font-size:14px;">Year ${selectedYear} Quarterly Summary</h3><table style="width:100%; border-collapse:collapse;"><tr style="background:#f5f5f5;"><th style="text-align:left; padding:8px 12px; border:1px solid #ddd;">Quarter</th><th style="text-align:right; padding:8px 12px; border:1px solid #ddd;">Gross</th><th style="text-align:right; padding:8px 12px; border:1px solid #ddd;">Tax Owed</th><th style="text-align:left; padding:8px 12px; border:1px solid #ddd;">Status</th></tr>`;
     quarterly.forEach((q) => {
       body += `<tr><td style="padding:8px 12px; border:1px solid #ddd;">${q.quarter}</td><td style="text-align:right; padding:8px 12px; border:1px solid #ddd;">${cur} ${q.gross.toLocaleString()}</td><td style="text-align:right; padding:8px 12px; border:1px solid #ddd;">${cur} ${q.taxOwed.toLocaleString()}</td><td style="padding:8px 12px; border:1px solid #ddd;">${q.paid ? "Paid" : "Pending"}</td></tr>`;
     });
     body += `</table>`;
     const fullHtml = getPrintHtml(body, { logo: settings?.logo, businessName: settings?.businessName });
-    const filename = `tax-report-${new Date().toISOString().slice(0, 10)}.pdf`;
+    const filename = `tax-report-${monthName}-${selectedYear}.pdf`;
     setReportPreview({ open: true, html: fullHtml, filename });
   };
 
@@ -155,21 +184,24 @@ export default function TaxReports(){
 
       <div style={{padding:"24px 18px",display:"flex",flexDirection:"column",gap:18,animation:"fi .3s ease"}}>
 
-        {/* TOOLBAR */}
-        <div style={{display:"flex",justifyContent:"flex-end",alignItems:"center"}}>
-          <div style={{display:"flex",gap:10,alignItems:"center"}}>
-            <button onClick={()=>window.location.reload()} style={{display:"flex",alignItems:"center",gap:8,background:"#0a0a0a",border:"1px solid #171717",borderRadius:8,padding:"9px 16px",color:"#fff",fontSize:13,fontWeight:600,cursor:"pointer",fontFamily:"'Inter', sans-serif"}}><I.Refresh/><span>Refresh</span></button>
-            <button onClick={()=>{}} style={{display:"flex",alignItems:"center",gap:8,background:"#0a0a0a",border:"1px solid #171717",borderRadius:8,padding:"9px 16px",color:"#fff",fontSize:13,fontWeight:600,cursor:"pointer",fontFamily:"'Inter', sans-serif"}}><I.Download/><span>Export CSV</span></button>
-            <button onClick={openReportPreview} style={{display:"flex",alignItems:"center",gap:8,background:"#0a0a0a",border:"1px solid #171717",borderRadius:8,padding:"9px 16px",color:"#fff",fontSize:13,fontWeight:600,cursor:"pointer",fontFamily:"'Inter', sans-serif"}}><I.Download/><span>Download PDF</span></button>
-          </div>
+        {/* FILTER */}
+        <div style={{background:C.card,borderRadius:12,border:`1px solid ${C.border}`,padding:"16px 20px"}}>
+          <MonthYearFilter
+            selectedMonth={selectedMonth}
+            selectedYear={selectedYear}
+            onMonthChange={setSelectedMonth}
+            onYearChange={setSelectedYear}
+            onDownload={openReportPreview}
+            autoDownload={true}
+          />
         </div>
 
-        {/* STATS */}
+        {/* STATS - Monthly */}
         <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:14}}>
-          <Stat label="Total Gross Income" value={`LKR ${totalGross.toLocaleString()}`} Icon={I.FileText}      color={C.text2}/>
-          <Stat label="Total Tax Owed"     value={`LKR ${totalTax.toLocaleString()}`}   Icon={I.Receipt}       color={C.red}   sub={`${rate}% effective rate`}/>
-          <Stat label="Total Deductions"   value={`LKR ${totalDed.toLocaleString()}`}   Icon={I.Scissors}      color={C.green} sub="Tax savings" subColor={C.green}/>
-          <Stat label="Tax Paid (Q1–Q3)"   value={`LKR ${paidTax.toLocaleString()}`}    Icon={I.CheckCircle}   color={C.blue}  sub={`LKR ${pendingTax.toLocaleString()} pending`} subColor={C.yellow}/>
+          <Stat label="Monthly Income" value={`LKR ${monthlyIncome.toLocaleString()}`} Icon={I.FileText}      color={C.text2} sub={`${getMonthName(selectedMonth)} ${selectedYear}`}/>
+          <Stat label="Monthly Tax"     value={`LKR ${monthlyTax.toLocaleString()}`}   Icon={I.Receipt}       color={C.red}   sub={`${settings.taxRate || 0}% rate`}/>
+          <Stat label="Monthly Deductions"   value={`LKR ${monthlyExpense.toLocaleString()}`}   Icon={I.Scissors}      color={C.green} sub="Tax savings" subColor={C.green}/>
+          <Stat label="Taxable Income"   value={`LKR ${monthlyTaxable.toLocaleString()}`}    Icon={I.Target}   color={C.yellow}  sub="After deductions"/>
         </div>
 
         {/* QUARTERLY BAR + DONUT */}

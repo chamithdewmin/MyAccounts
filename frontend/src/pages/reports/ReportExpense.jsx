@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useState } from 'react';
 import { Helmet } from 'react-helmet';
 import { motion } from 'framer-motion';
 import { Download, RefreshCw } from 'lucide-react';
@@ -20,14 +20,7 @@ import { useToast } from '@/components/ui/use-toast';
 import ExportReportDialog from '@/components/ExportReportDialog';
 import ReportPreviewModal from '@/components/ReportPreviewModal';
 import { getPrintHtml } from '@/utils/pdfPrint';
-
-const filterByRange = (items, range, dateKey = 'date') => {
-  if (!range) return items;
-  return items.filter((i) => {
-    const d = new Date(i[dateKey]);
-    return d >= range.start && d <= range.end;
-  });
-};
+import MonthYearFilter, { filterDataByMonth, getMonthName } from '@/components/MonthYearFilter';
 
 const COLORS = ['#ef4444', '#dc2626', '#b91c1c', '#991b1b', '#7f1d1d', '#450a0a'];
 
@@ -36,49 +29,49 @@ const ReportExpense = () => {
   const { toast } = useToast();
   const [exportOpen, setExportOpen] = React.useState(false);
   const [reportPreview, setReportPreview] = React.useState({ open: false, html: '', filename: '', title: '' });
+  
+  // Month/Year filter state
+  const now = new Date();
+  const [selectedMonth, setSelectedMonth] = useState(now.getMonth());
+  const [selectedYear, setSelectedYear] = useState(now.getFullYear());
+
+  // Filter data by selected month/year
+  const filteredExpenses = useMemo(() => filterDataByMonth(expenses, selectedMonth, selectedYear), [expenses, selectedMonth, selectedYear]);
 
   const byCategory = useMemo(() => {
     const map = {};
-    expenses.forEach((e) => {
+    filteredExpenses.forEach((e) => {
       map[e.category] = (map[e.category] || 0) + e.amount;
     });
     return Object.entries(map).map(([name, amount]) => ({ name, amount })).sort((a, b) => b.amount - a.amount);
-  }, [expenses]);
+  }, [filteredExpenses]);
 
-  const totalExpenses = useMemo(() => expenses.reduce((s, e) => s + e.amount, 0), [expenses]);
+  const totalExpenses = useMemo(() => filteredExpenses.reduce((s, e) => s + e.amount, 0), [filteredExpenses]);
 
-  const handleExport = (range) => {
-    const filtered = filterByRange(expenses, range);
-    const headers = ['Category', 'Amount', 'Date', 'Recurring'];
-    const rows = filtered.map((e) => [e.category, e.amount, new Date(e.date).toLocaleDateString(), e.isRecurring ? 'Yes' : 'No']);
-    const csvContent = [headers.join(','), ...rows.map((r) => r.join(','))].join('\n');
-    const blob = new Blob([csvContent], { type: 'text/csv' });
-    const url = window.URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `expense-report-${range.start.toISOString().slice(0, 10)}.csv`;
-    a.click();
-    toast({ title: 'Export successful', description: 'Expense report exported to CSV' });
-  };
+  const handlePDF = () => {
+    const monthName = getMonthName(selectedMonth);
+    const byCat = byCategory.reduce((acc, e) => { acc[e.name] = e.amount; return acc; }, {});
 
-  const handlePDF = (range) => {
-    const filtered = filterByRange(expenses, range);
-    const total = filtered.reduce((s, e) => s + e.amount, 0);
-    const byCat = filtered.reduce((acc, e) => {
-      acc[e.category] = (acc[e.category] || 0) + e.amount;
-      return acc;
-    }, {});
-
-    let table = '<h1>Expense Report</h1><p>Period: ' + range.start.toLocaleDateString() + ' - ' + range.end.toLocaleDateString() + '</p>';
-    table += '<p><strong>Total: ' + settings.currency + ' ' + total.toLocaleString() + '</strong></p>';
+    let table = '<h1>Expense Report</h1><p>Period: ' + monthName + ' ' + selectedYear + '</p>';
+    table += '<p><strong>Total: ' + settings.currency + ' ' + totalExpenses.toLocaleString() + '</strong></p>';
+    
+    // Detail table
+    if (filteredExpenses.length > 0) {
+      table += '<h3>Expense Details</h3><table style="width:100%; border-collapse: collapse;"><tr style="background:#f5f5f5;"><th style="border:1px solid #ccc; padding:8px;">Date</th><th style="border:1px solid #ccc; padding:8px;">Category</th><th style="border:1px solid #ccc; padding:8px;">Description</th><th style="border:1px solid #ccc; padding:8px; text-align:right;">Amount</th></tr>';
+      filteredExpenses.forEach((exp) => {
+        table += `<tr><td style="border:1px solid #ccc; padding:8px;">${new Date(exp.date).toLocaleDateString()}</td><td style="border:1px solid #ccc; padding:8px;">${exp.category || '-'}</td><td style="border:1px solid #ccc; padding:8px;">${exp.description || '-'}</td><td style="border:1px solid #ccc; padding:8px; text-align:right;">${settings.currency} ${(exp.amount || 0).toLocaleString()}</td></tr>`;
+      });
+      table += '</table>';
+    }
+    
     table += '<h3>Expense Breakdown by Category</h3><table style="width:100%; border-collapse: collapse;"><tr><th style="border:1px solid #ccc; padding:8px;">Category</th><th style="border:1px solid #ccc; padding:8px;">Amount</th></tr>';
     Object.entries(byCat).forEach(([k, v]) => {
       table += `<tr><td style="border:1px solid #ccc; padding:8px;">${k}</td><td style="border:1px solid #ccc; padding:8px;">${settings.currency} ${v.toLocaleString()}</td></tr>`;
     });
-    table += '</table><h3>Budget vs Actual</h3><p>Actual total: ' + settings.currency + ' ' + total.toLocaleString() + '</p>';
+    table += '</table>';
 
     const fullHtml = getPrintHtml(table, { logo: settings?.logo, businessName: settings?.businessName });
-    setReportPreview({ open: true, html: fullHtml, filename: `expense-report-${range.start.toISOString().slice(0, 10)}.pdf`, title: 'Expense Report' });
+    setReportPreview({ open: true, html: fullHtml, filename: `expense-report-${monthName}-${selectedYear}.pdf`, title: 'Expense Report' });
   };
 
   return (
@@ -89,72 +82,32 @@ const ReportExpense = () => {
       </Helmet>
 
       <div className="space-y-6" style={{ fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, sans-serif" }}>
-        <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-3xl font-bold">Expense Reports</h1>
+          <p className="text-muted-foreground">Expense breakdown, Budget vs actual</p>
+        </div>
+        
+        {/* Filter */}
+        <div style={{ background: "#0a0a0a", borderRadius: 12, border: "1px solid #171717", padding: "16px 20px" }}>
+          <MonthYearFilter
+            selectedMonth={selectedMonth}
+            selectedYear={selectedYear}
+            onMonthChange={setSelectedMonth}
+            onYearChange={setSelectedYear}
+            onDownload={handlePDF}
+            autoDownload={true}
+          />
+        </div>
+        
+        {/* Summary */}
+        <div style={{ background: "#0a0a0a", borderRadius: 12, border: "1px solid #171717", padding: "20px", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
           <div>
-            <h1 className="text-3xl font-bold">Expense Reports</h1>
-            <p className="text-muted-foreground">Expense breakdown, Budget vs actual</p>
+            <p style={{ color: "#8b9ab0", fontSize: 12, fontWeight: 600, textTransform: "uppercase", margin: 0 }}>Total Expenses</p>
+            <p style={{ color: "#ef4444", fontSize: 28, fontWeight: 900, margin: "8px 0 0", fontFamily: "monospace" }}>{settings.currency} {totalExpenses.toLocaleString()}</p>
           </div>
-          <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
-            <button
-              onClick={() => { loadData(); toast({ title: 'Refreshed', description: 'Data refreshed' }); }}
-              style={{
-                display: "flex",
-                alignItems: "center",
-                gap: 8,
-                background: "#0a0a0a",
-                border: "1px solid #171717",
-                borderRadius: 8,
-                padding: "9px 16px",
-                color: "#fff",
-                fontSize: 13,
-                fontWeight: 600,
-                cursor: "pointer",
-                fontFamily: "'Inter', sans-serif",
-              }}
-            >
-              <RefreshCw className="w-4 h-4" />
-              <span>Refresh</span>
-            </button>
-            <button
-              onClick={() => setExportOpen(true)}
-              style={{
-                display: "flex",
-                alignItems: "center",
-                gap: 8,
-                background: "#0a0a0a",
-                border: "1px solid #171717",
-                borderRadius: 8,
-                padding: "9px 16px",
-                color: "#fff",
-                fontSize: 13,
-                fontWeight: 600,
-                cursor: "pointer",
-                fontFamily: "'Inter', sans-serif",
-              }}
-            >
-              <Download className="w-4 h-4" />
-              <span>Export CSV</span>
-            </button>
-            <button
-              onClick={() => setExportOpen(true)}
-              style={{
-                display: "flex",
-                alignItems: "center",
-                gap: 8,
-                background: "#0a0a0a",
-                border: "1px solid #171717",
-                borderRadius: 8,
-                padding: "9px 16px",
-                color: "#fff",
-                fontSize: 13,
-                fontWeight: 600,
-                cursor: "pointer",
-                fontFamily: "'Inter', sans-serif",
-              }}
-            >
-              <Download className="w-4 h-4" />
-              <span>Download PDF</span>
-            </button>
+          <div style={{ textAlign: "right" }}>
+            <p style={{ color: "#8b9ab0", fontSize: 12, margin: 0 }}>{filteredExpenses.length} transactions</p>
+            <p style={{ color: "#0e5cff", fontSize: 14, fontWeight: 600, margin: "4px 0 0" }}>{getMonthName(selectedMonth)} {selectedYear}</p>
           </div>
         </div>
 
@@ -185,7 +138,7 @@ const ReportExpense = () => {
                 </PieChart>
               </ResponsiveContainer>
             ) : (
-              <div className="h-[300px] flex items-center justify-center text-muted-foreground">No expense data</div>
+              <div className="h-[300px] flex items-center justify-center text-muted-foreground">No expense data for this period</div>
             )}
           </motion.div>
 
@@ -207,14 +160,13 @@ const ReportExpense = () => {
                 </BarChart>
               </ResponsiveContainer>
             ) : (
-              <div className="h-[300px] flex items-center justify-center text-muted-foreground">No expense data</div>
+              <div className="h-[300px] flex items-center justify-center text-muted-foreground">No expense data for this period</div>
             )}
             <p className="text-sm text-muted-foreground mt-2">Total actual: {settings.currency} {totalExpenses.toLocaleString()}</p>
           </motion.div>
         </div>
       </div>
 
-      <ExportReportDialog open={exportOpen} onOpenChange={setExportOpen} onExportCSV={handleExport} onDownloadPDF={handlePDF} reportTitle="Expense" />
       <ReportPreviewModal open={reportPreview.open} onOpenChange={(open) => setReportPreview((p) => ({ ...p, open }))} html={reportPreview.html} filename={reportPreview.filename} reportTitle={reportPreview.title} />
     </>
   );

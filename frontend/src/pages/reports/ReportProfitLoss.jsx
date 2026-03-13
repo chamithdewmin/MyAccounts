@@ -1,9 +1,10 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { BarChart, Bar, LineChart, Line, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from "recharts";
 import { useFinance } from "@/contexts/FinanceContext";
 import { getPrintHtml } from "@/utils/pdfPrint";
 import ReportPreviewModal from "@/components/ReportPreviewModal";
 import { useToast } from "@/components/ui/use-toast";
+import MonthYearFilter, { filterDataByMonth, getMonthName } from "@/components/MonthYearFilter";
 
 // ── COLORS ────────────────────────────────────────────────────────────────────
 const C = { bg:"#000000",bg2:"#000000",card:"#0a0a0a",border:"#171717",border2:"#171717",text:"#fff",text2:"#d1d9e6",muted:"#8b9ab0",faint:"#4a5568",green:"#22c55e",red:"#ef4444",blue:"#0e5cff",cyan:"#22d3ee",yellow:"#eab308",purple:"#a78bfa" };
@@ -64,15 +65,22 @@ const Legend2 = ({items})=>(
 export default function ProfitLoss(){
   const { incomes, expenses, totals, settings } = useFinance();
   const { toast } = useToast();
-  const [period,setPeriod]=useState("7M");
   const [reportPreview, setReportPreview] = useState({ open: false, html: "", filename: "" });
+  
+  // Month/Year filter state
+  const now = new Date();
+  const [selectedMonth, setSelectedMonth] = useState(now.getMonth());
+  const [selectedYear, setSelectedYear] = useState(now.getFullYear());
 
-  // Calculate monthly data (last 7 months)
+  // Filter data by selected month/year
+  const filteredIncomes = useMemo(() => filterDataByMonth(incomes, selectedMonth, selectedYear), [incomes, selectedMonth, selectedYear]);
+  const filteredExpenses = useMemo(() => filterDataByMonth(expenses, selectedMonth, selectedYear), [expenses, selectedMonth, selectedYear]);
+
+  // Calculate monthly data (last 7 months for chart)
   const monthly = useMemo(() => {
     const months = [];
-    const now = new Date();
     for (let i = 6; i >= 0; i--) {
-      const date = new Date(now.getFullYear(), now.getMonth() - i, 1);
+      const date = new Date(selectedYear, selectedMonth - i, 1);
       const monthLabel = date.toLocaleDateString('en-US', { month: 'short' });
       let monthIncome = 0;
       let monthExpense = 0;
@@ -88,16 +96,16 @@ export default function ProfitLoss(){
           monthExpense += expense.amount || 0;
         }
       });
-      months.push({ month: monthLabel, income: monthIncome, expenses: monthExpense, profit: monthIncome - monthExpense });
+      months.push({ month: monthLabel, fullDate: date, income: monthIncome, expenses: monthExpense, profit: monthIncome - monthExpense });
     }
     return months;
-  }, [incomes, expenses]);
+  }, [incomes, expenses, selectedMonth, selectedYear]);
 
-  // Expense categories
+  // Expense categories (filtered)
   const expCats = useMemo(() => {
     const catMap = {};
     const colors = [C.blue, C.purple, C.cyan, C.yellow, C.orange, C.red];
-    expenses.forEach(expense => {
+    filteredExpenses.forEach(expense => {
       const cat = expense.category || 'Other';
       if (!catMap[cat]) {
         catMap[cat] = { name: cat, value: 0, color: colors[Object.keys(catMap).length % colors.length] };
@@ -105,13 +113,13 @@ export default function ProfitLoss(){
       catMap[cat].value += expense.amount || 0;
     });
     return Object.values(catMap).sort((a, b) => b.value - a.value).slice(0, 4);
-  }, [expenses]);
+  }, [filteredExpenses]);
 
-  // Income sources
+  // Income sources (filtered)
   const incSrc = useMemo(() => {
     const sourceMap = {};
     const colors = [C.green, C.blue, C.cyan, C.purple, C.orange, C.yellow];
-    incomes.forEach(income => {
+    filteredIncomes.forEach(income => {
       const source = income.serviceType || 'Other';
       if (!sourceMap[source]) {
         sourceMap[source] = { name: source, value: 0, color: colors[Object.keys(sourceMap).length % colors.length] };
@@ -119,29 +127,45 @@ export default function ProfitLoss(){
       sourceMap[source].value += income.amount || 0;
     });
     return Object.values(sourceMap).sort((a, b) => b.value - a.value).slice(0, 4);
-  }, [incomes]);
+  }, [filteredIncomes]);
 
-  const totalIncome = useMemo(() => monthly.reduce((s, m) => s + m.income, 0), [monthly]);
-  const totalExp = useMemo(() => monthly.reduce((s, m) => s + m.expenses, 0), [monthly]);
+  // Use filtered data for totals
+  const totalIncome = useMemo(() => filteredIncomes.reduce((s, i) => s + (i.amount || 0), 0), [filteredIncomes]);
+  const totalExp = useMemo(() => filteredExpenses.reduce((s, e) => s + (e.amount || 0), 0), [filteredExpenses]);
   const netProfit = useMemo(() => totalIncome - totalExp, [totalIncome, totalExp]);
   const margin = useMemo(() => totalIncome > 0 ? ((netProfit / totalIncome) * 100).toFixed(1) : '0.0', [netProfit, totalIncome]);
   const best = useMemo(() => monthly.reduce((a, b) => a.profit > b.profit ? a : b, monthly[0] || { month: 'N/A', income: 0, profit: 0 }), [monthly]);
 
   const openReportPreview = () => {
     const cur = settings?.currency || "LKR";
+    const monthName = getMonthName(selectedMonth);
     let body = `<h2 style="margin:0 0 16px; font-size:18px; border-bottom:2px solid #111; padding-bottom:8px;">Profit &amp; Loss Report</h2>`;
-    body += `<p style="color:#666; font-size:12px; margin:0 0 20px;">${new Date().toLocaleDateString("en-US", { dateStyle: "long" })} · 7-month period</p>`;
+    body += `<p style="color:#666; font-size:12px; margin:0 0 20px;">${monthName} ${selectedYear} · Monthly Report</p>`;
     body += `<table style="width:100%; border-collapse:collapse; margin-bottom:24px;"><tr style="background:#f5f5f5;"><th style="text-align:left; padding:10px 12px; border:1px solid #ddd;">Metric</th><th style="text-align:right; padding:10px 12px; border:1px solid #ddd;">Value</th></tr>`;
     body += `<tr><td style="padding:10px 12px; border:1px solid #ddd;">Total Revenue</td><td style="text-align:right; padding:10px 12px; border:1px solid #ddd;">${cur} ${totalIncome.toLocaleString()}</td></tr>`;
     body += `<tr><td style="padding:10px 12px; border:1px solid #ddd;">Total Expenses</td><td style="text-align:right; padding:10px 12px; border:1px solid #ddd;">${cur} ${totalExp.toLocaleString()}</td></tr>`;
     body += `<tr><td style="padding:10px 12px; border:1px solid #ddd;">Net Profit</td><td style="text-align:right; padding:10px 12px; border:1px solid #ddd;">${cur} ${netProfit.toLocaleString()} (${margin}% margin)</td></tr></table>`;
-    body += `<h3 style="margin:0 0 12px; font-size:14px;">Monthly Summary</h3><table style="width:100%; border-collapse:collapse;"><tr style="background:#f5f5f5;"><th style="text-align:left; padding:8px 12px; border:1px solid #ddd;">Month</th><th style="text-align:right; padding:8px 12px; border:1px solid #ddd;">Income</th><th style="text-align:right; padding:8px 12px; border:1px solid #ddd;">Expenses</th><th style="text-align:right; padding:8px 12px; border:1px solid #ddd;">Profit</th></tr>`;
-    monthly.forEach((m) => {
-      body += `<tr><td style="padding:8px 12px; border:1px solid #ddd;">${m.month}</td><td style="text-align:right; padding:8px 12px; border:1px solid #ddd;">${cur} ${m.income.toLocaleString()}</td><td style="text-align:right; padding:8px 12px; border:1px solid #ddd;">${cur} ${m.expenses.toLocaleString()}</td><td style="text-align:right; padding:8px 12px; border:1px solid #ddd;">${cur} ${m.profit.toLocaleString()}</td></tr>`;
-    });
-    body += `</table>`;
+    
+    // Income details
+    if (filteredIncomes.length > 0) {
+      body += `<h3 style="margin:20px 0 12px; font-size:14px;">Income Details</h3><table style="width:100%; border-collapse:collapse;"><tr style="background:#f5f5f5;"><th style="text-align:left; padding:8px 12px; border:1px solid #ddd;">Date</th><th style="text-align:left; padding:8px 12px; border:1px solid #ddd;">Client</th><th style="text-align:left; padding:8px 12px; border:1px solid #ddd;">Service</th><th style="text-align:right; padding:8px 12px; border:1px solid #ddd;">Amount</th></tr>`;
+      filteredIncomes.forEach((inc) => {
+        body += `<tr><td style="padding:8px 12px; border:1px solid #ddd;">${new Date(inc.date).toLocaleDateString()}</td><td style="padding:8px 12px; border:1px solid #ddd;">${inc.clientName || '-'}</td><td style="padding:8px 12px; border:1px solid #ddd;">${inc.serviceType || '-'}</td><td style="text-align:right; padding:8px 12px; border:1px solid #ddd;">${cur} ${(inc.amount || 0).toLocaleString()}</td></tr>`;
+      });
+      body += `</table>`;
+    }
+    
+    // Expense details
+    if (filteredExpenses.length > 0) {
+      body += `<h3 style="margin:20px 0 12px; font-size:14px;">Expense Details</h3><table style="width:100%; border-collapse:collapse;"><tr style="background:#f5f5f5;"><th style="text-align:left; padding:8px 12px; border:1px solid #ddd;">Date</th><th style="text-align:left; padding:8px 12px; border:1px solid #ddd;">Category</th><th style="text-align:left; padding:8px 12px; border:1px solid #ddd;">Description</th><th style="text-align:right; padding:8px 12px; border:1px solid #ddd;">Amount</th></tr>`;
+      filteredExpenses.forEach((exp) => {
+        body += `<tr><td style="padding:8px 12px; border:1px solid #ddd;">${new Date(exp.date).toLocaleDateString()}</td><td style="padding:8px 12px; border:1px solid #ddd;">${exp.category || '-'}</td><td style="padding:8px 12px; border:1px solid #ddd;">${exp.description || '-'}</td><td style="text-align:right; padding:8px 12px; border:1px solid #ddd;">${cur} ${(exp.amount || 0).toLocaleString()}</td></tr>`;
+      });
+      body += `</table>`;
+    }
+    
     const fullHtml = getPrintHtml(body, { logo: settings?.logo, businessName: settings?.businessName });
-    const filename = `profit-loss-report-${new Date().toISOString().slice(0, 10)}.pdf`;
+    const filename = `profit-loss-report-${monthName}-${selectedYear}.pdf`;
     setReportPreview({ open: true, html: fullHtml, filename });
   };
 
@@ -150,19 +174,22 @@ export default function ProfitLoss(){
       <style>{`*{box-sizing:border-box;}body{margin:0;}::-webkit-scrollbar{width:4px;}::-webkit-scrollbar-thumb{background:${C.border2};border-radius:99px;}@keyframes fi{from{opacity:0;transform:translateY(10px);}to{opacity:1;transform:translateY(0);}}.row:hover{background:#0a0a0a!important;}`}</style>
       <div style={{padding:"24px 18px",display:"flex",flexDirection:"column",gap:18,animation:"fi .3s ease"}}>
 
-        {/* TOOLBAR */}
-        <div style={{display:"flex",justifyContent:"flex-end",alignItems:"center"}}>
-          <div style={{display:"flex",gap:10,alignItems:"center"}}>
-            <button onClick={()=>window.location.reload()} style={{display:"flex",alignItems:"center",gap:8,background:"#0a0a0a",border:"1px solid #171717",borderRadius:8,padding:"9px 16px",color:"#fff",fontSize:13,fontWeight:600,cursor:"pointer",fontFamily:"'Inter', sans-serif"}}><I.Refresh/><span>Refresh</span></button>
-            <button onClick={()=>{}} style={{display:"flex",alignItems:"center",gap:8,background:"#0a0a0a",border:"1px solid #171717",borderRadius:8,padding:"9px 16px",color:"#fff",fontSize:13,fontWeight:600,cursor:"pointer",fontFamily:"'Inter', sans-serif"}}><I.Download/><span>Export CSV</span></button>
-            <button onClick={openReportPreview} style={{display:"flex",alignItems:"center",gap:8,background:"#0a0a0a",border:"1px solid #171717",borderRadius:8,padding:"9px 16px",color:"#fff",fontSize:13,fontWeight:600,cursor:"pointer",fontFamily:"'Inter', sans-serif"}}><I.Download/><span>Download PDF</span></button>
-          </div>
+        {/* FILTER & TOOLBAR */}
+        <div style={{background:C.card,borderRadius:12,border:`1px solid ${C.border}`,padding:"16px 20px"}}>
+          <MonthYearFilter
+            selectedMonth={selectedMonth}
+            selectedYear={selectedYear}
+            onMonthChange={setSelectedMonth}
+            onYearChange={setSelectedYear}
+            onDownload={openReportPreview}
+            autoDownload={true}
+          />
         </div>
 
         {/* STATS */}
         <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:14}}>
-          <Stat label="Total Revenue"  value={`LKR ${totalIncome.toLocaleString()}`}         color={C.green}  Icon={I.Revenue}  sub="7-month total" subColor={C.green}/>
-          <Stat label="Total Expenses" value={`LKR ${totalExp.toLocaleString()}`}            color={C.red}    Icon={I.Expense}  sub="7-month total"/>
+          <Stat label="Total Revenue"  value={`LKR ${totalIncome.toLocaleString()}`}         color={C.green}  Icon={I.Revenue}  sub={`${getMonthName(selectedMonth)} ${selectedYear}`} subColor={C.green}/>
+          <Stat label="Total Expenses" value={`LKR ${totalExp.toLocaleString()}`}            color={C.red}    Icon={I.Expense}  sub={`${getMonthName(selectedMonth)} ${selectedYear}`}/>
           <Stat label="Net Profit"     value={`LKR ${netProfit.toLocaleString()}`}           color={netProfit>=0?C.green:C.red} Icon={I.Profit} sub={`${margin}% profit margin`} subColor={C.cyan}/>
           <Stat label="Best Month"     value={`LKR ${best.income.toLocaleString()}`}         color={C.yellow} Icon={I.Award}    sub={`${best.month} — LKR ${best.profit.toLocaleString()} profit`}/>
         </div>
@@ -226,7 +253,7 @@ export default function ProfitLoss(){
               {monthly.map((m,i)=>{
                 const prev=monthly[i-1];const diff=prev?m.profit-prev.profit:null;const mg=((m.profit/m.income)*100).toFixed(1);
                 return <tr key={i} className="row" style={{borderBottom:`1px solid ${C.border}`,background:i%2===0?"transparent":"rgba(255,255,255,0.012)",transition:"background .15s"}}>
-                  <td style={{color:C.text2,fontSize:13,padding:"13px 14px",fontWeight:600}}>{m.month} 2025</td>
+                  <td style={{color:C.text2,fontSize:13,padding:"13px 14px",fontWeight:600}}>{m.month} {m.fullDate?.getFullYear() || selectedYear}</td>
                   <td style={{color:C.green,fontSize:13,padding:"13px 14px",fontWeight:600}}>LKR {m.income.toLocaleString()}</td>
                   <td style={{color:C.red,fontSize:13,padding:"13px 14px"}}>LKR {m.expenses.toLocaleString()}</td>
                   <td style={{color:m.profit>=0?C.green:C.red,fontSize:13,padding:"13px 14px",fontWeight:700}}>LKR {m.profit.toLocaleString()}</td>

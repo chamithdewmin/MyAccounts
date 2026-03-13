@@ -478,22 +478,21 @@ export default function SidebarNew() {
               />
               <div
                 style={{
-                  position: "absolute",
-                  bottom: "calc(100% + 8px)",
-                  left: 10,
-                  right: collapsed ? -140 : 10,
-                  width: collapsed ? 200 : "auto",
+                  position: "fixed",
+                  bottom: 80,
+                  left: collapsed ? 20 : 20,
+                  width: collapsed ? 220 : currentWidth - 30,
                   background: "#0a0a0a",
                   border: "1px solid #171717",
                   borderRadius: 10,
                   padding: 4,
                   zIndex: 999,
-                  boxShadow: "0 -8px 24px rgba(0,0,0,0.4)",
+                  boxShadow: "0 8px 32px rgba(0,0,0,0.5)",
                 }}
               >
                 <div style={{ padding: "10px 12px 8px" }}>
                   <div style={{ fontSize: 13, fontWeight: 600, color: "#fff" }}>My Account</div>
-                  <div style={{ fontSize: 12, color: "#8b9ab0", marginTop: 2 }}>{user?.email}</div>
+                  <div style={{ fontSize: 12, color: "#8b9ab0", marginTop: 2, wordBreak: "break-all" }}>{user?.email}</div>
                 </div>
                 <div style={{ height: 1, background: "#171717", margin: "4px 0" }} />
                 <MenuPopupItem

@@ -352,7 +352,7 @@ const Inventory = () => {
           <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
             <div className="flex flex-wrap gap-3">
               <select
-                className="px-3 py-2 bg-[#1e293b] border-0 rounded-lg text-sm"
+                className="px-3 py-2 bg-[#0a0a0a] border-0 rounded-lg text-sm"
                 value={filters.period}
                 onChange={(e) => setFilters((prev) => ({ ...prev, period: e.target.value }))}
               >
@@ -361,7 +361,7 @@ const Inventory = () => {
                 <option value="all">All time</option>
               </select>
               <select
-                className="px-3 py-2 bg-[#1e293b] border-0 rounded-lg text-sm"
+                className="px-3 py-2 bg-[#0a0a0a] border-0 rounded-lg text-sm"
                 value={filters.category}
                 onChange={(e) => setFilters((prev) => ({ ...prev, category: e.target.value }))}
               >
@@ -492,7 +492,7 @@ const Inventory = () => {
               <div className="space-y-2">
                 <Label className="text-sm font-medium">Category</Label>
                 <select
-                  className="w-full px-3 py-2 bg-[#1e293b] border-0 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+                  className="w-full px-3 py-2 bg-[#0a0a0a] border-0 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary"
                   value={form.category}
                   onChange={(e) => handleFormChange('category', e.target.value)}
                 >
@@ -534,7 +534,7 @@ const Inventory = () => {
               <div className="space-y-2">
                 <Label className="text-sm font-medium">Payment Method</Label>
                 <select
-                  className="w-full px-3 py-2 bg-[#1e293b] border-0 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+                  className="w-full px-3 py-2 bg-[#0a0a0a] border-0 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary"
                   value={form.paymentMethod}
                   onChange={(e) => handleFormChange('paymentMethod', e.target.value)}
                 >
@@ -580,7 +580,7 @@ const Inventory = () => {
               <div className="space-y-2 md:col-span-2">
                 <Label className="text-sm font-medium">Notes</Label>
                 <textarea
-                  className="w-full px-3 py-2 bg-[#1e293b] border-0 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary min-h-[60px]"
+                  className="w-full px-3 py-2 bg-[#0a0a0a] border-0 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary min-h-[60px]"
                   placeholder="Optional notes about this expense"
                   value={form.notes}
                   onChange={(e) => handleFormChange('notes', e.target.value)}

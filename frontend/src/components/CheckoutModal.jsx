@@ -115,7 +115,7 @@ const CheckoutModal = ({ isOpen, onClose }) => {
             <select
               value={selectedCustomer}
               onChange={(e) => setSelectedCustomer(e.target.value)}
-              className="w-full px-3 py-2 bg-[#1e293b] border-0 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
+              className="w-full px-3 py-2 bg-[#0a0a0a] border-0 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
             >
               <option value="">Choose a customer...</option>
               {customers.map(customer => (

@@ -758,7 +758,7 @@ const CashFlow = () => {
         {/* Filters */}
         <div className="flex flex-wrap gap-3 items-center">
           <select
-            className="px-3 py-2 bg-[#1e293b] border-0 rounded-lg text-sm"
+            className="px-3 py-2 bg-[#0a0a0a] border-0 rounded-lg text-sm"
             value={filters.type}
             onChange={(e) => setFilters((p) => ({ ...p, type: e.target.value }))}
           >
@@ -768,7 +768,7 @@ const CashFlow = () => {
             <option value="upcoming">Upcoming (next month)</option>
           </select>
           <select
-            className="px-3 py-2 bg-[#1e293b] border-0 rounded-lg text-sm"
+            className="px-3 py-2 bg-[#0a0a0a] border-0 rounded-lg text-sm"
             value={filters.category}
             onChange={(e) => setFilters((p) => ({ ...p, category: e.target.value }))}
           >
@@ -780,7 +780,7 @@ const CashFlow = () => {
             ))}
           </select>
           <select
-            className="px-3 py-2 bg-[#1e293b] border-0 rounded-lg text-sm"
+            className="px-3 py-2 bg-[#0a0a0a] border-0 rounded-lg text-sm"
             value={filters.status}
             onChange={(e) => setFilters((p) => ({ ...p, status: e.target.value }))}
           >
@@ -805,7 +805,7 @@ const CashFlow = () => {
             placeholder="To"
           />
           <select
-            className="px-3 py-2 bg-[#1e293b] border-0 rounded-lg text-sm"
+            className="px-3 py-2 bg-[#0a0a0a] border-0 rounded-lg text-sm"
             value={filters.sort}
             onChange={(e) => setFilters((p) => ({ ...p, sort: e.target.value }))}
           >
@@ -961,7 +961,7 @@ const CashFlow = () => {
                 <div className="space-y-2">
                   <Label>Source / Client</Label>
                   <select
-                    className="w-full px-3 py-2 bg-[#1e293b] border-0 rounded-lg text-sm"
+                    className="w-full px-3 py-2 bg-[#0a0a0a] border-0 rounded-lg text-sm"
                     value={form.clientId}
                     onChange={(e) => {
                       const c = clients.find((x) => x.id === e.target.value);
@@ -996,7 +996,7 @@ const CashFlow = () => {
                 <div className="space-y-2">
                   <Label>Payment Method</Label>
                   <select
-                    className="w-full px-3 py-2 bg-[#1e293b] border-0 rounded-lg text-sm"
+                    className="w-full px-3 py-2 bg-[#0a0a0a] border-0 rounded-lg text-sm"
                     value={form.paymentMethod}
                     onChange={(e) => setForm((p) => ({ ...p, paymentMethod: e.target.value }))}
                   >
@@ -1023,7 +1023,7 @@ const CashFlow = () => {
                     <div className="space-y-2">
                       <Label>Frequency</Label>
                       <select
-                        className="w-full px-3 py-2 bg-[#1e293b] border-0 rounded-lg text-sm"
+                        className="w-full px-3 py-2 bg-[#0a0a0a] border-0 rounded-lg text-sm"
                         value={form.recurringFrequency}
                         onChange={(e) => setForm((p) => ({ ...p, recurringFrequency: e.target.value }))}
                       >
@@ -1076,7 +1076,7 @@ const CashFlow = () => {
                 <div className="space-y-2">
                   <Label>Recipient / Category</Label>
                   <select
-                    className="w-full px-3 py-2 bg-[#1e293b] border-0 rounded-lg text-sm"
+                    className="w-full px-3 py-2 bg-[#0a0a0a] border-0 rounded-lg text-sm"
                     value={form.category}
                     onChange={(e) =>
                       setForm((p) => ({
@@ -1104,7 +1104,7 @@ const CashFlow = () => {
                 <div className="space-y-2">
                   <Label>Payment Method</Label>
                   <select
-                    className="w-full px-3 py-2 bg-[#1e293b] border-0 rounded-lg text-sm"
+                    className="w-full px-3 py-2 bg-[#0a0a0a] border-0 rounded-lg text-sm"
                     value={form.paymentMethod}
                     onChange={(e) => setForm((p) => ({ ...p, paymentMethod: e.target.value }))}
                   >
@@ -1130,7 +1130,7 @@ const CashFlow = () => {
                     <div className="space-y-2">
                       <Label>Frequency</Label>
                       <select
-                        className="w-full px-3 py-2 bg-[#1e293b] border-0 rounded-lg text-sm"
+                        className="w-full px-3 py-2 bg-[#0a0a0a] border-0 rounded-lg text-sm"
                         value={form.recurringFrequency}
                         onChange={(e) => setForm((p) => ({ ...p, recurringFrequency: e.target.value }))}
                       >
@@ -1203,7 +1203,7 @@ const CashFlow = () => {
             <div className="space-y-2">
               <Label>Notes</Label>
               <textarea
-                className="w-full px-3 py-2 bg-[#1e293b] border-0 rounded-lg text-sm min-h-[60px]"
+                className="w-full px-3 py-2 bg-[#0a0a0a] border-0 rounded-lg text-sm min-h-[60px]"
                 placeholder="Optional notes"
                 value={form.notes}
                 onChange={(e) => setForm((p) => ({ ...p, notes: e.target.value }))}

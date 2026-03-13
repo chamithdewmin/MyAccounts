@@ -584,7 +584,7 @@ const Orders = () => {
               <div className="space-y-2">
                 <Label className="text-sm font-medium">Client</Label>
                 <select
-                  className="w-full px-3 py-2 bg-[#1e293b] border-0 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+                  className="w-full px-3 py-2 bg-[#0a0a0a] border-0 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary"
                   value={form.clientId}
                   onChange={(e) => handleChange('clientId', e.target.value)}
                 >
@@ -605,7 +605,7 @@ const Orders = () => {
               <div className="space-y-2">
                 <Label className="text-sm font-medium">Payment Method</Label>
                 <select
-                  className="w-full px-3 py-2 bg-[#1e293b] border-0 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+                  className="w-full px-3 py-2 bg-[#0a0a0a] border-0 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary"
                   value={form.paymentMethod}
                   onChange={(e) => handleChange('paymentMethod', e.target.value)}
                 >
@@ -713,7 +713,7 @@ const Orders = () => {
             <div className="space-y-2">
               <Label className="text-sm font-medium">Notes</Label>
               <textarea
-                className="w-full px-3 py-2 bg-[#1e293b] border-0 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary min-h-[60px]"
+                className="w-full px-3 py-2 bg-[#0a0a0a] border-0 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary min-h-[60px]"
                 placeholder="Optional notes for this invoice"
                 value={form.notes}
                 onChange={(e) => handleChange('notes', e.target.value)}

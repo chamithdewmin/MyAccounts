@@ -164,7 +164,7 @@ const Reports = () => {
             </p>
           </div>
           <div className="flex flex-wrap items-center gap-3">
-            <div className="flex rounded-lg border border-border bg-muted/30 p-1">
+            <div className="flex rounded-lg border border-[#171717] bg-muted/30 p-1">
               {DATE_RANGES.map(({ value, label }) => (
                 <button
                   key={value}
@@ -209,7 +209,7 @@ const Reports = () => {
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            className="bg-card rounded-lg p-6 border border-secondary"
+            className="bg-card rounded-lg p-6 border border-[#171717]"
           >
             <h2 className="text-xl font-bold mb-4">Cash Flow (Income vs Expenses)</h2>
             <ResponsiveContainer width="100%" height={300}>
@@ -220,7 +220,7 @@ const Reports = () => {
                 <Tooltip
                   contentStyle={{
                     backgroundColor: '#111316',
-                    border: '1px solid #1f2933',
+                    border: '1px solid #171717',
                     borderRadius: '0.5rem',
                   }}
                 />
@@ -236,7 +236,7 @@ const Reports = () => {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.1 }}
-            className="bg-card rounded-lg p-6 border border-secondary"
+            className="bg-card rounded-lg p-6 border border-[#171717]"
           >
             <h2 className="text-xl font-bold mb-4">Expense Breakdown by Category</h2>
             {expenseByCategory.length > 0 ? (
@@ -259,7 +259,7 @@ const Reports = () => {
                   <Tooltip
                     contentStyle={{
                       backgroundColor: '#111316',
-                      border: '1px solid #1f2933',
+                      border: '1px solid #171717',
                       borderRadius: '0.5rem',
                     }}
                   />
@@ -275,7 +275,7 @@ const Reports = () => {
 
         {/* Summary cards */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <div className="bg-card rounded-lg border border-secondary p-4 space-y-1">
+          <div className="bg-card rounded-lg border border-[#171717] p-4 space-y-1">
             <p className="text-xs uppercase tracking-wide text-muted-foreground">
               {dateRange === 'month' ? 'Period Profit (This month)' : dateRange === 'quarter' ? 'Period Profit (This quarter)' : 'Period Profit (This year)'}
             </p>
@@ -283,13 +283,13 @@ const Reports = () => {
               {settings.currency} {periodProfit.toLocaleString()}
             </p>
           </div>
-          <div className="bg-card rounded-lg border border-secondary p-4 space-y-1">
+          <div className="bg-card rounded-lg border border-[#171717] p-4 space-y-1">
             <p className="text-xs uppercase tracking-wide text-muted-foreground">Yearly Profit</p>
             <p className="text-xl font-bold">
               {settings.currency} {(totals.yearlyProfit ?? 0).toLocaleString()}
             </p>
           </div>
-          <div className="bg-card rounded-lg border border-secondary p-4 space-y-1">
+          <div className="bg-card rounded-lg border border-[#171717] p-4 space-y-1">
             <p className="text-xs uppercase tracking-wide text-muted-foreground">Estimated Tax (Year)</p>
             <p className="text-xl font-bold">
               {settings.currency} {(totals.estimatedTaxYearly ?? 0).toLocaleString()}

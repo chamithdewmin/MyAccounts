@@ -196,7 +196,7 @@ const Reminders = () => {
                         ? (item?.clientName || 'Unknown') + ' - ' + (settings.currency || '') + ' ' + (item?.amount || 0).toLocaleString()
                         : (item?.category || 'Expense') + ' - ' + (settings.currency || '') + ' ' + (item?.amount || 0).toLocaleString();
                     return (
-                      <tr key={r.id} className="border-t border-secondary hover:bg-secondary/20">
+                      <tr key={r.id} className="border-t border-[#171717] hover:bg-secondary/20">
                         <td className="px-4 py-3 text-sm">{label}</td>
                         <td className="px-4 py-3 text-sm">{(r.amount && r.amount > 0) ? `${settings?.currency || 'LKR'} ${Number(r.amount).toLocaleString()}` : '—'}</td>
                         <td className="px-4 py-3 text-sm">{(r.reminderDate || '').slice(0, 10)}</td>

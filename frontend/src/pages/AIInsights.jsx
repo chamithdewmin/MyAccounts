@@ -102,8 +102,8 @@ const AIInsights = () => {
         </div>
 
         {/* Combined: Suggestions + Ask — only the chat area scrolls; input bar stays fixed at bottom */}
-        <div className="bg-card rounded-xl border border-secondary overflow-hidden flex flex-col min-h-[320px] sm:min-h-[400px] md:min-h-[480px] max-h-[calc(100vh-10rem)] sm:max-h-[calc(100vh-11rem)] md:max-h-[calc(100vh-12rem)] h-[calc(100vh-10rem)] sm:h-[calc(100vh-11rem)] md:h-[calc(100vh-12rem)]">
-          <div className="flex-shrink-0 p-4 sm:p-6 pb-3 sm:pb-4 border-b border-secondary">
+        <div className="bg-card rounded-xl border border-[#171717] overflow-hidden flex flex-col min-h-[320px] sm:min-h-[400px] md:min-h-[480px] max-h-[calc(100vh-10rem)] sm:max-h-[calc(100vh-11rem)] md:max-h-[calc(100vh-12rem)] h-[calc(100vh-10rem)] sm:h-[calc(100vh-11rem)] md:h-[calc(100vh-12rem)]">
+          <div className="flex-shrink-0 p-4 sm:p-6 pb-3 sm:pb-4 border-b border-[#171717]">
             <div className="flex flex-col sm:flex-row sm:flex-wrap items-stretch sm:items-center gap-2 sm:gap-3">
               <Button onClick={fetchSuggestions} disabled={isLoading} size="lg" className="w-full sm:w-auto min-h-[44px]">
                 {suggestionsLoading ? (
@@ -142,7 +142,7 @@ const AIInsights = () => {
                   <p className="text-sm sm:text-base leading-6 sm:leading-7 whitespace-pre-wrap break-words">{msg.content}</p>
                 </div>
               ) : (
-                <div key={i} className="rounded-xl bg-secondary/30 border border-secondary p-4 sm:p-6 space-y-3 sm:space-y-4">
+                <div key={i} className="rounded-xl bg-secondary/30 border border-[#171717] p-4 sm:p-6 space-y-3 sm:space-y-4">
                   <p className="text-sm sm:text-base font-medium text-foreground break-words">Q: {msg.question}</p>
                   <p className="text-sm sm:text-base text-muted-foreground leading-6 sm:leading-7 whitespace-pre-wrap break-words">A: {msg.answer}</p>
                 </div>
@@ -156,7 +156,7 @@ const AIInsights = () => {
             )}
           </div>
 
-          <div className="flex-shrink-0 p-4 sm:p-6 pt-3 sm:pt-4 border-t border-secondary bg-background/30 pb-[env(safe-area-inset-bottom)]">
+          <div className="flex-shrink-0 p-4 sm:p-6 pt-3 sm:pt-4 border-t border-[#171717] bg-background/30 pb-[env(safe-area-inset-bottom)]">
             <form onSubmit={handleAsk} className="flex flex-col sm:flex-row gap-2 sm:gap-3">
               <Input
                 placeholder="Ask about profit, purchases, expenses, or how to..."

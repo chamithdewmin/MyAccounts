@@ -44,7 +44,7 @@ const CartDrawer = () => {
               className="fixed top-0 right-0 h-full w-full max-w-md bg-card z-50 shadow-2xl flex flex-col"
             >
               {/* Header */}
-              <div className="flex items-center justify-between p-6 border-b border-secondary">
+              <div className="flex items-center justify-between p-6 border-b border-[#171717]">
                 <h2 className="text-xl font-bold">Shopping Cart</h2>
                 <button
                   onClick={() => setIsOpen(false)}
@@ -115,7 +115,7 @@ const CartDrawer = () => {
 
               {/* Footer */}
               {cart.length > 0 && (
-                <div className="border-t border-secondary p-6 space-y-4">
+                <div className="border-t border-[#171717] p-6 space-y-4">
                   <div className="space-y-2">
                     <div className="flex justify-between text-sm">
                       <span className="text-muted-foreground">Subtotal</span>
@@ -125,7 +125,7 @@ const CartDrawer = () => {
                       <span className="text-muted-foreground">Tax (10%)</span>
                       <span>${getTax().toLocaleString()}</span>
                     </div>
-                    <div className="flex justify-between text-lg font-bold pt-2 border-t border-secondary">
+                    <div className="flex justify-between text-lg font-bold pt-2 border-t border-[#171717]">
                       <span>Total</span>
                       <span className="text-primary">${getGrandTotal().toLocaleString()}</span>
                     </div>

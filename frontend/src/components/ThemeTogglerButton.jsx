@@ -36,7 +36,7 @@ export function ThemeTogglerButton({
         'relative inline-flex items-center justify-center rounded-lg overflow-hidden',
         'transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2',
         variant === 'ghost' && 'hover:bg-secondary',
-        variant === 'outline' && 'border border-secondary hover:bg-secondary',
+        variant === 'outline' && 'border border-[#171717] hover:bg-secondary',
         variant === 'secondary' && 'bg-secondary hover:bg-secondary/80',
         buttonSize,
         className

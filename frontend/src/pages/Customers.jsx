@@ -196,9 +196,9 @@ const Customers = () => {
           />
         </div>
 
-        <div className="w-full max-w-[1600px] rounded-2xl border border-border bg-card overflow-hidden">
+        <div className="w-full max-w-[1600px] rounded-2xl border border-[#171717] bg-card overflow-hidden">
           {/* Header */}
-          <div className="flex items-center justify-between px-6 py-4 border-b border-border">
+          <div className="flex items-center justify-between px-6 py-4 border-b border-[#171717]">
             <div className="flex items-center gap-3">
               <span className="text-foreground font-semibold text-lg">Clients</span>
               <span className="bg-primary/20 text-primary text-xs font-medium px-2.5 py-0.5 rounded-full border border-primary/40">
@@ -214,7 +214,7 @@ const Customers = () => {
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
-                <tr className="border-b border-border text-muted-foreground text-xs uppercase tracking-wide">
+                <tr className="border-b border-[#171717] text-muted-foreground text-xs uppercase tracking-wide">
                   <th className="px-4 py-3 text-left font-medium">Name</th>
                   <th className="px-4 py-3 text-left font-medium">Email address</th>
                   <th className="px-4 py-3 text-left font-medium">Phone</th>
@@ -236,7 +236,7 @@ const Customers = () => {
                       initial={{ opacity: 0 }}
                       animate={{ opacity: 1 }}
                       transition={{ delay: index * 0.02 }}
-                      className="border-b border-border transition-colors hover:bg-secondary/30"
+                      className="border-b border-[#171717] transition-colors hover:bg-secondary/30"
                     >
                       <td className="px-4 py-3">
                         <div className="flex items-center gap-3">
@@ -281,13 +281,13 @@ const Customers = () => {
 
           {/* Pagination */}
           {totalPages > 1 && (
-            <div className="flex items-center justify-between px-6 py-4 border-t border-border">
+            <div className="flex items-center justify-between px-6 py-4 border-t border-[#171717]">
               <Button
                 variant="outline"
                 size="sm"
                 onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
                 disabled={currentPage === 1}
-                className="gap-2 border-border"
+                className="gap-2 border-[#171717]"
               >
                 <ChevronLeft className="w-4 h-4" />
                 Previous
@@ -315,7 +315,7 @@ const Customers = () => {
                 size="sm"
                 onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
                 disabled={currentPage === totalPages}
-                className="gap-2 border-border"
+                className="gap-2 border-[#171717]"
               >
                 Next
                 <ChevronRight className="w-4 h-4" />

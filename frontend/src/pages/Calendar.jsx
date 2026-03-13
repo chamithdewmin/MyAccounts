@@ -142,7 +142,7 @@ const Calendar = () => {
         </div>
 
         {/* Calendar Navigation */}
-        <div className="bg-card rounded-lg border border-secondary p-4 sm:p-6">
+        <div className="bg-card rounded-lg border border-[#171717] p-4 sm:p-6">
           <div className="flex items-center justify-between mb-6">
             <div className="flex items-center gap-4">
               <Button
@@ -249,7 +249,7 @@ const Calendar = () => {
 
         {/* Selected Date Details */}
         {selectedDate && selectedTransactions && (
-          <div className="bg-card rounded-lg border border-secondary p-4 sm:p-6">
+          <div className="bg-card rounded-lg border border-[#171717] p-4 sm:p-6">
             <h3 className="text-lg font-bold mb-4">
               {selectedDate.toLocaleDateString('en-US', { 
                 weekday: 'long', 

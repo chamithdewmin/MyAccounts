@@ -59,7 +59,7 @@ const FilterBar = ({ filters, setFilters, cars }) => {
 
       {/* Advanced filters */}
       {showFilters && (
-        <div className="bg-card rounded-lg p-6 border border-secondary space-y-6">
+        <div className="bg-card rounded-lg p-6 border border-[#171717] space-y-6">
           {/* Colors */}
           <div className="space-y-3">
             <Label>Colors</Label>

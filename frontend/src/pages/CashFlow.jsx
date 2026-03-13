@@ -635,7 +635,7 @@ const CashFlow = () => {
           <motion.div
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
-            className="bg-card rounded-lg border border-secondary p-4 flex items-center justify-between"
+            className="bg-card rounded-lg border border-[#171717] p-4 flex items-center justify-between"
           >
             <div>
               <p className="text-xs uppercase tracking-wide text-muted-foreground">Total Money In</p>
@@ -651,7 +651,7 @@ const CashFlow = () => {
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.05 }}
-            className="bg-card rounded-lg border border-secondary p-4 flex items-center justify-between"
+            className="bg-card rounded-lg border border-[#171717] p-4 flex items-center justify-between"
           >
             <div>
               <p className="text-xs uppercase tracking-wide text-muted-foreground">Total Money Out</p>
@@ -667,7 +667,7 @@ const CashFlow = () => {
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.1 }}
-            className="bg-card rounded-lg border border-secondary p-4 flex items-center justify-between"
+            className="bg-card rounded-lg border border-[#171717] p-4 flex items-center justify-between"
           >
             <div>
               <p className="text-xs uppercase tracking-wide text-muted-foreground">Net Cash Flow</p>
@@ -684,7 +684,7 @@ const CashFlow = () => {
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.15 }}
-            className="bg-card rounded-lg border border-secondary p-4 flex items-center justify-between"
+            className="bg-card rounded-lg border border-[#171717] p-4 flex items-center justify-between"
           >
             <div>
               <p className="text-xs uppercase tracking-wide text-muted-foreground">Current Cash</p>
@@ -719,7 +719,7 @@ const CashFlow = () => {
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            className="bg-card rounded-lg p-6 border border-secondary"
+            className="bg-card rounded-lg p-6 border border-[#171717]"
           >
             <h2 className="text-lg font-bold mb-4">Inflow vs Outflow</h2>
             <ResponsiveContainer width="100%" height={200}>
@@ -818,7 +818,7 @@ const CashFlow = () => {
         </div>
 
         {/* Table */}
-        <div className="bg-card rounded-lg border border-secondary overflow-hidden">
+        <div className="bg-card rounded-lg border border-[#171717] overflow-hidden">
           <div className="overflow-x-auto">
             <table className="w-full">
               <thead className="bg-secondary">
@@ -840,7 +840,7 @@ const CashFlow = () => {
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
                     transition={{ delay: index * 0.02 }}
-                    className={`border-b border-secondary transition-colors ${
+                    className={`border-b border-[#171717] transition-colors ${
                       (() => {
                         const d = new Date(tx.date);
                         return d >= nextMonthRange.start && d <= nextMonthRange.end
@@ -1013,7 +1013,7 @@ const CashFlow = () => {
                       type="checkbox"
                       checked={form.isRecurringInflow}
                       onChange={(e) => setForm((p) => ({ ...p, isRecurringInflow: e.target.checked }))}
-                      className="rounded border-secondary bg-secondary text-primary focus:ring-primary"
+                      className="rounded border-[#171717] bg-secondary text-primary focus:ring-primary"
                     />
                     Recurring income
                   </Label>
@@ -1046,7 +1046,7 @@ const CashFlow = () => {
                                 recurringEndDate: e.target.checked ? '' : p.recurringEndDate,
                               }))
                             }
-                            className="rounded border-secondary"
+                            className="rounded border-[#171717]"
                           />
                           Continue indefinitely
                         </label>
@@ -1120,7 +1120,7 @@ const CashFlow = () => {
                       type="checkbox"
                       checked={form.isRecurring}
                       onChange={(e) => setForm((p) => ({ ...p, isRecurring: e.target.checked }))}
-                      className="rounded border-secondary bg-secondary text-primary focus:ring-primary"
+                      className="rounded border-[#171717] bg-secondary text-primary focus:ring-primary"
                     />
                     Recurring (rent, subscriptions)
                   </Label>
@@ -1153,7 +1153,7 @@ const CashFlow = () => {
                                 recurringEndDate: e.target.checked ? '' : p.recurringEndDate,
                               }))
                             }
-                            className="rounded border-secondary"
+                            className="rounded border-[#171717]"
                           />
                           Continue indefinitely
                         </label>

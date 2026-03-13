@@ -240,7 +240,7 @@ const SMS = () => {
               <p className="text-sm text-muted-foreground mb-4">
                 {clientsWithPhone.length} customer(s) with phone numbers. Select recipients and enter your message.
               </p>
-              <div className="max-h-64 overflow-y-auto border border-secondary rounded-lg">
+              <div className="max-h-64 overflow-y-auto border border-[#171717] rounded-lg">
                 <table className="w-full">
                   <thead className="bg-secondary sticky top-0">
                     <tr>
@@ -260,7 +260,7 @@ const SMS = () => {
                     {clientsWithPhone.map((c) => (
                       <tr
                         key={c.id}
-                        className="border-t border-secondary hover:bg-secondary/30"
+                        className="border-t border-[#171717] hover:bg-secondary/30"
                       >
                         <td className="px-4 py-2">
                           <input

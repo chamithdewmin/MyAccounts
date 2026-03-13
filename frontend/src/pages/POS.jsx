@@ -231,7 +231,7 @@ const POS = () => {
           <motion.div
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
-            className="bg-card rounded-lg border border-secondary p-4 flex items-center justify-between"
+            className="bg-card rounded-lg border border-[#171717] p-4 flex items-center justify-between"
           >
             <div>
               <p className="text-xs uppercase tracking-wide text-muted-foreground">
@@ -250,7 +250,7 @@ const POS = () => {
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.05 }}
-            className="bg-card rounded-lg border border-secondary p-4 flex items-center justify-between"
+            className="bg-card rounded-lg border border-[#171717] p-4 flex items-center justify-between"
           >
             <div>
               <p className="text-xs uppercase tracking-wide text-muted-foreground">
@@ -269,7 +269,7 @@ const POS = () => {
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.1 }}
-            className="bg-card rounded-lg border border-secondary p-4 flex items-center justify-between"
+            className="bg-card rounded-lg border border-[#171717] p-4 flex items-center justify-between"
           >
             <div>
               <p className="text-xs uppercase tracking-wide text-muted-foreground">
@@ -324,7 +324,7 @@ const POS = () => {
             </div>
           </div>
 
-          <div className="bg-card rounded-lg border border-secondary overflow-hidden">
+          <div className="bg-card rounded-lg border border-[#171717] overflow-hidden">
             <div className="overflow-x-auto">
               <table className="w-full">
                 <thead className="bg-secondary">
@@ -344,7 +344,7 @@ const POS = () => {
                       initial={{ opacity: 0 }}
                       animate={{ opacity: 1 }}
                       transition={{ delay: index * 0.02 }}
-                      className="border-b border-secondary hover:bg-secondary/50 transition-colors"
+                      className="border-b border-[#171717] hover:bg-secondary/50 transition-colors"
                     >
                       <td className="px-4 py-3 text-sm text-muted-foreground">
                         {new Date(income.date).toLocaleDateString('en-US', {

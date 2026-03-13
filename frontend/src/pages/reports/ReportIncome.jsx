@@ -185,7 +185,7 @@ const ReportIncome = () => {
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            className="bg-card rounded-lg p-6 border border-secondary"
+            className="bg-card rounded-lg p-6 border border-[#171717]"
           >
             <h2 className="text-xl font-bold mb-4">Income by Client</h2>
             {byClient.length > 0 ? (
@@ -207,7 +207,7 @@ const ReportIncome = () => {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.1 }}
-            className="bg-card rounded-lg p-6 border border-secondary"
+            className="bg-card rounded-lg p-6 border border-[#171717]"
           >
             <h2 className="text-xl font-bold mb-4">Income by Service</h2>
             {byService.length > 0 ? (

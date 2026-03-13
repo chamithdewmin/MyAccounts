@@ -10,7 +10,7 @@ const ProductCard = ({ car, onQuickView }) => {
   return (
     <motion.div
       whileHover={{ y: -4 }}
-      className="bg-card rounded-lg overflow-hidden border border-secondary shadow-lg transition-shadow hover:shadow-2xl"
+      className="bg-card rounded-lg overflow-hidden border border-[#171717] shadow-lg transition-shadow hover:shadow-2xl"
     >
       <div className="relative h-48 overflow-hidden">
         <img
@@ -52,7 +52,7 @@ const ProductCard = ({ car, onQuickView }) => {
           )}
         </div>
 
-        <div className="flex items-center justify-between pt-2 border-t border-secondary">
+        <div className="flex items-center justify-between pt-2 border-t border-[#171717]">
           <span className="text-2xl font-bold text-primary">${car.price.toLocaleString()}</span>
           <span className="text-sm text-muted-foreground">Stock: {car.stock}</span>
         </div>

@@ -6,7 +6,7 @@ const Topbar = () => {
   const [searchQuery, setSearchQuery] = useState('');
 
   return (
-    <header className="sticky top-0 z-30 glass-effect border-b border-secondary pt-[env(safe-area-inset-top)]">
+    <header className="sticky top-0 z-30 glass-effect border-b border-[#171717] pt-[env(safe-area-inset-top)]">
       <div className="flex items-center gap-2 sm:gap-4 px-3 py-2 sm:px-4 sm:py-3 lg:px-6 min-w-0">
         <SidebarTrigger>
           <Menu className="w-5 h-5 shrink-0" />

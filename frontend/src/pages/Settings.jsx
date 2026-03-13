@@ -84,13 +84,13 @@ const Settings = () => {
           className="space-y-6"
         >
           {/* 1. Appearance */}
-          <div className="bg-card rounded-lg p-6 border border-secondary">
+          <div className="bg-card rounded-lg p-6 border border-[#171717]">
             <div className="flex items-center gap-2 mb-4">
               <Palette className="w-5 h-5 text-primary" />
               <h2 className="text-lg font-semibold">Appearance</h2>
             </div>
             <p className="text-sm text-muted-foreground mb-4">Interface preferences.</p>
-            <div className="rounded-lg border border-secondary bg-secondary/30 px-4 py-3 flex items-center justify-between mb-4">
+            <div className="rounded-lg border border-[#171717] bg-secondary/30 px-4 py-3 flex items-center justify-between mb-4">
               <div>
                 <p className="text-sm font-medium">Theme</p>
                 <p className="text-xs text-muted-foreground">Light or dark mode</p>
@@ -100,7 +100,7 @@ const Settings = () => {
                 onClick={() => setLocal((prev) => ({ ...prev, theme: prev.theme === 'dark' ? 'light' : 'dark' }))}
                 className={cn(
                   'relative inline-flex h-7 w-14 items-center rounded-full border transition-colors',
-                  s.theme === 'dark' ? 'bg-primary border-primary' : 'bg-muted border-secondary',
+                  s.theme === 'dark' ? 'bg-primary border-primary' : 'bg-muted border-[#171717]',
                 )}
               >
                 <span className={cn(
@@ -123,7 +123,7 @@ const Settings = () => {
           </div>
 
           {/* 2. Format Settings */}
-          <div className="bg-card rounded-lg p-6 border border-secondary">
+          <div className="bg-card rounded-lg p-6 border border-[#171717]">
             <div className="flex items-center gap-2 mb-4">
               <Calendar className="w-5 h-5 text-primary" />
               <h2 className="text-lg font-semibold">Format Settings</h2>
@@ -173,7 +173,7 @@ const Settings = () => {
           </div>
 
           {/* 3. Tax & Currency */}
-          <div className="bg-card rounded-lg p-6 border border-secondary">
+          <div className="bg-card rounded-lg p-6 border border-[#171717]">
             <div className="flex items-center gap-2 mb-4">
               <Percent className="w-5 h-5 text-primary" />
               <h2 className="text-lg font-semibold">Tax & Currency</h2>
@@ -203,7 +203,7 @@ const Settings = () => {
                   onChange={(e) => setLocal((prev) => ({ ...prev, taxRate: Number(e.target.value || 0) }))}
                 />
               </div>
-              <div className="md:col-span-2 rounded-lg border border-secondary bg-secondary/30 px-4 py-3 flex items-center justify-between">
+              <div className="md:col-span-2 rounded-lg border border-[#171717] bg-secondary/30 px-4 py-3 flex items-center justify-between">
                 <div>
                   <p className="text-sm font-medium">Tax Estimation</p>
                   <p className="text-xs text-muted-foreground">Enable simple tax estimation in reports</p>
@@ -215,7 +215,7 @@ const Settings = () => {
                   onClick={() => setLocal((prev) => ({ ...prev, taxEnabled: !prev.taxEnabled }))}
                   className={cn(
                     'relative inline-flex h-7 w-14 items-center rounded-full border transition-colors',
-                    s.taxEnabled ? 'bg-primary border-primary' : 'bg-muted border-secondary',
+                    s.taxEnabled ? 'bg-primary border-primary' : 'bg-muted border-[#171717]',
                   )}
                 >
                   <span className={cn(
@@ -239,7 +239,7 @@ const Settings = () => {
           </div>
 
           {/* 4. Invoice & Branding */}
-          <div className="bg-card rounded-lg p-6 border border-secondary">
+          <div className="bg-card rounded-lg p-6 border border-[#171717]">
             <div className="flex items-center gap-2 mb-4">
               <Receipt className="w-5 h-5 text-primary" />
               <h2 className="text-lg font-semibold">Invoice & Branding</h2>
@@ -272,7 +272,7 @@ const Settings = () => {
                   />
                   {s.logo && (
                     <div className="flex items-center gap-2">
-                      <img src={s.logo} alt="Logo" className="h-10 w-10 rounded border border-secondary object-contain bg-white" />
+                      <img src={s.logo} alt="Logo" className="h-10 w-10 rounded border border-[#171717] object-contain bg-white" />
                       <Button
                         type="button"
                         variant="outline"
@@ -294,7 +294,7 @@ const Settings = () => {
                     type="color"
                     value={s.invoiceThemeColor || '#F97316'}
                     onChange={(e) => setLocal((prev) => ({ ...prev, invoiceThemeColor: e.target.value }))}
-                    className="h-10 w-14 cursor-pointer rounded border border-secondary bg-transparent p-0"
+                    className="h-10 w-14 cursor-pointer rounded border border-[#171717] bg-transparent p-0"
                   />
                   <Input
                     type="text"
@@ -320,14 +320,14 @@ const Settings = () => {
           </div>
 
           {/* 5. General Settings */}
-          <div className="bg-card rounded-lg p-6 border border-secondary">
+          <div className="bg-card rounded-lg p-6 border border-[#171717]">
             <div className="flex items-center gap-2 mb-4">
               <Zap className="w-5 h-5 text-primary" />
               <h2 className="text-lg font-semibold">General Settings</h2>
             </div>
             <p className="text-sm text-muted-foreground mb-4">Common preferences and behaviors.</p>
             <div className="space-y-3 mb-4">
-              <div className="rounded-lg border border-secondary bg-secondary/30 px-4 py-3 flex items-center justify-between">
+              <div className="rounded-lg border border-[#171717] bg-secondary/30 px-4 py-3 flex items-center justify-between">
                 <div className="flex items-center gap-3">
                   <Zap className="w-4 h-4 text-muted-foreground" />
                   <div>
@@ -342,7 +342,7 @@ const Settings = () => {
                   onClick={() => setLocal((prev) => ({ ...prev, autoSave: !(prev.autoSave ?? false) }))}
                   className={cn(
                     'relative inline-flex h-7 w-14 items-center rounded-full border transition-colors',
-                    (s.autoSave ?? false) ? 'bg-primary border-primary' : 'bg-muted border-secondary',
+                    (s.autoSave ?? false) ? 'bg-primary border-primary' : 'bg-muted border-[#171717]',
                   )}
                 >
                   <span className={cn(
@@ -351,7 +351,7 @@ const Settings = () => {
                   )} />
                 </button>
               </div>
-              <div className="rounded-lg border border-secondary bg-secondary/30 px-4 py-3 flex items-center justify-between">
+              <div className="rounded-lg border border-[#171717] bg-secondary/30 px-4 py-3 flex items-center justify-between">
                 <div className="flex items-center gap-3">
                   <DollarSign className="w-4 h-4 text-muted-foreground" />
                   <div>
@@ -366,7 +366,7 @@ const Settings = () => {
                   onClick={() => setLocal((prev) => ({ ...prev, showCurrencySymbol: !(prev.showCurrencySymbol ?? true) }))}
                   className={cn(
                     'relative inline-flex h-7 w-14 items-center rounded-full border transition-colors',
-                    (s.showCurrencySymbol ?? true) ? 'bg-primary border-primary' : 'bg-muted border-secondary',
+                    (s.showCurrencySymbol ?? true) ? 'bg-primary border-primary' : 'bg-muted border-[#171717]',
                   )}
                 >
                   <span className={cn(
@@ -375,7 +375,7 @@ const Settings = () => {
                   )} />
                 </button>
               </div>
-              <div className="rounded-lg border border-secondary bg-secondary/30 px-4 py-3 flex items-center justify-between">
+              <div className="rounded-lg border border-[#171717] bg-secondary/30 px-4 py-3 flex items-center justify-between">
                 <div className="flex items-center gap-3">
                   <FileText className="w-4 h-4 text-muted-foreground" />
                   <div>
@@ -390,7 +390,7 @@ const Settings = () => {
                   onClick={() => setLocal((prev) => ({ ...prev, invoiceAutoNumbering: !(prev.invoiceAutoNumbering ?? false) }))}
                   className={cn(
                     'relative inline-flex h-7 w-14 items-center rounded-full border transition-colors',
-                    (s.invoiceAutoNumbering ?? false) ? 'bg-primary border-primary' : 'bg-muted border-secondary',
+                    (s.invoiceAutoNumbering ?? false) ? 'bg-primary border-primary' : 'bg-muted border-[#171717]',
                   )}
                 >
                   <span className={cn(
@@ -399,7 +399,7 @@ const Settings = () => {
                   )} />
                 </button>
               </div>
-              <div className="rounded-lg border border-secondary bg-secondary/30 px-4 py-3 flex items-center justify-between">
+              <div className="rounded-lg border border-[#171717] bg-secondary/30 px-4 py-3 flex items-center justify-between">
                 <div className="flex items-center gap-3">
                   <Download className="w-4 h-4 text-muted-foreground" />
                   <div>
@@ -414,7 +414,7 @@ const Settings = () => {
                   onClick={() => setLocal((prev) => ({ ...prev, autoExport: !(prev.autoExport ?? false) }))}
                   className={cn(
                     'relative inline-flex h-7 w-14 items-center rounded-full border transition-colors',
-                    (s.autoExport ?? false) ? 'bg-primary border-primary' : 'bg-muted border-secondary',
+                    (s.autoExport ?? false) ? 'bg-primary border-primary' : 'bg-muted border-[#171717]',
                   )}
                 >
                   <span className={cn(
@@ -438,14 +438,14 @@ const Settings = () => {
           </div>
 
           {/* 6. Notifications */}
-          <div className="bg-card rounded-lg p-6 border border-secondary">
+          <div className="bg-card rounded-lg p-6 border border-[#171717]">
             <div className="flex items-center gap-2 mb-4">
               <Bell className="w-5 h-5 text-primary" />
               <h2 className="text-lg font-semibold">Notifications</h2>
             </div>
             <p className="text-sm text-muted-foreground mb-4">Manage how you receive updates and alerts.</p>
             <div className="space-y-3 mb-4">
-              <div className="rounded-lg border border-secondary bg-secondary/30 px-4 py-3 flex items-center justify-between">
+              <div className="rounded-lg border border-[#171717] bg-secondary/30 px-4 py-3 flex items-center justify-between">
                 <div className="flex items-center gap-3">
                   <Mail className="w-4 h-4 text-muted-foreground" />
                   <div>
@@ -460,7 +460,7 @@ const Settings = () => {
                   onClick={() => setLocal((prev) => ({ ...prev, emailNotifications: !(prev.emailNotifications ?? false) }))}
                   className={cn(
                     'relative inline-flex h-7 w-14 items-center rounded-full border transition-colors',
-                    (s.emailNotifications ?? false) ? 'bg-primary border-primary' : 'bg-muted border-secondary',
+                    (s.emailNotifications ?? false) ? 'bg-primary border-primary' : 'bg-muted border-[#171717]',
                   )}
                 >
                   <span className={cn(
@@ -469,7 +469,7 @@ const Settings = () => {
                   )} />
                 </button>
               </div>
-              <div className="rounded-lg border border-secondary bg-secondary/30 px-4 py-3 flex items-center justify-between">
+              <div className="rounded-lg border border-[#171717] bg-secondary/30 px-4 py-3 flex items-center justify-between">
                 <div className="flex items-center gap-3">
                   <Smartphone className="w-4 h-4 text-muted-foreground" />
                   <div>
@@ -484,7 +484,7 @@ const Settings = () => {
                   onClick={() => setLocal((prev) => ({ ...prev, smsNotifications: !(prev.smsNotifications ?? false) }))}
                   className={cn(
                     'relative inline-flex h-7 w-14 items-center rounded-full border transition-colors',
-                    (s.smsNotifications ?? false) ? 'bg-primary border-primary' : 'bg-muted border-secondary',
+                    (s.smsNotifications ?? false) ? 'bg-primary border-primary' : 'bg-muted border-[#171717]',
                   )}
                 >
                   <span className={cn(
@@ -508,7 +508,7 @@ const Settings = () => {
           </div>
 
           {/* Reset Data */}
-          <div className="bg-card rounded-lg p-6 border border-destructive/30 border-secondary">
+          <div className="bg-card rounded-lg p-6 border border-destructive/30 border-[#171717]">
             <div className="flex items-center gap-2 mb-2">
               <Trash2 className="w-5 h-5 text-destructive" />
               <h2 className="text-lg font-semibold text-destructive">Danger Zone</h2>

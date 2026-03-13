@@ -398,7 +398,7 @@ const Orders = () => {
           </span>
         </div>
 
-        <div className="bg-card rounded-lg border border-secondary overflow-hidden min-w-0">
+        <div className="bg-card rounded-lg border border-[#171717] overflow-hidden min-w-0">
           <div className="overflow-x-auto -mx-3 sm:mx-0">
             <table className="w-full min-w-[640px]">
               <thead className="bg-secondary">
@@ -421,7 +421,7 @@ const Orders = () => {
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
                     transition={{ delay: index * 0.05 }}
-                    className="border-b border-secondary hover:bg-secondary/50 transition-colors"
+                    className="border-b border-[#171717] hover:bg-secondary/50 transition-colors"
                   >
                     <td className="px-4 py-3 text-sm font-mono">{order.invoiceNumber}</td>
                     <td className="px-4 py-3 text-sm">{order.clientName}</td>
@@ -438,7 +438,7 @@ const Orders = () => {
                       <span className={`px-2 py-1 rounded-full text-xs font-semibold ${
                         order.status === 'paid'
                           ? 'bg-green-500/20 text-green-500'
-                          : 'bg-white text-gray-900 border border-border'
+                          : 'bg-white text-gray-900 border border-[#171717]'
                       }`}>
                         {order.status === 'paid' ? 'Paid' : 'Unpaid'}
                       </span>
@@ -771,7 +771,7 @@ const Orders = () => {
           </DialogHeader>
           {hasBankDetailsInSettings && settings?.bankDetails && (
             <div className="space-y-3">
-              <div className="rounded-lg border border-secondary bg-secondary/30 p-4 space-y-2 text-sm">
+              <div className="rounded-lg border border-[#171717] bg-secondary/30 p-4 space-y-2 text-sm">
                 <p><span className="text-muted-foreground">Account Number:</span> {settings.bankDetails.accountNumber}</p>
                 <p><span className="text-muted-foreground">Account Name:</span> {settings.bankDetails.accountName}</p>
                 <p><span className="text-muted-foreground">Bank:</span> {settings.bankDetails.bankName}</p>

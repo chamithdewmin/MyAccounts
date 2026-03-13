@@ -42,7 +42,7 @@
     --background: 0 0% 0%; /* #000000 for page background */
     --foreground: 210 40% 96%;
 
-    --card: 217 33% 17%; /* #1e293b for sidebar and cards */
+    --card: 0 0% 4%; /* #0a0a0a for sidebar and cards */
     --card-foreground: 210 40% 96%;
 
     --primary: 221 100% 53%; /* #0e5cff blue */
@@ -72,8 +72,8 @@
 
     /* Table color scheme */
     --table-header-bg: #000000;
-    --table-row-odd: #1e293b;
-    --table-row-even: #1e293b;
+    --table-row-odd: #0a0a0a;
+    --table-row-even: #0a0a0a;
     --table-row-hover: #101010;
     --table-divider: #000000;
     --table-border: #000000;

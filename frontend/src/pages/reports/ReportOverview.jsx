@@ -10,7 +10,7 @@ import ReportPreviewModal from "@/components/ReportPreviewModal";
 
 // ─── COLORS ──────────────────────────────────────────────────────────────────
 const C = {
-  bg:"#000000", bg2:"#000000", card:"#1e293b", border:"#000000",
+  bg:"#000000", bg2:"#000000", card:"#0a0a0a", border:"#000000",
   border2:"#000000", text:"#fff", text2:"#d1d9e6", muted:"#8b9ab0",
   faint:"#4a5568", green:"#22c55e", red:"#ef4444", blue:"#0e5cff",
   cyan:"#22d3ee", yellow:"#eab308", purple:"#a78bfa", orange:"#f97316",
@@ -68,7 +68,7 @@ const sMap = {
 const Tip = ({ active, payload, label }) => {
   if (!active || !payload?.length) return null;
   return (
-    <div style={{ background:"#1e293b", border:`1px solid ${C.border2}`, borderRadius:12, padding:"12px 16px", boxShadow:"0 8px 32px rgba(0,0,0,.5)" }}>
+    <div style={{ background:"#0a0a0a", border:`1px solid ${C.border2}`, borderRadius:12, padding:"12px 16px", boxShadow:"0 8px 32px rgba(0,0,0,.5)" }}>
       <p style={{ color:C.muted, fontSize:11, margin:"0 0 8px", fontWeight:600 }}>{label}</p>
       {payload.map((p,i) => (
         <div key={i} style={{ display:"flex", alignItems:"center", gap:8, marginBottom:3 }}>
@@ -358,7 +358,7 @@ export default function OverviewReports() {
         @keyframes fi { from { opacity:0; transform:translateY(12px); } to { opacity:1; transform:translateY(0); } }
         .ins { transition:transform .2s, box-shadow .2s, border-color .2s; cursor:pointer; }
         .ins:hover { transform:translateY(-2px); box-shadow:0 8px 24px rgba(0,0,0,.3); }
-        .txrow:hover { background:#1e293b !important; }
+        .txrow:hover { background:#0a0a0a !important; }
       `}</style>
 
       <div style={{ padding:"24px 18px", display:"flex", flexDirection:"column", gap:20, animation:"fi .4s ease" }}>
@@ -381,7 +381,7 @@ export default function OverviewReports() {
                   display: "flex",
                   alignItems: "center",
                   gap: 8,
-                  background: "#1e293b",
+                  background: "#0a0a0a",
                   border: "1px solid #000000",
                   borderRadius: 8,
                   padding: "9px 16px",
@@ -401,7 +401,7 @@ export default function OverviewReports() {
                   display: "flex",
                   alignItems: "center",
                   gap: 8,
-                  background: "#1e293b",
+                  background: "#0a0a0a",
                   border: "1px solid #000000",
                   borderRadius: 8,
                   padding: "9px 16px",
@@ -421,7 +421,7 @@ export default function OverviewReports() {
                   display: "flex",
                   alignItems: "center",
                   gap: 8,
-                  background: "#1e293b",
+                  background: "#0a0a0a",
                   border: "1px solid #000000",
                   borderRadius: 8,
                   padding: "9px 16px",
@@ -555,7 +555,7 @@ export default function OverviewReports() {
                   <Pie data={incomeSources} cx="50%" cy="50%" innerRadius={50} outerRadius={72} dataKey="value" strokeWidth={0}>
                     {incomeSources.map((e,i) => <Cell key={i} fill={e.color}/>)}
                   </Pie>
-                  <Tooltip formatter={v=>`LKR ${v.toLocaleString()}`} contentStyle={{ background:"#1e293b", border:`1px solid ${C.border2}`, borderRadius:10 }}/>
+                  <Tooltip formatter={v=>`LKR ${v.toLocaleString()}`} contentStyle={{ background:"#0a0a0a", border:`1px solid ${C.border2}`, borderRadius:10 }}/>
                 </PieChart>
               </ResponsiveContainer>
               <div style={{ display:"flex", flexDirection:"column", gap:8, marginTop:6 }}>

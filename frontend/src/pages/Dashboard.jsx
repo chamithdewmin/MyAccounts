@@ -142,7 +142,7 @@ const StatCard = ({ icon, iconBg, label, value, badge, badgeColor }) => {
 
   return (
     <div style={{
-      background: "#1e293b",
+      background: "#0a0a0a",
       borderRadius: 16,
       padding: "18px 20px",
       display: "flex",
@@ -584,7 +584,7 @@ export default function FinanceDashboard() {
       color: "#fff",
     },
     card: {
-      background: "#1e293b",
+      background: "#0a0a0a",
       borderRadius: 20,
       border: "1px solid #000000",
       padding: 20,
@@ -883,7 +883,7 @@ export default function FinanceDashboard() {
 
                   {/* Info strip */}
                   <div style={{
-                    background: "#1e293b",
+                    background: "#0a0a0a",
                     borderRadius: 14,
                     padding: "14px 18px",
                     border: "1px solid #000000",

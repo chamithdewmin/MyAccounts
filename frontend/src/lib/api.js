@@ -125,6 +125,25 @@ export const api = {
     getSuggestions: () => request('/ai/suggestions', { method: 'POST', body: JSON.stringify({}) }),
     ask: (question) => request('/ai/ask', { method: 'POST', body: JSON.stringify({ question: question.trim() }) }),
   },
+  backup: {
+    getInfo: () => request('/backup/info'),
+    download: async () => {
+      const url = `${API_BASE}/backup`;
+      const headers = { Authorization: `Bearer ${getToken()}` };
+      const res = await fetch(url, { headers });
+      if (!res.ok) throw new Error('Failed to download backup');
+      const data = await res.json();
+      const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+      const filename = `MyAccounts_Backup_${new Date().toISOString().split('T')[0].replace(/-/g, '_')}.json`;
+      const link = document.createElement('a');
+      link.href = URL.createObjectURL(blob);
+      link.download = filename;
+      link.click();
+      URL.revokeObjectURL(link.href);
+      return data;
+    },
+    restore: (data) => request('/backup/restore', { method: 'POST', body: JSON.stringify(data) }),
+  },
 };
 
 export const useApi = () => !!import.meta.env.VITE_API_URL || window.location.origin.includes('myaccounts.logozodev.com');

@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { Helmet } from 'react-helmet';
 import { motion } from 'framer-motion';
-import { Save, Palette, Trash2, Percent, Receipt, Bell, Mail, Smartphone, Zap, DollarSign, Calendar, FileText, Download } from 'lucide-react';
+import { Save, Palette, Trash2, Percent, Receipt, Bell, Mail, Smartphone, Zap, DollarSign, Calendar, FileText, Download, Upload, Database, AlertTriangle, HardDrive } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
@@ -23,6 +23,14 @@ const Settings = () => {
   const [resetLoading, setResetLoading] = useState(false);
   const [devOtp, setDevOtp] = useState('');
   const [saving, setSaving] = useState({});
+
+  // Backup/Restore states
+  const [backupLoading, setBackupLoading] = useState(false);
+  const [restoreLoading, setRestoreLoading] = useState(false);
+  const [restoreConfirmOpen, setRestoreConfirmOpen] = useState(false);
+  const [selectedFile, setSelectedFile] = useState(null);
+  const [backupInfo, setBackupInfo] = useState(null);
+  const fileInputRef = useRef(null);
 
   useEffect(() => {
     if (!settings) return;
@@ -61,6 +69,80 @@ const Settings = () => {
       if (current === undefined || saved === undefined) return false;
       return String(current ?? '') !== String(saved ?? '');
     });
+  };
+
+  // Load backup info on mount
+  useEffect(() => {
+    const loadBackupInfo = async () => {
+      try {
+        const info = await api.backup.getInfo();
+        setBackupInfo(info);
+      } catch (err) {
+        console.log('Could not load backup info:', err.message);
+      }
+    };
+    loadBackupInfo();
+  }, []);
+
+  const handleBackupDownload = async () => {
+    setBackupLoading(true);
+    try {
+      await api.backup.download();
+      toast({
+        title: 'Backup downloaded',
+        description: 'Your data backup has been downloaded successfully.',
+      });
+    } catch (err) {
+      toast({
+        title: 'Backup failed',
+        description: err.message || 'Failed to download backup.',
+        variant: 'destructive',
+      });
+    } finally {
+      setBackupLoading(false);
+    }
+  };
+
+  const handleFileSelect = (e) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setSelectedFile(file);
+      setRestoreConfirmOpen(true);
+    }
+  };
+
+  const handleRestore = async () => {
+    if (!selectedFile) return;
+    
+    setRestoreLoading(true);
+    try {
+      const text = await selectedFile.text();
+      const data = JSON.parse(text);
+      
+      if (!data.version || !data.tables) {
+        throw new Error('Invalid backup file format');
+      }
+      
+      const result = await api.backup.restore(data);
+      setRestoreConfirmOpen(false);
+      setSelectedFile(null);
+      if (fileInputRef.current) fileInputRef.current.value = '';
+      
+      await loadData();
+      
+      toast({
+        title: 'Restore successful',
+        description: result.message || `Restored ${result.restoredCount} records.`,
+      });
+    } catch (err) {
+      toast({
+        title: 'Restore failed',
+        description: err.message || 'Failed to restore backup.',
+        variant: 'destructive',
+      });
+    } finally {
+      setRestoreLoading(false);
+    }
   };
 
   const s = local;
@@ -507,6 +589,77 @@ const Settings = () => {
             </div>
           </div>
 
+          {/* Database Backup & Restore */}
+          <div className="bg-card rounded-lg p-6 border border-[#171717]">
+            <div className="flex items-center gap-2 mb-2">
+              <Database className="w-5 h-5 text-primary" />
+              <h2 className="text-lg font-semibold">Database Backup & Restore</h2>
+            </div>
+            <p className="text-sm text-muted-foreground mb-4">
+              Download a backup of all your data or restore from a previous backup file.
+            </p>
+
+            <div className="grid gap-6 sm:grid-cols-2">
+              {/* Backup Section */}
+              <div className="space-y-4">
+                <div className="flex items-center gap-2">
+                  <HardDrive className="w-4 h-4 text-green-500" />
+                  <h3 className="font-medium">Create Backup</h3>
+                </div>
+                <p className="text-sm text-muted-foreground">
+                  Download a complete backup of your data including orders, clients, invoices, expenses, incomes, and settings.
+                </p>
+                {backupInfo && (
+                  <div className="text-xs text-muted-foreground bg-[#1e293b] rounded-lg p-3">
+                    <p>Total records: <span className="text-white font-medium">{backupInfo.totalRecords}</span></p>
+                  </div>
+                )}
+                <Button
+                  onClick={handleBackupDownload}
+                  disabled={backupLoading}
+                  className="gap-2 w-full sm:w-auto"
+                >
+                  <Download className="h-4 w-4" />
+                  {backupLoading ? 'Downloading...' : 'Backup Now'}
+                </Button>
+              </div>
+
+              {/* Restore Section */}
+              <div className="space-y-4">
+                <div className="flex items-center gap-2">
+                  <Upload className="w-4 h-4 text-yellow-500" />
+                  <h3 className="font-medium">Restore Backup</h3>
+                </div>
+                <p className="text-sm text-muted-foreground">
+                  Import a backup file to restore your data. This will replace all current data.
+                </p>
+                <div className="flex items-center gap-2 p-3 bg-yellow-500/10 border border-yellow-500/30 rounded-lg">
+                  <AlertTriangle className="w-4 h-4 text-yellow-500 flex-shrink-0" />
+                  <p className="text-xs text-yellow-500">Restoring will overwrite all existing data</p>
+                </div>
+                <div>
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept=".json"
+                    onChange={handleFileSelect}
+                    className="hidden"
+                    id="restore-file-input"
+                  />
+                  <Button
+                    variant="outline"
+                    onClick={() => fileInputRef.current?.click()}
+                    disabled={restoreLoading}
+                    className="gap-2 w-full sm:w-auto border-[#171717]"
+                  >
+                    <Upload className="h-4 w-4" />
+                    {restoreLoading ? 'Restoring...' : 'Choose Backup File'}
+                  </Button>
+                </div>
+              </div>
+            </div>
+          </div>
+
           {/* Reset Data */}
           <div className="bg-card rounded-lg p-6 border border-destructive/30 border-[#171717]">
             <div className="flex items-center gap-2 mb-2">
@@ -607,6 +760,55 @@ const Settings = () => {
               }}
             >
               {resetLoading ? 'Verifying...' : 'Verify & Reset'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Restore confirmation dialog */}
+      <Dialog open={restoreConfirmOpen} onOpenChange={(open) => { setRestoreConfirmOpen(open); if (!open) { setSelectedFile(null); if (fileInputRef.current) fileInputRef.current.value = ''; } }}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <AlertTriangle className="w-5 h-5 text-yellow-500" />
+              Restore Database?
+            </DialogTitle>
+            <DialogDescription>
+              This will replace ALL your current data with the data from the backup file. This action cannot be undone.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-3 py-2">
+            {selectedFile && (
+              <div className="bg-[#1e293b] rounded-lg p-3">
+                <p className="text-sm text-muted-foreground">Selected file:</p>
+                <p className="text-sm font-medium text-white truncate">{selectedFile.name}</p>
+                <p className="text-xs text-muted-foreground">Size: {(selectedFile.size / 1024).toFixed(2)} KB</p>
+              </div>
+            )}
+            <div className="flex items-start gap-2 p-3 bg-red-500/10 border border-red-500/30 rounded-lg">
+              <AlertTriangle className="w-4 h-4 text-red-500 flex-shrink-0 mt-0.5" />
+              <div className="text-xs text-red-400">
+                <p className="font-medium">Warning:</p>
+                <ul className="list-disc list-inside mt-1 space-y-1">
+                  <li>All current orders, clients, invoices, and other data will be deleted</li>
+                  <li>Data from the backup file will be imported</li>
+                  <li>This process cannot be reversed</li>
+                </ul>
+              </div>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => { setRestoreConfirmOpen(false); setSelectedFile(null); if (fileInputRef.current) fileInputRef.current.value = ''; }}>
+              Cancel
+            </Button>
+            <Button
+              variant="destructive"
+              disabled={restoreLoading || !selectedFile}
+              onClick={handleRestore}
+              className="gap-2"
+            >
+              <Upload className="h-4 w-4" />
+              {restoreLoading ? 'Restoring...' : 'Yes, Restore Data'}
             </Button>
           </DialogFooter>
         </DialogContent>

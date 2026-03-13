@@ -83,7 +83,7 @@ function MenuPopupItem({ icon, label, onClick }) {
         cursor: "pointer",
         background: hovered ? "rgba(255,255,255,0.06)" : "transparent",
         color: hovered ? "#fff" : "#8b9ab0",
-        fontSize: 13.5,
+        fontSize: 14.5,
         transition: "all 0.15s",
       }}
     >
@@ -108,7 +108,7 @@ function SubItem({ to, label, icon: Icon }) {
         alignItems: "center",
         gap: 10,
         padding: "8px 12px 8px 36px",
-        fontSize: 13,
+        fontSize: 14.5,
         color: isActive ? "#0e5cff" : hovered ? "#fff" : "#8b9ab0",
         cursor: "pointer",
         borderRadius: 6,
@@ -123,7 +123,7 @@ function SubItem({ to, label, icon: Icon }) {
         textDecoration: "none",
       }}
     >
-      {Icon && <Icon size={16} style={{ flexShrink: 0 }} />}
+      {Icon && <Icon size={17} style={{ flexShrink: 0 }} />}
       {label}
     </NavLink>
   );
@@ -172,7 +172,7 @@ function NavItem({
           transition: "all 0.2s",
           position: "relative",
           color: hovered || active ? "#fff" : "#8b9ab0",
-          fontSize: 14,
+          fontSize: 15,
           fontWeight: active ? 500 : 400,
           whiteSpace: "nowrap",
           overflow: "hidden",
@@ -189,8 +189,8 @@ function NavItem({
       >
         <span
           style={{
-            width: 20,
-            height: 20,
+            width: 22,
+            height: 22,
             flexShrink: 0,
             display: "flex",
             alignItems: "center",
@@ -198,7 +198,7 @@ function NavItem({
             color: active ? "#0e5cff" : "inherit",
           }}
         >
-          <Icon size={20} />
+          <Icon size={21} />
         </span>
         {!mini && (
           <span style={{ flex: 1, overflow: "hidden", color: active ? "#0e5cff" : "inherit" }}>
@@ -413,7 +413,7 @@ export default function SidebarNew() {
           {!collapsed && (
             <div
               style={{
-                fontSize: 11,
+                fontSize: 12,
                 fontWeight: 600,
                 color: "#6b7280",
                 textTransform: "uppercase",

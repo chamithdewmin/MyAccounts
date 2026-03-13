@@ -5,10 +5,13 @@ import SidebarNew, { SidebarProvider, useSidebarState } from '@/components/Sideb
 const MainContent = () => {
   const { collapsed } = useSidebarState();
   
+  // Account for sidebar width + margins (10px left margin + 10px gap)
+  const sidebarMargin = collapsed ? 88 : 280;
+  
   return (
     <main 
       className="flex-1 transition-[margin] duration-300 px-6 py-2 sm:px-8 sm:py-3 lg:px-10 lg:py-4 min-w-0 max-w-full pt-[env(safe-area-inset-top)]"
-      style={{ marginLeft: collapsed ? 68 : 260 }}
+      style={{ marginLeft: sidebarMargin }}
     >
       <Outlet />
     </main>

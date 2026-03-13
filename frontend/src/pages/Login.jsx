@@ -83,7 +83,7 @@ const Login = () => {
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   required
-                  className="h-12 bg-[#0a0a0a] border-[#0a0a0a] text-[#a0a0a0] placeholder:text-[#6b6b6b] "
+                  className="h-12 bg-[#1e293b] border-0 text-white placeholder:text-[#64748b] "
                 />
               </div>
 
@@ -102,7 +102,7 @@ const Login = () => {
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     required
-                    className="h-12 bg-[#0a0a0a] border-[#0a0a0a] text-[#a0a0a0] placeholder:text-[#6b6b6b] pr-10"
+                    className="h-12 bg-[#1e293b] border-0 text-white placeholder:text-[#64748b] pr-10"
                   />
                   <button
                     type="button"

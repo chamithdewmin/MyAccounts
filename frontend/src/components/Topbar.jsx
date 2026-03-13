@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
-import { Search, Menu } from 'lucide-react';
-import { SidebarTrigger } from '@/components/ui/sidebar';
+import { Search } from 'lucide-react';
 
 const Topbar = () => {
   const [searchQuery, setSearchQuery] = useState('');
@@ -8,9 +7,8 @@ const Topbar = () => {
   return (
     <header className="sticky top-0 z-30 glass-effect border-b border-[#171717] pt-[env(safe-area-inset-top)]">
       <div className="flex items-center gap-2 sm:gap-4 px-3 py-2 sm:px-4 sm:py-3 lg:px-6 min-w-0">
-        <SidebarTrigger>
-          <Menu className="w-5 h-5 shrink-0" />
-        </SidebarTrigger>
+        {/* Mobile menu button space - sidebar has its own toggle */}
+        <div className="w-10 lg:hidden" />
         <div className="relative flex-1 min-w-0 max-w-md">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
           <input

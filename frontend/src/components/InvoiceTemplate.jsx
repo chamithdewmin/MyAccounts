@@ -136,7 +136,7 @@ const invoiceStyles = {
     margin: 0,
     padding: '48px 40px',
     background: '#fff',
-    color: '#1a1a1a',
+    color: '#0a0a0a',
     position: 'relative',
     boxSizing: 'border-box',
   },
@@ -179,15 +179,15 @@ const invoiceStyles = {
   },
   sellerInfo: { fontSize: '13px', lineHeight: '1.7', color: '#333' },
   sellerName: { fontWeight: 'bold', fontSize: '15px', marginBottom: '2px' },
-  invoiceWord: { fontSize: '46px', fontWeight: 600, letterSpacing: '6px', color: '#1a1a1a', lineHeight: 1, textAlign: 'right', fontFamily: "'Montserrat', sans-serif" },
+  invoiceWord: { fontSize: '46px', fontWeight: 600, letterSpacing: '6px', color: '#0a0a0a', lineHeight: 1, textAlign: 'right', fontFamily: "'Montserrat', sans-serif" },
   invoiceNum: { fontSize: '14px', color: '#555', marginTop: '6px', textAlign: 'right' },
   metaSection: { display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', margin: '8px 0 20px' },
   billToLabel: { color: '#555', fontSize: '13px', marginBottom: '4px' },
   billToName: { fontWeight: 'bold', fontSize: '15px' },
-  billToDetail: { fontSize: '13px', color: '#1a1a1a', marginTop: '2px' },
+  billToDetail: { fontSize: '13px', color: '#0a0a0a', marginTop: '2px' },
   metaRow: { display: 'flex', justifyContent: 'flex-end', gap: '24px', marginBottom: '4px', fontSize: '13px' },
   metaKey: { color: '#555' },
-  metaVal: { color: '#1a1a1a', fontWeight: 500, minWidth: '120px', textAlign: 'right' },
+  metaVal: { color: '#0a0a0a', fontWeight: 500, minWidth: '120px', textAlign: 'right' },
   table: { width: '100%', borderCollapse: 'collapse', marginTop: '8px', border: 'none', borderSpacing: 0 },
   th: {
     padding: '10px 14px',
@@ -209,9 +209,9 @@ const invoiceStyles = {
     borderRight: 'none',
     borderBottom: '1px solid #e5e7eb',
     background: '#fff',
-    color: '#1a1a1a',
+    color: '#0a0a0a',
   },
-  itemTitle: { fontWeight: 600, marginBottom: '2px', fontSize: '13px', color: '#1a1a1a' },
+  itemTitle: { fontWeight: 600, marginBottom: '2px', fontSize: '13px', color: '#0a0a0a' },
   itemSku: { color: '#333', fontSize: '12px', marginTop: '4px' },
   itemDesc: { color: '#333', fontSize: '12px', marginTop: '3px', lineHeight: 1.5 },
   totalsSection: { display: 'flex', justifyContent: 'flex-end', marginTop: '10px' },
@@ -318,7 +318,7 @@ export default function InvoiceTemplate({
               fontFamily: "'Montserrat', sans-serif",
               fontWeight: 600,
               fontSize: 14,
-              background: dlStatus === 'loading' ? '#7f1d1d' : dlStatus === 'done' ? '#166534' : '#1a1a1a',
+              background: dlStatus === 'loading' ? '#7f1d1d' : dlStatus === 'done' ? '#166534' : '#0a0a0a',
               color: '#fff',
               border: 'none',
               borderRadius: 8,
@@ -331,7 +331,7 @@ export default function InvoiceTemplate({
               transition: 'background 0.2s',
             }}
             onMouseEnter={(e) => { if (dlStatus === 'idle') e.currentTarget.style.background = '#cc0000'; }}
-            onMouseLeave={(e) => { if (dlStatus === 'idle') e.currentTarget.style.background = '#1a1a1a'; }}
+            onMouseLeave={(e) => { if (dlStatus === 'idle') e.currentTarget.style.background = '#0a0a0a'; }}
           >
             {dlStatus === 'loading' ? <SpinIcon /> : <DownloadIcon />}
             {dlStatus === 'loading' ? 'Generating…' : dlStatus === 'done' ? '✓ Downloaded!' : dlStatus === 'error' ? 'Retry' : 'Download PDF (A4)'}
@@ -343,7 +343,7 @@ export default function InvoiceTemplate({
               fontFamily: "'Montserrat', sans-serif",
               fontWeight: 600,
               fontSize: 14,
-              background: '#1a1a1a',
+              background: '#0a0a0a',
               color: '#fff',
               border: 'none',
               borderRadius: 8,
@@ -356,7 +356,7 @@ export default function InvoiceTemplate({
               transition: 'background 0.2s',
             }}
             onMouseEnter={(e) => { e.currentTarget.style.background = '#cc0000'; }}
-            onMouseLeave={(e) => { e.currentTarget.style.background = '#1a1a1a'; }}
+            onMouseLeave={(e) => { e.currentTarget.style.background = '#0a0a0a'; }}
           >
             <PrintIcon />
             Print
@@ -456,7 +456,7 @@ export default function InvoiceTemplate({
                 {inv.discountPercentage > 0 && (
                   <div style={invoiceStyles.row()}><span>Discount ({inv.discountPercentage}%)</span><span>{inv.discountFormatted}</span></div>
                 )}
-                <div style={invoiceStyles.row({ fontWeight: 'bold', fontSize: '15px', borderTop: '2px solid #1a1a1a', borderBottom: 'none', marginTop: '4px', paddingTop: '8px' })}>
+                <div style={invoiceStyles.row({ fontWeight: 'bold', fontSize: '15px', borderTop: '2px solid #0a0a0a', borderBottom: 'none', marginTop: '4px', paddingTop: '8px' })}>
                   <span>Total</span><span>{inv.totalFormatted}</span>
                 </div>
               </div>

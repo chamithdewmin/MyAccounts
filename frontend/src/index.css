@@ -4,8 +4,8 @@
 
 @layer base {
   :root {
-    /* Light theme: using #0c0e14 background for all pages */
-    --background: 225 25% 6%; /* #0c0e14 */
+    /* Light theme: using #000000 background for all pages */
+    --background: 0 0% 0%; /* #000000 */
     --foreground: 210 40% 96%;
 
     --card: 0 0% 100%;
@@ -39,10 +39,10 @@
 
   .dark {
     /* Dark theme with custom background colors */
-    --background: 225 25% 6%; /* #0c0e14 for page background */
+    --background: 0 0% 0%; /* #000000 for page background */
     --foreground: 210 40% 96%;
 
-    --card: 224 22% 10%; /* #13161e for sidebar and cards */
+    --card: 0 0% 4%; /* #0a0a0a for sidebar and cards */
     --card-foreground: 210 40% 96%;
 
     --primary: 217 91% 60%; /* blue */
@@ -68,12 +68,12 @@
     --sidebar-active-accent: 217 91% 60%;
 
     /* Table color scheme */
-    --table-header-bg: #0f1117;
-    --table-row-odd: #111419;
-    --table-row-even: #13161e;
-    --table-row-hover: #1a1d27;
-    --table-divider: #1e2433;
-    --table-border: #2a3347;
+    --table-header-bg: #000000;
+    --table-row-odd: #0a0a0a;
+    --table-row-even: #0a0a0a;
+    --table-row-hover: #101010;
+    --table-divider: #101010;
+    --table-border: #101010;
     --text-primary: #fff;
     --text-body: #d1d9e6;
     --text-label: #8b9ab0;

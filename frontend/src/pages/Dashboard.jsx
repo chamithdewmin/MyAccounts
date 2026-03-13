@@ -116,7 +116,7 @@ const CashIcon = () => (
 const CustomTooltip = ({ active, payload, label, currency = "" }) => {
   if (active && payload && payload.length) {
     return (
-      <div style={{ background: "#000000", border: "1px solid #101010", borderRadius: 10, padding: "10px 14px" }}>
+      <div style={{ background: "#171717", border: "1px solid #171717", borderRadius: 10, padding: "10px 14px" }}>
         <p style={{ color: "#fff", fontWeight: 700, marginBottom: 4, fontSize: 13 }}>{label}</p>
         {payload.map((p, i) => (
           <p key={i} style={{ color: p.color, fontSize: 12, margin: "2px 0" }}>
@@ -149,7 +149,7 @@ const StatCard = ({ icon, iconBg, label, value, badge, badgeColor }) => {
       alignItems: "center",
       gap: 16,
       flex: 1,
-      border: "1px solid #101010",
+      border: "1px solid #171717",
     }}>
       <div style={{
         width: 44, height: 44, borderRadius: 12,
@@ -586,7 +586,7 @@ export default function FinanceDashboard() {
     card: {
       background: "#0a0a0a",
       borderRadius: 20,
-      border: "1px solid #101010",
+      border: "1px solid #171717",
       padding: 20,
     },
     label: { color: "#8b9ab0", fontSize: 12, fontWeight: 500, margin: 0 },
@@ -618,7 +618,7 @@ export default function FinanceDashboard() {
       {/* HEADER + DATE RANGE TOGGLE */}
       <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", justifyContent: "space-between", gap: 12, marginBottom: 16, marginTop: -4 }}>
         <p style={{ color: "#8b9ab0", fontSize: 15, margin: 0, fontWeight: 500 }}>{getGreeting()}, {userName} 👋</p>
-        <div style={{ display: "flex", gap: 6, background: "#000000", borderRadius: 10, padding: 4 }}>
+        <div style={{ display: "flex", gap: 6, background: "#171717", borderRadius: 10, padding: 4 }}>
           {DATE_RANGES.map(({ value, label }) => (
             <button
               key={value}
@@ -707,7 +707,7 @@ export default function FinanceDashboard() {
                   <div style={{ width: 8, height: 8, borderRadius: "50%", background: "#22d3ee" }} />
                   <span style={{ color: "#8b9ab0", fontSize: 12 }}>Outcome</span>
                 </div>
-                <div style={{ background: "#000000", borderRadius: 8, padding: "4px 12px", fontSize: 12, color: "#8b9ab0" }}>
+                <div style={{ background: "#171717", borderRadius: 8, padding: "4px 12px", fontSize: 12, color: "#8b9ab0" }}>
                 {dateRange === "month" ? "Last 8 months" : dateRange === "quarter" ? "Last 8 quarters" : "Last 5 years"}
               </div>
               </div>
@@ -760,7 +760,7 @@ export default function FinanceDashboard() {
                     <div key={i}>
                       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 5 }}>
                         <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                          <div style={{ width: 32, height: 32, borderRadius: 8, background: "#000000", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                          <div style={{ width: 32, height: 32, borderRadius: 8, background: "#171717", display: "flex", alignItems: "center", justifyContent: "center" }}>
                             {p.icon}
                           </div>
                           <span style={{ color: "#d1d9e6", fontSize: 13, fontWeight: 500 }}>{p.label}</span>
@@ -769,7 +769,7 @@ export default function FinanceDashboard() {
                           <span style={{ color: "#fff", fontWeight: 600 }}>{formatCurrency(p.spent)}</span>/{formatCurrency(p.total)}
                         </span>
                       </div>
-                      <div style={{ height: 3, background: "#000000", borderRadius: 99 }}>
+                      <div style={{ height: 3, background: "#171717", borderRadius: 99 }}>
                         <div style={{ height: 3, background: p.color, borderRadius: 99, width: `${Math.min((p.spent / p.total) * 100, 100)}%` }} />
                       </div>
                     </div>
@@ -875,7 +875,7 @@ export default function FinanceDashboard() {
                           transition: "all 0.3s ease",
                           background: currentCard === i
                             ? (c.id === 1 ? "#16a34a" : "#0e5cff")
-                            : "#000000",
+                            : "#171717",
                         }}
                       />
                     ))}
@@ -886,7 +886,7 @@ export default function FinanceDashboard() {
                     background: "#0a0a0a",
                     borderRadius: 14,
                     padding: "14px 18px",
-                    border: "1px solid #101010",
+                    border: "1px solid #171717",
                     display: "flex",
                     alignItems: "center",
                     justifyContent: "space-between",
@@ -971,7 +971,7 @@ export default function FinanceDashboard() {
           <div style={s.card}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
               <h3 style={{ color: "#fff", fontSize: 14, fontWeight: 700, margin: 0 }}>Activity</h3>
-              <div style={{ background: "#000000", borderRadius: 8, padding: "4px 10px", fontSize: 12, color: "#8b9ab0" }}>Month ▾</div>
+              <div style={{ background: "#171717", borderRadius: 8, padding: "4px 10px", fontSize: 12, color: "#8b9ab0" }}>Month ▾</div>
             </div>
             <div style={{ display: "flex", justifyContent: "center" }}>
               <PieChart width={200} height={120}>

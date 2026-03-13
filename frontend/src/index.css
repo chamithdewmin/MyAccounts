@@ -60,7 +60,7 @@
     --destructive: 0 72% 51%;
     --destructive-foreground: 0 0% 100%;
 
-    --border: 0 0% 6%; /* #101010 */
+    --border: 216 19% 15%;
     --input: 217 33% 17%; /* #1e293b - dark blue-gray for inputs */
     
     --secondary: 217 33% 17%; /* #1e293b - dark blue-gray */
@@ -75,8 +75,8 @@
     --table-row-odd: #0a0a0a;
     --table-row-even: #0a0a0a;
     --table-row-hover: #101010;
-    --table-divider: #101010;
-    --table-border: #101010;
+    --table-divider: #171717;
+    --table-border: #171717;
     --text-primary: #fff;
     --text-body: #d1d9e6;
     --text-label: #8b9ab0;

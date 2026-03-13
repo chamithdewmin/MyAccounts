@@ -10,8 +10,8 @@ import ReportPreviewModal from "@/components/ReportPreviewModal";
 
 // ─── COLORS ──────────────────────────────────────────────────────────────────
 const C = {
-  bg:"#000000", bg2:"#000000", card:"#0a0a0a", border:"#101010",
-  border2:"#101010", text:"#fff", text2:"#d1d9e6", muted:"#8b9ab0",
+  bg:"#000000", bg2:"#000000", card:"#0a0a0a", border:"#171717",
+  border2:"#171717", text:"#fff", text2:"#d1d9e6", muted:"#8b9ab0",
   faint:"#4a5568", green:"#22c55e", red:"#ef4444", blue:"#0e5cff",
   cyan:"#22d3ee", yellow:"#eab308", purple:"#a78bfa", orange:"#f97316",
 };
@@ -382,7 +382,7 @@ export default function OverviewReports() {
                   alignItems: "center",
                   gap: 8,
                   background: "#0a0a0a",
-                  border: "1px solid #101010",
+                  border: "1px solid #171717",
                   borderRadius: 8,
                   padding: "9px 16px",
                   color: "#fff",
@@ -402,7 +402,7 @@ export default function OverviewReports() {
                   alignItems: "center",
                   gap: 8,
                   background: "#0a0a0a",
-                  border: "1px solid #101010",
+                  border: "1px solid #171717",
                   borderRadius: 8,
                   padding: "9px 16px",
                   color: "#fff",
@@ -422,7 +422,7 @@ export default function OverviewReports() {
                   alignItems: "center",
                   gap: 8,
                   background: "#0a0a0a",
-                  border: "1px solid #101010",
+                  border: "1px solid #171717",
                   borderRadius: 8,
                   padding: "9px 16px",
                   color: "#fff",

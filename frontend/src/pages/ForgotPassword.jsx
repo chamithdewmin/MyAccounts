@@ -27,7 +27,7 @@ const ForgotPassword = () => {
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
-  const inputClass = 'h-12 bg-[#0a0a0a] border-[#0a0a0a] text-[#a0a0a0] placeholder:text-[#6b6b6b]';
+  const inputClass = 'h-12 bg-[#1e293b] border-0 text-white placeholder:text-[#64748b]';
   const labelClass = 'text-[#D3D3D3]';
   const linkClass = 'text-[#6A6FF7] hover:text-[#8b8ff9]';
 

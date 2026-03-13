@@ -134,7 +134,7 @@ const Settings = () => {
                 <Label htmlFor="date-format">Date Format</Label>
                 <select
                   id="date-format"
-                  className="w-full px-3 py-2 bg-secondary border border-secondary rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
+                  className="w-full px-3 py-2 bg-[#1e293b] border-0 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
                   value={s.dateFormat || 'DD/MM/YYYY'}
                   onChange={(e) => setLocal((prev) => ({ ...prev, dateFormat: e.target.value }))}
                 >
@@ -148,7 +148,7 @@ const Settings = () => {
                 <Label htmlFor="number-format">Number Format</Label>
                 <select
                   id="number-format"
-                  className="w-full px-3 py-2 bg-secondary border border-secondary rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
+                  className="w-full px-3 py-2 bg-[#1e293b] border-0 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
                   value={s.numberFormat || '1,234.56'}
                   onChange={(e) => setLocal((prev) => ({ ...prev, numberFormat: e.target.value }))}
                 >
@@ -184,7 +184,7 @@ const Settings = () => {
                 <Label htmlFor="currency">Currency</Label>
                 <select
                   id="currency"
-                  className="w-full px-3 py-2 bg-secondary border border-secondary rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
+                  className="w-full px-3 py-2 bg-[#1e293b] border-0 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
                   value={s.currency || 'LKR'}
                   onChange={(e) => setLocal((prev) => ({ ...prev, currency: e.target.value }))}
                 >

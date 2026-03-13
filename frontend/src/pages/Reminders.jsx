@@ -161,7 +161,7 @@ const Reminders = () => {
           <motion.div
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
-            className="bg-card border border-secondary rounded-lg p-12 text-center"
+            className="bg-[#1e293b] border-0 rounded-lg p-12 text-center"
           >
             <Bell className="w-16 h-16 mx-auto text-muted-foreground mb-4" />
             <h2 className="text-xl font-semibold mb-2">No reminders yet</h2>
@@ -174,7 +174,7 @@ const Reminders = () => {
             </Button>
           </motion.div>
         ) : (
-          <div className="bg-card border border-secondary rounded-lg overflow-hidden">
+          <div className="bg-[#1e293b] border-0 rounded-lg overflow-hidden">
             <div className="overflow-x-auto">
               <table className="w-full">
                 <thead className="bg-secondary">
@@ -287,7 +287,7 @@ const Reminders = () => {
               <textarea
                 value={form.message}
                 onChange={(e) => setForm((f) => ({ ...f, message: e.target.value }))}
-                className="w-full min-h-[80px] px-3 py-2 bg-background border border-secondary rounded-lg resize-none text-sm"
+                className="w-full min-h-[80px] px-3 py-2 bg-[#1e293b] border-0 rounded-lg resize-none text-sm"
                 placeholder="Custom message when sending..."
               />
             </div>

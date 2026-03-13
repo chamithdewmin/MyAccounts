@@ -72,8 +72,8 @@
     --table-row-odd: #0a0a0a;
     --table-row-even: #0a0a0a;
     --table-row-hover: #101010;
-    --table-divider: #101010;
-    --table-border: #101010;
+    --table-divider: #000000;
+    --table-border: #000000;
     --text-primary: #fff;
     --text-body: #d1d9e6;
     --text-label: #8b9ab0;

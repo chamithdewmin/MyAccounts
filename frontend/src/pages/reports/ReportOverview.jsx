@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import {
   AreaChart, Area, BarChart, Bar, LineChart, Line,
   PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid,
@@ -8,13 +8,29 @@ import { useFinance } from "@/contexts/FinanceContext";
 import { getPrintHtml } from "@/utils/pdfPrint";
 import ReportPreviewModal from "@/components/ReportPreviewModal";
 
-// ─── COLORS ──────────────────────────────────────────────────────────────────
-const C = {
-  bg:"#000000", bg2:"#000000", card:"#0a0a0a", border:"#171717",
-  border2:"#171717", text:"#fff", text2:"#d1d9e6", muted:"#8b9ab0",
-  faint:"#4a5568", green:"#22c55e", red:"#ef4444", blue:"#0e5cff",
-  cyan:"#22d3ee", yellow:"#eab308", purple:"#a78bfa", orange:"#f97316",
+// ─── COLORS (theme-aware via CSS variables) ─────────────────────────────────
+const getColors = () => {
+  const isDark = document.documentElement.classList.contains('dark');
+  return {
+    bg: isDark ? "#000000" : "#ffffff",
+    bg2: isDark ? "#000000" : "#f8fafc",
+    card: isDark ? "#0a0a0a" : "#ffffff",
+    border: isDark ? "#171717" : "#e2e8f0",
+    border2: isDark ? "#171717" : "#e2e8f0",
+    text: isDark ? "#fff" : "#0f172a",
+    text2: isDark ? "#d1d9e6" : "#334155",
+    muted: isDark ? "#8b9ab0" : "#64748b",
+    faint: isDark ? "#4a5568" : "#94a3b8",
+    green: "#22c55e",
+    red: "#ef4444",
+    blue: "#0e5cff",
+    cyan: "#22d3ee",
+    yellow: "#eab308",
+    purple: "#a78bfa",
+    orange: "#f97316",
+  };
 };
+const C = getColors();
 
 // ─── SVG ICON ENGINE ─────────────────────────────────────────────────────────
 const Svg = ({ d, s = 18, c = "#fff", sw = 2 }) => (
@@ -147,6 +163,15 @@ export default function OverviewReports() {
   const { incomes, expenses, assets, loans, invoices, settings, totals } = useFinance();
   const [activeInsight, setActiveInsight] = useState(null);
   const [reportPreview, setReportPreview] = useState({ open: false, html: "", filename: "" });
+  const [colors, setColors] = useState(getColors);
+
+  useEffect(() => {
+    const updateColors = () => setColors(getColors());
+    window.addEventListener('theme-change', updateColors);
+    return () => window.removeEventListener('theme-change', updateColors);
+  }, []);
+
+  const C = colors;
 
   // Calculate monthly P&L data (last 7 months)
   const plMonthly = useMemo(() => {

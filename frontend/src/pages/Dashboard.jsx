@@ -10,6 +10,19 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/components/ui/use-toast";
 
+// ─── THEME-AWARE COLORS ───────────────────────────────────────────────────────
+const getThemeColors = () => {
+  const isDark = document.documentElement.classList.contains('dark');
+  return {
+    bg: isDark ? "#000000" : "#ffffff",
+    card: isDark ? "#0a0a0a" : "#ffffff",
+    border: isDark ? "#171717" : "#e2e8f0",
+    text: isDark ? "#fff" : "#0f172a",
+    text2: isDark ? "#d1d9e6" : "#334155",
+    muted: isDark ? "#8b9ab0" : "#64748b",
+  };
+};
+
 // ─── MASTERCARD ───────────────────────────────────────────────────────────────
 const MastercardIcon = () => (
   <div style={{ display: "flex", alignItems: "center" }}>
@@ -114,10 +127,11 @@ const CashIcon = () => (
 
 // ─── CUSTOM TOOLTIP ───────────────────────────────────────────────────────────
 const CustomTooltip = ({ active, payload, label, currency = "" }) => {
+  const tc = getThemeColors();
   if (active && payload && payload.length) {
     return (
-      <div style={{ background: "#000000", border: "1px solid #171717", borderRadius: 10, padding: "10px 14px" }}>
-        <p style={{ color: "#fff", fontWeight: 700, marginBottom: 4, fontSize: 13 }}>{label}</p>
+      <div style={{ background: tc.card, border: `1px solid ${tc.border}`, borderRadius: 10, padding: "10px 14px", boxShadow: "0 4px 12px rgba(0,0,0,0.15)" }}>
+        <p style={{ color: tc.text, fontWeight: 700, marginBottom: 4, fontSize: 13 }}>{label}</p>
         {payload.map((p, i) => (
           <p key={i} style={{ color: p.color, fontSize: 12, margin: "2px 0" }}>
             {currency} {p.value.toLocaleString()}
@@ -131,6 +145,7 @@ const CustomTooltip = ({ active, payload, label, currency = "" }) => {
 
 // ─── STAT CARD ────────────────────────────────────────────────────────────────
 const StatCard = ({ icon, iconBg, label, value, badge, badgeColor }) => {
+  const tc = getThemeColors();
   const isPositive = badgeColor === "green";
   const badgeBg = isPositive 
     ? "rgba(34,197,94,0.2)" 
@@ -142,14 +157,15 @@ const StatCard = ({ icon, iconBg, label, value, badge, badgeColor }) => {
 
   return (
     <div style={{
-      background: "#0a0a0a",
+      background: tc.card,
       borderRadius: 16,
       padding: "18px 20px",
       display: "flex",
       alignItems: "center",
       gap: 16,
       flex: 1,
-      border: "1px solid #171717",
+      border: `1px solid ${tc.border}`,
+      boxShadow: "0 1px 3px rgba(0,0,0,0.1)",
     }}>
       <div style={{
         width: 44, height: 44, borderRadius: 12,
@@ -159,7 +175,7 @@ const StatCard = ({ icon, iconBg, label, value, badge, badgeColor }) => {
       }}>{icon}</div>
       <div>
         <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-          <p style={{ color: "#8b9ab0", fontSize: 12, margin: 0, fontWeight: 500 }}>{label}</p>
+          <p style={{ color: tc.muted, fontSize: 12, margin: 0, fontWeight: 500 }}>{label}</p>
           {badge && (
             <span style={{
               background: badgeBg,
@@ -173,7 +189,7 @@ const StatCard = ({ icon, iconBg, label, value, badge, badgeColor }) => {
             }}>{badge}</span>
           )}
         </div>
-        <p style={{ color: "#fff", fontSize: 22, fontWeight: 800, margin: "4px 0 0", letterSpacing: "-0.03em" }}>{value}</p>
+        <p style={{ color: tc.text, fontSize: 22, fontWeight: 800, margin: "4px 0 0", letterSpacing: "-0.03em" }}>{value}</p>
       </div>
     </div>
   );
@@ -261,10 +277,17 @@ export default function FinanceDashboard() {
   const [bankModalOpen, setBankModalOpen] = useState(false);
   const [bankModalMode, setBankModalMode] = useState("deposit"); // "deposit" | "withdraw"
   const [transferAmount, setTransferAmount] = useState("");
+  const [, forceUpdate] = useState(0);
 
   useEffect(() => {
     document.body.classList.add("dashboard-page");
     return () => document.body.classList.remove("dashboard-page");
+  }, []);
+
+  useEffect(() => {
+    const handleThemeChange = () => forceUpdate(n => n + 1);
+    window.addEventListener('theme-change', handleThemeChange);
+    return () => window.removeEventListener('theme-change', handleThemeChange);
   }, []);
 
   const openBankModal = (mode) => {
@@ -576,21 +599,23 @@ export default function FinanceDashboard() {
     };
   }, [totalIncome, totalOutcome, monthlyProfit, pendingPayments]);
 
+  const tc = getThemeColors();
   const s = {
     page: {
       minHeight: "100vh",
       padding: 22,
       fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, sans-serif",
-      color: "#fff",
+      color: tc.text,
     },
     card: {
-      background: "#0a0a0a",
+      background: tc.card,
       borderRadius: 20,
-      border: "1px solid #171717",
+      border: `1px solid ${tc.border}`,
       padding: 20,
+      boxShadow: "0 1px 3px rgba(0,0,0,0.1)",
     },
-    label: { color: "#8b9ab0", fontSize: 12, fontWeight: 500, margin: 0 },
-    val: { color: "#fff", fontSize: 26, fontWeight: 800, margin: "4px 0 0", letterSpacing: "-0.03em" },
+    label: { color: tc.muted, fontSize: 12, fontWeight: 500, margin: 0 },
+    val: { color: tc.text, fontSize: 26, fontWeight: 800, margin: "4px 0 0", letterSpacing: "-0.03em" },
   };
 
   useEffect(() => {
@@ -617,8 +642,8 @@ export default function FinanceDashboard() {
       <div className="dashboard-container -mx-3 sm:-mx-4 lg:-mx-5" style={s.page}>
       {/* HEADER + DATE RANGE TOGGLE */}
       <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", justifyContent: "space-between", gap: 12, marginBottom: 16, marginTop: -4 }}>
-        <p style={{ color: "#8b9ab0", fontSize: 15, margin: 0, fontWeight: 500 }}>{getGreeting()}, {userName} 👋</p>
-        <div style={{ display: "flex", gap: 6, background: "#000000", borderRadius: 10, padding: 4 }}>
+        <p style={{ color: tc.muted, fontSize: 15, margin: 0, fontWeight: 500 }}>{getGreeting()}, {userName} 👋</p>
+        <div style={{ display: "flex", gap: 6, background: tc.card, border: `1px solid ${tc.border}`, borderRadius: 10, padding: 4 }}>
           {DATE_RANGES.map(({ value, label }) => (
             <button
               key={value}
@@ -633,7 +658,7 @@ export default function FinanceDashboard() {
                 fontWeight: 600,
                 fontFamily: "'Inter', sans-serif",
                 background: dateRange === value ? "#0e5cff" : "transparent",
-                color: dateRange === value ? "#fff" : "#8b9ab0",
+                color: dateRange === value ? "#fff" : tc.muted,
                 transition: "all 0.2s ease",
               }}
             >
@@ -697,17 +722,17 @@ export default function FinanceDashboard() {
           {/* ANALYTICS */}
           <div style={s.card}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20 }}>
-              <h2 style={{ color: "#fff", fontSize: 16, fontWeight: 700, margin: 0 }}>Analytics</h2>
+              <h2 style={{ color: tc.text, fontSize: 16, fontWeight: 700, margin: 0 }}>Analytics</h2>
               <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
                 <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
                   <div style={{ width: 8, height: 8, borderRadius: "50%", background: "#0e5cff" }} />
-                  <span style={{ color: "#8b9ab0", fontSize: 12 }}>Income</span>
+                  <span style={{ color: tc.muted, fontSize: 12 }}>Income</span>
                 </div>
                 <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
                   <div style={{ width: 8, height: 8, borderRadius: "50%", background: "#22d3ee" }} />
-                  <span style={{ color: "#8b9ab0", fontSize: 12 }}>Outcome</span>
+                  <span style={{ color: tc.muted, fontSize: 12 }}>Outcome</span>
                 </div>
-                <div style={{ background: "#000000", borderRadius: 8, padding: "4px 12px", fontSize: 12, color: "#8b9ab0" }}>
+                <div style={{ background: tc.bg, border: `1px solid ${tc.border}`, borderRadius: 8, padding: "4px 12px", fontSize: 12, color: tc.muted }}>
                 {dateRange === "month" ? "Last 8 months" : dateRange === "quarter" ? "Last 8 quarters" : "Last 5 years"}
               </div>
               </div>

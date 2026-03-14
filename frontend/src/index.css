@@ -5,10 +5,10 @@
 @layer base {
   :root {
     /* Light theme: clean white/light gray design */
-    --background: 0 0% 100%; /* #ffffff */
+    --background: 210 20% 98%; /* #f8fafc - slightly off-white */
     --foreground: 222 47% 11%; /* dark text */
 
-    --card: 0 0% 100%; /* #ffffff */
+    --card: 0 0% 100%; /* #ffffff - pure white for cards */
     --card-foreground: 222 47% 11%;
 
     --primary: 221 100% 53%; /* #0e5cff blue */

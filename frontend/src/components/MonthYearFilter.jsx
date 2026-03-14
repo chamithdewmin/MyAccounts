@@ -1,13 +1,16 @@
 import { useState, useEffect, useMemo } from "react";
 import { Calendar, Download, ChevronDown } from "lucide-react";
 
-const C = {
-  bg: "#000000",
-  card: "#0a0a0a",
-  border: "#171717",
-  text: "#fff",
-  muted: "#8b9ab0",
-  blue: "#0e5cff",
+const getColors = () => {
+  const isDark = document.documentElement.classList.contains('dark');
+  return {
+    bg: isDark ? "#000000" : "#f8fafc",
+    card: isDark ? "#0a0a0a" : "#ffffff",
+    border: isDark ? "#171717" : "#e2e8f0",
+    text: isDark ? "#fff" : "#0f172a",
+    muted: isDark ? "#8b9ab0" : "#64748b",
+    blue: "#0e5cff",
+  };
 };
 
 const MONTHS = [
@@ -24,6 +27,9 @@ export default function MonthYearFilter({
   showDownloadButton = true,
   autoDownload = false,
 }) {
+  const [colors, setColors] = useState(getColors);
+  const C = colors;
+
   const currentDate = new Date();
   const currentMonth = currentDate.getMonth();
   const currentYear = currentDate.getFullYear();
@@ -35,6 +41,12 @@ export default function MonthYearFilter({
     }
     return yrs;
   }, [currentYear]);
+
+  useEffect(() => {
+    const updateColors = () => setColors(getColors());
+    window.addEventListener('theme-change', updateColors);
+    return () => window.removeEventListener('theme-change', updateColors);
+  }, []);
 
   useEffect(() => {
     if (selectedMonth === null || selectedMonth === undefined) {

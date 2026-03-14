@@ -108,22 +108,26 @@ const UpwardTrendIcon = () => (
 );
 
 // ─── CARD ICON ────────────────────────────────────────────────────────────────
-const CardIcon = () => (
+const CardIcon = ({ color }) => {
+  const c = color || (document.documentElement.classList.contains('dark') ? "#fff" : "#0f172a");
+  return (
   <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-    <rect x="2" y="5" width="20" height="14" rx="2" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-    <path d="M2 10H22" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-    <rect x="16" y="14" width="4" height="3" rx="0.5" fill="#fff"/>
+    <rect x="2" y="5" width="20" height="14" rx="2" stroke={c} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+    <path d="M2 10H22" stroke={c} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+    <rect x="16" y="14" width="4" height="3" rx="0.5" fill={c}/>
   </svg>
-);
+);};
 
 // ─── CASH ICON ────────────────────────────────────────────────────────────────
-const CashIcon = () => (
+const CashIcon = ({ color }) => {
+  const c = color || (document.documentElement.classList.contains('dark') ? "#fff" : "#0f172a");
+  return (
   <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-    <rect x="2" y="7" width="20" height="12" rx="2" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-    <circle cx="12" cy="13" r="2" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-    <path d="M6 9H7M17 9H18M6 17H7M17 17H18" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+    <rect x="2" y="7" width="20" height="12" rx="2" stroke={c} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+    <circle cx="12" cy="13" r="2" stroke={c} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+    <path d="M6 9H7M17 9H18M6 17H7M17 17H18" stroke={c} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
   </svg>
-);
+);};
 
 // ─── CUSTOM TOOLTIP ───────────────────────────────────────────────────────────
 const CustomTooltip = ({ active, payload, label, currency = "" }) => {
@@ -277,7 +281,7 @@ export default function FinanceDashboard() {
   const [bankModalOpen, setBankModalOpen] = useState(false);
   const [bankModalMode, setBankModalMode] = useState("deposit"); // "deposit" | "withdraw"
   const [transferAmount, setTransferAmount] = useState("");
-  const [, forceUpdate] = useState(0);
+  const [themeKey, setThemeKey] = useState(0);
 
   useEffect(() => {
     document.body.classList.add("dashboard-page");
@@ -285,7 +289,7 @@ export default function FinanceDashboard() {
   }, []);
 
   useEffect(() => {
-    const handleThemeChange = () => forceUpdate(n => n + 1);
+    const handleThemeChange = () => setThemeKey(n => n + 1);
     window.addEventListener('theme-change', handleThemeChange);
     return () => window.removeEventListener('theme-change', handleThemeChange);
   }, []);
@@ -480,7 +484,7 @@ export default function FinanceDashboard() {
         const total = Math.max(data.spent * 1.5, data.spent);
         const useCardIcon = data.cardAmount >= data.cashAmount;
         return {
-          icon: useCardIcon ? <CardIcon /> : <CashIcon />,
+          icon: useCardIcon ? <CardIcon color={document.documentElement.classList.contains('dark') ? "#fff" : "#0f172a"} /> : <CashIcon color={document.documentElement.classList.contains('dark') ? "#fff" : "#0f172a"} />,
           label: category,
           spent: data.spent,
           total,
@@ -490,7 +494,7 @@ export default function FinanceDashboard() {
       })
       .sort((a, b) => b.spent - a.spent)
       .slice(0, 4);
-  }, [expenses, rangeBounds, prevRangeBounds]);
+  }, [expenses, rangeBounds, prevRangeBounds, themeKey]);
 
   // Activity percentages (income vs expense in selected range)
   const activityPercentages = useMemo(() => {
@@ -739,8 +743,8 @@ export default function FinanceDashboard() {
             </div>
             <ResponsiveContainer width="100%" height={220}>
               <BarChart data={analyticsData} barGap={4} barCategoryGap={20}>
-                <XAxis dataKey="month" axisLine={false} tickLine={false} tick={{ fill: "#8b9ab0", fontSize: 12 }} />
-                <YAxis axisLine={false} tickLine={false} tick={{ fill: "#8b9ab0", fontSize: 11 }} tickFormatter={v => `${(v / 1000).toFixed(0)}K`} />
+                <XAxis dataKey="month" axisLine={false} tickLine={false} tick={{ fill: tc.muted, fontSize: 12 }} />
+                <YAxis axisLine={false} tickLine={false} tick={{ fill: tc.muted, fontSize: 11 }} tickFormatter={v => `${(v / 1000).toFixed(0)}K`} />
                 <Tooltip content={<CustomTooltip currency={settings.currency || ''} />} cursor={{ fill: "rgba(255,255,255,0.03)" }} />
                 <Bar dataKey="income" radius={[6, 6, 0, 0]} fill="#0e5cff" />
                 <Bar dataKey="outcome" radius={[6, 6, 0, 0]} fill="#22d3ee" opacity={0.7} />
@@ -753,22 +757,22 @@ export default function FinanceDashboard() {
             {/* ACTIVITY */}
             <div style={{ ...s.card, minHeight: 300 }}>
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
-                <h3 style={{ color: "#fff", fontSize: 14, fontWeight: 700, margin: 0 }}>Activity</h3>
+                <h3 style={{ color: tc.text, fontSize: 14, fontWeight: 700, margin: 0 }}>Activity</h3>
                 <div style={{ display: "flex", gap: 12 }}>
                   <div style={{ display: "flex", alignItems: "center", gap: 5 }}>
                     <div style={{ width: 7, height: 7, borderRadius: "50%", background: "#0e5cff" }} />
-                    <span style={{ color: "#8b9ab0", fontSize: 11 }}>Earning</span>
+                    <span style={{ color: tc.muted, fontSize: 11 }}>Earning</span>
                   </div>
                   <div style={{ display: "flex", alignItems: "center", gap: 5 }}>
                     <div style={{ width: 7, height: 7, borderRadius: "50%", background: "#22d3ee" }} />
-                    <span style={{ color: "#8b9ab0", fontSize: 11 }}>Spent</span>
+                    <span style={{ color: tc.muted, fontSize: 11 }}>Spent</span>
                   </div>
                 </div>
               </div>
               <ResponsiveContainer width="100%" height={220}>
                 <BarChart data={activityData} barGap={2} barCategoryGap={14}>
-                  <XAxis dataKey="day" axisLine={false} tickLine={false} tick={{ fill: "#8b9ab0", fontSize: 11 }} />
-                  <YAxis axisLine={false} tickLine={false} tick={{ fill: "#8b9ab0", fontSize: 11 }} tickFormatter={v => `${(v / 1000).toFixed(0)}k`} width={40} />
+                  <XAxis dataKey="day" axisLine={false} tickLine={false} tick={{ fill: tc.muted, fontSize: 11 }} />
+                  <YAxis axisLine={false} tickLine={false} tick={{ fill: tc.muted, fontSize: 11 }} tickFormatter={v => `${(v / 1000).toFixed(0)}k`} width={40} />
                   <Tooltip content={<CustomTooltip currency={settings.currency || ''} />} cursor={{ fill: "rgba(255,255,255,0.03)" }} />
                   <Bar dataKey="earning" radius={[4, 4, 0, 0]} fill="#0e5cff" />
                   <Bar dataKey="spent" radius={[4, 4, 0, 0]} fill="#22d3ee" opacity={0.7} />
@@ -778,29 +782,29 @@ export default function FinanceDashboard() {
 
             {/* PAYMENT */}
             <div style={{ ...s.card, minHeight: 330 }}>
-              <h3 style={{ color: "#fff", fontSize: 14, fontWeight: 700, margin: "0 0 14px" }}>Payment</h3>
+              <h3 style={{ color: tc.text, fontSize: 14, fontWeight: 700, margin: "0 0 14px" }}>Payment</h3>
               <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
                 {payments.length > 0 ? payments.map((p, i) => {
                   return (
                     <div key={i}>
                       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 5 }}>
                         <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                          <div style={{ width: 32, height: 32, borderRadius: 8, background: "#000000", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                          <div style={{ width: 32, height: 32, borderRadius: 8, background: tc.bg, border: `1px solid ${tc.border}`, display: "flex", alignItems: "center", justifyContent: "center" }}>
                             {p.icon}
                           </div>
-                          <span style={{ color: "#d1d9e6", fontSize: 13, fontWeight: 500 }}>{p.label}</span>
+                          <span style={{ color: tc.text2, fontSize: 13, fontWeight: 500 }}>{p.label}</span>
                         </div>
-                        <span style={{ color: "#8b9ab0", fontSize: 11 }}>
-                          <span style={{ color: "#fff", fontWeight: 600 }}>{formatCurrency(p.spent)}</span>/{formatCurrency(p.total)}
+                        <span style={{ color: tc.muted, fontSize: 11 }}>
+                          <span style={{ color: tc.text, fontWeight: 600 }}>{formatCurrency(p.spent)}</span>/{formatCurrency(p.total)}
                         </span>
                       </div>
-                      <div style={{ height: 3, background: "#000000", borderRadius: 99 }}>
+                      <div style={{ height: 3, background: tc.border, borderRadius: 99 }}>
                         <div style={{ height: 3, background: p.color, borderRadius: 99, width: `${Math.min((p.spent / p.total) * 100, 100)}%` }} />
                       </div>
                     </div>
                   );
                 }) : (
-                  <p style={{ color: "#8b9ab0", fontSize: 12, textAlign: "center", margin: "20px 0" }}>No expense data available</p>
+                  <p style={{ color: tc.muted, fontSize: 12, textAlign: "center", margin: "20px 0" }}>No expense data available</p>
                 )}
               </div>
             </div>
@@ -900,7 +904,7 @@ export default function FinanceDashboard() {
                           transition: "all 0.3s ease",
                           background: currentCard === i
                             ? (c.id === 1 ? "#16a34a" : "#0e5cff")
-                            : "#000000",
+                            : tc.border,
                         }}
                       />
                     ))}
@@ -908,10 +912,10 @@ export default function FinanceDashboard() {
 
                   {/* Info strip */}
                   <div style={{
-                    background: "#0a0a0a",
+                    background: tc.card,
                     borderRadius: 14,
                     padding: "14px 18px",
-                    border: "1px solid #171717",
+                    border: `1px solid ${tc.border}`,
                     display: "flex",
                     alignItems: "center",
                     justifyContent: "space-between",
@@ -922,8 +926,8 @@ export default function FinanceDashboard() {
                       <>
                         <div style={{ display: "flex", gap: 20 }}>
                           <div>
-                            <p style={{ color: "#8b9ab0", fontSize: 11, margin: "0 0 2px", textTransform: "uppercase", letterSpacing: "0.07em" }}>My Cash</p>
-                            <p style={{ color: "#fff", fontSize: 15, fontWeight: 700, margin: 0 }}>Cash in Hand</p>
+                            <p style={{ color: tc.muted, fontSize: 11, margin: "0 0 2px", textTransform: "uppercase", letterSpacing: "0.07em" }}>My Cash</p>
+                            <p style={{ color: tc.text, fontSize: 15, fontWeight: 700, margin: 0 }}>Cash in Hand</p>
                           </div>
                         </div>
                         <button
@@ -943,8 +947,8 @@ export default function FinanceDashboard() {
                       <>
                         <div style={{ display: "flex", gap: 20 }}>
                           <div>
-                            <p style={{ color: "#8b9ab0", fontSize: 11, margin: "0 0 2px", textTransform: "uppercase", letterSpacing: "0.07em" }}>My card</p>
-                            <p style={{ color: "#fff", fontSize: 15, fontWeight: 700, margin: 0 }}>Bank Balance</p>
+                            <p style={{ color: tc.muted, fontSize: 11, margin: "0 0 2px", textTransform: "uppercase", letterSpacing: "0.07em" }}>My card</p>
+                            <p style={{ color: tc.text, fontSize: 15, fontWeight: 700, margin: 0 }}>Bank Balance</p>
                           </div>
                         </div>
                         <button
@@ -995,8 +999,8 @@ export default function FinanceDashboard() {
           {/* ACTIVITY GAUGE */}
           <div style={s.card}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
-              <h3 style={{ color: "#fff", fontSize: 14, fontWeight: 700, margin: 0 }}>Activity</h3>
-              <div style={{ background: "#000000", borderRadius: 8, padding: "4px 10px", fontSize: 12, color: "#8b9ab0" }}>Month ▾</div>
+              <h3 style={{ color: tc.text, fontSize: 14, fontWeight: 700, margin: 0 }}>Activity</h3>
+              <div style={{ background: tc.card, border: `1px solid ${tc.border}`, borderRadius: 8, padding: "4px 10px", fontSize: 12, color: tc.muted }}>Month ▾</div>
             </div>
             <div style={{ display: "flex", justifyContent: "center" }}>
               <PieChart width={200} height={120}>
@@ -1016,23 +1020,23 @@ export default function FinanceDashboard() {
                 </Pie>
               </PieChart>
             </div>
-            <p style={{ color: "#fff", fontWeight: 800, fontSize: 22, textAlign: "center", margin: "-20px 0 12px", letterSpacing: "-0.02em" }}>
+            <p style={{ color: tc.text, fontWeight: 800, fontSize: 22, textAlign: "center", margin: "-20px 0 12px", letterSpacing: "-0.02em" }}>
               {activityPercentages.total || 0}%
             </p>
             <div style={{ display: "flex", justifyContent: "space-around" }}>
               <div style={{ textAlign: "center" }}>
                 <div style={{ display: "flex", alignItems: "center", gap: 6, justifyContent: "center" }}>
                   <div style={{ width: 8, height: 8, borderRadius: "50%", background: "#0e5cff" }} />
-                  <span style={{ color: "#8b9ab0", fontSize: 12 }}>Income</span>
+                  <span style={{ color: tc.muted, fontSize: 12 }}>Income</span>
                 </div>
-                <p style={{ color: "#fff", fontWeight: 700, fontSize: 16, margin: "4px 0 0" }}>{activityPercentages.dailyPayment || 0}%</p>
+                <p style={{ color: tc.text, fontWeight: 700, fontSize: 16, margin: "4px 0 0" }}>{activityPercentages.dailyPayment || 0}%</p>
               </div>
               <div style={{ textAlign: "center" }}>
                 <div style={{ display: "flex", alignItems: "center", gap: 6, justifyContent: "center" }}>
                   <div style={{ width: 8, height: 8, borderRadius: "50%", background: "#22d3ee" }} />
-                  <span style={{ color: "#8b9ab0", fontSize: 12 }}>Expenses</span>
+                  <span style={{ color: tc.muted, fontSize: 12 }}>Expenses</span>
                 </div>
-                <p style={{ color: "#fff", fontWeight: 700, fontSize: 16, margin: "4px 0 0" }}>{activityPercentages.hobby || 0}%</p>
+                <p style={{ color: tc.text, fontWeight: 700, fontSize: 16, margin: "4px 0 0" }}>{activityPercentages.hobby || 0}%</p>
               </div>
             </div>
           </div>

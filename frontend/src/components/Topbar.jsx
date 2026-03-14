@@ -180,7 +180,7 @@ const Topbar = () => {
         position: 'sticky',
         top: 0,
         zIndex: 30,
-        padding: '20px 60px 12px 20px',
+        padding: '20px 40px 12px 20px',
       }}
     >
       <div style={{

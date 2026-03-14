@@ -1,6 +1,7 @@
 import React from 'react';
 import { Outlet } from 'react-router-dom';
 import SidebarNew, { SidebarProvider, useSidebarState } from '@/components/SidebarNew';
+import Topbar from '@/components/Topbar';
 
 const MainContent = () => {
   const { collapsed } = useSidebarState();
@@ -9,12 +10,15 @@ const MainContent = () => {
   const sidebarMargin = collapsed ? 88 : 280;
   
   return (
-    <main 
-      className="flex-1 transition-[margin] duration-300 px-6 py-2 sm:px-8 sm:py-3 lg:px-10 lg:py-4 min-w-0 max-w-full pt-[env(safe-area-inset-top)]"
+    <div 
+      className="flex-1 flex flex-col transition-[margin] duration-300 min-w-0 max-w-full"
       style={{ marginLeft: sidebarMargin }}
     >
-      <Outlet />
-    </main>
+      <Topbar />
+      <main className="flex-1 px-6 py-2 sm:px-8 sm:py-3 lg:px-10 lg:py-4 min-w-0">
+        <Outlet />
+      </main>
+    </div>
   );
 };
 

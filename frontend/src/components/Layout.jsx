@@ -15,7 +15,7 @@ const MainContent = () => {
       style={{ marginLeft: sidebarMargin }}
     >
       <Topbar />
-      <main className="flex-1 px-6 py-2 sm:px-8 sm:py-3 lg:px-10 lg:py-4 min-w-0">
+      <main className="flex-1 px-6 py-2 sm:px-8 sm:py-3 lg:px-10 lg:py-4">
         <Outlet />
       </main>
     </div>

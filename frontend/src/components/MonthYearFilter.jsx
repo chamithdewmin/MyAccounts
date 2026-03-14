@@ -154,8 +154,25 @@ export default function MonthYearFilter({
         </div>
       </div>
 
-      {/* Right side - Download Button & Current Period */}
+      {/* Right side - Current Period & Download Button */}
       <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+        {/* Current Period Display */}
+        <div
+          style={{
+            background: `${C.blue}15`,
+            border: `1px solid ${C.blue}30`,
+            borderRadius: 8,
+            padding: "8px 14px",
+            display: "flex",
+            alignItems: "center",
+            gap: 6,
+          }}
+        >
+          <span style={{ color: C.blue, fontSize: 12, fontWeight: 600 }}>
+            {MONTHS[selectedMonth ?? currentMonth]} {selectedYear ?? currentYear}
+          </span>
+        </div>
+
         {/* Download Button */}
         {showDownloadButton && onDownload && (
           <button
@@ -182,23 +199,6 @@ export default function MonthYearFilter({
             <span>Download Report</span>
           </button>
         )}
-
-        {/* Current Period Display */}
-        <div
-          style={{
-            background: `${C.blue}15`,
-            border: `1px solid ${C.blue}30`,
-            borderRadius: 8,
-            padding: "8px 14px",
-            display: "flex",
-            alignItems: "center",
-            gap: 6,
-          }}
-        >
-          <span style={{ color: C.blue, fontSize: 12, fontWeight: 600 }}>
-            {MONTHS[selectedMonth ?? currentMonth]} {selectedYear ?? currentYear}
-          </span>
-        </div>
       </div>
     </div>
   );

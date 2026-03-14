@@ -190,7 +190,7 @@ const Topbar = () => {
         gap: 16,
       }}>
         {/* Search */}
-        <div style={{ position: 'relative', flex: 1, maxWidth: 320 }}>
+        <div style={{ position: 'relative', flex: 1, maxWidth: 420 }}>
           <Search 
             size={16} 
             style={{

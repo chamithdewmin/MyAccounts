@@ -635,7 +635,7 @@ const CashFlow = () => {
           <motion.div
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
-            className="bg-card rounded-lg border border-[#171717] p-4 flex items-center justify-between"
+            className="bg-card rounded-lg border border-border p-4 flex items-center justify-between"
           >
             <div>
               <p className="text-xs uppercase tracking-wide text-muted-foreground">Total Money In</p>
@@ -651,7 +651,7 @@ const CashFlow = () => {
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.05 }}
-            className="bg-card rounded-lg border border-[#171717] p-4 flex items-center justify-between"
+            className="bg-card rounded-lg border border-border p-4 flex items-center justify-between"
           >
             <div>
               <p className="text-xs uppercase tracking-wide text-muted-foreground">Total Money Out</p>
@@ -667,7 +667,7 @@ const CashFlow = () => {
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.1 }}
-            className="bg-card rounded-lg border border-[#171717] p-4 flex items-center justify-between"
+            className="bg-card rounded-lg border border-border p-4 flex items-center justify-between"
           >
             <div>
               <p className="text-xs uppercase tracking-wide text-muted-foreground">Net Cash Flow</p>
@@ -684,7 +684,7 @@ const CashFlow = () => {
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.15 }}
-            className="bg-card rounded-lg border border-[#171717] p-4 flex items-center justify-between"
+            className="bg-card rounded-lg border border-border p-4 flex items-center justify-between"
           >
             <div>
               <p className="text-xs uppercase tracking-wide text-muted-foreground">Current Cash</p>
@@ -719,7 +719,7 @@ const CashFlow = () => {
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            className="bg-card rounded-lg p-6 border border-[#171717]"
+            className="bg-card rounded-lg p-6 border border-border"
           >
             <h2 className="text-lg font-bold mb-4">Inflow vs Outflow</h2>
             <ResponsiveContainer width="100%" height={200}>
@@ -758,7 +758,7 @@ const CashFlow = () => {
         {/* Filters */}
         <div className="flex flex-wrap gap-3 items-center">
           <select
-            className="px-3 py-2 bg-[#1e293b] border-0 rounded-lg text-sm"
+            className="px-3 py-2 bg-input border border-border rounded-lg text-sm"
             value={filters.type}
             onChange={(e) => setFilters((p) => ({ ...p, type: e.target.value }))}
           >
@@ -768,7 +768,7 @@ const CashFlow = () => {
             <option value="upcoming">Upcoming (next month)</option>
           </select>
           <select
-            className="px-3 py-2 bg-[#1e293b] border-0 rounded-lg text-sm"
+            className="px-3 py-2 bg-input border border-border rounded-lg text-sm"
             value={filters.category}
             onChange={(e) => setFilters((p) => ({ ...p, category: e.target.value }))}
           >
@@ -780,7 +780,7 @@ const CashFlow = () => {
             ))}
           </select>
           <select
-            className="px-3 py-2 bg-[#1e293b] border-0 rounded-lg text-sm"
+            className="px-3 py-2 bg-input border border-border rounded-lg text-sm"
             value={filters.status}
             onChange={(e) => setFilters((p) => ({ ...p, status: e.target.value }))}
           >
@@ -805,7 +805,7 @@ const CashFlow = () => {
             placeholder="To"
           />
           <select
-            className="px-3 py-2 bg-[#1e293b] border-0 rounded-lg text-sm"
+            className="px-3 py-2 bg-input border border-border rounded-lg text-sm"
             value={filters.sort}
             onChange={(e) => setFilters((p) => ({ ...p, sort: e.target.value }))}
           >
@@ -818,7 +818,7 @@ const CashFlow = () => {
         </div>
 
         {/* Table */}
-        <div className="bg-card rounded-lg border border-[#171717] overflow-hidden">
+        <div className="bg-card rounded-lg border border-border overflow-hidden">
           <div className="overflow-x-auto">
             <table className="w-full">
               <thead className="bg-secondary">
@@ -840,7 +840,7 @@ const CashFlow = () => {
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
                     transition={{ delay: index * 0.02 }}
-                    className={`border-b border-[#171717] transition-colors ${
+                    className={`border-b border-border transition-colors ${
                       (() => {
                         const d = new Date(tx.date);
                         return d >= nextMonthRange.start && d <= nextMonthRange.end
@@ -961,7 +961,7 @@ const CashFlow = () => {
                 <div className="space-y-2">
                   <Label>Source / Client</Label>
                   <select
-                    className="w-full px-3 py-2 bg-[#1e293b] border-0 rounded-lg text-sm"
+                    className="w-full px-3 py-2 bg-input border border-border rounded-lg text-sm"
                     value={form.clientId}
                     onChange={(e) => {
                       const c = clients.find((x) => x.id === e.target.value);
@@ -996,7 +996,7 @@ const CashFlow = () => {
                 <div className="space-y-2">
                   <Label>Payment Method</Label>
                   <select
-                    className="w-full px-3 py-2 bg-[#1e293b] border-0 rounded-lg text-sm"
+                    className="w-full px-3 py-2 bg-input border border-border rounded-lg text-sm"
                     value={form.paymentMethod}
                     onChange={(e) => setForm((p) => ({ ...p, paymentMethod: e.target.value }))}
                   >
@@ -1013,7 +1013,7 @@ const CashFlow = () => {
                       type="checkbox"
                       checked={form.isRecurringInflow}
                       onChange={(e) => setForm((p) => ({ ...p, isRecurringInflow: e.target.checked }))}
-                      className="rounded border-[#171717] bg-secondary text-primary focus:ring-primary"
+                      className="rounded border-border bg-secondary text-primary focus:ring-primary"
                     />
                     Recurring income
                   </Label>
@@ -1023,7 +1023,7 @@ const CashFlow = () => {
                     <div className="space-y-2">
                       <Label>Frequency</Label>
                       <select
-                        className="w-full px-3 py-2 bg-[#1e293b] border-0 rounded-lg text-sm"
+                        className="w-full px-3 py-2 bg-input border border-border rounded-lg text-sm"
                         value={form.recurringFrequency}
                         onChange={(e) => setForm((p) => ({ ...p, recurringFrequency: e.target.value }))}
                       >
@@ -1046,7 +1046,7 @@ const CashFlow = () => {
                                 recurringEndDate: e.target.checked ? '' : p.recurringEndDate,
                               }))
                             }
-                            className="rounded border-[#171717]"
+                            className="rounded border-border"
                           />
                           Continue indefinitely
                         </label>
@@ -1076,7 +1076,7 @@ const CashFlow = () => {
                 <div className="space-y-2">
                   <Label>Recipient / Category</Label>
                   <select
-                    className="w-full px-3 py-2 bg-[#1e293b] border-0 rounded-lg text-sm"
+                    className="w-full px-3 py-2 bg-input border border-border rounded-lg text-sm"
                     value={form.category}
                     onChange={(e) =>
                       setForm((p) => ({
@@ -1104,7 +1104,7 @@ const CashFlow = () => {
                 <div className="space-y-2">
                   <Label>Payment Method</Label>
                   <select
-                    className="w-full px-3 py-2 bg-[#1e293b] border-0 rounded-lg text-sm"
+                    className="w-full px-3 py-2 bg-input border border-border rounded-lg text-sm"
                     value={form.paymentMethod}
                     onChange={(e) => setForm((p) => ({ ...p, paymentMethod: e.target.value }))}
                   >
@@ -1120,7 +1120,7 @@ const CashFlow = () => {
                       type="checkbox"
                       checked={form.isRecurring}
                       onChange={(e) => setForm((p) => ({ ...p, isRecurring: e.target.checked }))}
-                      className="rounded border-[#171717] bg-secondary text-primary focus:ring-primary"
+                      className="rounded border-border bg-secondary text-primary focus:ring-primary"
                     />
                     Recurring (rent, subscriptions)
                   </Label>
@@ -1130,7 +1130,7 @@ const CashFlow = () => {
                     <div className="space-y-2">
                       <Label>Frequency</Label>
                       <select
-                        className="w-full px-3 py-2 bg-[#1e293b] border-0 rounded-lg text-sm"
+                        className="w-full px-3 py-2 bg-input border border-border rounded-lg text-sm"
                         value={form.recurringFrequency}
                         onChange={(e) => setForm((p) => ({ ...p, recurringFrequency: e.target.value }))}
                       >
@@ -1153,7 +1153,7 @@ const CashFlow = () => {
                                 recurringEndDate: e.target.checked ? '' : p.recurringEndDate,
                               }))
                             }
-                            className="rounded border-[#171717]"
+                            className="rounded border-border"
                           />
                           Continue indefinitely
                         </label>
@@ -1203,7 +1203,7 @@ const CashFlow = () => {
             <div className="space-y-2">
               <Label>Notes</Label>
               <textarea
-                className="w-full px-3 py-2 bg-[#1e293b] border-0 rounded-lg text-sm min-h-[60px]"
+                className="w-full px-3 py-2 bg-input border border-border rounded-lg text-sm min-h-[60px]"
                 placeholder="Optional notes"
                 value={form.notes}
                 onChange={(e) => setForm((p) => ({ ...p, notes: e.target.value }))}

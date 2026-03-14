@@ -398,7 +398,7 @@ const Orders = () => {
           </span>
         </div>
 
-        <div className="bg-card rounded-lg border border-[#171717] overflow-hidden min-w-0">
+        <div className="bg-card rounded-lg border border-border overflow-hidden min-w-0">
           <div className="overflow-x-auto -mx-3 sm:mx-0">
             <table className="w-full min-w-[640px]">
               <thead className="bg-secondary">
@@ -421,7 +421,7 @@ const Orders = () => {
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
                     transition={{ delay: index * 0.05 }}
-                    className="border-b border-[#171717] hover:bg-secondary/50 transition-colors"
+                    className="border-b border-border hover:bg-secondary/50 transition-colors"
                   >
                     <td className="px-4 py-3 text-sm font-mono">{order.invoiceNumber}</td>
                     <td className="px-4 py-3 text-sm">{order.clientName}</td>
@@ -438,7 +438,7 @@ const Orders = () => {
                       <span className={`px-2 py-1 rounded-full text-xs font-semibold ${
                         order.status === 'paid'
                           ? 'bg-green-500/20 text-green-500'
-                          : 'bg-white text-gray-900 border border-[#171717]'
+                          : 'bg-white text-gray-900 border border-border'
                       }`}>
                         {order.status === 'paid' ? 'Paid' : 'Unpaid'}
                       </span>
@@ -584,7 +584,7 @@ const Orders = () => {
               <div className="space-y-2">
                 <Label className="text-sm font-medium">Client</Label>
                 <select
-                  className="w-full px-3 py-2 bg-[#1e293b] border-0 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+                  className="w-full px-3 py-2 bg-input border border-border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary"
                   value={form.clientId}
                   onChange={(e) => handleChange('clientId', e.target.value)}
                 >
@@ -605,7 +605,7 @@ const Orders = () => {
               <div className="space-y-2">
                 <Label className="text-sm font-medium">Payment Method</Label>
                 <select
-                  className="w-full px-3 py-2 bg-[#1e293b] border-0 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+                  className="w-full px-3 py-2 bg-input border border-border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary"
                   value={form.paymentMethod}
                   onChange={(e) => handleChange('paymentMethod', e.target.value)}
                 >
@@ -713,7 +713,7 @@ const Orders = () => {
             <div className="space-y-2">
               <Label className="text-sm font-medium">Notes</Label>
               <textarea
-                className="w-full px-3 py-2 bg-[#1e293b] border-0 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary min-h-[60px]"
+                className="w-full px-3 py-2 bg-input border border-border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary min-h-[60px]"
                 placeholder="Optional notes for this invoice"
                 value={form.notes}
                 onChange={(e) => handleChange('notes', e.target.value)}
@@ -771,7 +771,7 @@ const Orders = () => {
           </DialogHeader>
           {hasBankDetailsInSettings && settings?.bankDetails && (
             <div className="space-y-3">
-              <div className="rounded-lg border border-[#171717] bg-secondary/30 p-4 space-y-2 text-sm">
+              <div className="rounded-lg border border-border bg-secondary/30 p-4 space-y-2 text-sm">
                 <p><span className="text-muted-foreground">Account Number:</span> {settings.bankDetails.accountNumber}</p>
                 <p><span className="text-muted-foreground">Account Name:</span> {settings.bankDetails.accountName}</p>
                 <p><span className="text-muted-foreground">Bank:</span> {settings.bankDetails.bankName}</p>

@@ -31,7 +31,7 @@ function App() {
 
   useEffect(() => {
     const updateTheme = () => {
-      const theme = localStorage.getItem('theme') || 'light';
+      const theme = localStorage.getItem('theme') || 'dark';
       const root = document.documentElement;
       if (theme === 'dark') {
         root.classList.add('dark');

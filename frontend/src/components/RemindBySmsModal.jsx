@@ -115,7 +115,7 @@ const RemindBySmsModal = ({ open, onOpenChange, item, type, defaultMessage, sett
               <textarea
                 value={message}
                 onChange={(e) => setMessage(e.target.value)}
-                className="w-full min-h-[120px] px-3 py-2 bg-[#1e293b] border-0 rounded-lg resize-none text-sm"
+                className="w-full min-h-[120px] px-3 py-2 bg-input border border-border rounded-lg resize-none text-sm"
                 maxLength={621}
               />
               <p className="text-xs text-muted-foreground mt-1">{message.length}/621</p>

@@ -18,7 +18,7 @@ export function ThemeTogglerButton({
 }) {
   const [isDark, setIsDark] = useState(() => {
     const stored = localStorage.getItem('theme');
-    return stored === 'dark';
+    return stored !== 'light';
   });
 
   useEffect(() => {

@@ -293,7 +293,7 @@ const Profile = () => {
           className="space-y-6"
         >
           {/* 1. Personal Details */}
-          <div className="bg-card rounded-lg p-4 sm:p-6 border border-[#171717]">
+          <div className="bg-card rounded-lg p-4 sm:p-6 border border-border">
             <h2 className="text-base sm:text-lg font-semibold mb-4">Personal Details</h2>
             <div className="space-y-6">
               {/* Avatar Upload */}
@@ -442,7 +442,7 @@ const Profile = () => {
           </div>
 
           {/* 2. Business Profile, Bank Account & Opening Balances */}
-          <div className="bg-card rounded-lg p-4 sm:p-6 border border-[#171717]">
+          <div className="bg-card rounded-lg p-4 sm:p-6 border border-border">
             {/* Business Profile Section */}
             <div className="mb-6">
               <div className="flex items-center gap-2 mb-4">
@@ -451,7 +451,7 @@ const Profile = () => {
               </div>
               <p className="text-sm text-muted-foreground mb-4">Your core business information used across invoices and reports.</p>
               {/* Invoice From preview - how it appears on invoices */}
-              <div className="mb-6 p-4 rounded-lg border border-[#171717] bg-muted/30">
+              <div className="mb-6 p-4 rounded-lg border border-border bg-muted/30">
                 <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mb-2">Invoice From (preview)</p>
                 <p className="font-bold text-lg text-foreground mb-2">{s.businessName || 'Company name'}</p>
                 <div className="text-sm text-muted-foreground space-y-1">
@@ -622,7 +622,7 @@ const Profile = () => {
             </div>
 
             {/* Single Save Button for All Sections */}
-            <div className="pt-6 border-t border-[#171717]">
+            <div className="pt-6 border-t border-border">
               <Button
                 type="button"
                 size="sm"

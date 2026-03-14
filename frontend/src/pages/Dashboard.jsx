@@ -1032,7 +1032,7 @@ export default function FinanceDashboard() {
               placeholder="0"
               value={transferAmount}
               onChange={(e) => setTransferAmount(e.target.value)}
-              className="bg-[#1e293b] border-0"
+              className="bg-input border border-border"
             />
             <p className="text-xs text-muted-foreground mt-1">
               {bankModalMode === "deposit"

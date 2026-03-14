@@ -42,7 +42,7 @@ const FilterBar = ({ filters, setFilters, cars }) => {
         <select
           value={filters.sortBy}
           onChange={(e) => setFilters(prev => ({ ...prev, sortBy: e.target.value }))}
-          className="px-4 py-2 bg-[#1e293b] border-0 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
+          className="px-4 py-2 bg-input border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
         >
           <option value="latest">Latest</option>
           <option value="price-low">Price: Low to High</option>
@@ -50,7 +50,7 @@ const FilterBar = ({ filters, setFilters, cars }) => {
         </select>
         <button
           onClick={() => setShowFilters(!showFilters)}
-          className="px-4 py-2 bg-[#1e293b] border-0 rounded-lg hover:bg-secondary/80 transition-colors flex items-center gap-2"
+          className="px-4 py-2 bg-input border border-border rounded-lg hover:bg-secondary/80 transition-colors flex items-center gap-2"
         >
           <SlidersHorizontal className="w-4 h-4" />
           Filters
@@ -59,7 +59,7 @@ const FilterBar = ({ filters, setFilters, cars }) => {
 
       {/* Advanced filters */}
       {showFilters && (
-        <div className="bg-card rounded-lg p-6 border border-[#171717] space-y-6">
+        <div className="bg-card rounded-lg p-6 border border-border space-y-6">
           {/* Colors */}
           <div className="space-y-3">
             <Label>Colors</Label>
@@ -110,7 +110,7 @@ const FilterBar = ({ filters, setFilters, cars }) => {
             <select
               value={filters.make}
               onChange={(e) => setFilters(prev => ({ ...prev, make: e.target.value }))}
-              className="w-full px-4 py-2 bg-[#1e293b] border-0 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
+              className="w-full px-4 py-2 bg-input border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
             >
               <option value="">All Makes</option>
               {availableMakes.map(make => (

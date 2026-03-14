@@ -221,7 +221,7 @@ const SMS = () => {
           <motion.div
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
-            className="bg-[#1e293b] border-0 rounded-lg p-8 text-center"
+            className="bg-card border border-border rounded-lg p-8 text-center"
           >
             <MessageSquare className="w-16 h-16 mx-auto text-muted-foreground mb-4" />
             <h2 className="text-xl font-semibold mb-2">Setup your SMS gateway</h2>
@@ -235,12 +235,12 @@ const SMS = () => {
           </motion.div>
         ) : (
           <>
-            <div className="bg-[#1e293b] border-0 rounded-lg p-6">
+            <div className="bg-card border border-border rounded-lg p-6">
               <h2 className="text-lg font-semibold mb-4">Select customers</h2>
               <p className="text-sm text-muted-foreground mb-4">
                 {clientsWithPhone.length} customer(s) with phone numbers. Select recipients and enter your message.
               </p>
-              <div className="max-h-64 overflow-y-auto border border-[#171717] rounded-lg">
+              <div className="max-h-64 overflow-y-auto border border-border rounded-lg">
                 <table className="w-full">
                   <thead className="bg-secondary sticky top-0">
                     <tr>
@@ -260,7 +260,7 @@ const SMS = () => {
                     {clientsWithPhone.map((c) => (
                       <tr
                         key={c.id}
-                        className="border-t border-[#171717] hover:bg-secondary/30"
+                        className="border-t border-border hover:bg-secondary/30"
                       >
                         <td className="px-4 py-2">
                           <input
@@ -290,7 +290,7 @@ const SMS = () => {
                   value={message}
                   onChange={(e) => setMessage(e.target.value)}
                   placeholder="Type your message..."
-                  className="w-full min-h-[100px] px-3 py-2 bg-[#1e293b] border-0 rounded-lg resize-none"
+                  className="w-full min-h-[100px] px-3 py-2 bg-card border border-border rounded-lg resize-none"
                   maxLength={621}
                 />
                 <div className="flex justify-between items-center">

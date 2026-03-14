@@ -115,7 +115,7 @@ const CheckoutModal = ({ isOpen, onClose }) => {
             <select
               value={selectedCustomer}
               onChange={(e) => setSelectedCustomer(e.target.value)}
-              className="w-full px-3 py-2 bg-[#1e293b] border-0 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
+              className="w-full px-3 py-2 bg-input border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
             >
               <option value="">Choose a customer...</option>
               {customers.map(customer => (
@@ -135,7 +135,7 @@ const CheckoutModal = ({ isOpen, onClose }) => {
                 className={`p-4 rounded-lg border-2 transition-all ${
                   paymentMethod === 'card'
                     ? 'border-primary bg-primary/10'
-                    : 'border-[#171717] hover:border-primary/50'
+                    : 'border-border hover:border-primary/50'
                 }`}
               >
                 <CreditCard className="w-6 h-6 mx-auto mb-2" />
@@ -146,7 +146,7 @@ const CheckoutModal = ({ isOpen, onClose }) => {
                 className={`p-4 rounded-lg border-2 transition-all ${
                   paymentMethod === 'cash'
                     ? 'border-primary bg-primary/10'
-                    : 'border-[#171717] hover:border-primary/50'
+                    : 'border-border hover:border-primary/50'
                 }`}
               >
                 <Banknote className="w-6 h-6 mx-auto mb-2" />
@@ -157,7 +157,7 @@ const CheckoutModal = ({ isOpen, onClose }) => {
                 className={`p-4 rounded-lg border-2 transition-all ${
                   paymentMethod === 'bank'
                     ? 'border-primary bg-primary/10'
-                    : 'border-[#171717] hover:border-primary/50'
+                    : 'border-border hover:border-primary/50'
                 }`}
               >
                 <Building2 className="w-6 h-6 mx-auto mb-2" />

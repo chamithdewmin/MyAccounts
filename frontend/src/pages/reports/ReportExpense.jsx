@@ -115,7 +115,7 @@ const ReportExpense = () => {
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            className="bg-card rounded-lg p-6 border border-[#171717]"
+            className="bg-card rounded-lg p-6 border border-border"
           >
             <h2 className="text-xl font-bold mb-4">Expense Breakdown by Category</h2>
             {byCategory.length > 0 ? (
@@ -146,7 +146,7 @@ const ReportExpense = () => {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.1 }}
-            className="bg-card rounded-lg p-6 border border-[#171717]"
+            className="bg-card rounded-lg p-6 border border-border"
           >
             <h2 className="text-xl font-bold mb-4">Budget vs Actual</h2>
             {byCategory.length > 0 ? (

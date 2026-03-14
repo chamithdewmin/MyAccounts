@@ -280,7 +280,7 @@ const Inventory = () => {
           <motion.div
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
-            className="bg-card rounded-lg border border-[#171717] p-4 flex items-center justify-between"
+            className="bg-card rounded-lg border border-border p-4 flex items-center justify-between"
           >
             <div>
               <p className="text-xs uppercase tracking-wide text-muted-foreground">
@@ -299,7 +299,7 @@ const Inventory = () => {
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.05 }}
-            className="bg-card rounded-lg border border-[#171717] p-4 flex items-center justify-between"
+            className="bg-card rounded-lg border border-border p-4 flex items-center justify-between"
           >
             <div>
               <p className="text-xs uppercase tracking-wide text-muted-foreground">
@@ -318,7 +318,7 @@ const Inventory = () => {
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.1 }}
-            className="bg-card rounded-lg border border-[#171717] p-4 flex items-center justify-between"
+            className="bg-card rounded-lg border border-border p-4 flex items-center justify-between"
           >
             <div>
               <p className="text-xs uppercase tracking-wide text-muted-foreground">
@@ -352,7 +352,7 @@ const Inventory = () => {
           <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
             <div className="flex flex-wrap gap-3">
               <select
-                className="px-3 py-2 bg-[#1e293b] border-0 rounded-lg text-sm"
+                className="px-3 py-2 bg-input border border-border rounded-lg text-sm"
                 value={filters.period}
                 onChange={(e) => setFilters((prev) => ({ ...prev, period: e.target.value }))}
               >
@@ -361,7 +361,7 @@ const Inventory = () => {
                 <option value="all">All time</option>
               </select>
               <select
-                className="px-3 py-2 bg-[#1e293b] border-0 rounded-lg text-sm"
+                className="px-3 py-2 bg-input border border-border rounded-lg text-sm"
                 value={filters.category}
                 onChange={(e) => setFilters((prev) => ({ ...prev, category: e.target.value }))}
               >
@@ -379,14 +379,14 @@ const Inventory = () => {
                   onChange={(e) =>
                     setFilters((prev) => ({ ...prev, recurringOnly: e.target.checked }))
                   }
-                  className="rounded border-[#171717] bg-secondary text-primary focus:ring-primary"
+                  className="rounded border-border bg-secondary text-primary focus:ring-primary"
                 />
                 <span>Recurring only</span>
               </label>
             </div>
           </div>
 
-          <div className="bg-card rounded-lg border border-[#171717] overflow-hidden">
+          <div className="bg-card rounded-lg border border-border overflow-hidden">
             <div className="overflow-x-auto">
               <table className="w-full">
                 <thead className="bg-secondary">
@@ -407,7 +407,7 @@ const Inventory = () => {
                       initial={{ opacity: 0 }}
                       animate={{ opacity: 1 }}
                       transition={{ delay: index * 0.02 }}
-                      className="border-b border-[#171717] hover:bg-secondary/50 transition-colors"
+                      className="border-b border-border hover:bg-secondary/50 transition-colors"
                     >
                       <td className="px-4 py-3 text-sm text-muted-foreground">
                         {new Date(exp.date).toLocaleDateString('en-US', {
@@ -492,7 +492,7 @@ const Inventory = () => {
               <div className="space-y-2">
                 <Label className="text-sm font-medium">Category</Label>
                 <select
-                  className="w-full px-3 py-2 bg-[#1e293b] border-0 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+                  className="w-full px-3 py-2 bg-input border border-border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary"
                   value={form.category}
                   onChange={(e) => handleFormChange('category', e.target.value)}
                 >
@@ -534,7 +534,7 @@ const Inventory = () => {
               <div className="space-y-2">
                 <Label className="text-sm font-medium">Payment Method</Label>
                 <select
-                  className="w-full px-3 py-2 bg-[#1e293b] border-0 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+                  className="w-full px-3 py-2 bg-input border border-border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary"
                   value={form.paymentMethod}
                   onChange={(e) => handleFormChange('paymentMethod', e.target.value)}
                 >
@@ -572,7 +572,7 @@ const Inventory = () => {
                     type="checkbox"
                     checked={form.isRecurring}
                     onChange={(e) => handleFormChange('isRecurring', e.target.checked)}
-                    className="rounded border-[#171717] bg-secondary text-primary focus:ring-primary"
+                    className="rounded border-border bg-secondary text-primary focus:ring-primary"
                   />
                   <span>Recurring monthly expense (e.g. tools, subscriptions)</span>
                 </Label>
@@ -580,7 +580,7 @@ const Inventory = () => {
               <div className="space-y-2 md:col-span-2">
                 <Label className="text-sm font-medium">Notes</Label>
                 <textarea
-                  className="w-full px-3 py-2 bg-[#1e293b] border-0 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary min-h-[60px]"
+                  className="w-full px-3 py-2 bg-input border border-border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary min-h-[60px]"
                   placeholder="Optional notes about this expense"
                   value={form.notes}
                   onChange={(e) => handleFormChange('notes', e.target.value)}

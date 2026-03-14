@@ -23,7 +23,7 @@ const Settings = () => {
   const [resetLoading, setResetLoading] = useState(false);
   const [devOtp, setDevOtp] = useState('');
   const [saving, setSaving] = useState({});
-  const [theme, setTheme] = useState(() => localStorage.getItem('theme') || 'light');
+  const [theme, setTheme] = useState(() => localStorage.getItem('theme') || 'dark');
 
   useEffect(() => {
     const handleThemeChange = () => {
@@ -218,7 +218,7 @@ const Settings = () => {
                   onClick={() => setLocal((prev) => ({ ...prev, taxEnabled: !prev.taxEnabled }))}
                   className={cn(
                     'relative inline-flex h-7 w-14 items-center rounded-full border transition-colors',
-                    s.taxEnabled ? 'bg-primary border-primary' : 'bg-muted border-[#171717]',
+                    s.taxEnabled ? 'bg-primary border-primary' : 'bg-muted border-border',
                   )}
                 >
                   <span className={cn(
@@ -345,7 +345,7 @@ const Settings = () => {
                   onClick={() => setLocal((prev) => ({ ...prev, autoSave: !(prev.autoSave ?? false) }))}
                   className={cn(
                     'relative inline-flex h-7 w-14 items-center rounded-full border transition-colors',
-                    (s.autoSave ?? false) ? 'bg-primary border-primary' : 'bg-muted border-[#171717]',
+                    (s.autoSave ?? false) ? 'bg-primary border-primary' : 'bg-muted border-border',
                   )}
                 >
                   <span className={cn(
@@ -369,7 +369,7 @@ const Settings = () => {
                   onClick={() => setLocal((prev) => ({ ...prev, showCurrencySymbol: !(prev.showCurrencySymbol ?? true) }))}
                   className={cn(
                     'relative inline-flex h-7 w-14 items-center rounded-full border transition-colors',
-                    (s.showCurrencySymbol ?? true) ? 'bg-primary border-primary' : 'bg-muted border-[#171717]',
+                    (s.showCurrencySymbol ?? true) ? 'bg-primary border-primary' : 'bg-muted border-border',
                   )}
                 >
                   <span className={cn(
@@ -393,7 +393,7 @@ const Settings = () => {
                   onClick={() => setLocal((prev) => ({ ...prev, invoiceAutoNumbering: !(prev.invoiceAutoNumbering ?? false) }))}
                   className={cn(
                     'relative inline-flex h-7 w-14 items-center rounded-full border transition-colors',
-                    (s.invoiceAutoNumbering ?? false) ? 'bg-primary border-primary' : 'bg-muted border-[#171717]',
+                    (s.invoiceAutoNumbering ?? false) ? 'bg-primary border-primary' : 'bg-muted border-border',
                   )}
                 >
                   <span className={cn(
@@ -417,7 +417,7 @@ const Settings = () => {
                   onClick={() => setLocal((prev) => ({ ...prev, autoExport: !(prev.autoExport ?? false) }))}
                   className={cn(
                     'relative inline-flex h-7 w-14 items-center rounded-full border transition-colors',
-                    (s.autoExport ?? false) ? 'bg-primary border-primary' : 'bg-muted border-[#171717]',
+                    (s.autoExport ?? false) ? 'bg-primary border-primary' : 'bg-muted border-border',
                   )}
                 >
                   <span className={cn(
@@ -463,7 +463,7 @@ const Settings = () => {
                   onClick={() => setLocal((prev) => ({ ...prev, emailNotifications: !(prev.emailNotifications ?? false) }))}
                   className={cn(
                     'relative inline-flex h-7 w-14 items-center rounded-full border transition-colors',
-                    (s.emailNotifications ?? false) ? 'bg-primary border-primary' : 'bg-muted border-[#171717]',
+                    (s.emailNotifications ?? false) ? 'bg-primary border-primary' : 'bg-muted border-border',
                   )}
                 >
                   <span className={cn(
@@ -487,7 +487,7 @@ const Settings = () => {
                   onClick={() => setLocal((prev) => ({ ...prev, smsNotifications: !(prev.smsNotifications ?? false) }))}
                   className={cn(
                     'relative inline-flex h-7 w-14 items-center rounded-full border transition-colors',
-                    (s.smsNotifications ?? false) ? 'bg-primary border-primary' : 'bg-muted border-[#171717]',
+                    (s.smsNotifications ?? false) ? 'bg-primary border-primary' : 'bg-muted border-border',
                   )}
                 >
                   <span className={cn(
@@ -511,7 +511,7 @@ const Settings = () => {
           </div>
 
           {/* Reset Data */}
-          <div className="bg-card rounded-lg p-6 border border-destructive/30 border-[#171717]">
+          <div className="bg-card rounded-lg p-6 border border-destructive/30">
             <div className="flex items-center gap-2 mb-2">
               <Trash2 className="w-5 h-5 text-destructive" />
               <h2 className="text-lg font-semibold text-destructive">Danger Zone</h2>

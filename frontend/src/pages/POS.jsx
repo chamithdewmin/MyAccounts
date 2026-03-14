@@ -231,7 +231,7 @@ const POS = () => {
           <motion.div
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
-            className="bg-card rounded-lg border border-[#171717] p-4 flex items-center justify-between"
+            className="bg-card rounded-lg border border-border p-4 flex items-center justify-between"
           >
             <div>
               <p className="text-xs uppercase tracking-wide text-muted-foreground">
@@ -250,7 +250,7 @@ const POS = () => {
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.05 }}
-            className="bg-card rounded-lg border border-[#171717] p-4 flex items-center justify-between"
+            className="bg-card rounded-lg border border-border p-4 flex items-center justify-between"
           >
             <div>
               <p className="text-xs uppercase tracking-wide text-muted-foreground">
@@ -269,7 +269,7 @@ const POS = () => {
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.1 }}
-            className="bg-card rounded-lg border border-[#171717] p-4 flex items-center justify-between"
+            className="bg-card rounded-lg border border-border p-4 flex items-center justify-between"
           >
             <div>
               <p className="text-xs uppercase tracking-wide text-muted-foreground">
@@ -303,7 +303,7 @@ const POS = () => {
           <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
             <div className="flex flex-wrap gap-3">
               <select
-                className="px-3 py-2 bg-[#1e293b] border-0 rounded-lg text-sm"
+                className="px-3 py-2 bg-input border border-border rounded-lg text-sm"
                 value={filters.period}
                 onChange={(e) => handleFilterChange('period', e.target.value)}
               >
@@ -312,7 +312,7 @@ const POS = () => {
                 <option value="all">All time</option>
               </select>
               <select
-                className="px-3 py-2 bg-[#1e293b] border-0 rounded-lg text-sm"
+                className="px-3 py-2 bg-input border border-border rounded-lg text-sm"
                 value={filters.paymentMethod}
                 onChange={(e) => handleFilterChange('paymentMethod', e.target.value)}
               >
@@ -324,7 +324,7 @@ const POS = () => {
             </div>
           </div>
 
-          <div className="bg-card rounded-lg border border-[#171717] overflow-hidden">
+          <div className="bg-card rounded-lg border border-border overflow-hidden">
             <div className="overflow-x-auto">
               <table className="w-full">
                 <thead className="bg-secondary">
@@ -344,7 +344,7 @@ const POS = () => {
                       initial={{ opacity: 0 }}
                       animate={{ opacity: 1 }}
                       transition={{ delay: index * 0.02 }}
-                      className="border-b border-[#171717] hover:bg-secondary/50 transition-colors"
+                      className="border-b border-border hover:bg-secondary/50 transition-colors"
                     >
                       <td className="px-4 py-3 text-sm text-muted-foreground">
                         {new Date(income.date).toLocaleDateString('en-US', {
@@ -410,7 +410,7 @@ const POS = () => {
               <div className="space-y-2">
                 <Label className="text-sm font-medium">Client</Label>
                 <select
-                  className="w-full px-3 py-2 bg-[#1e293b] border-0 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+                  className="w-full px-3 py-2 bg-input border border-border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary"
                   value={form.clientId}
                   onChange={(e) => handleChange('clientId', e.target.value)}
                 >
@@ -450,7 +450,7 @@ const POS = () => {
               <div className="space-y-2">
                 <Label className="text-sm font-medium">Payment Method</Label>
                 <select
-                  className="w-full px-3 py-2 bg-[#1e293b] border-0 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+                  className="w-full px-3 py-2 bg-input border border-border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary"
                   value={form.paymentMethod}
                   onChange={(e) => handleChange('paymentMethod', e.target.value)}
                 >
@@ -470,7 +470,7 @@ const POS = () => {
               <div className="space-y-2 md:col-span-2">
                 <Label className="text-sm font-medium">Notes</Label>
                 <textarea
-                  className="w-full px-3 py-2 bg-[#1e293b] border-0 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary min-h-[60px]"
+                  className="w-full px-3 py-2 bg-input border border-border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary min-h-[60px]"
                   placeholder="Optional notes about this payment"
                   value={form.notes}
                   onChange={(e) => handleChange('notes', e.target.value)}

@@ -236,14 +236,14 @@ const BackupRestore = () => {
           className="space-y-6"
         >
           {/* Database Information */}
-          <div className="bg-card rounded-lg p-6 border border-[#171717]">
+          <div className="bg-card rounded-lg p-6 border border-border">
             <div className="flex items-center gap-2 mb-4">
               <Server className="w-5 h-5 text-primary" />
               <h2 className="text-lg font-semibold">Database Information</h2>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-              <div className="bg-secondary/30 rounded-lg p-4 border border-[#171717]">
+              <div className="bg-secondary/30 rounded-lg p-4 border border-border">
                 <div className="flex items-center gap-2 text-muted-foreground mb-1">
                   <Database className="w-4 h-4" />
                   <span className="text-sm">Database Name</span>
@@ -251,7 +251,7 @@ const BackupRestore = () => {
                 <p className="text-lg font-semibold">{backupInfo?.databaseName || 'Unknown'}</p>
               </div>
 
-              <div className="bg-secondary/30 rounded-lg p-4 border border-[#171717]">
+              <div className="bg-secondary/30 rounded-lg p-4 border border-border">
                 <div className="flex items-center gap-2 text-muted-foreground mb-1">
                   <Table className="w-4 h-4" />
                   <span className="text-sm">Total Tables</span>
@@ -259,7 +259,7 @@ const BackupRestore = () => {
                 <p className="text-lg font-semibold">{backupInfo?.totalTables || 0}</p>
               </div>
 
-              <div className="bg-secondary/30 rounded-lg p-4 border border-[#171717]">
+              <div className="bg-secondary/30 rounded-lg p-4 border border-border">
                 <div className="flex items-center gap-2 text-muted-foreground mb-1">
                   <Clock className="w-4 h-4" />
                   <span className="text-sm">Last Backup</span>
@@ -280,7 +280,7 @@ const BackupRestore = () => {
                   {backupInfo.tables.map((table) => (
                     <div
                       key={table.name}
-                      className="flex items-center justify-between bg-background rounded-lg px-3 py-2 border border-[#171717]"
+                      className="flex items-center justify-between bg-background rounded-lg px-3 py-2 border border-border"
                     >
                       <span className="text-sm truncate">{table.name}</span>
                       <span className="text-xs text-muted-foreground ml-2">{table.rows}</span>
@@ -319,7 +319,7 @@ const BackupRestore = () => {
           </div>
 
           {/* Restore Database */}
-          <div className="bg-card rounded-lg p-6 border border-[#171717]">
+          <div className="bg-card rounded-lg p-6 border border-border">
             <div className="flex items-center gap-2 mb-4">
               <Upload className="w-5 h-5 text-primary" />
               <h2 className="text-lg font-semibold">Restore Database</h2>
@@ -356,13 +356,13 @@ const BackupRestore = () => {
           </div>
 
           {/* Auto Backup Settings */}
-          <div className="bg-card rounded-lg p-6 border border-[#171717]">
+          <div className="bg-card rounded-lg p-6 border border-border">
             <div className="flex items-center gap-2 mb-4">
               <Clock className="w-5 h-5 text-primary" />
               <h2 className="text-lg font-semibold">Auto Backup Settings</h2>
             </div>
 
-            <div className="rounded-lg border border-[#171717] bg-secondary/30 px-4 py-3 flex items-center justify-between">
+            <div className="rounded-lg border border-border bg-secondary/30 px-4 py-3 flex items-center justify-between">
               <div>
                 <p className="text-sm font-medium">Auto Backup</p>
                 <p className="text-xs text-muted-foreground">Automatically backup database daily</p>
@@ -382,7 +382,7 @@ const BackupRestore = () => {
                 }}
                 className={cn(
                   'relative inline-flex h-7 w-14 items-center rounded-full border transition-colors',
-                  autoBackup ? 'bg-primary border-primary' : 'bg-muted border-[#171717]',
+                  autoBackup ? 'bg-primary border-primary' : 'bg-muted border-border',
                 )}
               >
                 <span className={cn(
@@ -394,7 +394,7 @@ const BackupRestore = () => {
           </div>
 
           {/* Backup History */}
-          <div className="bg-card rounded-lg p-6 border border-[#171717]">
+          <div className="bg-card rounded-lg p-6 border border-border">
             <div className="flex items-center justify-between mb-4">
               <div className="flex items-center gap-2">
                 <History className="w-5 h-5 text-primary" />
@@ -417,7 +417,7 @@ const BackupRestore = () => {
                 {backupHistory.map((backup) => (
                   <div
                     key={backup.id}
-                    className="flex items-center justify-between p-4 rounded-lg bg-secondary/30 border border-[#171717] hover:bg-secondary/50 transition-colors"
+                    className="flex items-center justify-between p-4 rounded-lg bg-secondary/30 border border-border hover:bg-secondary/50 transition-colors"
                   >
                     <div className="flex items-center gap-4">
                       <div className="p-2 rounded-lg bg-primary/10">

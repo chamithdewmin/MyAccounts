@@ -23,6 +23,15 @@ const Settings = () => {
   const [resetLoading, setResetLoading] = useState(false);
   const [devOtp, setDevOtp] = useState('');
   const [saving, setSaving] = useState({});
+  const [theme, setTheme] = useState(() => localStorage.getItem('theme') || 'light');
+
+  useEffect(() => {
+    const handleThemeChange = () => {
+      setTheme(localStorage.getItem('theme') || 'light');
+    };
+    window.addEventListener('theme-change', handleThemeChange);
+    return () => window.removeEventListener('theme-change', handleThemeChange);
+  }, []);
 
   useEffect(() => {
     if (!settings) return;
@@ -84,46 +93,40 @@ const Settings = () => {
           className="space-y-6"
         >
           {/* 1. Appearance */}
-          <div className="bg-card rounded-lg p-6 border border-[#171717]">
+          <div className="bg-card rounded-lg p-6 border border-border">
             <div className="flex items-center gap-2 mb-4">
               <Palette className="w-5 h-5 text-primary" />
               <h2 className="text-lg font-semibold">Appearance</h2>
             </div>
             <p className="text-sm text-muted-foreground mb-4">Interface preferences.</p>
-            <div className="rounded-lg border border-[#171717] bg-secondary/30 px-4 py-3 flex items-center justify-between mb-4">
+            <div className="rounded-lg border border-border bg-secondary/30 px-4 py-3 flex items-center justify-between">
               <div>
                 <p className="text-sm font-medium">Theme</p>
-                <p className="text-xs text-muted-foreground">Light or dark mode</p>
+                <p className="text-xs text-muted-foreground">Light or dark mode (saved locally)</p>
               </div>
               <button
                 type="button"
-                onClick={() => setLocal((prev) => ({ ...prev, theme: prev.theme === 'dark' ? 'light' : 'dark' }))}
+                onClick={() => {
+                  const nextTheme = theme === 'dark' ? 'light' : 'dark';
+                  localStorage.setItem('theme', nextTheme);
+                  setTheme(nextTheme);
+                  window.dispatchEvent(new Event('theme-change'));
+                }}
                 className={cn(
                   'relative inline-flex h-7 w-14 items-center rounded-full border transition-colors',
-                  s.theme === 'dark' ? 'bg-primary border-primary' : 'bg-muted border-[#171717]',
+                  theme === 'dark' ? 'bg-primary border-primary' : 'bg-muted border-border',
                 )}
               >
                 <span className={cn(
                   'inline-block h-5 w-5 transform rounded-full bg-white shadow transition-transform',
-                  s.theme === 'dark' ? 'translate-x-7' : 'translate-x-1',
+                  theme === 'dark' ? 'translate-x-7' : 'translate-x-1',
                 )} />
               </button>
-            </div>
-            <div className="flex justify-end">
-              <Button
-                size="sm"
-                disabled={!hasChanges(['theme']) || saving.appearance}
-                onClick={() => handleSaveSection('Appearance', ['theme'])}
-                className="gap-2"
-              >
-                <Save className="h-4 w-4" />
-                {saving.appearance ? 'Saving...' : 'Save'}
-              </Button>
             </div>
           </div>
 
           {/* 2. Format Settings */}
-          <div className="bg-card rounded-lg p-6 border border-[#171717]">
+          <div className="bg-card rounded-lg p-6 border border-border">
             <div className="flex items-center gap-2 mb-4">
               <Calendar className="w-5 h-5 text-primary" />
               <h2 className="text-lg font-semibold">Format Settings</h2>
@@ -134,7 +137,7 @@ const Settings = () => {
                 <Label htmlFor="date-format">Date Format</Label>
                 <select
                   id="date-format"
-                  className="w-full px-3 py-2 bg-[#1e293b] border-0 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
+                  className="w-full px-3 py-2 bg-input border-0 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
                   value={s.dateFormat || 'DD/MM/YYYY'}
                   onChange={(e) => setLocal((prev) => ({ ...prev, dateFormat: e.target.value }))}
                 >
@@ -148,7 +151,7 @@ const Settings = () => {
                 <Label htmlFor="number-format">Number Format</Label>
                 <select
                   id="number-format"
-                  className="w-full px-3 py-2 bg-[#1e293b] border-0 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
+                  className="w-full px-3 py-2 bg-input border-0 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
                   value={s.numberFormat || '1,234.56'}
                   onChange={(e) => setLocal((prev) => ({ ...prev, numberFormat: e.target.value }))}
                 >
@@ -173,7 +176,7 @@ const Settings = () => {
           </div>
 
           {/* 3. Tax & Currency */}
-          <div className="bg-card rounded-lg p-6 border border-[#171717]">
+          <div className="bg-card rounded-lg p-6 border border-border">
             <div className="flex items-center gap-2 mb-4">
               <Percent className="w-5 h-5 text-primary" />
               <h2 className="text-lg font-semibold">Tax & Currency</h2>
@@ -184,7 +187,7 @@ const Settings = () => {
                 <Label htmlFor="currency">Currency</Label>
                 <select
                   id="currency"
-                  className="w-full px-3 py-2 bg-[#1e293b] border-0 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
+                  className="w-full px-3 py-2 bg-input border-0 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
                   value={s.currency || 'LKR'}
                   onChange={(e) => setLocal((prev) => ({ ...prev, currency: e.target.value }))}
                 >
@@ -203,7 +206,7 @@ const Settings = () => {
                   onChange={(e) => setLocal((prev) => ({ ...prev, taxRate: Number(e.target.value || 0) }))}
                 />
               </div>
-              <div className="md:col-span-2 rounded-lg border border-[#171717] bg-secondary/30 px-4 py-3 flex items-center justify-between">
+              <div className="md:col-span-2 rounded-lg border border-border bg-secondary/30 px-4 py-3 flex items-center justify-between">
                 <div>
                   <p className="text-sm font-medium">Tax Estimation</p>
                   <p className="text-xs text-muted-foreground">Enable simple tax estimation in reports</p>
@@ -239,7 +242,7 @@ const Settings = () => {
           </div>
 
           {/* 4. Invoice & Branding */}
-          <div className="bg-card rounded-lg p-6 border border-[#171717]">
+          <div className="bg-card rounded-lg p-6 border border-border">
             <div className="flex items-center gap-2 mb-4">
               <Receipt className="w-5 h-5 text-primary" />
               <h2 className="text-lg font-semibold">Invoice & Branding</h2>
@@ -272,7 +275,7 @@ const Settings = () => {
                   />
                   {s.logo && (
                     <div className="flex items-center gap-2">
-                      <img src={s.logo} alt="Logo" className="h-10 w-10 rounded border border-[#171717] object-contain bg-white" />
+                      <img src={s.logo} alt="Logo" className="h-10 w-10 rounded border border-border object-contain bg-white" />
                       <Button
                         type="button"
                         variant="outline"
@@ -294,7 +297,7 @@ const Settings = () => {
                     type="color"
                     value={s.invoiceThemeColor || '#F97316'}
                     onChange={(e) => setLocal((prev) => ({ ...prev, invoiceThemeColor: e.target.value }))}
-                    className="h-10 w-14 cursor-pointer rounded border border-[#171717] bg-transparent p-0"
+                    className="h-10 w-14 cursor-pointer rounded border border-border bg-transparent p-0"
                   />
                   <Input
                     type="text"
@@ -320,14 +323,14 @@ const Settings = () => {
           </div>
 
           {/* 5. General Settings */}
-          <div className="bg-card rounded-lg p-6 border border-[#171717]">
+          <div className="bg-card rounded-lg p-6 border border-border">
             <div className="flex items-center gap-2 mb-4">
               <Zap className="w-5 h-5 text-primary" />
               <h2 className="text-lg font-semibold">General Settings</h2>
             </div>
             <p className="text-sm text-muted-foreground mb-4">Common preferences and behaviors.</p>
             <div className="space-y-3 mb-4">
-              <div className="rounded-lg border border-[#171717] bg-secondary/30 px-4 py-3 flex items-center justify-between">
+              <div className="rounded-lg border border-border bg-secondary/30 px-4 py-3 flex items-center justify-between">
                 <div className="flex items-center gap-3">
                   <Zap className="w-4 h-4 text-muted-foreground" />
                   <div>
@@ -351,7 +354,7 @@ const Settings = () => {
                   )} />
                 </button>
               </div>
-              <div className="rounded-lg border border-[#171717] bg-secondary/30 px-4 py-3 flex items-center justify-between">
+              <div className="rounded-lg border border-border bg-secondary/30 px-4 py-3 flex items-center justify-between">
                 <div className="flex items-center gap-3">
                   <DollarSign className="w-4 h-4 text-muted-foreground" />
                   <div>
@@ -375,7 +378,7 @@ const Settings = () => {
                   )} />
                 </button>
               </div>
-              <div className="rounded-lg border border-[#171717] bg-secondary/30 px-4 py-3 flex items-center justify-between">
+              <div className="rounded-lg border border-border bg-secondary/30 px-4 py-3 flex items-center justify-between">
                 <div className="flex items-center gap-3">
                   <FileText className="w-4 h-4 text-muted-foreground" />
                   <div>
@@ -399,7 +402,7 @@ const Settings = () => {
                   )} />
                 </button>
               </div>
-              <div className="rounded-lg border border-[#171717] bg-secondary/30 px-4 py-3 flex items-center justify-between">
+              <div className="rounded-lg border border-border bg-secondary/30 px-4 py-3 flex items-center justify-between">
                 <div className="flex items-center gap-3">
                   <Download className="w-4 h-4 text-muted-foreground" />
                   <div>
@@ -438,14 +441,14 @@ const Settings = () => {
           </div>
 
           {/* 6. Notifications */}
-          <div className="bg-card rounded-lg p-6 border border-[#171717]">
+          <div className="bg-card rounded-lg p-6 border border-border">
             <div className="flex items-center gap-2 mb-4">
               <Bell className="w-5 h-5 text-primary" />
               <h2 className="text-lg font-semibold">Notifications</h2>
             </div>
             <p className="text-sm text-muted-foreground mb-4">Manage how you receive updates and alerts.</p>
             <div className="space-y-3 mb-4">
-              <div className="rounded-lg border border-[#171717] bg-secondary/30 px-4 py-3 flex items-center justify-between">
+              <div className="rounded-lg border border-border bg-secondary/30 px-4 py-3 flex items-center justify-between">
                 <div className="flex items-center gap-3">
                   <Mail className="w-4 h-4 text-muted-foreground" />
                   <div>
@@ -469,7 +472,7 @@ const Settings = () => {
                   )} />
                 </button>
               </div>
-              <div className="rounded-lg border border-[#171717] bg-secondary/30 px-4 py-3 flex items-center justify-between">
+              <div className="rounded-lg border border-border bg-secondary/30 px-4 py-3 flex items-center justify-between">
                 <div className="flex items-center gap-3">
                   <Smartphone className="w-4 h-4 text-muted-foreground" />
                   <div>

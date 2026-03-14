@@ -1,8 +1,7 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Sun, Moon } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { useFinance } from '@/contexts/FinanceContext';
 
 const sizeMap = {
   sm: { button: 'h-9 w-9', icon: 16 },
@@ -17,12 +16,25 @@ export function ThemeTogglerButton({
   className,
   ...props
 }) {
-  const { settings, updateSettings } = useFinance();
-  const isDark = settings?.theme === 'dark';
-  const nextTheme = isDark ? 'light' : 'dark';
+  const [isDark, setIsDark] = useState(() => {
+    const stored = localStorage.getItem('theme');
+    return stored === 'dark';
+  });
+
+  useEffect(() => {
+    const handleThemeChange = () => {
+      const stored = localStorage.getItem('theme');
+      setIsDark(stored === 'dark');
+    };
+    window.addEventListener('theme-change', handleThemeChange);
+    return () => window.removeEventListener('theme-change', handleThemeChange);
+  }, []);
 
   const handleClick = () => {
-    updateSettings({ theme: nextTheme });
+    const nextTheme = isDark ? 'light' : 'dark';
+    localStorage.setItem('theme', nextTheme);
+    setIsDark(!isDark);
+    window.dispatchEvent(new Event('theme-change'));
   };
 
   const { button: buttonSize, icon: iconSize } = sizeMap[size] || sizeMap.icon;
@@ -31,12 +43,12 @@ export function ThemeTogglerButton({
     <button
       type="button"
       onClick={handleClick}
-      aria-label={`Switch to ${nextTheme} mode`}
+      aria-label={`Switch to ${isDark ? 'light' : 'dark'} mode`}
       className={cn(
         'relative inline-flex items-center justify-center rounded-lg overflow-hidden',
         'transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2',
         variant === 'ghost' && 'hover:bg-secondary',
-        variant === 'outline' && 'border border-[#171717] hover:bg-secondary',
+        variant === 'outline' && 'border border-border hover:bg-secondary',
         variant === 'secondary' && 'bg-secondary hover:bg-secondary/80',
         buttonSize,
         className

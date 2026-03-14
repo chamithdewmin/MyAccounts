@@ -225,7 +225,7 @@ export default function Sidebar() {
               type="button"
               onClick={() => setOpen(false)}
               aria-label="Close menu"
-              className="lg:hidden h-7 w-7 shrink-0 flex items-center justify-center hover:bg-secondary rounded-md border border-[#171717] transition-colors touch-manipulation"
+              className="lg:hidden h-7 w-7 shrink-0 flex items-center justify-center hover:bg-secondary rounded-md border border-border transition-colors touch-manipulation"
             >
               <X className="w-4 h-4" />
             </button>
@@ -235,7 +235,7 @@ export default function Sidebar() {
               type="button"
               onClick={toggleCollapsed}
               aria-label="Expand sidebar"
-              className="hidden lg:flex h-7 w-7 shrink-0 items-center justify-center rounded-md border border-[#171717] bg-card hover:bg-secondary transition-all touch-manipulation opacity-0 pointer-events-none group-hover/header:opacity-100 group-hover/header:pointer-events-auto absolute right-1.5 top-1/2 -translate-y-1/2"
+              className="hidden lg:flex h-7 w-7 shrink-0 items-center justify-center rounded-md border border-border bg-card hover:bg-secondary transition-all touch-manipulation opacity-0 pointer-events-none group-hover/header:opacity-100 group-hover/header:pointer-events-auto absolute right-1.5 top-1/2 -translate-y-1/2"
             >
               <ChevronRight className="w-4 h-4" />
             </button>
@@ -244,7 +244,7 @@ export default function Sidebar() {
               type="button"
               onClick={toggleCollapsed}
               aria-label="Collapse sidebar"
-              className="hidden lg:flex h-7 w-7 shrink-0 items-center justify-center rounded-md border border-[#171717] hover:bg-secondary transition-colors touch-manipulation"
+              className="hidden lg:flex h-7 w-7 shrink-0 items-center justify-center rounded-md border border-border hover:bg-secondary transition-colors touch-manipulation"
             >
               <ChevronLeft className="w-4 h-4" />
             </button>
@@ -287,7 +287,7 @@ export default function Sidebar() {
               {!collapsed && <ChevronsUpDown className="h-4 w-4 shrink-0 text-muted-foreground" />}
             </DropdownMenuTrigger>
                 <DropdownMenuContent align="end" side="top" className="w-56 p-2">
-                  <div className="px-3 py-2 mb-1 border-b border-[#171717]">
+                  <div className="px-3 py-2 mb-1 border-b border-border">
                     <p className="text-sm font-semibold text-foreground">My Account</p>
                     <p className="text-xs text-muted-foreground truncate">{user?.email}</p>
                   </div>

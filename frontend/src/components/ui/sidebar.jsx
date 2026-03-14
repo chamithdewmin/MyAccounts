@@ -24,7 +24,7 @@ export function SidebarProvider({ children, defaultCollapsed = false }) {
       }}
     >
       <div
-        className="group/sidebar-wrapper flex min-h-screen w-full bg-background dark:bg-[#0C0E14]"
+        className="group/sidebar-wrapper flex min-h-screen w-full bg-background"
         data-state={collapsed ? 'collapsed' : 'expanded'}
       >
         {children}
@@ -43,7 +43,7 @@ export const Sidebar = React.forwardRef(
         data-collapsible={collapsible}
         data-state={isIconOnly ? 'collapsed' : 'expanded'}
         className={cn(
-          'fixed top-0 left-0 z-50 flex h-screen flex-col border-r border-[#171717] bg-card dark:bg-[#0a0a0a] transition-[width] duration-300 ease-sidebar pt-[env(safe-area-inset-top)]',
+          'fixed top-0 left-0 z-50 flex h-screen flex-col border-r border-border bg-card transition-[width] duration-300 ease-sidebar pt-[env(safe-area-inset-top)]',
           open ? 'translate-x-0' : '-translate-x-full lg:translate-x-0',
           isIconOnly ? 'w-[56px]' : 'w-[240px] max-w-[85vw]',
           className
@@ -61,7 +61,7 @@ export function SidebarHeader({ className, ...props }) {
   return (
     <div
       className={cn(
-        'flex shrink-0 items-center justify-between gap-2 border-b border-[#171717] px-3 pt-4 pb-3 min-h-14',
+        'flex shrink-0 items-center justify-between gap-2 border-b border-border px-3 pt-4 pb-3 min-h-14',
         className
       )}
       {...props}
@@ -87,7 +87,7 @@ export function SidebarContent({ className, ...props }) {
 export function SidebarFooter({ className, ...props }) {
   return (
     <div
-      className={cn('shrink-0 border-t border-[#171717] p-3', className)}
+      className={cn('shrink-0 border-t border-border p-3', className)}
       {...props}
     />
   );
@@ -100,7 +100,7 @@ export function SidebarRail() {
       type="button"
       onClick={toggleCollapsed}
       aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
-      className="absolute -right-3 top-1/2 z-10 hidden h-6 w-6 -translate-y-1/2 items-center justify-center rounded-full border border-[#171717] bg-card shadow transition-colors hover:bg-secondary lg:flex"
+      className="absolute -right-3 top-1/2 z-10 hidden h-6 w-6 -translate-y-1/2 items-center justify-center rounded-full border border-border bg-card shadow transition-colors hover:bg-secondary lg:flex"
     >
       <span
         className={cn(
@@ -142,7 +142,7 @@ export function SidebarTrigger({ className, ...props }) {
 }
 
 export function SidebarDivider({ className, ...props }) {
-  return <div className={cn('my-1 border-t border-[#171717]', className)} {...props} />;
+  return <div className={cn('my-1 border-t border-border', className)} {...props} />;
 }
 
 export function SidebarGroup({ className, ...props }) {
@@ -187,7 +187,7 @@ SidebarMenuButton.displayName = 'SidebarMenuButton';
 export function SidebarMenuSub({ className, ...props }) {
   return (
     <div
-      className={cn('sidebar-label ml-2 border-l border-[#171717] pl-2 space-y-0.5', className)}
+      className={cn('sidebar-label ml-2 border-l border-border pl-2 space-y-0.5', className)}
       {...props}
     />
   );

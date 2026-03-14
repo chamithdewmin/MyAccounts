@@ -21,7 +21,6 @@ const getDefaultSettings = () => ({
   currency: 'LKR',
   taxRate: 10,
   taxEnabled: true,
-  theme: 'dark',
   logo: null, // data URL for logo image
   profileAvatar: null, // data URL for user profile avatar
   invoiceThemeColor: '#F97316', // Orange - used for invoice bands, headers, totals

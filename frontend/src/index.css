@@ -4,22 +4,21 @@
 
 @layer base {
   :root {
-    /* Light theme: using #000000 background for all pages */
-    --background: 0 0% 0%; /* #000000 */
-    --foreground: 210 40% 96%;
+    /* Light theme: clean white/light gray design */
+    --background: 0 0% 100%; /* #ffffff */
+    --foreground: 222 47% 11%; /* dark text */
 
-    --card: 0 0% 100%;
+    --card: 0 0% 100%; /* #ffffff */
     --card-foreground: 222 47% 11%;
 
     --primary: 221 100% 53%; /* #0e5cff blue */
     --primary-foreground: 0 0% 100%;
 
-    /* Slightly darker so border-secondary and bg-secondary are visible vs white */
-    --secondary: 214 20% 90%;
+    --secondary: 214 20% 96%; /* light gray */
     --secondary-foreground: 222 47% 11%;
 
-    --muted: 214 20% 92%;
-    --muted-foreground: 215 15% 35%;
+    --muted: 214 20% 96%;
+    --muted-foreground: 215 15% 45%;
 
     --accent: 221 100% 53%; /* #0e5cff blue */
     --accent-foreground: 0 0% 100%;
@@ -27,14 +26,27 @@
     --destructive: 0 72% 51%;
     --destructive-foreground: 0 0% 100%;
 
-    /* Visible borders for cards, inputs, dividers */
-    --border: 0 0% 9%; /* #171717 */
-    --input: 214 20% 88%;
+    /* Light theme borders */
+    --border: 214 20% 88%; /* light gray border */
+    --input: 214 20% 92%;
     --ring: 221 100% 53%; /* #0e5cff */
 
-    /* Sidebar active state: dark blue with blue accent */
-    --sidebar-active-bg: 221 55% 22%;
+    /* Sidebar active state for light theme */
+    --sidebar-active-bg: 221 100% 95%; /* light blue */
     --sidebar-active-accent: 221 100% 53%; /* #0e5cff */
+
+    /* Table color scheme for light theme */
+    --table-header-bg: #f8fafc;
+    --table-row-odd: #ffffff;
+    --table-row-even: #f8fafc;
+    --table-row-hover: #f1f5f9;
+    --table-divider: #e2e8f0;
+    --table-border: #e2e8f0;
+    --text-primary: #0f172a;
+    --text-body: #334155;
+    --text-label: #64748b;
+    --text-muted: #94a3b8;
+    --text-placeholder: #cbd5e1;
   }
 
   .dark {

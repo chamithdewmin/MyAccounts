@@ -382,7 +382,7 @@ export default function SidebarNew() {
         style={{
           width: currentWidth,
           minWidth: currentWidth,
-          height: "calc(100vh - 20px)",
+          height: "calc(100vh - 40px)",
           background: c.bg,
           border: `1px solid ${c.border}`,
           borderRadius: 16,

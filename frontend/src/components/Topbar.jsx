@@ -111,7 +111,7 @@ const Topbar = () => {
             style={{
               background: c.cardBg,
               border: `1px solid ${c.border}`,
-              borderRadius: 10,
+              borderRadius: 50,
               padding: 10,
               cursor: 'pointer',
               color: c.textMuted,
@@ -128,7 +128,7 @@ const Topbar = () => {
             style={{
               background: c.cardBg,
               border: `1px solid ${c.border}`,
-              borderRadius: 10,
+              borderRadius: 50,
               padding: 10,
               cursor: 'pointer',
               color: c.textMuted,

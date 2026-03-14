@@ -28,8 +28,24 @@ import {
   HardDrive,
 } from "lucide-react";
 
+// Theme-aware colors
+const getColors = () => {
+  const isDark = document.documentElement.classList.contains('dark');
+  return {
+    bg: isDark ? "#0a0a0a" : "#ffffff",
+    border: isDark ? "#171717" : "#e2e8f0",
+    text: isDark ? "#fff" : "#0f172a",
+    textMuted: isDark ? "#8b9ab0" : "#64748b",
+    textLabel: isDark ? "#6b7280" : "#64748b",
+    hoverBg: isDark ? "rgba(255,255,255,0.06)" : "rgba(0,0,0,0.04)",
+    activeBg: isDark ? "rgba(14,92,255,0.15)" : "rgba(14,92,255,0.1)",
+    activeAccent: "#0e5cff",
+    divider: isDark ? "#171717" : "#e2e8f0",
+  };
+};
+
 // Sidebar context to share collapsed state
-const SidebarContext = createContext({ collapsed: false, setCollapsed: () => {} });
+const SidebarContext = createContext({ collapsed: false, setCollapsed: () => {}, colors: getColors() });
 export const useSidebarState = () => useContext(SidebarContext);
 
 const ADMIN_EMAIL = "logozodev@gmail.com";
@@ -67,8 +83,9 @@ const NAV_ITEMS = [
   { label: "Settings", icon: Settings, href: "/settings", items: settingsSubItems },
 ];
 
-function MenuPopupItem({ icon, label, onClick }) {
+function MenuPopupItem({ icon, label, onClick, colors }) {
   const [hovered, setHovered] = useState(false);
+  const c = colors || getColors();
   return (
     <div
       onClick={onClick}
@@ -81,8 +98,8 @@ function MenuPopupItem({ icon, label, onClick }) {
         padding: "8px 12px",
         borderRadius: 7,
         cursor: "pointer",
-        background: hovered ? "rgba(255,255,255,0.06)" : "transparent",
-        color: hovered ? "#fff" : "#8b9ab0",
+        background: hovered ? c.hoverBg : "transparent",
+        color: hovered ? c.text : c.textMuted,
         fontSize: 14.5,
         transition: "all 0.15s",
       }}
@@ -93,10 +110,11 @@ function MenuPopupItem({ icon, label, onClick }) {
   );
 }
 
-function SubItem({ to, label, icon: Icon }) {
+function SubItem({ to, label, icon: Icon, colors }) {
   const location = useLocation();
   const isActive = location.pathname === to;
   const [hovered, setHovered] = useState(false);
+  const c = colors || getColors();
 
   return (
     <NavLink
@@ -109,14 +127,14 @@ function SubItem({ to, label, icon: Icon }) {
         gap: 10,
         padding: "8px 12px 8px 36px",
         fontSize: 14.5,
-        color: isActive ? "#0e5cff" : hovered ? "#fff" : "#8b9ab0",
+        color: isActive ? c.activeAccent : hovered ? c.text : c.textMuted,
         cursor: "pointer",
         borderRadius: 6,
         marginBottom: 1,
         background: isActive
-          ? "rgba(14,92,255,0.1)"
+          ? c.activeBg
           : hovered
-          ? "rgba(255,255,255,0.06)"
+          ? c.hoverBg
           : "transparent",
         whiteSpace: "nowrap",
         transition: "all 0.2s",
@@ -138,10 +156,12 @@ function NavItem({
   chevron,
   onChevronOpen,
   onClick,
+  colors,
 }) {
   const [hovered, setHovered] = useState(false);
   const [tooltipPos, setTooltipPos] = useState({ x: 0, y: 0 });
   const [tooltipVisible, setTooltipVisible] = useState(false);
+  const c = colors || getColors();
 
   const handleMouseEnter = (e) => {
     setHovered(true);
@@ -171,16 +191,16 @@ function NavItem({
           cursor: "pointer",
           transition: "all 0.2s",
           position: "relative",
-          color: hovered || active ? "#fff" : "#8b9ab0",
+          color: hovered || active ? c.text : c.textMuted,
           fontSize: 15,
           fontWeight: active ? 500 : 400,
           whiteSpace: "nowrap",
           overflow: "hidden",
           marginBottom: 2,
           background: active
-            ? "rgba(14,92,255,0.15)"
+            ? c.activeBg
             : hovered
-            ? "rgba(255,255,255,0.06)"
+            ? c.hoverBg
             : "transparent",
           justifyContent: mini ? "center" : "flex-start",
           userSelect: "none",
@@ -195,13 +215,13 @@ function NavItem({
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
-            color: active ? "#0e5cff" : "inherit",
+            color: active ? c.activeAccent : "inherit",
           }}
         >
           <Icon size={21} />
         </span>
         {!mini && (
-          <span style={{ flex: 1, overflow: "hidden", color: active ? "#0e5cff" : "inherit" }}>
+          <span style={{ flex: 1, overflow: "hidden", color: active ? c.activeAccent : "inherit" }}>
             {label}
           </span>
         )}
@@ -216,7 +236,7 @@ function NavItem({
               transition: "transform 0.2s ease",
               transform: chevron ? "rotate(180deg)" : "rotate(0deg)",
               flexShrink: 0,
-              color: "#8b9ab0",
+              color: c.textMuted,
               display: "flex",
             }}
           >
@@ -228,19 +248,19 @@ function NavItem({
         <div
           style={{
             position: "fixed",
-            background: "#0a0a0a",
-            color: "#fff",
+            background: c.bg,
+            color: c.text,
             fontSize: 12,
             padding: "6px 12px",
             borderRadius: 6,
             pointerEvents: "none",
-            border: "1px solid #171717",
+            border: `1px solid ${c.border}`,
             zIndex: 9999,
             whiteSpace: "nowrap",
             top: tooltipPos.y,
             left: tooltipPos.x,
             transform: "translateY(-50%)",
-            boxShadow: "0 4px 12px rgba(0,0,0,0.3)",
+            boxShadow: "0 4px 12px rgba(0,0,0,0.15)",
           }}
         >
           {label}
@@ -269,6 +289,7 @@ export function SidebarProvider({ children }) {
     }
     return false;
   });
+  const [colors, setColors] = useState(getColors);
 
   // Handle window resize
   useEffect(() => {
@@ -281,9 +302,16 @@ export function SidebarProvider({ children }) {
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
   }, []);
+
+  // Handle theme changes
+  useEffect(() => {
+    const updateColors = () => setColors(getColors());
+    window.addEventListener('theme-change', updateColors);
+    return () => window.removeEventListener('theme-change', updateColors);
+  }, []);
   
   return (
-    <SidebarContext.Provider value={{ collapsed, setCollapsed }}>
+    <SidebarContext.Provider value={{ collapsed, setCollapsed, colors }}>
       {children}
     </SidebarContext.Provider>
   );
@@ -294,7 +322,8 @@ export default function SidebarNew() {
   const { settings } = useFinance();
   const navigate = useNavigate();
   const location = useLocation();
-  const { collapsed, setCollapsed } = useSidebarState();
+  const { collapsed, setCollapsed, colors } = useSidebarState();
+  const c = colors;
 
   const [analyticsOpen, setAnalyticsOpen] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
@@ -334,8 +363,8 @@ export default function SidebarNew() {
           width: currentWidth,
           minWidth: currentWidth,
           height: "calc(100vh - 20px)",
-          background: "#0a0a0a",
-          border: "1px solid #171717",
+          background: c.bg,
+          border: `1px solid ${c.border}`,
           borderRadius: 16,
           display: "flex",
           flexDirection: "column",
@@ -355,7 +384,7 @@ export default function SidebarNew() {
             alignItems: "center",
             justifyContent: collapsed ? "center" : "space-between",
             padding: collapsed ? "16px 12px" : "16px 16px",
-            borderBottom: "1px solid #171717",
+            borderBottom: `1px solid ${c.border}`,
             minHeight: 64,
           }}
         >
@@ -384,19 +413,19 @@ export default function SidebarNew() {
               >
                 <img src={sidebarIcon} alt="" style={{ width: 18, height: 18, objectFit: "contain" }} />
               </div>
-              <span style={{ fontSize: 15, fontWeight: 600, color: "#fff", whiteSpace: "nowrap" }}>
+              <span style={{ fontSize: 15, fontWeight: 600, color: c.text, whiteSpace: "nowrap" }}>
                 MyAccounts
               </span>
             </a>
           )}
           <button
-            onClick={() => setCollapsed((c) => !c)}
+            onClick={() => setCollapsed((col) => !col)}
             style={{
               background: "none",
               border: "none",
               cursor: "pointer",
               padding: 6,
-              color: "#8b9ab0",
+              color: c.textMuted,
               borderRadius: 6,
               display: "flex",
               alignItems: "center",
@@ -415,7 +444,7 @@ export default function SidebarNew() {
               style={{
                 fontSize: 12,
                 fontWeight: 600,
-                color: "#6b7280",
+                color: c.textLabel,
                 textTransform: "uppercase",
                 letterSpacing: "0.05em",
                 padding: "8px 12px 6px",
@@ -429,7 +458,7 @@ export default function SidebarNew() {
               return (
                 <div
                   key={i}
-                  style={{ height: 1, background: "#171717", margin: "8px 8px" }}
+                  style={{ height: 1, background: c.divider, margin: "8px 8px" }}
                 />
               );
             }
@@ -449,6 +478,7 @@ export default function SidebarNew() {
                     onClick={() => {
                       if (!collapsed) setAnalyticsOpen((o) => !o);
                     }}
+                    colors={c}
                   />
                   {!collapsed && (
                     <div
@@ -465,6 +495,7 @@ export default function SidebarNew() {
                           to={sub.to}
                           label={sub.label}
                           icon={sub.icon}
+                          colors={c}
                         />
                       ))}
                     </div>
@@ -487,6 +518,7 @@ export default function SidebarNew() {
                     onClick={() => {
                       if (!collapsed) setSettingsOpen((o) => !o);
                     }}
+                    colors={c}
                   />
                   {!collapsed && (
                     <div
@@ -505,6 +537,7 @@ export default function SidebarNew() {
                             to={sub.to}
                             label={sub.label}
                             icon={sub.icon}
+                            colors={c}
                           />
                         ))}
                     </div>
@@ -521,13 +554,14 @@ export default function SidebarNew() {
                 href={item.href}
                 active={isActive(item.href)}
                 mini={collapsed}
+                colors={c}
               />
             );
           })}
         </nav>
 
         {/* User */}
-        <div style={{ padding: 10, borderTop: "1px solid #171717", position: "relative" }}>
+        <div style={{ padding: 10, borderTop: `1px solid ${c.border}`, position: "relative" }}>
           {/* Popup Menu */}
           {userMenuOpen && (
             <>
@@ -541,19 +575,19 @@ export default function SidebarNew() {
                   bottom: 80,
                   left: collapsed ? 20 : 20,
                   width: collapsed ? 220 : currentWidth - 30,
-                  background: "#0a0a0a",
-                  border: "1px solid #171717",
+                  background: c.bg,
+                  border: `1px solid ${c.border}`,
                   borderRadius: 10,
                   padding: 4,
                   zIndex: 999,
-                  boxShadow: "0 8px 32px rgba(0,0,0,0.5)",
+                  boxShadow: "0 8px 32px rgba(0,0,0,0.15)",
                 }}
               >
                 <div style={{ padding: "10px 12px 8px" }}>
-                  <div style={{ fontSize: 13, fontWeight: 600, color: "#fff" }}>My Account</div>
-                  <div style={{ fontSize: 12, color: "#8b9ab0", marginTop: 2, wordBreak: "break-all" }}>{user?.email}</div>
+                  <div style={{ fontSize: 13, fontWeight: 600, color: c.text }}>My Account</div>
+                  <div style={{ fontSize: 12, color: c.textMuted, marginTop: 2, wordBreak: "break-all" }}>{user?.email}</div>
                 </div>
-                <div style={{ height: 1, background: "#171717", margin: "4px 0" }} />
+                <div style={{ height: 1, background: c.divider, margin: "4px 0" }} />
                 <MenuPopupItem
                   icon={<User size={16} />}
                   label="Profile"
@@ -561,6 +595,7 @@ export default function SidebarNew() {
                     setUserMenuOpen(false);
                     navigate("/profile");
                   }}
+                  colors={c}
                 />
                 <MenuPopupItem
                   icon={<LogOut size={16} />}
@@ -569,6 +604,7 @@ export default function SidebarNew() {
                     setUserMenuOpen(false);
                     handleLogout();
                   }}
+                  colors={c}
                 />
               </div>
             </>
@@ -585,7 +621,7 @@ export default function SidebarNew() {
               padding: 10,
               borderRadius: 8,
               cursor: "pointer",
-              background: userMenuOpen || hoverUser ? "rgba(255,255,255,0.06)" : "transparent",
+              background: userMenuOpen || hoverUser ? c.hoverBg : "transparent",
               transition: "background 0.2s",
               overflow: "hidden",
               justifyContent: collapsed ? "center" : "flex-start",
@@ -619,7 +655,7 @@ export default function SidebarNew() {
                   height: 10,
                   background: "#22c55e",
                   borderRadius: "50%",
-                  border: "2px solid #0a0a0a",
+                  border: `2px solid ${c.bg}`,
                 }}
               />
             </div>
@@ -630,7 +666,7 @@ export default function SidebarNew() {
                     style={{
                       fontSize: 13,
                       fontWeight: 500,
-                      color: "#fff",
+                      color: c.text,
                       whiteSpace: "nowrap",
                       overflow: "hidden",
                       textOverflow: "ellipsis",
@@ -641,7 +677,7 @@ export default function SidebarNew() {
                   <div
                     style={{
                       fontSize: 11,
-                      color: "#8b9ab0",
+                      color: c.textMuted,
                       whiteSpace: "nowrap",
                       overflow: "hidden",
                       textOverflow: "ellipsis",
@@ -650,7 +686,7 @@ export default function SidebarNew() {
                     {user?.email}
                   </div>
                 </div>
-                <span style={{ color: "#8b9ab0", flexShrink: 0 }}>
+                <span style={{ color: c.textMuted, flexShrink: 0 }}>
                   <ChevronsUpDown size={16} />
                 </span>
               </>

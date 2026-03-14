@@ -1,11 +1,32 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from "recharts";
 import { useFinance } from "@/contexts/FinanceContext";
 import { getPrintHtml } from "@/utils/pdfPrint";
 import ReportPreviewModal from "@/components/ReportPreviewModal";
 import MonthYearFilter, { filterDataByMonth, getMonthName } from "@/components/MonthYearFilter";
 
-const C = { bg:"#000000",bg2:"#000000",card:"#0a0a0a",border:"#171717",border2:"#171717",text:"#fff",text2:"#d1d9e6",muted:"#8b9ab0",faint:"#4a5568",green:"#22c55e",red:"#ef4444",blue:"#0e5cff",cyan:"#22d3ee",yellow:"#eab308",purple:"#a78bfa",orange:"#f97316" };
+// ── THEME-AWARE COLORS ────────────────────────────────────────────────────────
+const getColors = () => {
+  const isDark = document.documentElement.classList.contains('dark');
+  return {
+    bg: isDark ? "#000000" : "#f8fafc",
+    bg2: isDark ? "#000000" : "#f8fafc",
+    card: isDark ? "#0a0a0a" : "#ffffff",
+    border: isDark ? "#171717" : "#e2e8f0",
+    border2: isDark ? "#171717" : "#e2e8f0",
+    text: isDark ? "#fff" : "#0f172a",
+    text2: isDark ? "#d1d9e6" : "#334155",
+    muted: isDark ? "#8b9ab0" : "#64748b",
+    faint: isDark ? "#4a5568" : "#94a3b8",
+    green: "#22c55e",
+    red: "#ef4444",
+    blue: "#0e5cff",
+    cyan: "#22d3ee",
+    yellow: "#eab308",
+    purple: "#a78bfa",
+    orange: "#f97316",
+  };
+};
 
 const Svg=({d,s=18,c="#fff",sw=2})=><svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth={sw} strokeLinecap="round" strokeLinejoin="round" style={{display:"block",flexShrink:0}}><path d={d}/></svg>;
 const I={
@@ -22,32 +43,38 @@ const I={
 };
 
 
-const Tip=({active,payload,label})=>{
+const Tip=({active,payload,label,C})=>{
+  const c = C || getColors();
   if(!active||!payload?.length)return null;
-  return <div style={{background:"#0a0a0a",border:`1px solid ${C.border2}`,borderRadius:12,padding:"12px 16px"}}>
-    <p style={{color:C.muted,fontSize:11,margin:"0 0 8px",fontWeight:600}}>{label}</p>
+  return <div style={{background:c.card,border:`1px solid ${c.border2}`,borderRadius:12,padding:"12px 16px",boxShadow:"0 4px 12px rgba(0,0,0,0.15)"}}>
+    <p style={{color:c.muted,fontSize:11,margin:"0 0 8px",fontWeight:600}}>{label}</p>
     {payload.map((p,i)=><div key={i} style={{display:"flex",alignItems:"center",gap:8,marginBottom:3}}>
-      <div style={{width:7,height:7,borderRadius:"50%",background:p.color}}/><span style={{color:C.text2,fontSize:12}}>{p.name}:</span><span style={{color:C.text,fontWeight:700,fontSize:12}}>LKR {Number(p.value).toLocaleString()}</span>
+      <div style={{width:7,height:7,borderRadius:"50%",background:p.color}}/><span style={{color:c.text2,fontSize:12}}>{p.name}:</span><span style={{color:c.text,fontWeight:700,fontSize:12}}>LKR {Number(p.value).toLocaleString()}</span>
     </div>)}
   </div>;
 };
-const Stat=({label,value,color,Icon,sub,subColor})=>(
-  <div style={{background:C.card,borderRadius:14,border:`1px solid ${C.border}`,padding:"20px 22px",position:"relative",overflow:"hidden"}}>
-    <div style={{position:"absolute",right:14,top:14,width:36,height:36,borderRadius:10,background:`${color||C.blue}18`,display:"flex",alignItems:"center",justifyContent:"center",opacity:0.8}}><Icon/></div>
-    <p style={{color:C.muted,fontSize:10,fontWeight:700,letterSpacing:"0.1em",textTransform:"uppercase",margin:0}}>{label}</p>
-    <p style={{color:color||C.text,fontSize:22,fontWeight:900,margin:"8px 0 0",letterSpacing:"-0.02em",fontFamily:"monospace"}}>{value}</p>
-    {sub&&<p style={{color:subColor||C.muted,fontSize:12,margin:"5px 0 0",fontWeight:600}}>{sub}</p>}
-    <div style={{position:"absolute",bottom:0,left:0,right:0,height:3,background:`linear-gradient(90deg,${color||C.blue}55,transparent)`}}/>
+const Stat=({label,value,color,Icon,sub,subColor,C})=>{
+  const c = C || getColors();
+  return (
+  <div style={{background:c.card,borderRadius:14,border:`1px solid ${c.border}`,padding:"20px 22px",position:"relative",overflow:"hidden",boxShadow:"0 1px 3px rgba(0,0,0,0.1)"}}>
+    <div style={{position:"absolute",right:14,top:14,width:36,height:36,borderRadius:10,background:`${color||c.blue}18`,display:"flex",alignItems:"center",justifyContent:"center",opacity:0.8}}><Icon/></div>
+    <p style={{color:c.muted,fontSize:10,fontWeight:700,letterSpacing:"0.1em",textTransform:"uppercase",margin:0}}>{label}</p>
+    <p style={{color:color||c.text,fontSize:22,fontWeight:900,margin:"8px 0 0",letterSpacing:"-0.02em",fontFamily:"monospace"}}>{value}</p>
+    {sub&&<p style={{color:subColor||c.muted,fontSize:12,margin:"5px 0 0",fontWeight:600}}>{sub}</p>}
+    <div style={{position:"absolute",bottom:0,left:0,right:0,height:3,background:`linear-gradient(90deg,${color||c.blue}55,transparent)`}}/>
   </div>
-);
-const Card=({title,subtitle,children})=>(
-  <div style={{background:C.card,borderRadius:16,border:`1px solid ${C.border}`,padding:"22px 24px"}}>
-    <div style={{marginBottom:18}}><h3 style={{color:C.text,fontSize:15,fontWeight:800,margin:0}}>{title}</h3>{subtitle&&<p style={{color:C.muted,fontSize:12,margin:"4px 0 0"}}>{subtitle}</p>}</div>
+);};
+const Card=({title,subtitle,children,C})=>{
+  const c = C || getColors();
+  return (
+  <div style={{background:c.card,borderRadius:16,border:`1px solid ${c.border}`,padding:"22px 24px",boxShadow:"0 1px 3px rgba(0,0,0,0.1)"}}>
+    <div style={{marginBottom:18}}><h3 style={{color:c.text,fontSize:15,fontWeight:800,margin:0}}>{title}</h3>{subtitle&&<p style={{color:c.muted,fontSize:12,margin:"4px 0 0"}}>{subtitle}</p>}</div>
     {children}
   </div>
-);
+);};
 const StatusBadge=({paid,status})=>{
-  const s=paid?{bg:"rgba(34,197,94,0.15)",c:C.green}:{bg:"rgba(234,179,8,0.15)",c:C.yellow};
+  const c = getColors();
+  const s=paid?{bg:"rgba(34,197,94,0.15)",c:c.green}:{bg:"rgba(234,179,8,0.15)",c:c.yellow};
   return <span style={{background:s.bg,color:s.c,borderRadius:6,padding:"3px 10px",fontSize:11,fontWeight:700,display:"inline-flex",alignItems:"center",gap:5}}><span style={{width:5,height:5,borderRadius:"50%",background:s.c,display:"inline-block"}}/>{status}</span>;
 };
 
@@ -55,6 +82,15 @@ export default function TaxReports(){
   const { incomes, expenses, settings, totals } = useFinance();
   const [activeQ,setActiveQ]=useState(null);
   const [reportPreview, setReportPreview] = useState({ open: false, html: "", filename: "" });
+  const [colors, setColors] = useState(getColors);
+
+  useEffect(() => {
+    const updateColors = () => setColors(getColors());
+    window.addEventListener('theme-change', updateColors);
+    return () => window.removeEventListener('theme-change', updateColors);
+  }, []);
+
+  const C = colors;
   
   // Month/Year filter state
   const now = new Date();
@@ -224,7 +260,7 @@ export default function TaxReports(){
             <ResponsiveContainer width="100%" height={190}>
               <PieChart><Pie data={incSplit} cx="50%" cy="50%" innerRadius={55} outerRadius={80} dataKey="value" strokeWidth={0}>
                 {incSplit.map((e,i)=><Cell key={i} fill={e.color}/>)}
-              </Pie><Tooltip formatter={v=>`LKR ${v.toLocaleString()}`} contentStyle={{background:"#0a0a0a",border:`1px solid ${C.border2}`,borderRadius:10}}/></PieChart>
+              </Pie><Tooltip formatter={v=>`LKR ${v.toLocaleString()}`} contentStyle={{background:C.card,border:`1px solid ${C.border2}`,borderRadius:10}}/></PieChart>
             </ResponsiveContainer>
             <div style={{display:"flex",flexDirection:"column",gap:9,marginTop:8}}>
               {incSplit.map((e,i)=><div key={i} style={{display:"flex",justifyContent:"space-between"}}>

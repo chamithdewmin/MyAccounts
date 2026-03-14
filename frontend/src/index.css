@@ -100,44 +100,13 @@
     @apply border-border;
   }
 
-  /* Scrollbar: light theme (default) */
+  /* Hide scrollbars globally but keep scroll functionality */
   * {
-    scrollbar-width: thin;
-    scrollbar-color: hsl(214 20% 75%) hsl(214 20% 94%);
+    scrollbar-width: none; /* Firefox */
+    -ms-overflow-style: none; /* IE and Edge */
   }
   *::-webkit-scrollbar {
-    width: 10px;
-    height: 10px;
-  }
-  *::-webkit-scrollbar-track {
-    background: hsl(214 20% 94%);
-  }
-  *::-webkit-scrollbar-thumb {
-    background: hsl(214 20% 75%);
-    border-radius: 5px;
-  }
-  *::-webkit-scrollbar-thumb:hover {
-    background: hsl(214 20% 65%);
-  }
-  *::-webkit-scrollbar-button {
-    display: none;
-  }
-
-  /* Scrollbar: dark theme */
-  .dark * {
-    scrollbar-color: #333 #111;
-  }
-  .dark *::-webkit-scrollbar-track {
-    background: #111;
-  }
-  .dark *::-webkit-scrollbar-thumb {
-    background: #333;
-  }
-  .dark *::-webkit-scrollbar-thumb:hover {
-    background: #444;
-  }
-  .dark *::-webkit-scrollbar-button {
-    background: #111;
+    display: none; /* Chrome, Safari, Opera */
   }
   body {
     @apply bg-background text-foreground;

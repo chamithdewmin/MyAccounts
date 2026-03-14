@@ -391,8 +391,9 @@ export default function SidebarNew() {
           transition: "width 0.3s cubic-bezier(0.4,0,0.2,1), min-width 0.3s cubic-bezier(0.4,0,0.2,1)",
           overflow: "hidden",
           position: "fixed",
-          top: 10,
+          top: "50%",
           left: 10,
+          transform: "translateY(-50%)",
           zIndex: 50,
           fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, sans-serif",
         }}

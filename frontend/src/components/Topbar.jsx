@@ -1,12 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { Search, Calendar, Bell } from 'lucide-react';
-import { useAuth } from '@/contexts/AuthContext';
-import { useFinance } from '@/contexts/FinanceContext';
 
 const getColors = () => {
   const isDark = document.documentElement.classList.contains('dark');
   return {
-    bg: isDark ? "#0a0a0a" : "#ffffff",
     border: isDark ? "#171717" : "#e2e8f0",
     text: isDark ? "#fff" : "#0f172a",
     textMuted: isDark ? "#8b9ab0" : "#64748b",
@@ -17,8 +14,6 @@ const getColors = () => {
 const Topbar = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [colors, setColors] = useState(getColors);
-  const { user } = useAuth();
-  const { settings } = useFinance();
   const c = colors;
 
   useEffect(() => {
@@ -43,17 +38,13 @@ const Topbar = () => {
         position: 'sticky',
         top: 0,
         zIndex: 30,
-        background: c.bg,
-        borderBottom: `1px solid ${c.border}`,
-        borderRadius: 12,
-        margin: '10px 10px 0 10px',
+        padding: '12px 20px',
       }}
     >
       <div style={{
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'space-between',
-        padding: '12px 20px',
         gap: 16,
       }}>
         {/* Search */}
@@ -91,8 +82,8 @@ const Topbar = () => {
           />
         </div>
 
-        {/* Right side - Date, Icons, Avatar */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
+        {/* Right side - Date, Icons */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
           {/* Date */}
           <span style={{ 
             color: c.textMuted, 
@@ -140,28 +131,6 @@ const Topbar = () => {
           >
             <Bell size={20} />
           </button>
-
-          {/* User Avatar */}
-          <div
-            style={{
-              width: 36,
-              height: 36,
-              borderRadius: '50%',
-              background: settings?.profileAvatar
-                ? `url(${settings.profileAvatar}) center/cover`
-                : 'linear-gradient(135deg, #0e5cff, #0839a3)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              fontSize: 13,
-              fontWeight: 600,
-              color: '#fff',
-              cursor: 'pointer',
-              flexShrink: 0,
-            }}
-          >
-            {!settings?.profileAvatar && (user?.name || 'U').charAt(0).toUpperCase()}
-          </div>
         </div>
       </div>
     </header>

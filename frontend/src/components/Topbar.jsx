@@ -8,6 +8,7 @@ const getColors = () => {
     text: isDark ? "#fff" : "#0f172a",
     textMuted: isDark ? "#8b9ab0" : "#64748b",
     inputBg: isDark ? "#1e293b" : "#f1f5f9",
+    cardBg: isDark ? "#0a0a0a" : "#ffffff",
   };
 };
 
@@ -83,7 +84,15 @@ const Topbar = () => {
         </div>
 
         {/* Right side - Date, Icons */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+        <div style={{ 
+          display: 'flex', 
+          alignItems: 'center', 
+          gap: 8,
+          background: c.cardBg,
+          border: `1px solid ${c.border}`,
+          borderRadius: 12,
+          padding: '8px 16px',
+        }}>
           {/* Date */}
           <span style={{ 
             color: c.textMuted, 
@@ -102,8 +111,8 @@ const Topbar = () => {
             style={{
               background: 'transparent',
               border: 'none',
-              padding: 8,
-              borderRadius: 8,
+              padding: 6,
+              borderRadius: 6,
               cursor: 'pointer',
               color: c.textMuted,
               display: 'flex',
@@ -111,7 +120,7 @@ const Topbar = () => {
               justifyContent: 'center',
             }}
           >
-            <Calendar size={20} />
+            <Calendar size={18} />
           </button>
 
           {/* Notification Icon */}
@@ -119,8 +128,8 @@ const Topbar = () => {
             style={{
               background: 'transparent',
               border: 'none',
-              padding: 8,
-              borderRadius: 8,
+              padding: 6,
+              borderRadius: 6,
               cursor: 'pointer',
               color: c.textMuted,
               display: 'flex',
@@ -129,7 +138,7 @@ const Topbar = () => {
               position: 'relative',
             }}
           >
-            <Bell size={20} />
+            <Bell size={18} />
           </button>
         </div>
       </div>

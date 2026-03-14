@@ -84,35 +84,35 @@ const Topbar = () => {
         </div>
 
         {/* Right side - Date, Icons */}
-        <div style={{ 
-          display: 'flex', 
-          alignItems: 'center', 
-          gap: 8,
-          background: c.cardBg,
-          border: `1px solid ${c.border}`,
-          borderRadius: 12,
-          padding: '8px 16px',
-        }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
           {/* Date */}
-          <span style={{ 
-            color: c.textMuted, 
-            fontSize: 13, 
-            fontWeight: 500,
-            whiteSpace: 'nowrap',
-            display: 'none',
-          }}
-          className="sm:!flex"
+          <div 
+            style={{ 
+              background: c.cardBg,
+              border: `1px solid ${c.border}`,
+              borderRadius: 10,
+              padding: '8px 14px',
+              display: 'none',
+            }}
+            className="sm:!flex"
           >
-            {formatDate()}
-          </span>
+            <span style={{ 
+              color: c.textMuted, 
+              fontSize: 13, 
+              fontWeight: 500,
+              whiteSpace: 'nowrap',
+            }}>
+              {formatDate()}
+            </span>
+          </div>
 
           {/* Calendar Icon */}
           <button
             style={{
-              background: 'transparent',
-              border: 'none',
-              padding: 6,
-              borderRadius: 6,
+              background: c.cardBg,
+              border: `1px solid ${c.border}`,
+              borderRadius: 10,
+              padding: 10,
               cursor: 'pointer',
               color: c.textMuted,
               display: 'flex',
@@ -126,10 +126,10 @@ const Topbar = () => {
           {/* Notification Icon */}
           <button
             style={{
-              background: 'transparent',
-              border: 'none',
-              padding: 6,
-              borderRadius: 6,
+              background: c.cardBg,
+              border: `1px solid ${c.border}`,
+              borderRadius: 10,
+              padding: 10,
               cursor: 'pointer',
               color: c.textMuted,
               display: 'flex',

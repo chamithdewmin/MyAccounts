@@ -41,6 +41,8 @@ const getColors = () => {
     activeBg: isDark ? "rgba(14,92,255,0.15)" : "rgba(14,92,255,0.1)",
     activeAccent: "#0e5cff",
     divider: isDark ? "#171717" : "#e2e8f0",
+    scrollbarThumb: isDark ? "#333333" : "#c1c1c1",
+    scrollbarTrack: isDark ? "#1a1a1a" : "#f1f1f1",
   };
 };
 
@@ -357,6 +359,24 @@ export default function SidebarNew() {
 
   return (
     <>
+      {/* Scrollbar styles */}
+      <style>{`
+        .sidebar-nav-scroll::-webkit-scrollbar {
+          width: 6px;
+        }
+        .sidebar-nav-scroll::-webkit-scrollbar-track {
+          background: ${c.scrollbarTrack};
+          border-radius: 3px;
+        }
+        .sidebar-nav-scroll::-webkit-scrollbar-thumb {
+          background: ${c.scrollbarThumb};
+          border-radius: 3px;
+        }
+        .sidebar-nav-scroll::-webkit-scrollbar-thumb:hover {
+          background: ${c.scrollbarThumb}cc;
+        }
+      `}</style>
+      
       {/* Sidebar */}
       <div
         style={{
@@ -438,7 +458,17 @@ export default function SidebarNew() {
         </div>
 
         {/* Nav */}
-        <nav style={{ flex: 1, padding: "8px 10px", overflowY: "auto", overflowX: "hidden" }}>
+        <nav 
+          className="sidebar-nav-scroll"
+          style={{ 
+            flex: 1, 
+            padding: "8px 10px", 
+            overflowY: "auto", 
+            overflowX: "hidden",
+            scrollbarColor: `${c.scrollbarThumb} ${c.scrollbarTrack}`,
+            scrollbarWidth: "thin",
+          }}
+        >
           {!collapsed && (
             <div
               style={{

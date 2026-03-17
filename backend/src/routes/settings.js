@@ -30,7 +30,7 @@ const toSettings = (row) => {
     theme: row.theme || 'dark',
     logo: row.logo,
     profileAvatar: row.profile_avatar || null,
-    invoiceThemeColor: row.invoice_theme_color || '#F97316',
+    invoiceThemeColor: row.invoice_theme_color || additionalSettings.invoiceThemeColor || '#F97316',
     openingCash: parseFloat(row.opening_cash) || 0,
     ownerCapital: parseFloat(row.owner_capital) || 0,
     payables: parseFloat(row.payables) || 0,
@@ -52,6 +52,8 @@ const toSettings = (row) => {
     email: additionalSettings.email ?? '',
     address: additionalSettings.address ?? '',
     website: additionalSettings.website ?? '',
+    // Fallbacks from JSON for future compatibility
+    logo: row.logo || additionalSettings.logo || null,
   };
   return base;
 };
@@ -157,6 +159,9 @@ router.put('/', async (req, res) => {
       email: d.email !== undefined ? d.email : (existingJson.email ?? ''),
       address: d.address !== undefined ? d.address : (existingJson.address ?? ''),
       website: d.website !== undefined ? d.website : (existingJson.website ?? ''),
+      // Store visual branding here as well for forward-compatibility
+      logo: d.logo !== undefined ? d.logo : (existingJson.logo ?? null),
+      invoiceThemeColor: d.invoiceThemeColor !== undefined ? d.invoiceThemeColor : (existingJson.invoiceThemeColor ?? '#F97316'),
     };
     const settingsJson = useSettingsJson ? JSON.stringify(additionalSettings) : null;
 

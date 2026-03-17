@@ -234,6 +234,7 @@ export default function InvoiceTemplate({
   const { settings } = useFinance();
   const raw = invoiceProp || order || {};
   const inv = normalise(raw, currency, settings);
+  const themeColor = (settings?.invoiceThemeColor || '#F97316').toString().trim() || '#F97316';
 
   const printAreaRef = useRef(null);
   const [dlStatus, setDlStatus] = useState('idle');
@@ -396,7 +397,7 @@ export default function InvoiceTemplate({
                 </div>
               </div>
               <div style={{ textAlign: 'right', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
-                <div style={invoiceStyles.invoiceWord}>INVOICE</div>
+                <div style={{ ...invoiceStyles.invoiceWord, color: themeColor }}>INVOICE</div>
                 <div style={invoiceStyles.invoiceNum}># {inv.invoiceNumber}</div>
               </div>
             </div>
@@ -426,11 +427,11 @@ export default function InvoiceTemplate({
             <table style={invoiceStyles.table}>
               <thead>
                 <tr>
-                  <th style={{ ...invoiceStyles.th, width: '40px' }}>#</th>
-                  <th style={{ ...invoiceStyles.th }}>Description</th>
-                  <th style={{ ...invoiceStyles.th, width: '80px', textAlign: 'right' }}>Qty</th>
-                  <th style={{ ...invoiceStyles.th, width: '100px', textAlign: 'right' }}>Rate</th>
-                  <th style={{ ...invoiceStyles.th, width: '110px', textAlign: 'right' }}>Amount</th>
+                  <th style={{ ...invoiceStyles.th, width: '40px', background: themeColor }}>#</th>
+                  <th style={{ ...invoiceStyles.th, background: themeColor }}>Description</th>
+                  <th style={{ ...invoiceStyles.th, width: '80px', textAlign: 'right', background: themeColor }}>Qty</th>
+                  <th style={{ ...invoiceStyles.th, width: '100px', textAlign: 'right', background: themeColor }}>Rate</th>
+                  <th style={{ ...invoiceStyles.th, width: '110px', textAlign: 'right', background: themeColor }}>Amount</th>
                 </tr>
               </thead>
               <tbody>
@@ -456,7 +457,7 @@ export default function InvoiceTemplate({
                 {inv.discountPercentage > 0 && (
                   <div style={invoiceStyles.row()}><span>Discount ({inv.discountPercentage}%)</span><span>{inv.discountFormatted}</span></div>
                 )}
-                <div style={invoiceStyles.row({ fontWeight: 'bold', fontSize: '15px', borderTop: '2px solid #0a0a0a', borderBottom: 'none', marginTop: '4px', paddingTop: '8px' })}>
+                <div style={invoiceStyles.row({ fontWeight: 'bold', fontSize: '15px', borderTop: `2px solid ${themeColor}`, borderBottom: 'none', marginTop: '4px', paddingTop: '8px', color: themeColor })}>
                   <span>Total</span><span>{inv.totalFormatted}</span>
                 </div>
               </div>

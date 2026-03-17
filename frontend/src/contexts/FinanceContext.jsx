@@ -177,7 +177,8 @@ export const FinanceProvider = ({ children }) => {
       return invoice;
     }
     const invoiceNumber = data.invoiceNumber || createId('INV');
-    const invoice = { id: invoiceNumber, invoiceNumber, clientId: data.clientId || null, clientName: data.clientName?.trim() || '', clientEmail: data.clientEmail?.trim() || '', clientPhone: data.clientPhone?.trim() || '', items: data.items || [], subtotal: Number(data.subtotal) || 0, discountPercentage: Number(data.discountPercentage) || 0, taxRate: settings.taxEnabled ? settings.taxRate : 0, taxAmount: inv.taxAmount, total: Number(inv.total) || Number(data.subtotal) + inv.taxAmount, paymentMethod: data.paymentMethod || 'bank', status: data.status || 'unpaid', dueDate: data.dueDate || new Date().toISOString(), createdAt: data.createdAt || new Date().toISOString(), notes: data.notes || '', bankDetails: data.bankDetails || null, showSignatureArea: Boolean(data.showSignatureArea) };
+    const createdAt = data.invoiceDate || data.createdAt || new Date().toISOString();
+    const invoice = { id: invoiceNumber, invoiceNumber, clientId: data.clientId || null, clientName: data.clientName?.trim() || '', clientEmail: data.clientEmail?.trim() || '', clientPhone: data.clientPhone?.trim() || '', items: data.items || [], subtotal: Number(data.subtotal) || 0, discountPercentage: Number(data.discountPercentage) || 0, taxRate: settings.taxEnabled ? settings.taxRate : 0, taxAmount: inv.taxAmount, total: Number(inv.total) || Number(data.subtotal) + inv.taxAmount, paymentMethod: data.paymentMethod || 'bank', status: data.status || 'unpaid', dueDate: data.dueDate || new Date().toISOString(), createdAt, notes: data.notes || '', bankDetails: data.bankDetails || null, showSignatureArea: Boolean(data.showSignatureArea) };
     setInvoices((prev) => [invoice, ...prev]);
     return invoice;
   };
@@ -198,6 +199,7 @@ export const FinanceProvider = ({ children }) => {
           const discountPercentage = Number(data.discountPercentage ?? invoice.discountPercentage ?? 0) || 0;
           const taxAmount = inv.taxAmount;
           const total = Number(inv.total) || subtotal + taxAmount;
+          const createdAt = data.invoiceDate || data.createdAt || invoice.createdAt;
           const next = {
             ...invoice,
             clientId: data.clientId ?? invoice.clientId,
@@ -213,6 +215,7 @@ export const FinanceProvider = ({ children }) => {
             paymentMethod: data.paymentMethod ?? invoice.paymentMethod,
             dueDate: data.dueDate ?? invoice.dueDate,
             notes: data.notes ?? invoice.notes,
+            createdAt,
             bankDetails: data.bankDetails ?? invoice.bankDetails,
             showSignatureArea: data.showSignatureArea != null ? Boolean(data.showSignatureArea) : invoice.showSignatureArea,
           };

@@ -21,9 +21,23 @@ const getDefaultSettings = () => ({
   currency: 'LKR',
   taxRate: 10,
   taxEnabled: true,
-  logo: null, // data URL for logo image
+  // Persist branding locally as a safety net in case older databases
+  // don't return logo/color correctly yet.
+  logo: (() => {
+    try {
+      return localStorage.getItem('ma_invoice_logo') || null;
+    } catch {
+      return null;
+    }
+  })(),
   profileAvatar: null, // data URL for user profile avatar
-  invoiceThemeColor: '#F97316', // Orange - used for invoice bands, headers, totals
+  invoiceThemeColor: (() => {
+    try {
+      return localStorage.getItem('ma_invoice_theme_color') || '#F97316';
+    } catch {
+      return '#F97316';
+    }
+  })(), // Used for invoice bands, headers, totals
   openingCash: 0, // Opening cash balance at business start
   ownerCapital: 0, // Owner deposits / initial investment
   payables: 0, // Unpaid bills (manual entry until bills feature exists)
@@ -307,6 +321,19 @@ export const FinanceProvider = ({ children }) => {
     } else {
       // Offline mode: just update local state
       setSettings((prev) => ({ ...prev, ...partial }));
+    }
+    // Mirror branding into localStorage so logo/color survive any backend issues
+    try {
+      if (Object.prototype.hasOwnProperty.call(partial, 'logo')) {
+        if (partial.logo) localStorage.setItem('ma_invoice_logo', partial.logo);
+        else localStorage.removeItem('ma_invoice_logo');
+      }
+      if (Object.prototype.hasOwnProperty.call(partial, 'invoiceThemeColor')) {
+        if (partial.invoiceThemeColor) localStorage.setItem('ma_invoice_theme_color', partial.invoiceThemeColor);
+        else localStorage.removeItem('ma_invoice_theme_color');
+      }
+    } catch {
+      // ignore storage errors
     }
   };
 

@@ -257,12 +257,19 @@ const Settings = () => {
                     id="logo-upload"
                     type="file"
                     accept="image/*"
-                    onChange={(e) => {
+                  onChange={(e) => {
                       const file = e.target.files?.[0];
                       if (!file) return;
                       const reader = new FileReader();
                       reader.onload = () => {
                         setLocal((prev) => ({ ...prev, logo: reader.result }));
+                        try {
+                          if (reader.result) {
+                            localStorage.setItem('ma_invoice_logo', reader.result);
+                          }
+                        } catch {
+                          // ignore
+                        }
                       };
                       reader.onerror = () => {
                         toast({ title: 'Upload failed', description: 'Failed to read image file.', variant: 'destructive' });
@@ -280,7 +287,14 @@ const Settings = () => {
                         type="button"
                         variant="outline"
                         size="sm"
-                        onClick={() => setLocal((prev) => ({ ...prev, logo: null }))}
+                        onClick={() => {
+                          setLocal((prev) => ({ ...prev, logo: null }));
+                          try {
+                            localStorage.removeItem('ma_invoice_logo');
+                          } catch {
+                            // ignore
+                          }
+                        }}
                       >
                         Remove
                       </Button>
@@ -296,13 +310,29 @@ const Settings = () => {
                     id="invoice-theme-color"
                     type="color"
                     value={s.invoiceThemeColor || '#F97316'}
-                    onChange={(e) => setLocal((prev) => ({ ...prev, invoiceThemeColor: e.target.value }))}
+                    onChange={(e) => {
+                      const value = e.target.value;
+                      setLocal((prev) => ({ ...prev, invoiceThemeColor: value }));
+                      try {
+                        localStorage.setItem('ma_invoice_theme_color', value);
+                      } catch {
+                        // ignore
+                      }
+                    }}
                     className="h-10 w-14 cursor-pointer rounded border border-border bg-transparent p-0"
                   />
                   <Input
                     type="text"
                     value={s.invoiceThemeColor || '#F97316'}
-                    onChange={(e) => setLocal((prev) => ({ ...prev, invoiceThemeColor: e.target.value }))}
+                    onChange={(e) => {
+                      const value = e.target.value;
+                      setLocal((prev) => ({ ...prev, invoiceThemeColor: value }));
+                      try {
+                        localStorage.setItem('ma_invoice_theme_color', value);
+                      } catch {
+                        // ignore
+                      }
+                    }}
                     placeholder="#F97316"
                     className="font-mono w-28"
                   />

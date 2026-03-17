@@ -332,30 +332,6 @@ const Settings = () => {
             <div className="space-y-3 mb-4">
               <div className="rounded-lg border border-border bg-secondary/30 px-4 py-3 flex items-center justify-between">
                 <div className="flex items-center gap-3">
-                  <Zap className="w-4 h-4 text-muted-foreground" />
-                  <div>
-                    <p className="text-sm font-medium">Auto-Save</p>
-                    <p className="text-xs text-muted-foreground">Automatically save changes as you type</p>
-                  </div>
-                </div>
-                <button
-                  type="button"
-                  role="switch"
-                  aria-checked={s.autoSave ?? false}
-                  onClick={() => setLocal((prev) => ({ ...prev, autoSave: !(prev.autoSave ?? false) }))}
-                  className={cn(
-                    'relative inline-flex h-7 w-14 items-center rounded-full border transition-colors',
-                    (s.autoSave ?? false) ? 'bg-primary border-primary' : 'bg-muted border-border',
-                  )}
-                >
-                  <span className={cn(
-                    'inline-block h-5 w-5 transform rounded-full bg-white shadow transition-transform',
-                    (s.autoSave ?? false) ? 'translate-x-7' : 'translate-x-1',
-                  )} />
-                </button>
-              </div>
-              <div className="rounded-lg border border-border bg-secondary/30 px-4 py-3 flex items-center justify-between">
-                <div className="flex items-center gap-3">
                   <DollarSign className="w-4 h-4 text-muted-foreground" />
                   <div>
                     <p className="text-sm font-medium">Show Currency Symbol</p>
@@ -430,8 +406,8 @@ const Settings = () => {
             <div className="flex justify-end">
               <Button
                 size="sm"
-                disabled={!hasChanges(['autoSave', 'showCurrencySymbol', 'invoiceAutoNumbering', 'autoExport']) || saving.general}
-                onClick={() => handleSaveSection('General', ['autoSave', 'showCurrencySymbol', 'invoiceAutoNumbering', 'autoExport'])}
+                disabled={!hasChanges(['showCurrencySymbol', 'invoiceAutoNumbering', 'autoExport']) || saving.general}
+                onClick={() => handleSaveSection('General', ['showCurrencySymbol', 'invoiceAutoNumbering', 'autoExport'])}
                 className="gap-2"
               >
                 <Save className="h-4 w-4" />

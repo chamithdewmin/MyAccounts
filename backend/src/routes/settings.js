@@ -70,8 +70,8 @@ router.get('/', async (req, res) => {
     const uid = req.user.id;
     const hasPhone = await hasPhoneColumn();
     
-    // Build SELECT query to explicitly include phone if column exists
-    let selectQuery = 'SELECT * FROM settings WHERE user_id = $1';
+    // Always take the most recently updated settings row for this user
+    let selectQuery = 'SELECT * FROM settings WHERE user_id = $1 ORDER BY updated_at DESC NULLS LAST, id DESC LIMIT 1';
     const { rows } = await pool.query(selectQuery, [uid]);
     
     if (!rows[0]) {
@@ -138,7 +138,7 @@ router.put('/', async (req, res) => {
 
     let existingJson = {};
     if (useSettingsJson) {
-      const { rows } = await pool.query('SELECT settings_json FROM settings WHERE user_id = $1', [uid]);
+      const { rows } = await pool.query('SELECT settings_json FROM settings WHERE user_id = $1 ORDER BY updated_at DESC NULLS LAST, id DESC LIMIT 1', [uid]);
       if (rows[0]?.settings_json) {
         try {
           existingJson = typeof rows[0].settings_json === 'string' ? JSON.parse(rows[0].settings_json) : (rows[0].settings_json || {});
@@ -302,7 +302,7 @@ router.put('/', async (req, res) => {
         );
       }
     }
-    const { rows } = await pool.query('SELECT * FROM settings WHERE user_id = $1', [uid]);
+    const { rows } = await pool.query('SELECT * FROM settings WHERE user_id = $1 ORDER BY updated_at DESC NULLS LAST, id DESC LIMIT 1', [uid]);
     if (!rows[0]) {
       return res.status(404).json({ error: 'Settings not found' });
     }

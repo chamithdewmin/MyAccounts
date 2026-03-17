@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { useFinance } from '@/contexts/FinanceContext';
+import defaultLogo from '@/assets/Text black logo without background.png';
 import html2canvas from 'html2canvas';
 import { jsPDF } from 'jspdf';
 
@@ -381,13 +382,13 @@ export default function InvoiceTemplate({
           <div style={invoiceStyles.page}>
             <div style={invoiceStyles.header}>
               <div>
-                {settings?.logo ? (
-                  <div style={invoiceStyles.logoBox}>
-                    <img src={settings.logo} alt="" style={{ maxWidth: '100%', maxHeight: '100%', objectFit: 'contain' }} />
-                  </div>
-                ) : (
-                  <div style={invoiceStyles.logoRed}>{inv.companyName}</div>
-                )}
+                <div style={invoiceStyles.logoBox}>
+                  <img
+                    src={settings?.logo || defaultLogo}
+                    alt=""
+                    style={{ maxWidth: '100%', maxHeight: '100%', objectFit: 'contain' }}
+                  />
+                </div>
                 <div style={invoiceStyles.sellerInfo}>
                   <div style={invoiceStyles.sellerName}>{inv.companyName}</div>
                   {inv.companyAddress && <div>{inv.companyAddress}</div>}

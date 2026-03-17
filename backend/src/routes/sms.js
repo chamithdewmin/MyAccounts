@@ -5,9 +5,6 @@ import { authMiddleware } from '../middleware/auth.js';
 const router = express.Router();
 router.use(authMiddleware);
 
-// Default API key provided by user; used only as fallback
-const DEFAULT_SMS_API_KEY = 'bcc15040-18d5-4d7d-9252-7557ee9419bf';
-
 const getSmsConfig = async (userId) => {
   const { rows } = await pool.query(
     'SELECT sms_config FROM settings WHERE user_id = $1',
@@ -35,9 +32,7 @@ router.put('/settings', async (req, res) => {
     const existing = await getSmsConfig(uid);
     const merged = {
       userId: (userId != null && userId !== '') ? String(userId).trim() : (existing?.userId || ''),
-      apiKey: (apiKey != null && apiKey !== '' && apiKey !== '••••••••')
-        ? String(apiKey).trim()
-        : (existing?.apiKey || DEFAULT_SMS_API_KEY),
+      apiKey: (apiKey != null && apiKey !== '' && apiKey !== '••••••••') ? String(apiKey).trim() : (existing?.apiKey || ''),
       baseUrl: (baseUrl != null && baseUrl !== '') ? String(baseUrl).trim().replace(/\/$/, '') : (existing?.baseUrl || ''),
       senderId: (senderId != null && senderId !== '') ? String(senderId).trim() : (existing?.senderId || ''),
     };

@@ -142,7 +142,8 @@ app.use(cors({
   origin: process.env.FRONTEND_URL || 'https://myaccounts.logozodev.com',
   credentials: true,
 }));
-app.use(express.json({ limit: '10mb' }));
+// Increase JSON body limit to comfortably handle base64 logos and other settings
+app.use(express.json({ limit: '20mb' }));
 
 app.get('/api', (req, res) => {
   res.json({ status: 'ok', message: 'MyAccounts Backend is Running...' });

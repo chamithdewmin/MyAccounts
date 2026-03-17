@@ -15,6 +15,7 @@ const requireAdmin = (req, res, next) => {
 };
 
 const TABLES = [
+  'users',
   'clients',
   'incomes',
   'expenses',

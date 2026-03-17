@@ -31,7 +31,6 @@ const Orders = () => {
     clientEmail: '',
     clientPhone: '',
     paymentMethod: 'bank',
-    invoiceDate: '',
     dueDate: '',
     notes: '',
     discountPercentage: '',
@@ -93,7 +92,6 @@ const Orders = () => {
       clientEmail: invoice.clientEmail || '',
       clientPhone: invoice.clientPhone || '',
       paymentMethod: invoice.paymentMethod || 'bank',
-      invoiceDate: toDateInputValue(invoice.createdAt),
       dueDate: toDateInputValue(invoice.dueDate || invoice.createdAt),
       notes: invoice.notes || '',
       discountPercentage:
@@ -168,10 +166,6 @@ const Orders = () => {
       return;
     }
 
-    const invoiceDateIso = form.invoiceDate
-      ? new Date(`${form.invoiceDate}T00:00:00`).toISOString()
-      : new Date().toISOString();
-
     const dueDateIso = form.dueDate
       ? new Date(`${form.dueDate}T00:00:00`).toISOString()
       : new Date().toISOString();
@@ -190,7 +184,6 @@ const Orders = () => {
         taxAmount,
         total: invoiceTotal,
         paymentMethod: form.paymentMethod,
-        invoiceDate: invoiceDateIso,
         dueDate: dueDateIso,
         notes: form.notes,
         bankDetails: form.bankDetails,
@@ -219,7 +212,6 @@ const Orders = () => {
         clientEmail: '',
         clientPhone: '',
         paymentMethod: 'bank',
-        invoiceDate: '',
         dueDate: '',
         notes: '',
         discountPercentage: '',
@@ -571,7 +563,6 @@ const Orders = () => {
               clientEmail: '',
               clientPhone: '',
               paymentMethod: 'bank',
-              invoiceDate: '',
               dueDate: '',
               notes: '',
               discountPercentage: '',
@@ -651,23 +642,13 @@ const Orders = () => {
                     {form.showSignatureArea ? '✓ Signature area added (click to remove)' : 'Add Signature Area'}
                   </Button>
                 </div>
-                <div className="grid grid-cols-1 gap-2 mt-2">
-                  <div className="space-y-1">
-                    <Label className="text-sm font-medium">Invoice Date</Label>
-                    <Input
-                      type="date"
-                      value={form.invoiceDate}
-                      onChange={(e) => handleChange('invoiceDate', e.target.value)}
-                    />
-                  </div>
-                  <div className="space-y-1">
-                    <Label className="text-sm font-medium">Due Date</Label>
-                    <Input
-                      type="date"
-                      value={form.dueDate}
-                      onChange={(e) => handleChange('dueDate', e.target.value)}
-                    />
-                  </div>
+                <div className="space-y-2 mt-2">
+                  <Label className="text-sm font-medium">Due Date</Label>
+                  <Input
+                    type="date"
+                    value={form.dueDate}
+                    onChange={(e) => handleChange('dueDate', e.target.value)}
+                  />
                 </div>
               </div>
             </div>

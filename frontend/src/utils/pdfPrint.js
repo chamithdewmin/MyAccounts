@@ -42,7 +42,7 @@ function getReportDocumentHtml(html, filename) {
   <title>${filename.replace('.pdf', '')}</title>
   <style>
     * { box-sizing: border-box; }
-    body { margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #fff; color: #000; }
+    body { margin: 0; padding: 0; font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #fff; color: #000; }
     @page { size: A4; margin: 15mm; }
     @media print {
       body { -webkit-print-color-adjust: exact; print-color-adjust: exact; }

@@ -84,7 +84,7 @@ const ReportPreviewModal = ({ open, onOpenChange, html, filename, reportTitle = 
             ref={contentRef}
             key={filename || 'preview'}
             className="report-preview-content bg-white text-black rounded-lg border border-border p-6 min-h-[200px] shadow-sm"
-            style={{ fontFamily: 'sans-serif', fontSize: '14px' }}
+            style={{ fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif", fontSize: '14px' }}
             dangerouslySetInnerHTML={{ __html: html || '<p class="text-gray-500">No content to display.</p>' }}
           />
         </div>

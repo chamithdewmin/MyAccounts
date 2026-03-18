@@ -101,7 +101,7 @@ const KpiCard = ({ label, value, color, Icon, sub, delay = 0 }) => (
   <div style={{ background:C.card, borderRadius:14, border:`1px solid ${C.border}`, padding:"18px 20px", position:"relative", overflow:"hidden", animation:`fi .4s ease ${delay}s both` }}>
     <div style={{ position:"absolute", right:14, top:14, width:36, height:36, borderRadius:10, background:`${color||C.blue}18`, display:"flex", alignItems:"center", justifyContent:"center", opacity:.85 }}><Icon /></div>
     <p style={{ color:C.muted, fontSize:10, fontWeight:700, letterSpacing:"0.1em", textTransform:"uppercase", margin:0 }}>{label}</p>
-    <p style={{ color:color||C.text, fontSize:19, fontWeight:900, margin:"8px 0 0", letterSpacing:"-0.02em", lineHeight:1.1, fontFamily:"monospace" }}>{value}</p>
+    <p style={{ color:color||C.text, fontSize:19, fontWeight:900, margin:"8px 0 0", letterSpacing:"-0.02em", lineHeight:1.1, fontFamily:"'Inter', -apple-system, BlinkMacSystemFont, sans-serif", fontVariantNumeric:"tabular-nums" }}>{value}</p>
     {sub && <p style={{ color:C.muted, fontSize:11, margin:"5px 0 0", fontWeight:500 }}>{sub}</p>}
     <div style={{ position:"absolute", bottom:0, left:0, right:0, height:3, background:`linear-gradient(90deg,${color||C.blue}55,transparent)` }} />
   </div>
@@ -136,7 +136,7 @@ const HealthRing = ({ score }) => {
             style={{ transition:"stroke-dasharray 1s ease" }} />
         </svg>
         <div style={{ position:"absolute", inset:0, display:"flex", flexDirection:"column", alignItems:"center", justifyContent:"center" }}>
-          <p style={{ color:C.text, fontSize:26, fontWeight:900, margin:0, letterSpacing:"-0.03em", fontFamily:"monospace" }}>{score}</p>
+          <p style={{ color:C.text, fontSize:26, fontWeight:900, margin:0, letterSpacing:"-0.03em", fontFamily:"'Inter', -apple-system, BlinkMacSystemFont, sans-serif", fontVariantNumeric:"tabular-nums" }}>{score}</p>
           <p style={{ color:C.muted, fontSize:10, margin:0 }}>/ 100</p>
         </div>
       </div>

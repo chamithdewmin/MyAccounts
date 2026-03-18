@@ -20,6 +20,7 @@ import { useToast } from '@/components/ui/use-toast';
 import { useFinance } from '@/contexts/FinanceContext';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
+import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import {
   BarChart,
   Bar,
@@ -69,6 +70,8 @@ const CashFlow = () => {
   const [addType, setAddType] = useState('inflow'); // inflow | outflow
   const [editingTx, setEditingTx] = useState(null);
   const [refreshLoading, setRefreshLoading] = useState(false);
+  const [deleteCandidate, setDeleteCandidate] = useState(null);
+  const [markPaidCandidate, setMarkPaidCandidate] = useState(null);
   const [form, setForm] = useState({
     source: '',
     category: '',
@@ -530,21 +533,10 @@ const CashFlow = () => {
 
   const handleDelete = (tx) => {
     if (tx.sourceType === 'invoice') {
-      if (window.confirm('Mark this invoice as paid instead of deleting?')) {
-        updateInvoiceStatus(tx.id, 'paid');
-        toast({ title: 'Invoice marked paid', description: 'Payment recorded.' });
-      }
+      setMarkPaidCandidate(tx);
       return;
     }
-    const msg =
-      tx.sourceType === 'income'
-        ? `Delete income of ${settings.currency} ${tx.amount.toLocaleString()}?`
-        : `Delete expense of ${settings.currency} ${tx.amount.toLocaleString()}?`;
-    if (window.confirm(msg)) {
-      if (tx.sourceType === 'income') deleteIncome(tx.id);
-      else deleteExpense(tx.id);
-      toast({ title: 'Deleted', description: 'Transaction has been removed.' });
-    }
+    setDeleteCandidate(tx);
   };
 
   const handleMarkPaid = (tx) => {
@@ -1220,6 +1212,67 @@ const CashFlow = () => {
           </form>
         </DialogContent>
       </Dialog>
+
+      <ConfirmDialog
+        open={!!markPaidCandidate}
+        onOpenChange={(open) => {
+          if (!open) setMarkPaidCandidate(null);
+        }}
+        title="Mark invoice as paid?"
+        description="This invoice appears in cash flow because it's unpaid. Marking it paid will remove it from upcoming payments."
+        confirmText="Mark paid"
+        confirmVariant="default"
+        onConfirm={async () => {
+          const tx = markPaidCandidate;
+          if (!tx) return;
+          try {
+            await updateInvoiceStatus(tx.id, 'paid');
+            toast({ title: 'Invoice marked paid', description: 'Payment recorded.' });
+          } catch (err) {
+            toast({
+              title: 'Failed to update invoice',
+              description: err?.message || 'Server error. Please try again.',
+              variant: 'destructive',
+            });
+          } finally {
+            setMarkPaidCandidate(null);
+          }
+        }}
+      />
+
+      <ConfirmDialog
+        open={!!deleteCandidate}
+        onOpenChange={(open) => {
+          if (!open) setDeleteCandidate(null);
+        }}
+        title={deleteCandidate?.sourceType === 'income' ? 'Delete income?' : 'Delete expense?'}
+        description={
+          deleteCandidate
+            ? deleteCandidate.sourceType === 'income'
+              ? `Delete income of ${settings.currency} ${deleteCandidate.amount.toLocaleString()}?`
+              : `Delete expense of ${settings.currency} ${deleteCandidate.amount.toLocaleString()}?`
+            : ''
+        }
+        confirmText="Delete"
+        confirmVariant="destructive"
+        onConfirm={async () => {
+          const tx = deleteCandidate;
+          if (!tx) return;
+          try {
+            if (tx.sourceType === 'income') await deleteIncome(tx.id);
+            else await deleteExpense(tx.id);
+            toast({ title: 'Deleted', description: 'Transaction has been removed.' });
+          } catch (err) {
+            toast({
+              title: 'Failed to delete',
+              description: err?.message || 'Server error. Please try again.',
+              variant: 'destructive',
+            });
+          } finally {
+            setDeleteCandidate(null);
+          }
+        }}
+      />
     </>
   );
 };

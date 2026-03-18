@@ -9,6 +9,7 @@ import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/components/ui/use-toast';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import InvoiceTemplate from '@/components/InvoiceTemplate';
 
 const Orders = () => {
@@ -21,6 +22,7 @@ const Orders = () => {
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [editingInvoice, setEditingInvoice] = useState(null);
   const [refreshLoading, setRefreshLoading] = useState(false);
+  const [deleteCandidate, setDeleteCandidate] = useState(null);
   const { toast } = useToast();
 
   const { invoices, clients, settings, updateInvoiceStatus, addInvoice, updateInvoice, deleteInvoice, loadData } = useFinance();
@@ -489,11 +491,7 @@ const Orders = () => {
                         <button
                           type="button"
                           onClick={() => {
-                            if (window.confirm(`Delete invoice ${order.invoiceNumber}?`)) {
-                              deleteInvoice(order.id);
-                              setSelectedOrder(null);
-                              toast({ title: 'Invoice deleted', description: 'Invoice has been removed.' });
-                            }
+                            setDeleteCandidate(order);
                           }}
                           className="p-2 hover:bg-secondary rounded-lg transition-colors text-red-500 hover:text-red-400"
                           title="Delete"
@@ -762,6 +760,42 @@ const Orders = () => {
           </form>
         </DialogContent>
       </Dialog>
+
+      <ConfirmDialog
+        open={!!deleteCandidate}
+        onOpenChange={(open) => {
+          if (!open) setDeleteCandidate(null);
+        }}
+        title="Delete invoice?"
+        description={
+          deleteCandidate
+            ? `This will permanently delete invoice ${deleteCandidate.invoiceNumber}.`
+            : ''
+        }
+        confirmText="Delete"
+        cancelText="Cancel"
+        confirmVariant="destructive"
+        onConfirm={async () => {
+          const inv = deleteCandidate;
+          if (!inv) return;
+          try {
+            await deleteInvoice(inv.id);
+            if (selectedOrder?.id === inv.id) {
+              setSelectedOrder(null);
+              setInvoiceAction(null);
+            }
+            toast({ title: 'Invoice deleted', description: 'Invoice has been removed.' });
+          } catch (err) {
+            toast({
+              title: 'Failed to delete invoice',
+              description: err?.message || 'Server error. Please try again.',
+              variant: 'destructive',
+            });
+          } finally {
+            setDeleteCandidate(null);
+          }
+        }}
+      />
 
       {/* Add Payment Details popup */}
       <Dialog open={showBankDetailsPopup} onOpenChange={setShowBankDetailsPopup}>

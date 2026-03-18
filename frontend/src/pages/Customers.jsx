@@ -7,6 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/components/ui/use-toast';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 
 const PER_PAGE = 10;
 
@@ -20,6 +21,7 @@ const Customers = () => {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingClient, setEditingClient] = useState(null);
   const [refreshLoading, setRefreshLoading] = useState(false);
+  const [deleteCandidate, setDeleteCandidate] = useState(null);
   const [form, setForm] = useState({
     name: '',
     email: '',
@@ -97,10 +99,7 @@ const Customers = () => {
   };
 
   const handleDeleteClient = (customer) => {
-    if (window.confirm(`Delete client "${customer.name}"?`)) {
-      deleteClient(customer.id);
-      toast({ title: 'Client deleted', description: 'Client has been removed.' });
-    }
+    setDeleteCandidate(customer);
   };
 
   const totalPages = Math.max(1, Math.ceil(filteredCustomers.length / PER_PAGE));
@@ -385,6 +384,33 @@ const Customers = () => {
             </form>
           </DialogContent>
         </Dialog>
+
+        <ConfirmDialog
+          open={!!deleteCandidate}
+          onOpenChange={(open) => {
+            if (!open) setDeleteCandidate(null);
+          }}
+          title="Delete client?"
+          description={deleteCandidate ? `Delete client "${deleteCandidate.name}"?` : ''}
+          confirmText="Delete"
+          confirmVariant="destructive"
+          onConfirm={async () => {
+            const c = deleteCandidate;
+            if (!c) return;
+            try {
+              await deleteClient(c.id);
+              toast({ title: 'Client deleted', description: 'Client has been removed.' });
+            } catch (err) {
+              toast({
+                title: 'Failed to delete client',
+                description: err?.message || 'Server error. Please try again.',
+                variant: 'destructive',
+              });
+            } finally {
+              setDeleteCandidate(null);
+            }
+          }}
+        />
       </div>
     </>
   );

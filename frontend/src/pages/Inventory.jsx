@@ -8,6 +8,7 @@ import { useToast } from '@/components/ui/use-toast';
 import { useFinance } from '@/contexts/FinanceContext';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
+import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 
 const Inventory = () => {
   const { expenses, settings, addExpense, updateExpense, deleteExpense, loadData } = useFinance();
@@ -33,6 +34,7 @@ const Inventory = () => {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingExpense, setEditingExpense] = useState(null);
   const [refreshLoading, setRefreshLoading] = useState(false);
+  const [deleteCandidate, setDeleteCandidate] = useState(null);
   const exportCSV = () => {
     const headers = ['ID', 'Category', 'Amount', 'Date', 'Recurring', 'Notes'];
     const rows = expenses.map(exp => [
@@ -148,10 +150,7 @@ const Inventory = () => {
   };
 
   const handleDeleteExpense = (exp) => {
-    if (window.confirm(`Delete expense of ${settings.currency} ${exp.amount.toLocaleString()} (${exp.category})?`)) {
-      deleteExpense(exp.id);
-      toast({ title: 'Expense deleted', description: 'Expense record has been removed.' });
-    }
+    setDeleteCandidate(exp);
   };
 
   const filteredExpenses = useMemo(() => {
@@ -598,6 +597,37 @@ const Inventory = () => {
           </form>
         </DialogContent>
       </Dialog>
+
+      <ConfirmDialog
+        open={!!deleteCandidate}
+        onOpenChange={(open) => {
+          if (!open) setDeleteCandidate(null);
+        }}
+        title="Delete expense?"
+        description={
+          deleteCandidate
+            ? `Delete expense of ${settings.currency} ${deleteCandidate.amount.toLocaleString()} (${deleteCandidate.category})?`
+            : ''
+        }
+        confirmText="Delete"
+        confirmVariant="destructive"
+        onConfirm={async () => {
+          const exp = deleteCandidate;
+          if (!exp) return;
+          try {
+            await deleteExpense(exp.id);
+            toast({ title: 'Expense deleted', description: 'Expense record has been removed.' });
+          } catch (err) {
+            toast({
+              title: 'Failed to delete expense',
+              description: err?.message || 'Server error. Please try again.',
+              variant: 'destructive',
+            });
+          } finally {
+            setDeleteCandidate(null);
+          }
+        }}
+      />
     </>
   );
 };

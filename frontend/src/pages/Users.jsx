@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { useToast } from '@/components/ui/use-toast';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { api } from '@/lib/api';
+import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 
 const PROTECTED_EMAIL = 'logozodev@gmail.com';
 const PER_PAGE = 10;
@@ -20,6 +21,7 @@ const Users = () => {
   const [editingUser, setEditingUser] = useState(null);
   const [saving, setSaving] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
+  const [deleteCandidate, setDeleteCandidate] = useState(null);
   const [form, setForm] = useState({
     name: '',
     email: '',
@@ -130,18 +132,7 @@ const Users = () => {
       });
       return;
     }
-    if (!window.confirm(`Delete user "${user.name}"?`)) return;
-    try {
-      await api.users.delete(user.id);
-      toast({ title: 'User deleted', description: `${user.name} has been removed.` });
-      loadUsers();
-    } catch (err) {
-      toast({
-        title: 'Failed to delete',
-        description: err.message || 'Could not delete user',
-        variant: 'destructive',
-      });
-    }
+    setDeleteCandidate(user);
   };
 
   const formatDate = (d) => {
@@ -397,6 +388,34 @@ const Users = () => {
             </form>
           </DialogContent>
         </Dialog>
+
+        <ConfirmDialog
+          open={!!deleteCandidate}
+          onOpenChange={(open) => {
+            if (!open) setDeleteCandidate(null);
+          }}
+          title="Delete user?"
+          description={deleteCandidate ? `Delete user "${deleteCandidate.name}"?` : ''}
+          confirmText="Delete"
+          confirmVariant="destructive"
+          onConfirm={async () => {
+            const u = deleteCandidate;
+            if (!u) return;
+            try {
+              await api.users.delete(u.id);
+              toast({ title: 'User deleted', description: `${u.name} has been removed.` });
+              await loadUsers();
+            } catch (err) {
+              toast({
+                title: 'Failed to delete',
+                description: err?.message || 'Could not delete user',
+                variant: 'destructive',
+              });
+            } finally {
+              setDeleteCandidate(null);
+            }
+          }}
+        />
       </div>
     </>
   );

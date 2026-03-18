@@ -8,6 +8,7 @@ import { useToast } from '@/components/ui/use-toast';
 import { useFinance } from '@/contexts/FinanceContext';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
+import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 
 const POS = () => {
   const { incomes, clients, addIncome, updateIncome, deleteIncome, settings, loadData } = useFinance();
@@ -30,6 +31,7 @@ const POS = () => {
   });
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingIncome, setEditingIncome] = useState(null);
+  const [deleteCandidate, setDeleteCandidate] = useState(null);
   const handleChange = (field, value) => {
     setForm((prev) => ({ ...prev, [field]: value }));
   };
@@ -97,10 +99,7 @@ const POS = () => {
   };
 
   const handleDeleteIncome = (income) => {
-    if (window.confirm(`Delete income of ${settings.currency} ${income.amount.toLocaleString()} from ${income.clientName || 'Unknown'}?`)) {
-      deleteIncome(income.id);
-      toast({ title: 'Income deleted', description: 'Income record has been removed.' });
-    }
+    setDeleteCandidate(income);
   };
 
   const filteredIncomes = useMemo(() => {
@@ -488,6 +487,37 @@ const POS = () => {
           </form>
         </DialogContent>
       </Dialog>
+
+      <ConfirmDialog
+        open={!!deleteCandidate}
+        onOpenChange={(open) => {
+          if (!open) setDeleteCandidate(null);
+        }}
+        title="Delete income?"
+        description={
+          deleteCandidate
+            ? `Delete income of ${settings.currency} ${deleteCandidate.amount.toLocaleString()} from ${deleteCandidate.clientName || 'Unknown'}?`
+            : ''
+        }
+        confirmText="Delete"
+        confirmVariant="destructive"
+        onConfirm={async () => {
+          const inc = deleteCandidate;
+          if (!inc) return;
+          try {
+            await deleteIncome(inc.id);
+            toast({ title: 'Income deleted', description: 'Income record has been removed.' });
+          } catch (err) {
+            toast({
+              title: 'Failed to delete income',
+              description: err?.message || 'Server error. Please try again.',
+              variant: 'destructive',
+            });
+          } finally {
+            setDeleteCandidate(null);
+          }
+        }}
+      />
     </>
   );
 };

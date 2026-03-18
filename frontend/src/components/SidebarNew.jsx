@@ -332,6 +332,7 @@ export default function SidebarNew() {
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [hoverUser, setHoverUser] = useState(false);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
+  const [miniSubmenu, setMiniSubmenu] = useState(null); // { title, items: Array<{to,label,icon?,adminOnly?}>, pos: {top,left,width} }
 
   const canManageUsers = user?.email === ADMIN_EMAIL;
 
@@ -352,6 +353,22 @@ export default function SidebarNew() {
   const isActive = (href) => location.pathname === href;
   const isAnalyticsActive = location.pathname.startsWith("/reports");
   const isSettingsActive = ["/settings", "/users", "/backup-restore"].includes(location.pathname);
+
+  const closeMiniSubmenu = () => setMiniSubmenu(null);
+
+  const openMiniSubmenu = (e, title, items) => {
+    if (typeof window === "undefined") return;
+    const rect = e.currentTarget.getBoundingClientRect();
+    const width = 260;
+    const rowH = 40;
+    const headerH = 52;
+    const padding = 8;
+    const desiredH = headerH + padding * 2 + items.length * rowH;
+    const maxTop = Math.max(12, window.innerHeight - desiredH - 12);
+    const top = Math.min(maxTop, Math.max(12, rect.top - 8));
+    const left = rect.right + 12;
+    setMiniSubmenu({ title, items, pos: { top, left, width } });
+  };
 
   // Sidebar widths
   const EXPANDED_WIDTH = 260;
@@ -507,8 +524,12 @@ export default function SidebarNew() {
                     mini={collapsed}
                     chevron={analyticsOpen}
                     onChevronOpen={() => setAnalyticsOpen((o) => !o)}
-                    onClick={() => {
-                      if (!collapsed) setAnalyticsOpen((o) => !o);
+                    onClick={(e) => {
+                      if (collapsed) {
+                        openMiniSubmenu(e, "Analytics", item.items);
+                        return;
+                      }
+                      setAnalyticsOpen((o) => !o);
                     }}
                     colors={c}
                   />
@@ -547,8 +568,13 @@ export default function SidebarNew() {
                     mini={collapsed}
                     chevron={settingsOpen}
                     onChevronOpen={() => setSettingsOpen((o) => !o)}
-                    onClick={() => {
-                      if (!collapsed) setSettingsOpen((o) => !o);
+                    onClick={(e) => {
+                      if (collapsed) {
+                        const subItems = item.items.filter((sub) => !sub.adminOnly || canManageUsers);
+                        openMiniSubmenu(e, "Settings", subItems);
+                        return;
+                      }
+                      setSettingsOpen((o) => !o);
                     }}
                     colors={c}
                   />
@@ -731,6 +757,57 @@ export default function SidebarNew() {
           </div>
         </div>
       </div>
+
+      {/* Collapsed submenu popup (portal so it won't be clipped) */}
+      {miniSubmenu && typeof document !== "undefined"
+        ? createPortal(
+            <>
+              <div
+                onClick={closeMiniSubmenu}
+                style={{ position: "fixed", inset: 0, zIndex: 998 }}
+              />
+              <div
+                style={{
+                  position: "fixed",
+                  top: miniSubmenu.pos.top,
+                  left: miniSubmenu.pos.left,
+                  width: miniSubmenu.pos.width,
+                  background: c.bg,
+                  border: `1px solid ${c.border}`,
+                  borderRadius: 12,
+                  padding: 8,
+                  zIndex: 999,
+                  boxShadow: "0 16px 48px rgba(0,0,0,0.35)",
+                }}
+              >
+                <div style={{ padding: "10px 10px 8px" }}>
+                  <div style={{ fontSize: 13, fontWeight: 700, color: c.text }}>
+                    {miniSubmenu.title}
+                  </div>
+                  <div style={{ fontSize: 11.5, color: c.textMuted, marginTop: 2 }}>
+                    Select an option
+                  </div>
+                </div>
+                <div style={{ height: 1, background: c.divider, margin: "4px 0 6px" }} />
+                <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
+                  {miniSubmenu.items.map((sub) => (
+                    <MenuPopupItem
+                      key={sub.to}
+                      icon={sub.icon ? <sub.icon size={16} /> : <FileText size={16} />}
+                      label={sub.label}
+                      onClick={() => {
+                        closeMiniSubmenu();
+                        navigate(sub.to);
+                      }}
+                      colors={c}
+                    />
+                  ))}
+                </div>
+              </div>
+            </>,
+            document.body
+          )
+        : null}
     </>
   );
 }

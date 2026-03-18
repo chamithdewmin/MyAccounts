@@ -1,4 +1,5 @@
 import { useState, useEffect, createContext, useContext } from "react";
+import { createPortal } from "react-dom";
 import { NavLink, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { useFinance } from "@/contexts/FinanceContext";
@@ -595,50 +596,55 @@ export default function SidebarNew() {
         <div style={{ padding: 10, borderTop: `1px solid ${c.border}`, position: "relative" }}>
           {/* Popup Menu */}
           {userMenuOpen && (
-            <>
-              <div
-                onClick={() => setUserMenuOpen(false)}
-                style={{ position: "fixed", inset: 0, zIndex: 998 }}
-              />
-              <div
-                style={{
-                  position: "fixed",
-                  bottom: 80,
-                  left: collapsed ? 20 : 20,
-                  width: collapsed ? 220 : currentWidth - 30,
-                  background: c.bg,
-                  border: `1px solid ${c.border}`,
-                  borderRadius: 10,
-                  padding: 4,
-                  zIndex: 999,
-                  boxShadow: "0 8px 32px rgba(0,0,0,0.15)",
-                }}
-              >
-                <div style={{ padding: "10px 12px 8px" }}>
-                  <div style={{ fontSize: 13, fontWeight: 600, color: c.text }}>My Account</div>
-                  <div style={{ fontSize: 12, color: c.textMuted, marginTop: 2, wordBreak: "break-all" }}>{user?.email}</div>
-                </div>
-                <div style={{ height: 1, background: c.divider, margin: "4px 0" }} />
-                <MenuPopupItem
-                  icon={<User size={16} />}
-                  label="Profile"
-                  onClick={() => {
-                    setUserMenuOpen(false);
-                    navigate("/profile");
-                  }}
-                  colors={c}
-                />
-                <MenuPopupItem
-                  icon={<LogOut size={16} />}
-                  label="Log out"
-                  onClick={() => {
-                    setUserMenuOpen(false);
-                    handleLogout();
-                  }}
-                  colors={c}
-                />
-              </div>
-            </>
+            typeof document !== "undefined"
+              ? createPortal(
+                  <>
+                    <div
+                      onClick={() => setUserMenuOpen(false)}
+                      style={{ position: "fixed", inset: 0, zIndex: 998 }}
+                    />
+                    <div
+                      style={{
+                        position: "fixed",
+                        bottom: 80,
+                        left: 20,
+                        width: collapsed ? 220 : currentWidth - 30,
+                        background: c.bg,
+                        border: `1px solid ${c.border}`,
+                        borderRadius: 10,
+                        padding: 4,
+                        zIndex: 999,
+                        boxShadow: "0 8px 32px rgba(0,0,0,0.15)",
+                      }}
+                    >
+                      <div style={{ padding: "10px 12px 8px" }}>
+                        <div style={{ fontSize: 13, fontWeight: 600, color: c.text }}>My Account</div>
+                        <div style={{ fontSize: 12, color: c.textMuted, marginTop: 2, wordBreak: "break-all" }}>{user?.email}</div>
+                      </div>
+                      <div style={{ height: 1, background: c.divider, margin: "4px 0" }} />
+                      <MenuPopupItem
+                        icon={<User size={16} />}
+                        label="Profile"
+                        onClick={() => {
+                          setUserMenuOpen(false);
+                          navigate("/profile");
+                        }}
+                        colors={c}
+                      />
+                      <MenuPopupItem
+                        icon={<LogOut size={16} />}
+                        label="Log out"
+                        onClick={() => {
+                          setUserMenuOpen(false);
+                          handleLogout();
+                        }}
+                        colors={c}
+                      />
+                    </div>
+                  </>,
+                  document.body
+                )
+              : null
           )}
 
           <div

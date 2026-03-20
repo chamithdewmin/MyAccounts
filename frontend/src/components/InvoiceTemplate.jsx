@@ -220,6 +220,9 @@ const invoiceStyles = {
   row: (extra = {}) => ({ display: 'flex', justifyContent: 'space-between', padding: '5px 0', borderBottom: '1px solid #f0f0f0', ...extra }),
   notes: { marginTop: '40px', fontSize: '13px' },
   notesTitle: { fontWeight: 'bold', marginBottom: '6px', fontSize: '14px' },
+  bankDetails: { marginTop: '24px', fontSize: '13px' },
+  bankDetailsTitle: { fontWeight: 'bold', marginBottom: '6px', fontSize: '14px' },
+  bankDetailsLine: { marginTop: '2px' },
   footer: { display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginTop: '48px' },
   sigBlock: { textAlign: 'center', fontSize: '12px', color: '#555' },
   sigLine: { borderTop: '1px solid #aaa', width: '140px', margin: '32px auto 4px' },
@@ -236,6 +239,9 @@ export default function InvoiceTemplate({
   const raw = invoiceProp || order || {};
   const inv = normalise(raw, currency, settings);
   const themeColor = (settings?.invoiceThemeColor || '#F97316').toString().trim() || '#F97316';
+  const hasInvoiceBankDetails =
+    inv.paymentMethod === 'bank' &&
+    (inv.payment?.accountNumber || inv.payment?.accountName || inv.payment?.bankName || inv.payment?.branch);
 
   const printAreaRef = useRef(null);
   const [dlStatus, setDlStatus] = useState('idle');
@@ -468,6 +474,24 @@ export default function InvoiceTemplate({
               <div style={invoiceStyles.notesTitle}>Notes</div>
               <div>{inv.notes}</div>
             </div>
+
+            {hasInvoiceBankDetails && (
+              <div style={invoiceStyles.bankDetails}>
+                <div style={invoiceStyles.bankDetailsTitle}>Bank Details</div>
+                {inv.payment.accountName && (
+                  <div style={invoiceStyles.bankDetailsLine}>Account Name: {inv.payment.accountName}</div>
+                )}
+                {inv.payment.accountNumber && (
+                  <div style={invoiceStyles.bankDetailsLine}>Account Number: {inv.payment.accountNumber}</div>
+                )}
+                {inv.payment.bankName && (
+                  <div style={invoiceStyles.bankDetailsLine}>Bank: {inv.payment.bankName}</div>
+                )}
+                {inv.payment.branch && (
+                  <div style={invoiceStyles.bankDetailsLine}>Branch: {inv.payment.branch}</div>
+                )}
+              </div>
+            )}
 
             {inv.showSignatureArea && (
               <div style={invoiceStyles.footer}>

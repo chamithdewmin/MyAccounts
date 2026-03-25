@@ -74,6 +74,34 @@ CREATE TABLE IF NOT EXISTS invoices (
   created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
+-- Finance: estimates
+CREATE TABLE IF NOT EXISTS estimates (
+  id VARCHAR(100) PRIMARY KEY,
+  estimate_number VARCHAR(100) NOT NULL,
+  user_id INT REFERENCES users(id),
+  client_id VARCHAR(50) REFERENCES clients(id) ON DELETE SET NULL,
+  client_name VARCHAR(255) DEFAULT '',
+  client_email VARCHAR(255) DEFAULT '',
+  client_phone VARCHAR(50) DEFAULT '',
+  client_address TEXT DEFAULT '',
+  project_title VARCHAR(255) DEFAULT '',
+  project_scope TEXT DEFAULT '',
+  assumptions TEXT DEFAULT '',
+  exclusions TEXT DEFAULT '',
+  items JSONB DEFAULT '[]',
+  subtotal DECIMAL(15,2) DEFAULT 0,
+  discount_percentage DECIMAL(5,2) DEFAULT 0,
+  tax_rate DECIMAL(5,2) DEFAULT 0,
+  tax_amount DECIMAL(15,2) DEFAULT 0,
+  total DECIMAL(15,2) DEFAULT 0,
+  valid_until DATE,
+  status VARCHAR(50) DEFAULT 'draft',
+  notes TEXT DEFAULT '',
+  terms_conditions JSONB DEFAULT '[]',
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
 -- Finance: settings (single row per user/business)
 CREATE TABLE IF NOT EXISTS settings (
   id INT PRIMARY KEY DEFAULT 1,

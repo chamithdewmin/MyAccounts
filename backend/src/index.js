@@ -22,6 +22,7 @@ import remindersRoutes from './routes/reminders.js';
 import bankDetailsRoutes from './routes/bankDetails.js';
 import aiRoutes from './routes/ai.js';
 import backupRoutes from './routes/backup.js';
+import estimatesRoutes from './routes/estimates.js';
 import pool from './config/db.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -127,6 +128,39 @@ async function initDb() {
     console.warn('Invoice columns:', e.message);
   }
   try {
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS estimates (
+        id VARCHAR(100) PRIMARY KEY,
+        estimate_number VARCHAR(100) NOT NULL,
+        user_id INT REFERENCES users(id),
+        client_id VARCHAR(50) REFERENCES clients(id) ON DELETE SET NULL,
+        client_name VARCHAR(255) DEFAULT '',
+        client_email VARCHAR(255) DEFAULT '',
+        client_phone VARCHAR(50) DEFAULT '',
+        client_address TEXT DEFAULT '',
+        project_title VARCHAR(255) DEFAULT '',
+        project_scope TEXT DEFAULT '',
+        assumptions TEXT DEFAULT '',
+        exclusions TEXT DEFAULT '',
+        items JSONB DEFAULT '[]',
+        subtotal DECIMAL(15,2) DEFAULT 0,
+        discount_percentage DECIMAL(5,2) DEFAULT 0,
+        tax_rate DECIMAL(5,2) DEFAULT 0,
+        tax_amount DECIMAL(15,2) DEFAULT 0,
+        total DECIMAL(15,2) DEFAULT 0,
+        valid_until DATE,
+        status VARCHAR(50) DEFAULT 'draft',
+        notes TEXT DEFAULT '',
+        terms_conditions JSONB DEFAULT '[]',
+        created_at TIMESTAMPTZ DEFAULT NOW(),
+        updated_at TIMESTAMPTZ DEFAULT NOW()
+      )
+    `);
+    console.log('Estimates table ready.');
+  } catch (e) {
+    console.warn('Estimates table:', e.message);
+  }
+  try {
     await pool.query('ALTER TABLE reminders ADD COLUMN IF NOT EXISTS reason VARCHAR(255) DEFAULT \'\'');
     await pool.query('ALTER TABLE reminders ADD COLUMN IF NOT EXISTS amount DECIMAL(15,2) DEFAULT 0');
     console.log('Reminders columns (reason, amount) ready.');
@@ -181,6 +215,7 @@ app.use('/api/transfers', transfersRoutes);
 app.use('/api/reminders', remindersRoutes);
 app.use('/api/ai', aiRoutes);
 app.use('/api/backup', backupRoutes);
+app.use('/api/estimates', estimatesRoutes);
 
 const HOST = '0.0.0.0'; // Required for Docker: listen on all interfaces
 

@@ -73,6 +73,7 @@ const NAV_ITEMS = [
   { divider: true },
   { label: "Payments", href: "/income", icon: CreditCard },
   { label: "Invoices", href: "/invoices", icon: FileText },
+  { label: "Estimates", href: "/estimates", icon: FileText },
   { label: "Clients", href: "/clients", icon: Users },
   { divider: true },
   { label: "Expenses", href: "/expenses", icon: Receipt },

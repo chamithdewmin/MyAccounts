@@ -77,6 +77,7 @@ export const FinanceProvider = ({ children }) => {
   const [expenses, setExpenses] = useState([]);
   const [clients, setClients] = useState([]);
   const [invoices, setInvoices] = useState([]);
+  const [estimates, setEstimates] = useState([]);
   const [settings, setSettings] = useState(getDefaultSettings);
   const [assets, setAssets] = useState([]);
   const [loans, setLoans] = useState([]);
@@ -88,6 +89,7 @@ export const FinanceProvider = ({ children }) => {
       setExpenses([]);
       setClients([]);
       setInvoices([]);
+      setEstimates([]);
       setSettings(getDefaultSettings());
       setAssets([]);
       setLoans([]);
@@ -95,11 +97,12 @@ export const FinanceProvider = ({ children }) => {
       return;
     }
     try {
-      const [incomesRes, expensesRes, clientsRes, invoicesRes, settingsRes, assetsRes, loansRes, transfersRes, bankDetailsRes] = await Promise.all([
+      const [incomesRes, expensesRes, clientsRes, invoicesRes, estimatesRes, settingsRes, assetsRes, loansRes, transfersRes, bankDetailsRes] = await Promise.all([
         api.incomes.list().catch(() => []),
         api.expenses.list().catch(() => []),
         api.clients.list().catch(() => []),
         api.invoices.list().catch(() => []),
+        api.estimates.list().catch(() => []),
         api.settings.get().catch(() => getDefaultSettings()),
         api.assets.list().catch(() => []),
         api.loans.list().catch(() => []),
@@ -110,6 +113,7 @@ export const FinanceProvider = ({ children }) => {
       setExpenses(Array.isArray(expensesRes) ? expensesRes : []);
       setClients(Array.isArray(clientsRes) ? clientsRes : []);
       setInvoices(Array.isArray(invoicesRes) ? invoicesRes : []);
+      setEstimates(Array.isArray(estimatesRes) ? estimatesRes : []);
       const settingsMerged = settingsRes && typeof settingsRes === 'object' ? { ...getDefaultSettings(), ...settingsRes } : getDefaultSettings();
       // Always use full default expense categories so Add Expense popup shows all options
       settingsMerged.expenseCategories = getDefaultSettings().expenseCategories;
@@ -123,6 +127,7 @@ export const FinanceProvider = ({ children }) => {
       setExpenses([]);
       setClients([]);
       setInvoices([]);
+      setEstimates([]);
       setSettings(getDefaultSettings());
       setAssets([]);
       setLoans([]);
@@ -245,6 +250,117 @@ export const FinanceProvider = ({ children }) => {
   const updateInvoiceStatus = async (invoiceId, status) => {
     if (hasToken()) await api.invoices.updateStatus(invoiceId, status);
     setInvoices((prev) => prev.map((inv) => (inv.id === invoiceId || inv.invoiceNumber === invoiceId ? { ...inv, status } : inv)));
+  };
+
+  const addEstimate = async (data) => {
+    const taxRate = settings.taxEnabled ? settings.taxRate : 0;
+    const subtotal = Number(data.subtotal) || 0;
+    const discountPercentage = Number(data.discountPercentage) || 0;
+    const amountAfterDiscount = subtotal - (subtotal * discountPercentage / 100);
+    const taxAmount = data.taxAmount ?? (amountAfterDiscount * (taxRate / 100));
+    const total = data.total || amountAfterDiscount + taxAmount;
+    const payload = { ...data, taxRate, taxAmount, total };
+    if (hasToken()) {
+      const estimate = await api.estimates.create(payload);
+      setEstimates((prev) => [estimate, ...prev]);
+      return estimate;
+    }
+    const id = createId('EST');
+    const estimate = {
+      id,
+      estimateNumber: id,
+      clientId: data.clientId || null,
+      clientName: data.clientName || '',
+      clientEmail: data.clientEmail || '',
+      clientPhone: data.clientPhone || '',
+      clientAddress: data.clientAddress || '',
+      projectTitle: data.projectTitle || '',
+      projectScope: data.projectScope || '',
+      assumptions: data.assumptions || '',
+      exclusions: data.exclusions || '',
+      items: data.items || [],
+      subtotal,
+      discountPercentage,
+      taxRate,
+      taxAmount,
+      total,
+      validUntil: data.validUntil || null,
+      status: data.status || 'draft',
+      notes: data.notes || '',
+      termsConditions: data.termsConditions || [],
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    };
+    setEstimates((prev) => [estimate, ...prev]);
+    return estimate;
+  };
+
+  const updateEstimate = async (id, data) => {
+    const taxRate = settings.taxEnabled ? settings.taxRate : 0;
+    const subtotal = Number(data.subtotal) || 0;
+    const discountPercentage = Number(data.discountPercentage) || 0;
+    const amountAfterDiscount = subtotal - (subtotal * discountPercentage / 100);
+    const taxAmount = data.taxAmount ?? (amountAfterDiscount * (taxRate / 100));
+    const total = data.total || amountAfterDiscount + taxAmount;
+    const payload = { ...data, taxRate, taxAmount, total };
+    if (hasToken()) {
+      const estimate = await api.estimates.update(id, payload);
+      setEstimates((prev) => prev.map((e) => (e.id === id || e.estimateNumber === id ? estimate : e)));
+      return estimate;
+    }
+    let updatedLocal = null;
+    setEstimates((prev) =>
+      prev.map((e) => {
+        if (e.id !== id && e.estimateNumber !== id) return e;
+        updatedLocal = {
+          ...e,
+          ...data,
+          subtotal,
+          discountPercentage,
+          taxRate,
+          taxAmount,
+          total,
+          updatedAt: new Date().toISOString(),
+        };
+        return updatedLocal;
+      })
+    );
+    return updatedLocal;
+  };
+
+  const updateEstimateStatus = async (estimateId, status) => {
+    if (hasToken()) await api.estimates.updateStatus(estimateId, status);
+    setEstimates((prev) =>
+      prev.map((e) => (e.id === estimateId || e.estimateNumber === estimateId ? { ...e, status } : e))
+    );
+  };
+
+  const deleteEstimate = async (id) => {
+    if (hasToken()) await api.estimates.delete(id);
+    setEstimates((prev) => prev.filter((e) => e.id !== id && e.estimateNumber !== id));
+  };
+
+  const convertEstimateToInvoice = async (estimate) => {
+    const estimateId = estimate?.id || estimate?.estimateNumber;
+    if (!estimateId) throw new Error('Estimate ID is required');
+    if (hasToken()) await api.estimates.convertToInvoice(estimateId);
+    const invoice = await addInvoice({
+      clientId: estimate.clientId || null,
+      clientName: estimate.clientName || '',
+      clientEmail: estimate.clientEmail || '',
+      clientPhone: estimate.clientPhone || '',
+      items: estimate.items || [],
+      subtotal: Number(estimate.subtotal) || 0,
+      discountPercentage: Number(estimate.discountPercentage) || 0,
+      taxAmount: Number(estimate.taxAmount) || 0,
+      total: Number(estimate.total) || 0,
+      paymentMethod: 'bank',
+      dueDate: estimate.validUntil || new Date().toISOString(),
+      notes: estimate.notes || `Converted from estimate ${estimate.estimateNumber || estimate.id}`,
+      status: 'unpaid',
+    });
+    await updateEstimateStatus(estimateId, 'converted');
+    return invoice;
   };
 
   const updateIncome = async (id, data) => {
@@ -455,6 +571,7 @@ export const FinanceProvider = ({ children }) => {
     expenses,
     clients,
     invoices,
+    estimates,
     settings,
     assets,
     loans,
@@ -463,7 +580,9 @@ export const FinanceProvider = ({ children }) => {
     addIncome,
     addExpense,
     addInvoice,
+    addEstimate,
     updateInvoice,
+    updateEstimate,
     updateIncome,
     deleteIncome,
     updateExpense,
@@ -471,7 +590,10 @@ export const FinanceProvider = ({ children }) => {
     updateClient,
     deleteClient,
     updateInvoiceStatus,
+    updateEstimateStatus,
     deleteInvoice,
+    deleteEstimate,
+    convertEstimateToInvoice,
     updateSettings,
     saveBankDetails,
     addAsset,

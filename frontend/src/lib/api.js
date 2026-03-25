@@ -64,6 +64,15 @@ export const api = {
     updateStatus: (id, status) => request(`/invoices/${id}/status`, { method: 'PATCH', body: JSON.stringify({ status }) }),
     delete: (id) => request(`/invoices/${id}`, { method: 'DELETE' }),
   },
+  estimates: {
+    list: () => request('/estimates'),
+    get: (id) => request(`/estimates/${id}`),
+    create: (data) => request('/estimates', { method: 'POST', body: JSON.stringify(data) }),
+    update: (id, data) => request(`/estimates/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
+    updateStatus: (id, status) => request(`/estimates/${id}/status`, { method: 'PATCH', body: JSON.stringify({ status }) }),
+    convertToInvoice: (id) => request(`/estimates/${id}/convert-to-invoice`, { method: 'POST' }),
+    delete: (id) => request(`/estimates/${id}`, { method: 'DELETE' }),
+  },
   settings: {
     get: () => request('/settings'),
     update: (data) => request('/settings', { method: 'PUT', body: JSON.stringify(data) }),

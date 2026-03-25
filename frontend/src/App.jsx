@@ -6,6 +6,7 @@ import ForgotPassword from './pages/ForgotPassword';
 import POS from './pages/POS';
 import Inventory from './pages/Inventory';
 import Orders from './pages/Orders';
+import Estimates from './pages/Estimates';
 import Customers from './pages/Customers';
 import ReportOverview from './pages/reports/ReportOverview';
 import ReportIncome from './pages/reports/ReportIncome';
@@ -63,6 +64,7 @@ function App() {
         <Route path="income" element={<POS />} />
         <Route path="expenses" element={<Inventory />} />
         <Route path="invoices" element={<Orders />} />
+        <Route path="estimates" element={<Estimates />} />
         <Route path="clients" element={<Customers />} />
         <Route path="cash-flow" element={<CashFlow />} />
         <Route path="calendar" element={<Calendar />} />

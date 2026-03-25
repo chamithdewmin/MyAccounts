@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import html2canvas from 'html2canvas';
 import { jsPDF } from 'jspdf';
 import { useFinance } from '@/contexts/FinanceContext';
@@ -27,22 +27,6 @@ function fmtDate(date) {
   return d.toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
 }
 
-/** Split one tall canvas across multiple A4 pages in mm (same approach as invoice-style exporters). */
-function addCanvasToA4Pages(pdf, canvas, marginMm = 12) {
-  const pageW = pdf.internal.pageSize.getWidth();
-  const pageH = pdf.internal.pageSize.getHeight();
-  const usableH = pageH - 2 * marginMm;
-  const imgW = pageW - 2 * marginMm;
-  const imgH = (canvas.height * imgW) / canvas.width;
-  const imgData = canvas.toDataURL('image/png');
-  let page = 0;
-  while (page * usableH < imgH - 0.01) {
-    if (page > 0) pdf.addPage();
-    pdf.addImage(imgData, 'PNG', marginMm, marginMm - page * usableH, imgW, imgH);
-    page += 1;
-  }
-}
-
 export default function EstimateTemplate({ estimate, autoAction = null, onAutoActionDone }) {
   const { settings } = useFinance();
   const printAreaRef = useRef(null);
@@ -51,21 +35,35 @@ export default function EstimateTemplate({ estimate, autoAction = null, onAutoAc
   const currency = settings?.currency || 'LKR';
   const items = Array.isArray(estimate?.items) ? estimate.items : [];
   const themeColor = (settings?.invoiceThemeColor || '#F97316').toString();
+  const itemsPerPage = 12;
+  const itemPages = useMemo(() => {
+    if (!items.length) return [[]];
+    const pages = [];
+    for (let i = 0; i < items.length; i += itemsPerPage) {
+      pages.push(items.slice(i, i + itemsPerPage));
+    }
+    return pages;
+  }, [items]);
 
   const downloadPdf = useCallback(async () => {
     if (downloading || !printAreaRef.current) return;
     setDownloading(true);
     try {
-      const element = printAreaRef.current;
-      const canvas = await html2canvas(element, {
-        scale: 2,
-        useCORS: true,
-        allowTaint: true,
-        logging: false,
-        backgroundColor: '#ffffff',
-      });
+      const pageEls = Array.from(printAreaRef.current.querySelectorAll('.est-page'));
       const pdf = new jsPDF({ unit: 'mm', format: 'a4', orientation: 'portrait' });
-      addCanvasToA4Pages(pdf, canvas, 12);
+      for (let i = 0; i < pageEls.length; i += 1) {
+        const pageEl = pageEls[i];
+        const canvas = await html2canvas(pageEl, {
+          scale: 2,
+          useCORS: true,
+          allowTaint: true,
+          logging: false,
+          backgroundColor: '#ffffff',
+        });
+        const img = canvas.toDataURL('image/png');
+        if (i > 0) pdf.addPage('a4', 'portrait');
+        pdf.addImage(img, 'PNG', 0, 0, 210, 297);
+      }
       pdf.save(`Estimate-${(estimate?.estimateNumber || estimate?.id || 'draft').toString().replace('#', '')}.pdf`);
     } finally {
       setDownloading(false);
@@ -90,32 +88,15 @@ export default function EstimateTemplate({ estimate, autoAction = null, onAutoAc
       <style>{`
         @media print {
           body * { visibility: hidden !important; }
-          .est-print-root, .est-print-root * { visibility: visible !important; }
-          .est-print-root {
-            background: #fff !important;
-            min-height: auto !important;
-            padding: 0 !important;
-          }
           .est-print-area, .est-print-area * { visibility: visible !important; }
-          .est-print-area {
-            position: relative !important;
-            left: auto !important;
-            top: auto !important;
-            width: 100% !important;
-            max-width: 180mm !important;
-            min-height: auto !important;
-            margin: 0 auto !important;
-            padding: 12mm 10mm !important;
-            background: #fff !important;
-            box-shadow: none !important;
-            break-inside: auto;
-          }
-          .est-print-area table tbody tr { break-inside: avoid; break-after: auto; }
+          .est-print-area { position: relative !important; left: 0; top: 0; width: 210mm !important; max-width: 210mm !important; background: #fff !important; box-shadow: none !important; margin: 0 auto !important; }
+          .est-page { width: 210mm !important; min-height: 297mm !important; margin: 0 !important; box-shadow: none !important; page-break-after: always !important; break-after: page !important; }
+          .est-page:last-child { page-break-after: auto !important; break-after: auto !important; }
           .est-no-print { display: none !important; }
-          @page { size: A4 portrait; margin: 12mm; }
+          @page { size: A4 portrait; margin: 0; }
         }
       `}</style>
-      <div className="est-print-root" style={{ background: '#d1d5db', minHeight: '100vh', padding: '24px 12px' }}>
+      <div style={{ background: '#d1d5db', minHeight: '100vh', padding: '24px 12px' }}>
         <div className="est-no-print" style={{ maxWidth: 680, margin: '0 auto 16px', display: 'flex', justifyContent: 'flex-end', gap: 8 }}>
           <button onClick={downloadPdf} style={{ border: 'none', background: '#0a0a0a', color: '#fff', borderRadius: 8, padding: '10px 14px', display: 'flex', gap: 6, alignItems: 'center', cursor: 'pointer' }}>
             <DownloadIcon /> {downloading ? 'Generating...' : 'Download PDF (A4)'}
@@ -125,100 +106,133 @@ export default function EstimateTemplate({ estimate, autoAction = null, onAutoAc
           </button>
         </div>
 
-        <div ref={printAreaRef} className="est-print-area" style={{ width: 680, margin: '0 auto', background: '#fff', boxShadow: '0 4px 40px rgba(0,0,0,0.16)', padding: '48px 40px', color: '#111', fontFamily: 'Inter, sans-serif' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 24 }}>
-            <div>
-              <img src={settings?.logo || defaultLogo} alt="" style={{ width: 180, maxHeight: 64, objectFit: 'contain' }} />
-              <div style={{ fontWeight: 700, marginTop: 8 }}>{settings?.businessName || 'My Business'}</div>
-              {settings?.address && <div style={{ fontSize: 13 }}>{settings.address}</div>}
-              {settings?.email && <div style={{ fontSize: 13 }}>{settings.email}</div>}
-              {settings?.phone && <div style={{ fontSize: 13 }}>{settings.phone}</div>}
-            </div>
-            <div style={{ textAlign: 'right' }}>
-              <div style={{ fontSize: 42, letterSpacing: 3, fontWeight: 700, color: themeColor }}>ESTIMATE</div>
-              <div style={{ marginTop: 4 }}># {estimate?.estimateNumber || estimate?.id || 'Draft'}</div>
-              <div style={{ marginTop: 4, fontSize: 13 }}>Date: {fmtDate(estimate?.createdAt)}</div>
-              <div style={{ marginTop: 2, fontSize: 13 }}>Valid Until: {fmtDate(estimate?.validUntil)}</div>
-            </div>
-          </div>
+        <div ref={printAreaRef} className="est-print-area" style={{ width: '210mm', margin: '0 auto', color: '#111', fontFamily: 'Inter, sans-serif' }}>
+          {itemPages.map((pageItems, pageIndex) => (
+            <div
+              key={`est-page-${pageIndex}`}
+              className="est-page"
+              style={{
+                width: '210mm',
+                minHeight: '297mm',
+                background: '#fff',
+                boxShadow: '0 4px 40px rgba(0,0,0,0.16)',
+                marginBottom: 16,
+                padding: '15mm',
+                boxSizing: 'border-box',
+              }}
+            >
+              {pageIndex === 0 ? (
+                <>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 24 }}>
+                    <div>
+                      <img src={settings?.logo || defaultLogo} alt="" style={{ width: 180, maxHeight: 64, objectFit: 'contain' }} />
+                      <div style={{ fontWeight: 700, marginTop: 8 }}>{settings?.businessName || 'My Business'}</div>
+                      {settings?.address && <div style={{ fontSize: 13 }}>{settings.address}</div>}
+                      {settings?.email && <div style={{ fontSize: 13 }}>{settings.email}</div>}
+                      {settings?.phone && <div style={{ fontSize: 13 }}>{settings.phone}</div>}
+                    </div>
+                    <div style={{ textAlign: 'right' }}>
+                      <div style={{ fontSize: 42, letterSpacing: 3, fontWeight: 700, color: themeColor }}>ESTIMATE</div>
+                      <div style={{ marginTop: 4 }}># {estimate?.estimateNumber || estimate?.id || 'Draft'}</div>
+                      <div style={{ marginTop: 4, fontSize: 13 }}>Date: {fmtDate(estimate?.createdAt)}</div>
+                      <div style={{ marginTop: 2, fontSize: 13 }}>Valid Until: {fmtDate(estimate?.validUntil)}</div>
+                    </div>
+                  </div>
 
-          <div style={{ marginBottom: 20 }}>
-            <div style={{ color: '#666', fontSize: 13 }}>Prepared For</div>
-            <div style={{ fontWeight: 700 }}>{estimate?.clientName || 'Client'}</div>
-            {estimate?.clientEmail && <div style={{ fontSize: 13 }}>{estimate.clientEmail}</div>}
-            {estimate?.clientPhone && <div style={{ fontSize: 13 }}>{estimate.clientPhone}</div>}
-            {estimate?.clientAddress && <div style={{ fontSize: 13 }}>{estimate.clientAddress}</div>}
-          </div>
+                  <div style={{ marginBottom: 20 }}>
+                    <div style={{ color: '#666', fontSize: 13 }}>Prepared For</div>
+                    <div style={{ fontWeight: 700 }}>{estimate?.clientName || 'Client'}</div>
+                    {estimate?.clientEmail && <div style={{ fontSize: 13 }}>{estimate.clientEmail}</div>}
+                    {estimate?.clientPhone && <div style={{ fontSize: 13 }}>{estimate.clientPhone}</div>}
+                    {estimate?.clientAddress && <div style={{ fontSize: 13 }}>{estimate.clientAddress}</div>}
+                  </div>
 
-          {estimate?.projectTitle && <div style={{ marginBottom: 10, fontWeight: 600 }}>Project: {estimate.projectTitle}</div>}
-          {estimate?.projectScope && <div style={{ marginBottom: 16, fontSize: 13, color: '#222' }}>{estimate.projectScope}</div>}
-
-          <table style={{ width: '100%', borderCollapse: 'collapse', marginTop: 8 }}>
-            <thead>
-              <tr>
-                <th style={{ textAlign: 'left', padding: 10, color: '#fff', background: themeColor, border: '1px solid #111' }}>#</th>
-                <th style={{ textAlign: 'left', padding: 10, color: '#fff', background: themeColor, border: '1px solid #111' }}>Description</th>
-                <th style={{ textAlign: 'right', padding: 10, color: '#fff', background: themeColor, border: '1px solid #111' }}>Qty</th>
-                <th style={{ textAlign: 'right', padding: 10, color: '#fff', background: themeColor, border: '1px solid #111' }}>Rate</th>
-                <th style={{ textAlign: 'right', padding: 10, color: '#fff', background: themeColor, border: '1px solid #111' }}>Amount</th>
-              </tr>
-            </thead>
-            <tbody>
-              {items.map((item, idx) => {
-                const qty = Number(item.quantity || item.qty || 1);
-                const price = Number(item.price || 0);
-                const amount = Number(item.total || (qty * price));
-                return (
-                  <tr key={`item-${idx}`}>
-                    <td style={{ padding: 10, border: '1px solid #111', background: '#fff', color: '#0a0a0a' }}>{idx + 1}</td>
-                    <td style={{ padding: 10, border: '1px solid #111', background: '#fff', color: '#0a0a0a' }}>{item.description || item.name || 'Item'}</td>
-                    <td style={{ padding: 10, border: '1px solid #111', background: '#fff', color: '#0a0a0a', textAlign: 'right' }}>{qty}</td>
-                    <td style={{ padding: 10, border: '1px solid #111', background: '#fff', color: '#0a0a0a', textAlign: 'right' }}>{price.toLocaleString()}</td>
-                    <td style={{ padding: 10, border: '1px solid #111', background: '#fff', color: '#0a0a0a', textAlign: 'right' }}>{amount.toLocaleString()}</td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-
-          <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 14 }}>
-            <div style={{ width: 300 }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', padding: '6px 0' }}>
-                <span>Subtotal</span><span>{currency} {(Number(estimate?.subtotal) || 0).toLocaleString()}</span>
-              </div>
-              {Number(estimate?.discountPercentage || 0) > 0 && (
-                <div style={{ display: 'flex', justifyContent: 'space-between', padding: '6px 0' }}>
-                  <span>Discount ({Number(estimate.discountPercentage)}%)</span>
-                  <span>- {currency} {((Number(estimate?.subtotal) || 0) * Number(estimate.discountPercentage) / 100).toLocaleString()}</span>
+                  {estimate?.projectTitle && <div style={{ marginBottom: 10, fontWeight: 600 }}>Project: {estimate.projectTitle}</div>}
+                  {estimate?.projectScope && <div style={{ marginBottom: 16, fontSize: 13, color: '#222' }}>{estimate.projectScope}</div>}
+                </>
+              ) : (
+                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 16 }}>
+                  <div style={{ fontWeight: 700 }}>{settings?.businessName || 'My Business'}</div>
+                  <div style={{ textAlign: 'right', fontSize: 13 }}>
+                    <div style={{ fontWeight: 700, color: themeColor }}>ESTIMATE CONTINUED</div>
+                    <div># {estimate?.estimateNumber || estimate?.id || 'Draft'} - Page {pageIndex + 1}</div>
+                  </div>
                 </div>
               )}
-              <div style={{ display: 'flex', justifyContent: 'space-between', padding: '6px 0' }}>
-                <span>Tax</span><span>{currency} {(Number(estimate?.taxAmount) || 0).toLocaleString()}</span>
-              </div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 0', marginTop: 4, borderTop: `2px solid ${themeColor}`, fontWeight: 700, color: themeColor }}>
-                <span>Total</span><span>{currency} {(Number(estimate?.total) || 0).toLocaleString()}</span>
-              </div>
-            </div>
-          </div>
 
-          {estimate?.assumptions && (
-            <div style={{ marginTop: 22 }}>
-              <div style={{ fontWeight: 700, marginBottom: 4 }}>Assumptions</div>
-              <div style={{ fontSize: 13 }}>{estimate.assumptions}</div>
+              <table style={{ width: '100%', borderCollapse: 'collapse', marginTop: 8 }}>
+                <thead>
+                  <tr>
+                    <th style={{ textAlign: 'left', padding: 10, color: '#fff', background: themeColor, border: '1px solid #111' }}>#</th>
+                    <th style={{ textAlign: 'left', padding: 10, color: '#fff', background: themeColor, border: '1px solid #111' }}>Description</th>
+                    <th style={{ textAlign: 'right', padding: 10, color: '#fff', background: themeColor, border: '1px solid #111' }}>Qty</th>
+                    <th style={{ textAlign: 'right', padding: 10, color: '#fff', background: themeColor, border: '1px solid #111' }}>Rate</th>
+                    <th style={{ textAlign: 'right', padding: 10, color: '#fff', background: themeColor, border: '1px solid #111' }}>Amount</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {pageItems.map((item, idx) => {
+                    const qty = Number(item.quantity || item.qty || 1);
+                    const price = Number(item.price || 0);
+                    const amount = Number(item.total || (qty * price));
+                    const rowNo = (pageIndex * itemsPerPage) + idx + 1;
+                    return (
+                      <tr key={`item-${pageIndex}-${idx}`}>
+                        <td style={{ padding: 10, border: '1px solid #111', background: '#fff', color: '#0a0a0a' }}>{rowNo}</td>
+                        <td style={{ padding: 10, border: '1px solid #111', background: '#fff', color: '#0a0a0a' }}>{item.description || item.name || 'Item'}</td>
+                        <td style={{ padding: 10, border: '1px solid #111', background: '#fff', color: '#0a0a0a', textAlign: 'right' }}>{qty}</td>
+                        <td style={{ padding: 10, border: '1px solid #111', background: '#fff', color: '#0a0a0a', textAlign: 'right' }}>{price.toLocaleString()}</td>
+                        <td style={{ padding: 10, border: '1px solid #111', background: '#fff', color: '#0a0a0a', textAlign: 'right' }}>{amount.toLocaleString()}</td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+
+              {pageIndex === itemPages.length - 1 && (
+                <>
+                  <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 14 }}>
+                    <div style={{ width: 300 }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', padding: '6px 0' }}>
+                        <span>Subtotal</span><span>{currency} {(Number(estimate?.subtotal) || 0).toLocaleString()}</span>
+                      </div>
+                      {Number(estimate?.discountPercentage || 0) > 0 && (
+                        <div style={{ display: 'flex', justifyContent: 'space-between', padding: '6px 0' }}>
+                          <span>Discount ({Number(estimate.discountPercentage)}%)</span>
+                          <span>- {currency} {((Number(estimate?.subtotal) || 0) * Number(estimate.discountPercentage) / 100).toLocaleString()}</span>
+                        </div>
+                      )}
+                      <div style={{ display: 'flex', justifyContent: 'space-between', padding: '6px 0' }}>
+                        <span>Tax</span><span>{currency} {(Number(estimate?.taxAmount) || 0).toLocaleString()}</span>
+                      </div>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 0', marginTop: 4, borderTop: `2px solid ${themeColor}`, fontWeight: 700, color: themeColor }}>
+                        <span>Total</span><span>{currency} {(Number(estimate?.total) || 0).toLocaleString()}</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {estimate?.assumptions && (
+                    <div style={{ marginTop: 22 }}>
+                      <div style={{ fontWeight: 700, marginBottom: 4 }}>Assumptions</div>
+                      <div style={{ fontSize: 13 }}>{estimate.assumptions}</div>
+                    </div>
+                  )}
+                  {estimate?.exclusions && (
+                    <div style={{ marginTop: 14 }}>
+                      <div style={{ fontWeight: 700, marginBottom: 4 }}>Exclusions</div>
+                      <div style={{ fontSize: 13 }}>{estimate.exclusions}</div>
+                    </div>
+                  )}
+                  {estimate?.notes && (
+                    <div style={{ marginTop: 14 }}>
+                      <div style={{ fontWeight: 700, marginBottom: 4 }}>Notes</div>
+                      <div style={{ fontSize: 13 }}>{estimate.notes}</div>
+                    </div>
+                  )}
+                </>
+              )}
             </div>
-          )}
-          {estimate?.exclusions && (
-            <div style={{ marginTop: 14 }}>
-              <div style={{ fontWeight: 700, marginBottom: 4 }}>Exclusions</div>
-              <div style={{ fontSize: 13 }}>{estimate.exclusions}</div>
-            </div>
-          )}
-          {estimate?.notes && (
-            <div style={{ marginTop: 14 }}>
-              <div style={{ fontWeight: 700, marginBottom: 4 }}>Notes</div>
-              <div style={{ fontSize: 13 }}>{estimate.notes}</div>
-            </div>
-          )}
+          ))}
         </div>
       </div>
     </>

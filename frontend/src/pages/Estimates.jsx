@@ -270,7 +270,7 @@ export default function Estimates() {
                         </button>
                         {est.status !== 'converted' && (
                           <button
-                            className="text-xs px-3 py-1 rounded-full bg-primary text-white hover:bg-primary/90"
+                            className="text-xs px-3 py-1 rounded-full bg-primary !text-white hover:bg-primary/90 font-medium"
                             onClick={async () => {
                               try {
                                 await convertEstimateToInvoice(est);

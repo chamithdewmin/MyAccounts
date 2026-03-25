@@ -27,6 +27,22 @@ function fmtDate(date) {
   return d.toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
 }
 
+/** Split one tall canvas across multiple A4 pages in mm (same approach as invoice-style exporters). */
+function addCanvasToA4Pages(pdf, canvas, marginMm = 12) {
+  const pageW = pdf.internal.pageSize.getWidth();
+  const pageH = pdf.internal.pageSize.getHeight();
+  const usableH = pageH - 2 * marginMm;
+  const imgW = pageW - 2 * marginMm;
+  const imgH = (canvas.height * imgW) / canvas.width;
+  const imgData = canvas.toDataURL('image/png');
+  let page = 0;
+  while (page * usableH < imgH - 0.01) {
+    if (page > 0) pdf.addPage();
+    pdf.addImage(imgData, 'PNG', marginMm, marginMm - page * usableH, imgW, imgH);
+    page += 1;
+  }
+}
+
 export default function EstimateTemplate({ estimate, autoAction = null, onAutoActionDone }) {
   const { settings } = useFinance();
   const printAreaRef = useRef(null);
@@ -48,12 +64,8 @@ export default function EstimateTemplate({ estimate, autoAction = null, onAutoAc
         logging: false,
         backgroundColor: '#ffffff',
       });
-      const w = element.offsetWidth;
-      const h = element.offsetHeight;
-      const wMm = (w * 25.4) / 96;
-      const hMm = (h * 25.4) / 96;
-      const pdf = new jsPDF({ unit: 'mm', format: [wMm, hMm], hotfixes: ['px_scaling'] });
-      pdf.addImage(canvas.toDataURL('image/png'), 'PNG', 0, 0, wMm, hMm);
+      const pdf = new jsPDF({ unit: 'mm', format: 'a4', orientation: 'portrait' });
+      addCanvasToA4Pages(pdf, canvas, 12);
       pdf.save(`Estimate-${(estimate?.estimateNumber || estimate?.id || 'draft').toString().replace('#', '')}.pdf`);
     } finally {
       setDownloading(false);
@@ -78,13 +90,32 @@ export default function EstimateTemplate({ estimate, autoAction = null, onAutoAc
       <style>{`
         @media print {
           body * { visibility: hidden !important; }
+          .est-print-root, .est-print-root * { visibility: visible !important; }
+          .est-print-root {
+            background: #fff !important;
+            min-height: auto !important;
+            padding: 0 !important;
+          }
           .est-print-area, .est-print-area * { visibility: visible !important; }
-          .est-print-area { position: fixed !important; left: 0; top: 0; width: 180mm !important; max-width: 180mm !important; min-height: 297mm !important; background: #fff !important; box-shadow: none !important; margin: 0 auto !important; }
+          .est-print-area {
+            position: relative !important;
+            left: auto !important;
+            top: auto !important;
+            width: 100% !important;
+            max-width: 180mm !important;
+            min-height: auto !important;
+            margin: 0 auto !important;
+            padding: 12mm 10mm !important;
+            background: #fff !important;
+            box-shadow: none !important;
+            break-inside: auto;
+          }
+          .est-print-area table tbody tr { break-inside: avoid; break-after: auto; }
           .est-no-print { display: none !important; }
-          @page { size: A4 portrait; margin: 15mm; }
+          @page { size: A4 portrait; margin: 12mm; }
         }
       `}</style>
-      <div style={{ background: '#d1d5db', minHeight: '100vh', padding: '24px 12px' }}>
+      <div className="est-print-root" style={{ background: '#d1d5db', minHeight: '100vh', padding: '24px 12px' }}>
         <div className="est-no-print" style={{ maxWidth: 680, margin: '0 auto 16px', display: 'flex', justifyContent: 'flex-end', gap: 8 }}>
           <button onClick={downloadPdf} style={{ border: 'none', background: '#0a0a0a', color: '#fff', borderRadius: 8, padding: '10px 14px', display: 'flex', gap: 6, alignItems: 'center', cursor: 'pointer' }}>
             <DownloadIcon /> {downloading ? 'Generating...' : 'Download PDF (A4)'}

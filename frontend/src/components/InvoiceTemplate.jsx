@@ -140,7 +140,7 @@ const invoiceStyles = {
     maxWidth: '100%',
     margin: 0,
     padding: '48px 40px',
-    background: '#fff',
+    background: 'transparent',
     color: '#0a0a0a',
     position: 'relative',
     boxSizing: 'border-box',
@@ -300,7 +300,7 @@ export default function InvoiceTemplate({
         @media print {
           body * { visibility: hidden !important; }
           .inv-print-area, .inv-print-area * { visibility: visible !important; }
-          .inv-print-area { position: fixed !important; left: 0; top: 0; width: 180mm !important; max-width: 180mm !important; min-height: 297mm !important; background: #fff !important; box-shadow: none !important; margin: 0 auto !important; }
+          .inv-print-area { position: fixed !important; left: 0; top: 0; width: 180mm !important; max-width: 180mm !important; min-height: 297mm !important; background: transparent !important; box-shadow: none !important; margin: 0 auto !important; }
           .no-print { display: none !important; }
           @page { size: A4 portrait; margin: 15mm; }
         }
@@ -369,8 +369,8 @@ export default function InvoiceTemplate({
             maxWidth: 680,
             minWidth: 680,
             margin: '0 auto',
-            background: '#fff',
-            boxShadow: '0 4px 40px rgba(0,0,0,0.18)',
+            background: 'transparent',
+            boxShadow: 'none',
             fontFamily: "'Montserrat', sans-serif",
             boxSizing: 'border-box',
           }}

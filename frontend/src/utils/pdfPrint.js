@@ -138,6 +138,34 @@ export async function downloadReportPdfFile(element, filename) {
 }
 
 /**
+ * Invoice / estimate style PDF: JPEG raster (much smaller than PNG) + moderate capture scale.
+ * Single A4 page is typically a few hundred KB–~1.5 MB depending on logo complexity.
+ * @param {HTMLElement} element
+ * @param {string} filename
+ * @param {{ scale?: number, jpegQuality?: number }} [options]
+ */
+export async function downloadDomPdfCompressed(element, filename, options = {}) {
+  if (!element) throw new Error('No element to capture');
+  const scale = options.scale ?? 1.25;
+  const jpegQuality = options.jpegQuality ?? 0.85;
+  const canvas = await html2canvas(element, {
+    scale,
+    useCORS: true,
+    allowTaint: true,
+    logging: false,
+    backgroundColor: '#ffffff',
+  });
+  const w = element.offsetWidth;
+  const h = element.offsetHeight;
+  const wMm = (w * 25.4) / 96;
+  const hMm = (h * 25.4) / 96;
+  const pdf = new jsPDF({ unit: 'mm', format: [wMm, hMm], hotfixes: ['px_scaling'] });
+  const dataUrl = canvas.toDataURL('image/jpeg', jpegQuality);
+  pdf.addImage(dataUrl, 'JPEG', 0, 0, wMm, hMm);
+  pdf.save(filename);
+}
+
+/**
  * Legacy: opens print dialog. Use downloadReportPdfFile for direct PDF download.
  * @param {string} html - Full HTML content (from getPrintHtml)
  * @param {string} filename - e.g. 'overview-report-2026-02-19.pdf'

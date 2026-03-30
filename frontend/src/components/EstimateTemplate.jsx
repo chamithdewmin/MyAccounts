@@ -1,6 +1,5 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import html2canvas from 'html2canvas';
-import { jsPDF } from 'jspdf';
+import { downloadDomPdfCompressed } from '@/utils/pdfPrint';
 import { useFinance } from '@/contexts/FinanceContext';
 import defaultLogo from '@/assets/Text black logo without background.png';
 
@@ -41,20 +40,8 @@ export default function EstimateTemplate({ estimate, autoAction = null, onAutoAc
     setDownloading(true);
     try {
       const element = printAreaRef.current;
-      const canvas = await html2canvas(element, {
-        scale: 2,
-        useCORS: true,
-        allowTaint: true,
-        logging: false,
-        backgroundColor: '#ffffff',
-      });
-      const w = element.offsetWidth;
-      const h = element.offsetHeight;
-      const wMm = (w * 25.4) / 96;
-      const hMm = (h * 25.4) / 96;
-      const pdf = new jsPDF({ unit: 'mm', format: [wMm, hMm], hotfixes: ['px_scaling'] });
-      pdf.addImage(canvas.toDataURL('image/png'), 'PNG', 0, 0, wMm, hMm);
-      pdf.save(`Estimate-${(estimate?.estimateNumber || estimate?.id || 'draft').toString().replace('#', '')}.pdf`);
+      const name = `Estimate-${(estimate?.estimateNumber || estimate?.id || 'draft').toString().replace('#', '')}.pdf`;
+      await downloadDomPdfCompressed(element, name, { scale: 1.25, jpegQuality: 0.85 });
     } finally {
       setDownloading(false);
     }

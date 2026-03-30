@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { downloadDomPdfCompressed } from '@/utils/pdfPrint';
 import { useFinance } from '@/contexts/FinanceContext';
+import { downloadDocumentPdfFromElement } from '@/utils/pdfPrint';
 import defaultLogo from '@/assets/Text black logo without background.png';
 
 const DownloadIcon = () => (
@@ -41,7 +41,7 @@ export default function EstimateTemplate({ estimate, autoAction = null, onAutoAc
     try {
       const element = printAreaRef.current;
       const name = `Estimate-${(estimate?.estimateNumber || estimate?.id || 'draft').toString().replace('#', '')}.pdf`;
-      await downloadDomPdfCompressed(element, name, { scale: 1.25, jpegQuality: 0.85 });
+      await downloadDocumentPdfFromElement(element, name);
     } finally {
       setDownloading(false);
     }

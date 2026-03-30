@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { useFinance } from '@/contexts/FinanceContext';
 import defaultLogo from '@/assets/Text black logo without background.png';
-import { downloadDomPdfCompressed } from '@/utils/pdfPrint';
+import { downloadDocumentPdfFromElement } from '@/utils/pdfPrint';
 
 const DownloadIcon = () => (
   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
@@ -259,7 +259,7 @@ export default function InvoiceTemplate({
     setDlStatus('loading');
     try {
       const filename = `Invoice-${String(inv.invoiceNumber).replace(/^#/, '')}.pdf`;
-      await downloadDomPdfCompressed(element, filename, { scale: 1.25, jpegQuality: 0.85 });
+      await downloadDocumentPdfFromElement(element, filename);
 
       setDlStatus('done');
       setTimeout(() => setDlStatus('idle'), 2500);

@@ -1,6 +1,45 @@
 import html2canvas from 'html2canvas';
 import { jsPDF } from 'jspdf';
 
+/** html2canvas scale: 2 keeps text/logo sharp on screen and print */
+const DOCUMENT_PDF_DEFAULTS = {
+  scale: 2,
+  /** 0.92–0.95: visually near-lossless on white documents; far smaller than PNG-in-PDF */
+  jpegQuality: 0.93,
+};
+
+/**
+ * Captures a DOM node and saves a compact PDF using JPEG compression (smaller file than PNG,
+ * while keeping logos and text sharp). Typical one-page invoice/estimate stays well under a few MB.
+ * @param {HTMLElement} element
+ * @param {string} filename
+ * @param {{ scale?: number, jpegQuality?: number }} [options]
+ */
+export async function downloadDocumentPdfFromElement(element, filename, options = {}) {
+  if (!element) throw new Error('No content to export');
+
+  const scale = options.scale ?? DOCUMENT_PDF_DEFAULTS.scale;
+  const jpegQuality = options.jpegQuality ?? DOCUMENT_PDF_DEFAULTS.jpegQuality;
+
+  const canvas = await html2canvas(element, {
+    scale,
+    useCORS: true,
+    allowTaint: true,
+    logging: false,
+    backgroundColor: '#ffffff',
+  });
+
+  const w = element.offsetWidth;
+  const h = element.offsetHeight;
+  const wMm = (w * 25.4) / 96;
+  const hMm = (h * 25.4) / 96;
+
+  const pdf = new jsPDF({ unit: 'mm', format: [wMm, hMm], hotfixes: ['px_scaling'] });
+  const imgData = canvas.toDataURL('image/jpeg', jpegQuality);
+  pdf.addImage(imgData, 'JPEG', 0, 0, wMm, hMm);
+  pdf.save(filename);
+}
+
 /**
  * Wraps report/print content with logo (top-left), optional business name, and "Generated from MyAccounts" footer.
  * Uses the invoice/company logo uploaded in Settings.
@@ -119,50 +158,7 @@ export async function downloadReportPdf(html, filename) {
  * @returns {Promise<void>}
  */
 export async function downloadReportPdfFile(element, filename) {
-  if (!element) throw new Error('No report content to download');
-  const scale = 2;
-  const canvas = await html2canvas(element, {
-    scale,
-    useCORS: true,
-    allowTaint: true,
-    logging: false,
-    backgroundColor: '#ffffff',
-  });
-  const w = element.offsetWidth;
-  const h = element.offsetHeight;
-  const wMm = (w * 25.4) / 96;
-  const hMm = (h * 25.4) / 96;
-  const pdf = new jsPDF({ unit: 'mm', format: [wMm, hMm], hotfixes: ['px_scaling'] });
-  pdf.addImage(canvas.toDataURL('image/png'), 'PNG', 0, 0, wMm, hMm);
-  pdf.save(filename);
-}
-
-/**
- * Invoice / estimate style PDF: JPEG raster (much smaller than PNG) + moderate capture scale.
- * Single A4 page is typically a few hundred KB–~1.5 MB depending on logo complexity.
- * @param {HTMLElement} element
- * @param {string} filename
- * @param {{ scale?: number, jpegQuality?: number }} [options]
- */
-export async function downloadDomPdfCompressed(element, filename, options = {}) {
-  if (!element) throw new Error('No element to capture');
-  const scale = options.scale ?? 1.25;
-  const jpegQuality = options.jpegQuality ?? 0.85;
-  const canvas = await html2canvas(element, {
-    scale,
-    useCORS: true,
-    allowTaint: true,
-    logging: false,
-    backgroundColor: '#ffffff',
-  });
-  const w = element.offsetWidth;
-  const h = element.offsetHeight;
-  const wMm = (w * 25.4) / 96;
-  const hMm = (h * 25.4) / 96;
-  const pdf = new jsPDF({ unit: 'mm', format: [wMm, hMm], hotfixes: ['px_scaling'] });
-  const dataUrl = canvas.toDataURL('image/jpeg', jpegQuality);
-  pdf.addImage(dataUrl, 'JPEG', 0, 0, wMm, hMm);
-  pdf.save(filename);
+  await downloadDocumentPdfFromElement(element, filename);
 }
 
 /**

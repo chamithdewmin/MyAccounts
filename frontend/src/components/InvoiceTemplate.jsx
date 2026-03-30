@@ -49,7 +49,12 @@ function normalise(raw = {}, currency = 'LKR', settings = {}) {
   const taxRate = raw.taxRate ?? settings?.taxRate ?? 0;
   const taxAmount = raw.taxAmount ?? raw.tax ?? (amountAfterDiscount * (taxRate / 100));
   const total = raw.total ?? amountAfterDiscount + taxAmount;
-  const payment = raw.bankDetails || settings?.bankDetails || {};
+  // Only invoice-attached bank details (via "Add Payment Details"); do not fall back to Settings.
+  const bd = raw.bankDetails;
+  const payment =
+    bd && (bd.accountNumber || bd.accountName || bd.bankName || bd.branch)
+      ? bd
+      : {};
 
   const paymentMadeNum = parseFloat(raw.paymentMade ?? raw.paymentMadeAmount ?? 0) || 0;
   const totalNum = total;

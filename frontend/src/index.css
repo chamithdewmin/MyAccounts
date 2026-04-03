@@ -51,10 +51,10 @@
 
   .dark {
     /* Dark theme with custom background colors */
-    --background: 0 0% 13.33%; /* #222222 page background */
+    --background: 0 0% 0%; /* #000000 for page background */
     --foreground: 210 40% 96%;
 
-    --card: 0 0% 15.29%; /* #272727 sidebar and cards */
+    --card: 0 0% 4%; /* #0a0a0a for sidebar and cards */
     --card-foreground: 210 40% 96%;
 
     --primary: 221 100% 53%; /* #0e5cff blue */

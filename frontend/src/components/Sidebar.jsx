@@ -218,7 +218,7 @@ export default function Sidebar() {
             </div>
             {!collapsed && (
               <span className="sidebar-label text-base text-foreground truncate">
-                <span className="font-extrabold">Logozo</span>
+                <span className="font-extrabold">Logozo </span>
                 <span className="font-medium">POS</span>
               </span>
             )}

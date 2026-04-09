@@ -199,7 +199,7 @@ const SMS = () => {
   return (
     <>
       <Helmet>
-        <title>SMS - MyAccounts</title>
+        <title>SMS - LogozoPOS</title>
         <meta name="description" content="Send SMS to customers" />
       </Helmet>
 

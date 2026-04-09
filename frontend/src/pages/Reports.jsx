@@ -151,7 +151,7 @@ const Reports = () => {
   return (
     <>
       <Helmet>
-        <title>Reports & Analytics - MyAccounts</title>
+        <title>Reports & Analytics - LogozoPOS</title>
         <meta name="description" content="Analyze income, expenses, profit, and cash flow" />
       </Helmet>
 

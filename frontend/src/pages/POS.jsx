@@ -188,7 +188,7 @@ const POS = () => {
   return (
     <>
       <Helmet>
-        <title>Income - MyAccounts</title>
+        <title>Income - LogozoPOS</title>
         <meta name="description" content="Manage all money coming into your business" />
       </Helmet>
 

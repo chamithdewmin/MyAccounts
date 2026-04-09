@@ -3,7 +3,7 @@ import { createPortal } from "react-dom";
 import { NavLink, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { useFinance } from "@/contexts/FinanceContext";
-import sidebarIcon from "@/assets/icon.png";
+import sidebarIcon from "@/assets/logozopos.png";
 import {
   Receipt,
   FileText,
@@ -454,7 +454,7 @@ export default function SidebarNew() {
                 <img src={sidebarIcon} alt="" style={{ width: 18, height: 18, objectFit: "contain" }} />
               </div>
               <span style={{ fontSize: 15, fontWeight: 600, color: c.text, whiteSpace: "nowrap" }}>
-                MyAccounts
+                LogozoPOS
               </span>
             </a>
           )}

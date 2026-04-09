@@ -190,7 +190,7 @@ export default function Estimates() {
   return (
     <>
       <Helmet>
-        <title>Estimates - MyAccounts</title>
+        <title>Estimates - LogozoPOS</title>
         <meta name="description" content="Create and manage project estimates" />
       </Helmet>
 

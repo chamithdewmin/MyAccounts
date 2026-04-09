@@ -272,7 +272,7 @@ const Profile = () => {
   return (
     <>
       <Helmet>
-        <title>Profile - MyAccounts</title>
+        <title>Profile - LogozoPOS</title>
         <meta name="description" content="Manage your profile, business details, bank account, and branding" />
       </Helmet>
 

@@ -164,7 +164,7 @@ const Users = () => {
   return (
     <>
       <Helmet>
-        <title>Users - MyAccounts</title>
+        <title>Users - LogozoPOS</title>
         <meta name="description" content="Manage app users and add new users" />
       </Helmet>
 

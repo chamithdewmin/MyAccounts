@@ -77,7 +77,7 @@ const ReportExpense = () => {
   return (
     <>
       <Helmet>
-        <title>Expense Reports - MyAccounts</title>
+        <title>Expense Reports - LogozoPOS</title>
         <meta name="description" content="Expense breakdown, Budget vs actual" />
       </Helmet>
 

@@ -119,7 +119,7 @@ const ReportIncome = () => {
   return (
     <>
       <Helmet>
-        <title>Income Reports - MyAccounts</title>
+        <title>Income Reports - LogozoPOS</title>
         <meta name="description" content="Income by client, Income by service" />
       </Helmet>
 

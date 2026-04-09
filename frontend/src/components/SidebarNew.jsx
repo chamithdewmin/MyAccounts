@@ -35,12 +35,12 @@ const getColors = () => {
   return {
     bg: isDark ? "#0a0a0a" : "#ffffff",
     border: isDark ? "#171717" : "#e2e8f0",
-    text: isDark ? "#fff" : "#0f172a",
-    textMuted: isDark ? "#8b9ab0" : "#64748b",
-    textLabel: isDark ? "#6b7280" : "#64748b",
+    text: isDark ? "#fff" : "#000000",
+    textMuted: isDark ? "#8b9ab0" : "#000000",
+    textLabel: isDark ? "#6b7280" : "#000000",
     hoverBg: isDark ? "rgba(255,255,255,0.06)" : "rgba(0,0,0,0.04)",
-    activeBg: isDark ? "rgba(14,92,255,0.15)" : "rgba(14,92,255,0.1)",
-    activeAccent: "#0e5cff",
+    activeBg: isDark ? "rgba(14,97,253,0.15)" : "#0e61fd",
+    activeAccent: isDark ? "#0e61fd" : "#ffffff",
     divider: isDark ? "#171717" : "#e2e8f0",
     scrollbarThumb: isDark ? "#333333" : "#c1c1c1",
     scrollbarTrack: isDark ? "#1a1a1a" : "#f1f1f1",
@@ -130,7 +130,7 @@ function SubItem({ to, label, icon: Icon, colors }) {
         alignItems: "center",
         gap: 10,
         padding: "8px 12px 8px 36px",
-        fontSize: 14.5,
+        fontSize: 15.5,
         color: isActive ? c.activeAccent : hovered ? c.text : c.textMuted,
         cursor: "pointer",
         borderRadius: 6,
@@ -145,7 +145,7 @@ function SubItem({ to, label, icon: Icon, colors }) {
         textDecoration: "none",
       }}
     >
-      {Icon && <Icon size={17} style={{ flexShrink: 0 }} />}
+      {Icon && <Icon size={18} style={{ flexShrink: 0 }} />}
       {label}
     </NavLink>
   );
@@ -195,8 +195,8 @@ function NavItem({
           cursor: "pointer",
           transition: "all 0.2s",
           position: "relative",
-          color: hovered || active ? c.text : c.textMuted,
-          fontSize: 15,
+          color: active ? c.activeAccent : hovered ? c.text : c.textMuted,
+          fontSize: 16,
           fontWeight: active ? 500 : 400,
           whiteSpace: "nowrap",
           overflow: "hidden",
@@ -222,7 +222,7 @@ function NavItem({
             color: active ? c.activeAccent : "inherit",
           }}
         >
-          <Icon size={21} />
+          <Icon size={22} />
         </span>
         {!mini && (
           <span style={{ flex: 1, overflow: "hidden", color: active ? c.activeAccent : "inherit" }}>

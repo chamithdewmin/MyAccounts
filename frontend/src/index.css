@@ -5,13 +5,13 @@
 @layer base {
   :root {
     /* Light theme: clean white/light gray design */
-    --background: 210 20% 98%; /* #f8fafc - slightly off-white */
+    --background: 220 33% 98%; /* #f9fafc - slightly off-white */
     --foreground: 222 47% 11%; /* dark text */
 
     --card: 0 0% 100%; /* #ffffff - pure white for cards */
     --card-foreground: 222 47% 11%;
 
-    --primary: 221 100% 53%; /* #0e5cff blue */
+    --primary: 219 98% 52%; /* #0e61fd blue */
     --primary-foreground: 0 0% 100%;
 
     --secondary: 214 20% 96%; /* light gray */
@@ -20,7 +20,7 @@
     --muted: 214 20% 96%;
     --muted-foreground: 215 15% 45%;
 
-    --accent: 221 100% 53%; /* #0e5cff blue */
+    --accent: 219 98% 52%; /* #0e61fd blue */
     --accent-foreground: 0 0% 100%;
 
     --destructive: 0 72% 51%;
@@ -29,11 +29,11 @@
     /* Light theme borders */
     --border: 214 20% 88%; /* light gray border */
     --input: 214 20% 92%;
-    --ring: 221 100% 53%; /* #0e5cff */
+    --ring: 219 98% 52%; /* #0e61fd */
 
     /* Sidebar active state for light theme */
     --sidebar-active-bg: 221 100% 95%; /* light blue */
-    --sidebar-active-accent: 221 100% 53%; /* #0e5cff */
+    --sidebar-active-accent: 219 98% 52%; /* #0e61fd */
 
     /* Table color scheme for light theme */
     --table-header-bg: #f8fafc;
@@ -57,7 +57,7 @@
     --card: 0 0% 4%; /* #0a0a0a for sidebar and cards */
     --card-foreground: 210 40% 96%;
 
-    --primary: 221 100% 53%; /* #0e5cff blue */
+    --primary: 219 98% 52%; /* #0e61fd blue */
     --primary-foreground: 0 0% 100%;
 
     --secondary: 210 25% 18%;
@@ -66,7 +66,7 @@
     --muted: 210 25% 18%;
     --muted-foreground: 210 30% 80%;
 
-    --accent: 221 100% 53%; /* #0e5cff blue */
+    --accent: 219 98% 52%; /* #0e61fd blue */
     --accent-foreground: 0 0% 100%;
 
     --destructive: 0 72% 51%;
@@ -77,10 +77,10 @@
     
     --secondary: 217 33% 17%; /* #1e293b - dark blue-gray */
     --secondary-foreground: 210 30% 80%;
-    --ring: 221 100% 53%; /* #0e5cff */
+    --ring: 219 98% 52%; /* #0e61fd */
 
     --sidebar-active-bg: 221 55% 22%;
-    --sidebar-active-accent: 221 100% 53%; /* #0e5cff */
+    --sidebar-active-accent: 219 98% 52%; /* #0e61fd */
 
     /* Table color scheme */
     --table-header-bg: #000000;

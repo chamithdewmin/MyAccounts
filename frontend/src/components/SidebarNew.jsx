@@ -333,6 +333,7 @@ export default function SidebarNew() {
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [hoverUser, setHoverUser] = useState(false);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
+  const [hoverToggle, setHoverToggle] = useState(false);
   const [miniSubmenu, setMiniSubmenu] = useState(null); // { title, items: Array<{to,label,icon?,adminOnly?}>, pos: {top,left,width} }
 
   const canManageUsers = user?.email === ADMIN_EMAIL;
@@ -451,6 +452,8 @@ export default function SidebarNew() {
           )}
           <button
             onClick={() => setCollapsed((col) => !col)}
+            onMouseEnter={() => setHoverToggle(true)}
+            onMouseLeave={() => setHoverToggle(false)}
             style={{
               background: "none",
               border: "none",
@@ -464,7 +467,41 @@ export default function SidebarNew() {
               flexShrink: 0,
             }}
           >
-            <Menu size={18} />
+            {collapsed ? (
+              <span
+                style={{
+                  width: 24,
+                  height: 24,
+                  position: "relative",
+                  display: "inline-flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                }}
+              >
+                <img
+                  src={sidebarIcon}
+                  alt=""
+                  style={{
+                    width: 20,
+                    height: 20,
+                    objectFit: "contain",
+                    position: "absolute",
+                    opacity: hoverToggle ? 0 : 1,
+                    transition: "opacity 0.2s ease",
+                  }}
+                />
+                <Menu
+                  size={18}
+                  style={{
+                    position: "absolute",
+                    opacity: hoverToggle ? 1 : 0,
+                    transition: "opacity 0.2s ease",
+                  }}
+                />
+              </span>
+            ) : (
+              <Menu size={18} />
+            )}
           </button>
         </div>
 

@@ -130,7 +130,7 @@ function SubItem({ to, label, icon: Icon, colors }) {
         alignItems: "center",
         gap: 10,
         padding: "8px 12px 8px 36px",
-        fontSize: 15.5,
+        fontSize: 16.5,
         color: isActive ? c.activeAccent : hovered ? c.text : c.textMuted,
         cursor: "pointer",
         borderRadius: 6,
@@ -145,7 +145,7 @@ function SubItem({ to, label, icon: Icon, colors }) {
         textDecoration: "none",
       }}
     >
-      {Icon && <Icon size={18} style={{ flexShrink: 0 }} />}
+      {Icon && <Icon size={20} style={{ flexShrink: 0 }} />}
       {label}
     </NavLink>
   );
@@ -189,14 +189,14 @@ function NavItem({
         style={{
           display: "flex",
           alignItems: "center",
-          gap: mini ? 0 : 12,
-          padding: mini ? "10px 0" : "10px 12px",
+          gap: mini ? 0 : 13,
+          padding: mini ? "11px 0" : "11px 13px",
           borderRadius: 8,
           cursor: "pointer",
           transition: "all 0.2s",
           position: "relative",
           color: active ? c.activeAccent : hovered ? c.text : c.textMuted,
-          fontSize: 16,
+          fontSize: 17,
           fontWeight: active ? 500 : 400,
           whiteSpace: "nowrap",
           overflow: "hidden",
@@ -213,8 +213,8 @@ function NavItem({
       >
         <span
           style={{
-            width: 22,
-            height: 22,
+            width: 24,
+            height: 24,
             flexShrink: 0,
             display: "flex",
             alignItems: "center",
@@ -222,7 +222,7 @@ function NavItem({
             color: active ? c.activeAccent : "inherit",
           }}
         >
-          <Icon size={22} />
+          <Icon size={24} />
         </span>
         {!mini && (
           <span style={{ flex: 1, overflow: "hidden", color: active ? c.activeAccent : "inherit" }}>

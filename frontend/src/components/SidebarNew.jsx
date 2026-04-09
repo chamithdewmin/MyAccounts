@@ -439,20 +439,11 @@ export default function SidebarNew() {
                 overflow: "hidden",
               }}
             >
-              <div
-                style={{
-                  width: 32,
-                  height: 32,
-                  borderRadius: 8,
-                  background: "rgba(14,92,255,0.2)",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  flexShrink: 0,
-                }}
-              >
-                <img src={sidebarIcon} alt="" style={{ width: 18, height: 18, objectFit: "contain" }} />
-              </div>
+              <img
+                src={sidebarIcon}
+                alt=""
+                style={{ width: 28, height: 28, objectFit: "contain", flexShrink: 0 }}
+              />
               <span style={{ fontSize: 15, fontWeight: 600, color: c.text, whiteSpace: "nowrap" }}>
                 LogozoPOS
               </span>

@@ -445,7 +445,7 @@ export default function SidebarNew() {
                 alt=""
                 style={{ width: 28, height: 28, objectFit: "contain", flexShrink: 0 }}
               />
-              <span style={{ fontSize: 15, fontWeight: 600, color: c.text, whiteSpace: "nowrap" }}>
+              <span style={{ fontSize: 15, fontWeight: 800, color: c.text, whiteSpace: "nowrap" }}>
                 LogozoPOS
               </span>
             </a>

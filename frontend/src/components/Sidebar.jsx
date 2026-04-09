@@ -217,7 +217,7 @@ export default function Sidebar() {
               <img src={sidebarIcon} alt="" className="h-4 w-4 object-contain" />
             </div>
             {!collapsed && (
-              <span className="sidebar-label text-base font-semibold text-foreground truncate">LogozoPOS</span>
+              <span className="sidebar-label text-base font-extrabold text-foreground truncate">LogozoPOS</span>
             )}
           </div>
           {!collapsed && (

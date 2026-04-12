@@ -612,50 +612,52 @@ const Orders = () => {
             <DialogTitle>{editingInvoice ? 'Edit Invoice' : 'Create Invoice'}</DialogTitle>
           </DialogHeader>
           <form onSubmit={handleCreateInvoice} className="space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="space-y-2 relative">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-start">
+              <div className="space-y-2 w-full min-w-0">
                 <Label className="text-sm font-medium">Client</Label>
-                <Input
-                  placeholder="Search or type client name"
-                  value={form.clientName}
-                  autoComplete="off"
-                  onChange={(e) => handleClientNameInput(e.target.value)}
-                  onFocus={() => {
-                    if (clientSearchBlurRef.current) {
-                      clearTimeout(clientSearchBlurRef.current);
-                      clientSearchBlurRef.current = null;
-                    }
-                    setClientSearchOpen(true);
-                  }}
-                  onBlur={() => {
-                    clientSearchBlurRef.current = window.setTimeout(() => {
-                      setClientSearchOpen(false);
-                      clientSearchBlurRef.current = null;
-                    }, 180);
-                  }}
-                  className="w-full"
-                />
-                {clientSearchOpen &&
-                  form.clientName.trim() &&
-                  clientNameMatches.length > 0 && (
-                    <ul
-                      className="absolute z-50 left-0 right-0 top-full mt-1 max-h-48 overflow-y-auto rounded-lg border border-border bg-card shadow-lg py-1"
-                      role="listbox"
-                    >
-                      {clientNameMatches.map((c) => (
-                        <li key={c.id} role="option">
-                          <button
-                            type="button"
-                            className="w-full text-left px-3 py-2 text-sm text-foreground hover:bg-secondary transition-colors"
-                            onMouseDown={(e) => e.preventDefault()}
-                            onClick={() => applyClientFromDirectory(c)}
-                          >
-                            {c.name}
-                          </button>
-                        </li>
-                      ))}
-                    </ul>
-                  )}
+                <div className="relative w-full">
+                  <Input
+                    placeholder="Search or type client name"
+                    value={form.clientName}
+                    autoComplete="off"
+                    onChange={(e) => handleClientNameInput(e.target.value)}
+                    onFocus={() => {
+                      if (clientSearchBlurRef.current) {
+                        clearTimeout(clientSearchBlurRef.current);
+                        clientSearchBlurRef.current = null;
+                      }
+                      setClientSearchOpen(true);
+                    }}
+                    onBlur={() => {
+                      clientSearchBlurRef.current = window.setTimeout(() => {
+                        setClientSearchOpen(false);
+                        clientSearchBlurRef.current = null;
+                      }, 180);
+                    }}
+                    className="w-full"
+                  />
+                  {clientSearchOpen &&
+                    form.clientName.trim() &&
+                    clientNameMatches.length > 0 && (
+                      <ul
+                        className="absolute z-[100] left-0 right-0 top-[calc(100%+2px)] max-h-48 overflow-y-auto rounded-lg border border-border bg-card shadow-lg py-1"
+                        role="listbox"
+                      >
+                        {clientNameMatches.map((c) => (
+                          <li key={c.id} role="option">
+                            <button
+                              type="button"
+                              className="w-full text-left px-3 py-2 text-sm text-foreground hover:bg-secondary transition-colors"
+                              onMouseDown={(e) => e.preventDefault()}
+                              onClick={() => applyClientFromDirectory(c)}
+                            >
+                              {c.name}
+                            </button>
+                          </li>
+                        ))}
+                      </ul>
+                    )}
+                </div>
               </div>
               <div className="space-y-2">
                 <Label className="text-sm font-medium">Payment Method</Label>

@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useRef, useState } from 'react';
 import { Helmet } from 'react-helmet';
 import { motion } from 'framer-motion';
 import { Plus, Search, DollarSign, Wallet, CreditCard, Download, RefreshCw, Pencil, Trash2 } from 'lucide-react';
@@ -32,6 +32,36 @@ const POS = () => {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingIncome, setEditingIncome] = useState(null);
   const [deleteCandidate, setDeleteCandidate] = useState(null);
+  const [clientSearchOpen, setClientSearchOpen] = useState(false);
+  const clientSearchBlurRef = useRef(null);
+
+  const clientNameMatches = useMemo(() => {
+    const q = form.clientName.trim().toLowerCase();
+    if (!q) return [];
+    return clients.filter((c) => (c.name || '').toLowerCase().startsWith(q));
+  }, [clients, form.clientName]);
+
+  const applyClientFromDirectory = (c) => {
+    setForm((prev) => ({
+      ...prev,
+      clientId: c.id,
+      clientName: c.name || '',
+    }));
+    setClientSearchOpen(false);
+  };
+
+  const handleClientNameInput = (value) => {
+    setForm((prev) => {
+      const sel = prev.clientId && clients.find((x) => x.id === prev.clientId);
+      const next = { ...prev, clientName: value };
+      if (sel && (sel.name || '').toLowerCase() !== value.trim().toLowerCase()) {
+        next.clientId = '';
+      }
+      return next;
+    });
+    setClientSearchOpen(true);
+  };
+
   const handleChange = (field, value) => {
     setForm((prev) => ({ ...prev, [field]: value }));
   };
@@ -397,7 +427,10 @@ const POS = () => {
         open={isDialogOpen}
         onOpenChange={(open) => {
           setIsDialogOpen(open);
-          if (!open) setEditingIncome(null);
+          if (!open) {
+            setEditingIncome(null);
+            setClientSearchOpen(false);
+          }
         }}
       >
         <DialogContent className="max-w-xl">
@@ -405,27 +438,52 @@ const POS = () => {
             <DialogTitle>{editingIncome ? 'Edit Income' : 'Add Income'}</DialogTitle>
           </DialogHeader>
           <form onSubmit={handleSubmit} className="space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="space-y-2">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-start">
+              <div className="space-y-2 w-full min-w-0">
                 <Label className="text-sm font-medium">Client</Label>
-                <select
-                  className="w-full px-3 py-2 bg-input border border-border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary"
-                  value={form.clientId}
-                  onChange={(e) => handleChange('clientId', e.target.value)}
-                >
-                  <option value="">Select existing client (optional)</option>
-                  {clients.map((c) => (
-                    <option key={c.id} value={c.id}>
-                      {c.name}
-                    </option>
-                  ))}
-                </select>
-                <Input
-                  placeholder="Or type client name manually"
-                  value={form.clientName}
-                  onChange={(e) => handleChange('clientName', e.target.value)}
-                  className="mt-2"
-                />
+                <div className="relative w-full">
+                  <Input
+                    placeholder="Search or type client name (optional)"
+                    value={form.clientName}
+                    autoComplete="off"
+                    onChange={(e) => handleClientNameInput(e.target.value)}
+                    onFocus={() => {
+                      if (clientSearchBlurRef.current) {
+                        clearTimeout(clientSearchBlurRef.current);
+                        clientSearchBlurRef.current = null;
+                      }
+                      setClientSearchOpen(true);
+                    }}
+                    onBlur={() => {
+                      clientSearchBlurRef.current = window.setTimeout(() => {
+                        setClientSearchOpen(false);
+                        clientSearchBlurRef.current = null;
+                      }, 180);
+                    }}
+                    className="w-full"
+                  />
+                  {clientSearchOpen &&
+                    form.clientName.trim() &&
+                    clientNameMatches.length > 0 && (
+                      <ul
+                        className="absolute z-[100] left-0 right-0 top-[calc(100%+2px)] max-h-48 overflow-y-auto rounded-lg border border-border bg-card shadow-lg py-1"
+                        role="listbox"
+                      >
+                        {clientNameMatches.map((c) => (
+                          <li key={c.id} role="option">
+                            <button
+                              type="button"
+                              className="w-full text-left px-3 py-2 text-sm text-foreground hover:bg-secondary transition-colors"
+                              onMouseDown={(e) => e.preventDefault()}
+                              onClick={() => applyClientFromDirectory(c)}
+                            >
+                              {c.name}
+                            </button>
+                          </li>
+                        ))}
+                      </ul>
+                    )}
+                </div>
               </div>
               <div className="space-y-2">
                 <Label className="text-sm font-medium">Service Type</Label>

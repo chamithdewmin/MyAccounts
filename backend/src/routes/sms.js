@@ -1,18 +1,11 @@
 import express from 'express';
+import { randomUUID } from 'crypto';
 import pool from '../config/db.js';
 import { authMiddleware } from '../middleware/auth.js';
+import { getSmsConfig, sendBulkSms } from '../lib/smsGateway.js';
 
 const router = express.Router();
 router.use(authMiddleware);
-
-const getSmsConfig = async (userId) => {
-  const { rows } = await pool.query(
-    'SELECT sms_config FROM settings WHERE user_id = $1',
-    [userId]
-  );
-  const config = rows[0]?.sms_config;
-  return config && config.userId ? config : null;
-};
 
 router.get('/settings', async (req, res) => {
   try {
@@ -98,75 +91,110 @@ router.post('/test', async (req, res) => {
 
 router.post('/send-bulk', async (req, res) => {
   try {
-    const config = await getSmsConfig(req.user.id);
-    if (!config) {
-      return res.status(400).json({ error: 'SMS gateway not configured. Please set up your SMS gateway first.' });
-    }
     const { contacts, message } = req.body;
     if (!Array.isArray(contacts) || contacts.length === 0 || !message) {
       return res.status(400).json({ error: 'Contacts array and message are required' });
     }
-    const normalizedContacts = contacts
-      .map((c) => String(c).trim())
-      .filter((c) => c.length > 0)
-      .map((c) => (c.startsWith('+') ? c : `+94${c.replace(/^0/, '')}`));
-
-    if (normalizedContacts.length === 0) {
-      return res.status(400).json({ error: 'No valid contacts' });
-    }
-
-    const baseUrl = config.baseUrl.replace(/\/$/, '');
-    const url = `${baseUrl}/send-bulk-sms`;
-    const msg = String(message).slice(0, 1500);
-    const body = {
-      user_id: config.userId,
-      api_key: config.apiKey,
-      sender_id: config.senderId,
-      contacts: normalizedContacts,
-      message: msg,
-    };
-    let resp = await fetch(url, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(body),
-    });
-    if (resp.status === 415) {
-      const fd = new URLSearchParams();
-      fd.append('user_id', config.userId);
-      fd.append('api_key', config.apiKey);
-      fd.append('sender_id', config.senderId);
-      fd.append('contacts', JSON.stringify(normalizedContacts));
-      fd.append('message', msg);
-      resp = await fetch(url, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-        body: fd.toString(),
-      });
-    }
-
-    const data = await resp.json().catch((e) => {
-      console.error('[SMS send-bulk] Parse error:', e.message);
-      return {};
-    });
-    const errMsg = data.message || data.error || data.msg || data.status_message || data.detail || (typeof data === 'string' ? data : null);
-    if (!resp.ok) {
-      console.error('[SMS send-bulk] SMS API error:', resp.status, JSON.stringify(data));
-      return res.status(400).json({
-        error: errMsg || `SMS API returned ${resp.status}. Check credentials and Sender ID (SMSlenzDEMO for testing).`,
-      });
-    }
-    if (data.status === 'error' || data.success === false) {
-      console.error('[SMS send-bulk] SMS API reject:', JSON.stringify(data));
-      return res.status(400).json({
-        error: errMsg || 'SMS gateway rejected the request. Verify account credits and Sender ID.',
-      });
-    }
-    res.json({ success: true, sent: normalizedContacts.length });
+    const result = await sendBulkSms(req.user.id, contacts, message);
+    res.json({ success: true, sent: result.sent });
   } catch (err) {
     console.error('[SMS send-bulk]', err);
-    res.status(500).json({
+    if (err.code === 'NO_CONFIG') {
+      return res.status(400).json({ error: 'SMS gateway not configured. Please set up your SMS gateway first.' });
+    }
+    if (err.code === 'NO_CONTACTS') {
+      return res.status(400).json({ error: 'No valid contacts' });
+    }
+    res.status(400).json({
       error: err.message || 'Failed to send SMS. Check API Base URL and network.',
     });
+  }
+});
+
+/** Schedule bulk SMS for a future time (processed by server worker — sends even when browser is closed). */
+router.post('/schedule', async (req, res) => {
+  try {
+    const uid = req.user.id;
+    const { message, sendAt, clientIds } = req.body;
+    if (!message || !String(message).trim()) {
+      return res.status(400).json({ error: 'Message is required' });
+    }
+    if (!Array.isArray(clientIds) || clientIds.length === 0) {
+      return res.status(400).json({ error: 'Select at least one client' });
+    }
+    const sendAtDate = new Date(sendAt);
+    if (Number.isNaN(sendAtDate.getTime())) {
+      return res.status(400).json({ error: 'Invalid date and time' });
+    }
+    if (sendAtDate.getTime() <= Date.now()) {
+      return res.status(400).json({ error: 'Schedule time must be in the future' });
+    }
+
+    const cfg = await getSmsConfig(uid);
+    if (!cfg) {
+      return res.status(400).json({ error: 'SMS gateway not configured' });
+    }
+
+    const id = `SCH-${Date.now()}-${randomUUID().slice(0, 8)}`;
+    await pool.query(
+      `INSERT INTO scheduled_sms (id, user_id, message, send_at, client_ids, status)
+       VALUES ($1, $2, $3, $4, $5::jsonb, 'pending')`,
+      [id, uid, String(message).trim().slice(0, 621), sendAtDate.toISOString(), JSON.stringify(clientIds)]
+    );
+
+    res.status(201).json({
+      id,
+      message: String(message).trim().slice(0, 621),
+      sendAt: sendAtDate.toISOString(),
+      clientIds,
+      status: 'pending',
+    });
+  } catch (err) {
+    console.error('[SMS schedule]', err);
+    res.status(500).json({ error: err.message || 'Server error' });
+  }
+});
+
+router.get('/scheduled', async (req, res) => {
+  try {
+    const { rows } = await pool.query(
+      `SELECT id, message, send_at, client_ids, status, error, sent_at, created_at
+       FROM scheduled_sms
+       WHERE user_id = $1
+       ORDER BY send_at DESC`,
+      [req.user.id]
+    );
+    res.json(
+      rows.map((r) => ({
+        id: r.id,
+        message: r.message,
+        sendAt: r.send_at,
+        clientIds: r.client_ids,
+        status: r.status,
+        error: r.error,
+        sentAt: r.sent_at,
+        createdAt: r.created_at,
+      }))
+    );
+  } catch (err) {
+    console.error('[SMS scheduled list]', err);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+router.delete('/scheduled/:id', async (req, res) => {
+  try {
+    const { rowCount } = await pool.query(
+      `DELETE FROM scheduled_sms WHERE id = $1 AND user_id = $2 AND status = 'pending'`,
+      [req.params.id, req.user.id]
+    );
+    if (rowCount === 0) {
+      return res.status(404).json({ error: 'Not found or already processed' });
+    }
+    res.json({ success: true });
+  } catch (err) {
+    console.error('[SMS scheduled delete]', err);
+    res.status(500).json({ error: 'Server error' });
   }
 });
 

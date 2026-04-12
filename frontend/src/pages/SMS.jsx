@@ -1,7 +1,7 @@
-import React, { useState, useEffect, useRef, useMemo } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Helmet } from 'react-helmet';
 import { motion } from 'framer-motion';
-import { MessageSquare, Send, Settings2, CalendarClock, Trash2 } from 'lucide-react';
+import { MessageSquare, Send, Settings2, CalendarClock, Trash2, Loader2 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
@@ -9,17 +9,9 @@ import { useToast } from '@/components/ui/use-toast';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { api } from '@/lib/api';
 import { useFinance } from '@/contexts/FinanceContext';
-import { useAuth } from '@/contexts/AuthContext';
-import { getStorageData, setStorageData } from '@/utils/storage';
-
-const newJobId = () =>
-  typeof crypto !== 'undefined' && crypto.randomUUID
-    ? crypto.randomUUID()
-    : `sch_${Date.now()}_${Math.random().toString(36).slice(2, 11)}`;
 
 const SMS = () => {
   const { clients } = useFinance();
-  const { user } = useAuth();
   const { toast } = useToast();
   const [smsConfig, setSmsConfig] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -34,7 +26,7 @@ const SMS = () => {
   const [scheduleModalMessage, setScheduleModalMessage] = useState('');
   const [scheduleModalSelectedIds, setScheduleModalSelectedIds] = useState(() => new Set());
   const [scheduledJobs, setScheduledJobs] = useState([]);
-  const processingRef = useRef(new Set());
+  const [scheduleSaving, setScheduleSaving] = useState(false);
 
   const [form, setForm] = useState({
     userId: '',
@@ -42,11 +34,6 @@ const SMS = () => {
     baseUrl: 'https://www.smslenz.lk/api',
     senderId: 'SMSlenzDEMO',
   });
-
-  const storageKey = useMemo(
-    () => `logozopos_scheduled_sms_v1_${user?.email || user?.id || 'default'}`,
-    [user?.email, user?.id],
-  );
 
   const loadSmsConfig = async () => {
     try {
@@ -72,9 +59,21 @@ const SMS = () => {
     loadSmsConfig();
   }, []);
 
+  const loadScheduledList = async () => {
+    try {
+      const list = await api.sms.listScheduled();
+      setScheduledJobs(Array.isArray(list) ? list : []);
+    } catch {
+      setScheduledJobs([]);
+    }
+  };
+
   useEffect(() => {
-    setScheduledJobs(getStorageData(storageKey, []));
-  }, [storageKey]);
+    if (!smsConfig) return undefined;
+    loadScheduledList();
+    const t = setInterval(loadScheduledList, 30000);
+    return () => clearInterval(t);
+  }, [smsConfig]);
 
   const handleSaveAndTest = async (e) => {
     e.preventDefault();
@@ -172,11 +171,6 @@ const SMS = () => {
     return p.startsWith('+') ? p : `+94${p.replace(/^0/, '')}`;
   };
 
-  const persistJobs = (jobs) => {
-    setStorageData(storageKey, jobs);
-    setScheduledJobs(jobs);
-  };
-
   const handleSendBulk = async () => {
     const selectedClients = clients.filter((c) => selectedIds.has(c.id));
     const phones = selectedClients.map(getPhone).filter(Boolean);
@@ -241,7 +235,7 @@ const SMS = () => {
     }
   };
 
-  const handleSetSchedule = () => {
+  const handleSetSchedule = async () => {
     if (!scheduleModalSendAt) {
       toast({
         title: 'Date and time required',
@@ -279,103 +273,46 @@ const SMS = () => {
       });
       return;
     }
-    const job = {
-      id: newJobId(),
-      message: scheduleModalMessage.trim().slice(0, 621),
-      sendAt: new Date(scheduleModalSendAt).toISOString(),
-      clientIds: [...scheduleModalSelectedIds],
-      status: 'pending',
-      createdAt: new Date().toISOString(),
-    };
-    const next = [...getStorageData(storageKey, []), job];
-    persistJobs(next);
-    toast({
-      title: 'Schedule saved',
-      description: `SMS will send to ${scheduleModalSelectedIds.size} recipient(s) at the chosen time while the app is open.`,
-    });
-    setScheduleDialogOpen(false);
-    setScheduleModalSendAt('');
-    setScheduleModalMessage('');
-    setScheduleModalSelectedIds(new Set());
+    setScheduleSaving(true);
+    try {
+      await api.sms.schedule({
+        message: scheduleModalMessage.trim().slice(0, 621),
+        sendAt: new Date(scheduleModalSendAt).toISOString(),
+        clientIds: [...scheduleModalSelectedIds],
+      });
+      toast({
+        title: 'Schedule saved',
+        description: `The server will send SMS to ${scheduleModalSelectedIds.size} recipient(s) at the scheduled time — even if you close the app.`,
+      });
+      setScheduleDialogOpen(false);
+      setScheduleModalSendAt('');
+      setScheduleModalMessage('');
+      setScheduleModalSelectedIds(new Set());
+      await loadScheduledList();
+    } catch (err) {
+      toast({
+        title: 'Could not save schedule',
+        description: err.message || 'Please try again.',
+        variant: 'destructive',
+      });
+    } finally {
+      setScheduleSaving(false);
+    }
   };
 
-  const cancelScheduled = (id) => {
-    const next = getStorageData(storageKey, []).filter((j) => j.id !== id);
-    persistJobs(next);
-    toast({ title: 'Schedule removed', description: 'This message will not be sent.' });
+  const cancelScheduled = async (id) => {
+    try {
+      await api.sms.cancelScheduled(id);
+      toast({ title: 'Schedule removed', description: 'This message will not be sent.' });
+      await loadScheduledList();
+    } catch (err) {
+      toast({
+        title: 'Could not cancel',
+        description: err.message || 'It may have already been sent.',
+        variant: 'destructive',
+      });
+    }
   };
-
-  useEffect(() => {
-    if (!smsConfig) return;
-
-    const processDue = async () => {
-      const jobs = getStorageData(storageKey, []);
-      if (!jobs.length) return;
-
-      const now = Date.now();
-      let next = [...jobs];
-      let changed = false;
-
-      for (let i = 0; i < next.length; i++) {
-        const job = next[i];
-        if (job.status !== 'pending') continue;
-        const due = new Date(job.sendAt).getTime();
-        if (due > now) continue;
-        if (processingRef.current.has(job.id)) continue;
-
-        processingRef.current.add(job.id);
-        try {
-          const selectedClients = clients.filter((c) => job.clientIds.includes(c.id));
-          const phones = selectedClients.map(getPhone).filter(Boolean);
-          if (phones.length === 0) {
-            next[i] = {
-              ...job,
-              status: 'failed',
-              error: 'No valid phone numbers for selected clients',
-              processedAt: new Date().toISOString(),
-            };
-            changed = true;
-          } else {
-            await api.sms.sendBulk({ contacts: phones, message: job.message.slice(0, 621) });
-            next[i] = {
-              ...job,
-              status: 'sent',
-              sentAt: new Date().toISOString(),
-            };
-            changed = true;
-            toast({
-              title: 'Scheduled SMS sent',
-              description: `Message sent to ${phones.length} recipient(s).`,
-            });
-          }
-        } catch (err) {
-          next[i] = {
-            ...job,
-            status: 'failed',
-            error: err.message || 'Send failed',
-            processedAt: new Date().toISOString(),
-          };
-          changed = true;
-          toast({
-            title: 'Scheduled send failed',
-            description: err.message || 'Could not send SMS.',
-            variant: 'destructive',
-          });
-        } finally {
-          processingRef.current.delete(job.id);
-        }
-      }
-
-      if (changed) {
-        setStorageData(storageKey, next);
-        setScheduledJobs(next);
-      }
-    };
-
-    processDue();
-    const interval = setInterval(processDue, 15000);
-    return () => clearInterval(interval);
-  }, [smsConfig, storageKey, clients]);
 
   const clientsWithPhone = clients.filter((c) => getPhone(c));
 
@@ -401,8 +338,8 @@ const SMS = () => {
           <div>
             <h1 className="text-3xl font-bold">Messages</h1>
             <p className="text-muted-foreground">
-              Send SMS to your customers or use Schedule Messages for a future date and time. Set up your SMS gateway
-              first.
+              Send SMS instantly or use Schedule Messages — the server sends at the chosen time, even when you are not
+              logged in. Set up your SMS gateway first.
             </p>
           </div>
           <div className="flex flex-wrap items-center gap-2 shrink-0">
@@ -563,7 +500,7 @@ const SMS = () => {
                 </div>
                 {pendingJobs.length > 0 && (
                   <p className="text-xs text-muted-foreground mt-3">
-                    {pendingJobs.length} pending — next check every 15 seconds while the app is open.
+                    {pendingJobs.length} pending — the server sends automatically at each scheduled time.
                   </p>
                 )}
               </div>
@@ -577,8 +514,8 @@ const SMS = () => {
           <DialogHeader>
             <DialogTitle>Schedule Messages</DialogTitle>
             <DialogDescription id="schedule-dialog-desc">
-              Pick date and time, choose clients, and enter your message. SMS sends automatically at that time while
-              LogozoPOS stays open in your browser.
+              Pick date and time, choose clients, and enter your message. The server will send SMS at that time — you do
+              not need to keep the app open.
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4 pt-2">
@@ -657,8 +594,15 @@ const SMS = () => {
               <Button type="button" variant="outline" onClick={() => setScheduleDialogOpen(false)}>
                 Cancel
               </Button>
-              <Button type="button" onClick={handleSetSchedule}>
-                Set Schedule
+              <Button type="button" onClick={handleSetSchedule} disabled={scheduleSaving}>
+                {scheduleSaving ? (
+                  <>
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    Saving…
+                  </>
+                ) : (
+                  'Set Schedule'
+                )}
               </Button>
             </div>
           </div>

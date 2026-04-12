@@ -24,6 +24,7 @@ import aiRoutes from './routes/ai.js';
 import backupRoutes from './routes/backup.js';
 import estimatesRoutes from './routes/estimates.js';
 import pool from './config/db.js';
+import { processDueScheduledSms } from './workers/scheduledSmsWorker.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -161,6 +162,27 @@ async function initDb() {
     console.warn('Estimates table:', e.message);
   }
   try {
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS scheduled_sms (
+        id VARCHAR(80) PRIMARY KEY,
+        user_id INT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+        message TEXT NOT NULL,
+        send_at TIMESTAMPTZ NOT NULL,
+        client_ids JSONB NOT NULL DEFAULT '[]',
+        status VARCHAR(20) NOT NULL DEFAULT 'pending',
+        error TEXT,
+        sent_at TIMESTAMPTZ,
+        created_at TIMESTAMPTZ DEFAULT NOW()
+      )
+    `);
+    await pool.query(
+      `CREATE INDEX IF NOT EXISTS idx_scheduled_sms_due ON scheduled_sms (send_at) WHERE status IN ('pending', 'processing')`
+    );
+    console.log('Scheduled SMS table ready.');
+  } catch (e) {
+    console.warn('scheduled_sms table:', e.message);
+  }
+  try {
     await pool.query('ALTER TABLE reminders ADD COLUMN IF NOT EXISTS reason VARCHAR(255) DEFAULT \'\'');
     await pool.query('ALTER TABLE reminders ADD COLUMN IF NOT EXISTS amount DECIMAL(15,2) DEFAULT 0');
     console.log('Reminders columns (reason, amount) ready.');
@@ -228,4 +250,10 @@ initDb()
     app.listen(PORT, HOST, () => {
       console.log(`MyAccounts API running on ${HOST}:${PORT}`);
     });
+    const SCHEDULED_SMS_MS = 60 * 1000;
+    const runScheduledSms = () => {
+      processDueScheduledSms().catch((e) => console.error('[scheduled SMS worker]', e));
+    };
+    setInterval(runScheduledSms, SCHEDULED_SMS_MS);
+    setTimeout(runScheduledSms, 8000);
   });

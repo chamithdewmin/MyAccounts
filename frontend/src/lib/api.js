@@ -118,6 +118,10 @@ export const api = {
     saveSettings: (data) => request('/sms/settings', { method: 'PUT', body: JSON.stringify(data) }),
     test: () => request('/sms/test', { method: 'POST' }),
     sendBulk: (data) => request('/sms/send-bulk', { method: 'POST', body: JSON.stringify(data) }),
+    schedule: (data) => request('/sms/schedule', { method: 'POST', body: JSON.stringify(data) }),
+    listScheduled: () => request('/sms/scheduled'),
+    cancelScheduled: (id) =>
+      request(`/sms/scheduled/${encodeURIComponent(id)}`, { method: 'DELETE' }),
   },
   transfers: {
     list: () => request('/transfers'),

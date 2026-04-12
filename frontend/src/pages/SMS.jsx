@@ -29,7 +29,10 @@ const SMS = () => {
   const [sending, setSending] = useState(false);
   const [selectedIds, setSelectedIds] = useState(new Set());
   const [message, setMessage] = useState('');
-  const [scheduleSendAt, setScheduleSendAt] = useState('');
+  const [scheduleDialogOpen, setScheduleDialogOpen] = useState(false);
+  const [scheduleModalSendAt, setScheduleModalSendAt] = useState('');
+  const [scheduleModalMessage, setScheduleModalMessage] = useState('');
+  const [scheduleModalSelectedIds, setScheduleModalSelectedIds] = useState(() => new Set());
   const [scheduledJobs, setScheduledJobs] = useState([]);
   const processingRef = useRef(new Set());
 
@@ -213,8 +216,33 @@ const SMS = () => {
     }
   };
 
-  const handleSchedule = () => {
-    if (!scheduleSendAt) {
+  const openScheduleDialog = () => {
+    setScheduleModalSendAt('');
+    setScheduleModalMessage('');
+    setScheduleModalSelectedIds(new Set());
+    setScheduleDialogOpen(true);
+  };
+
+  const toggleScheduleModalSelect = (id) => {
+    setScheduleModalSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
+
+  const scheduleModalSelectAll = () => {
+    const withPhone = clients.filter((c) => c.phone?.trim());
+    if (scheduleModalSelectedIds.size === withPhone.length && withPhone.length > 0) {
+      setScheduleModalSelectedIds(new Set());
+    } else {
+      setScheduleModalSelectedIds(new Set(withPhone.map((c) => c.id)));
+    }
+  };
+
+  const handleSetSchedule = () => {
+    if (!scheduleModalSendAt) {
       toast({
         title: 'Date and time required',
         description: 'Choose when to send the message.',
@@ -222,7 +250,7 @@ const SMS = () => {
       });
       return;
     }
-    const due = new Date(scheduleSendAt).getTime();
+    const due = new Date(scheduleModalSendAt).getTime();
     if (Number.isNaN(due)) {
       toast({ title: 'Invalid date', description: 'Please pick a valid date and time.', variant: 'destructive' });
       return;
@@ -235,7 +263,7 @@ const SMS = () => {
       });
       return;
     }
-    if (selectedIds.size === 0) {
+    if (scheduleModalSelectedIds.size === 0) {
       toast({
         title: 'Select recipients',
         description: 'Choose at least one customer with a phone number.',
@@ -243,7 +271,7 @@ const SMS = () => {
       });
       return;
     }
-    if (!message.trim()) {
+    if (!scheduleModalMessage.trim()) {
       toast({
         title: 'Message required',
         description: 'Enter the message to send at the scheduled time.',
@@ -253,19 +281,22 @@ const SMS = () => {
     }
     const job = {
       id: newJobId(),
-      message: message.trim().slice(0, 621),
-      sendAt: new Date(scheduleSendAt).toISOString(),
-      clientIds: [...selectedIds],
+      message: scheduleModalMessage.trim().slice(0, 621),
+      sendAt: new Date(scheduleModalSendAt).toISOString(),
+      clientIds: [...scheduleModalSelectedIds],
       status: 'pending',
       createdAt: new Date().toISOString(),
     };
     const next = [...getStorageData(storageKey, []), job];
     persistJobs(next);
     toast({
-      title: 'Message scheduled',
-      description: `Will send to ${selectedIds.size} recipient(s) at the chosen time (while the app is open).`,
+      title: 'Schedule saved',
+      description: `SMS will send to ${scheduleModalSelectedIds.size} recipient(s) at the chosen time while the app is open.`,
     });
-    setScheduleSendAt('');
+    setScheduleDialogOpen(false);
+    setScheduleModalSendAt('');
+    setScheduleModalMessage('');
+    setScheduleModalSelectedIds(new Set());
   };
 
   const cancelScheduled = (id) => {
@@ -366,17 +397,26 @@ const SMS = () => {
       </Helmet>
 
       <div className="space-y-6">
-        <div className="flex items-center justify-between">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
           <div>
             <h1 className="text-3xl font-bold">Messages</h1>
             <p className="text-muted-foreground">
-              Send SMS to your customers or schedule messages for a date and time. Set up your SMS gateway first.
+              Send SMS to your customers or use Schedule Messages for a future date and time. Set up your SMS gateway
+              first.
             </p>
           </div>
-          <Button variant="outline" onClick={() => setSetupOpen(true)}>
-            <Settings2 className="w-4 h-4 mr-2" />
-            {smsConfig ? 'Edit Gateway' : 'Setup Gateway'}
-          </Button>
+          <div className="flex flex-wrap items-center gap-2 shrink-0">
+            {smsConfig && (
+              <Button type="button" onClick={openScheduleDialog}>
+                <CalendarClock className="w-4 h-4 mr-2" />
+                Schedule Messages
+              </Button>
+            )}
+            <Button variant="outline" type="button" onClick={() => setSetupOpen(true)}>
+              <Settings2 className="w-4 h-4 mr-2" />
+              {smsConfig ? 'Edit Gateway' : 'Setup Gateway'}
+            </Button>
+          </div>
         </div>
 
         {!smsConfig ? (
@@ -400,8 +440,7 @@ const SMS = () => {
             <div className="bg-card border border-border rounded-lg p-6">
               <h2 className="text-lg font-semibold mb-4">Select customers</h2>
               <p className="text-sm text-muted-foreground mb-4">
-                {clientsWithPhone.length} customer(s) with phone numbers. Use the selection for instant send or for a
-                scheduled send below.
+                {clientsWithPhone.length} customer(s) with phone numbers. Select recipients for instant send.
               </p>
               <div className="max-h-64 overflow-y-auto border border-border rounded-lg">
                 <table className="w-full">
@@ -465,37 +504,6 @@ const SMS = () => {
                     {sending ? 'Sending...' : `Send now to ${selectedIds.size} recipient(s)`}
                   </Button>
                 </div>
-              </div>
-            </div>
-
-            <div className="bg-card border border-border rounded-lg p-6 space-y-4">
-              <div className="flex items-center gap-2">
-                <CalendarClock className="w-5 h-5 text-primary" />
-                <h2 className="text-lg font-semibold">Schedule a message</h2>
-              </div>
-              <p className="text-sm text-muted-foreground">
-                Choose date and time, keep your recipients and message above, then schedule. At that time, the app will
-                send SMS to the same selected clients using the message above (phones are resolved from your client list
-                at send time).
-              </p>
-              <p className="text-xs text-muted-foreground border border-border rounded-md px-3 py-2 bg-secondary/30">
-                Scheduled sends run while LogozoPOS is open in your browser. Open the app before the scheduled time so
-                messages can go out automatically.
-              </p>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 items-end">
-                <div className="space-y-2">
-                  <Label htmlFor="schedule-send-at">Send date &amp; time</Label>
-                  <Input
-                    id="schedule-send-at"
-                    type="datetime-local"
-                    value={scheduleSendAt}
-                    onChange={(e) => setScheduleSendAt(e.target.value)}
-                  />
-                </div>
-                <Button type="button" onClick={handleSchedule} disabled={selectedIds.size === 0 || !message.trim()}>
-                  <CalendarClock className="w-4 h-4 mr-2" />
-                  Schedule message
-                </Button>
               </div>
             </div>
 
@@ -563,6 +571,99 @@ const SMS = () => {
           </>
         )}
       </div>
+
+      <Dialog open={scheduleDialogOpen} onOpenChange={setScheduleDialogOpen}>
+        <DialogContent className="w-[95vw] max-w-lg max-h-[90vh] overflow-y-auto sm:max-w-xl" aria-describedby="schedule-dialog-desc">
+          <DialogHeader>
+            <DialogTitle>Schedule Messages</DialogTitle>
+            <DialogDescription id="schedule-dialog-desc">
+              Pick date and time, choose clients, and enter your message. SMS sends automatically at that time while
+              LogozoPOS stays open in your browser.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 pt-2">
+            <div className="space-y-2">
+              <Label htmlFor="modal-schedule-at">Send date &amp; time</Label>
+              <Input
+                id="modal-schedule-at"
+                type="datetime-local"
+                value={scheduleModalSendAt}
+                onChange={(e) => setScheduleModalSendAt(e.target.value)}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="modal-schedule-msg">Message (max 621 chars)</Label>
+              <textarea
+                id="modal-schedule-msg"
+                value={scheduleModalMessage}
+                onChange={(e) => setScheduleModalMessage(e.target.value)}
+                placeholder="Type your message..."
+                className="w-full min-h-[88px] px-3 py-2 bg-background border border-border rounded-lg resize-none text-sm"
+                maxLength={621}
+              />
+              <span className="text-xs text-muted-foreground">{scheduleModalMessage.length}/621</span>
+            </div>
+            <div className="space-y-2">
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <Label className="text-base">Clients</Label>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={scheduleModalSelectAll}
+                  disabled={clientsWithPhone.length === 0}
+                >
+                  {scheduleModalSelectedIds.size === clientsWithPhone.length && clientsWithPhone.length > 0
+                    ? 'Deselect all'
+                    : 'Select all'}
+                </Button>
+              </div>
+              <div className="max-h-48 overflow-y-auto border border-border rounded-lg">
+                <table className="w-full text-sm">
+                  <thead className="bg-secondary sticky top-0">
+                    <tr>
+                      <th className="px-3 py-2 w-10" />
+                      <th className="px-3 py-2 text-left font-medium">Name</th>
+                      <th className="px-3 py-2 text-left font-medium">Phone</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {clientsWithPhone.map((c) => (
+                      <tr key={c.id} className="border-t border-border hover:bg-secondary/30">
+                        <td className="px-3 py-2">
+                          <input
+                            type="checkbox"
+                            className="rounded"
+                            checked={scheduleModalSelectedIds.has(c.id)}
+                            onChange={() => toggleScheduleModalSelect(c.id)}
+                          />
+                        </td>
+                        <td className="px-3 py-2">{c.name}</td>
+                        <td className="px-3 py-2 text-muted-foreground">{c.phone}</td>
+                      </tr>
+                    ))}
+                    {clientsWithPhone.length === 0 && (
+                      <tr>
+                        <td colSpan={3} className="px-3 py-6 text-center text-muted-foreground">
+                          No clients with phone numbers. Add phones in Clients first.
+                        </td>
+                      </tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+            <div className="flex flex-col-reverse sm:flex-row justify-end gap-2 pt-2">
+              <Button type="button" variant="outline" onClick={() => setScheduleDialogOpen(false)}>
+                Cancel
+              </Button>
+              <Button type="button" onClick={handleSetSchedule}>
+                Set Schedule
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
 
       <Dialog open={setupOpen} onOpenChange={setSetupOpen}>
         <DialogContent className="max-w-md">

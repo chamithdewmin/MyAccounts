@@ -53,13 +53,25 @@ export default function LoginActivity() {
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const [statsData, setStatsData] = useState(null);
 
   const loadData = async (userFilter = filter) => {
     try {
-      const userId = userFilter === 'all' ? undefined : userFilter;
-      const data = await api.auth.getActivity(userId);
-      setItems(Array.isArray(data?.items) ? data.items : []);
+      const userId = userFilter === 'all' ? null : Number(userFilter);
+      const [rows, stats, data] = await Promise.all([
+        api.auth.getLoginActivity().catch(() => []),
+        api.auth.getLoginActivityStats().catch(() => null),
+        api.auth.getActivity(userFilter === 'all' ? undefined : userFilter).catch(() => ({ items: [], users: [] })),
+      ]);
+      const fallbackRows = Array.isArray(data?.items) ? data.items : [];
+      const mergedRows = Array.isArray(rows) && rows.length > 0 ? rows : fallbackRows;
+      const filteredRows =
+        userId && Number.isInteger(userId)
+          ? mergedRows.filter((r) => Number(r.userId) === userId)
+          : mergedRows;
+      setItems(filteredRows);
       setUsers(Array.isArray(data?.users) ? data.users : []);
+      setStatsData(stats);
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -76,6 +88,14 @@ export default function LoginActivity() {
   }, [filter]);
 
   const stats = useMemo(() => {
+    if (statsData) {
+      return {
+        totalUsers: statsData.totalUsers ?? users.length,
+        activeSessions: statsData.activeSessions ?? items.filter((x) => x.status === 'active').length,
+        failedAttempts: statsData.failedAttempts ?? items.filter((x) => x.status === 'failed').length,
+        totalSessions: statsData.totalSessions ?? items.length,
+      };
+    }
     const activeSessions = items.filter((x) => x.status === 'active').length;
     const failedAttempts = items.filter((x) => x.status === 'failed').length;
     return {
@@ -174,9 +194,7 @@ export default function LoginActivity() {
                       <div className="font-medium">{row.email || 'Unknown'}</div>
                     </td>
                     <td className="px-4 py-3 text-sm">{formatDateTime(row.loginAt || row.createdAt)}</td>
-                    <td className="px-4 py-3 text-sm">
-                      {row.status === 'active' ? 'Active session' : formatDateTime(row.logoutAt)}
-                    </td>
+                    <td className="px-4 py-3 text-sm">{row.logoutAt ? formatDateTime(row.logoutAt) : 'Active session'}</td>
                     <td className="px-4 py-3 text-sm">{formatDuration(row.loginAt || row.createdAt, row.logoutAt, row.status)}</td>
                     <td className="px-4 py-3 text-sm">{row.ipAddress || '—'}</td>
                     <td className="px-4 py-3 text-sm">

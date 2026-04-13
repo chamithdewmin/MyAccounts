@@ -8,6 +8,7 @@ import { authMiddleware } from '../middleware/auth.js';
 const router = express.Router();
 const OTP_EXPIRY_MINUTES = 5;
 const RESET_TOKEN_EXPIRY = '15m';
+const ADMIN_EMAIL = 'logozodev@gmail.com';
 
 const generateOtp = () => String(Math.floor(100000 + Math.random() * 900000));
 
@@ -28,39 +29,50 @@ const getRequestIp = (req) => {
   return req.ip || req.socket?.remoteAddress || '';
 };
 
-const logLoginActivity = async ({
+const insertLoginActivity = async ({
   userId = null,
   email = '',
+  userName = '',
   sessionId = null,
   loginAt = null,
   logoutAt = null,
   ipAddress = '',
   userAgent = '',
-  status = 'active',
+  success = false,
+  role = null,
   failureReason = null,
 }) => {
   try {
-    await pool.query(
+    const status = success ? 'active' : 'failed';
+    const { rows } = await pool.query(
       `INSERT INTO login_activity (
-        id, user_id, email, session_id, login_at, logout_at, ip_address, user_agent, status, failure_reason, created_at
-      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, NOW())`,
+        id, user_id, email, user_name, session_id, login_at, logout_at, ip_address, user_agent, success, role, status, failure_reason, created_at
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, NOW())
+      RETURNING id`,
       [
         `LA-${Date.now()}-${Math.random().toString(36).slice(2, 10).toUpperCase()}`,
         userId,
         email,
+        userName,
         sessionId,
         loginAt,
         logoutAt,
         ipAddress,
         userAgent,
+        success,
+        role,
         status,
         failureReason,
       ],
     );
+    return rows[0]?.id || null;
   } catch (e) {
     console.error('[auth activity log]', e.message);
+    return null;
   }
 };
+
+const isAdmin = (req) => String(req.user?.email || '').toLowerCase() === ADMIN_EMAIL;
 
 /** Search settings only (GET /api/settings phone). Returns { userId, email, phone } or null */
 const findAccountByPhone = async (inputNormalized) => {
@@ -146,11 +158,11 @@ router.post('/login', async (req, res) => {
     const ipAddress = getRequestIp(req);
     const userAgent = String(req.headers['user-agent'] || '').slice(0, 1000);
     if (!user) {
-      await logLoginActivity({
+      await insertLoginActivity({
         email: emailTrimmed,
         ipAddress,
         userAgent,
-        status: 'failed',
+        success: false,
         failureReason: 'invalid_credentials',
       });
       return res.status(401).json({ success: false, error: 'Invalid credentials' });
@@ -158,12 +170,13 @@ router.post('/login', async (req, res) => {
 
     const valid = await bcrypt.compare(password, user.password_hash);
     if (!valid) {
-      await logLoginActivity({
+      await insertLoginActivity({
         userId: user.id,
         email: user.email,
+        userName: user.name || '',
         ipAddress,
         userAgent,
-        status: 'failed',
+        success: false,
         failureReason: 'invalid_credentials',
       });
       return res.status(401).json({ success: false, error: 'Invalid credentials' });
@@ -180,19 +193,22 @@ router.post('/login', async (req, res) => {
       { expiresIn: '7d' }
     );
 
-    await logLoginActivity({
+    const loginActivityId = await insertLoginActivity({
       userId: user.id,
       email: user.email,
+      userName: user.name || '',
       sessionId,
       loginAt,
       ipAddress,
       userAgent,
-      status: 'active',
+      success: true,
+      role: isAdmin({ user }) ? 'admin' : 'staff',
     });
 
     res.json({
       success: true,
       token,
+      loginActivityId,
       user: { id: user.id, email: user.email, name: user.name },
     });
   } catch (err) {
@@ -235,14 +251,16 @@ router.get('/me', async (req, res) => {
         [decoded.sid, decoded.id, 'active', ipAddress, userAgent],
       );
       if (!ar[0]) {
-        await logLoginActivity({
+        await insertLoginActivity({
           userId: decoded.id,
           email: rows[0].email,
+          userName: rows[0].name || '',
           sessionId: decoded.sid,
           loginAt: new Date().toISOString(),
           ipAddress,
           userAgent,
-          status: 'active',
+          success: true,
+          role: String(rows[0].email || '').toLowerCase() === ADMIN_EMAIL ? 'admin' : 'staff',
         });
       }
     }
@@ -254,18 +272,77 @@ router.get('/me', async (req, res) => {
 
 router.post('/logout', authMiddleware, async (req, res) => {
   try {
+    const raw = req.body?.activityId ?? req.body?.loginActivityId;
+    const activityId = raw != null ? String(raw).trim() : null;
     const sid = req.user.sid;
-    if (sid) {
+    if (activityId) {
+      await pool.query(
+        `UPDATE login_activity
+         SET logout_at = NOW(), status = 'completed'
+         WHERE id = $1 AND user_id = $2 AND COALESCE(success, true) = true AND logout_at IS NULL`,
+        [activityId, req.user.id],
+      );
+    } else if (sid) {
       await pool.query(
         `UPDATE login_activity
          SET logout_at = NOW(), status = 'completed'
          WHERE session_id = $1 AND user_id = $2 AND status = 'active'`,
         [sid, req.user.id],
       );
+    } else {
+      // Backward compatibility: older tokens may not have sid.
+      await pool.query(
+        `UPDATE login_activity
+         SET logout_at = NOW(), status = 'completed'
+         WHERE user_id = $1 AND status = 'active'`,
+        [req.user.id],
+      );
     }
     res.json({ success: true });
   } catch (err) {
     console.error('[logout]', err);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+router.get('/login-activity/stats', authMiddleware, async (req, res) => {
+  try {
+    if (!isAdmin(req)) return res.status(403).json({ error: 'Forbidden' });
+    const [totalUsersR, activeSessionsR, activeUsersR, totalSessionsR, failedR] = await Promise.all([
+      pool.query('SELECT COUNT(*)::int AS c FROM users'),
+      pool.query("SELECT COUNT(*)::int AS c FROM login_activity WHERE COALESCE(success, true) = true AND logout_at IS NULL"),
+      pool.query(`SELECT COUNT(DISTINCT user_id)::int AS c FROM login_activity
+                  WHERE COALESCE(success, true) = true AND logout_at IS NULL AND user_id IS NOT NULL`),
+      pool.query("SELECT COUNT(*)::int AS c FROM login_activity WHERE COALESCE(success, true) = true"),
+      pool.query("SELECT COUNT(*)::int AS c FROM login_activity WHERE COALESCE(success, false) = false"),
+    ]);
+    res.json({
+      totalUsers: totalUsersR.rows[0]?.c ?? 0,
+      activeSessions: activeSessionsR.rows[0]?.c ?? 0,
+      activeUsers: activeUsersR.rows[0]?.c ?? 0,
+      totalSessions: totalSessionsR.rows[0]?.c ?? 0,
+      failedAttempts: failedR.rows[0]?.c ?? 0,
+    });
+  } catch (err) {
+    console.error('login-activity/stats:', err);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+router.get('/login-activity', authMiddleware, async (req, res) => {
+  try {
+    if (!isAdmin(req)) return res.status(403).json({ error: 'Forbidden' });
+    const { rows } = await pool.query(
+      `SELECT id, user_id AS "userId", email, user_name AS "userName", COALESCE(success, status != 'failed') AS success,
+              role, ip_address AS "ipAddress", failure_reason AS "failureReason",
+              login_at AS "loginAt", logout_at AS "logoutAt", status
+       FROM login_activity
+       ORDER BY COALESCE(login_at, created_at) DESC
+       LIMIT 500`,
+    );
+    res.json(rows);
+  } catch (err) {
+    console.error('login-activity:', err);
     res.status(500).json({ error: 'Server error' });
   }
 });

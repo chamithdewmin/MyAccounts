@@ -48,6 +48,9 @@ export const AuthProvider = ({ children }) => {
       const data = await api.auth.login(email, password);
       if (data.success && data.token) {
         localStorage.setItem('token', data.token);
+        if (data.loginActivityId) {
+          localStorage.setItem('loginActivityId', String(data.loginActivityId));
+        }
         setIsAuthenticated(true);
         setUser(data.user);
         window.dispatchEvent(new CustomEvent('auth:login'));
@@ -60,14 +63,16 @@ export const AuthProvider = ({ children }) => {
   };
 
   const logout = async () => {
+    const activityId = localStorage.getItem('loginActivityId');
     try {
-      await api.auth.logout();
+      await api.auth.logout(activityId || undefined);
     } catch {
       // Best-effort logout activity update; still clear local auth state
     }
     setIsAuthenticated(false);
     setUser(null);
     localStorage.removeItem('token');
+    localStorage.removeItem('loginActivityId');
   };
 
   return (

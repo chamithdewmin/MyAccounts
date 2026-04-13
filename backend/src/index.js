@@ -106,16 +106,22 @@ async function initDb() {
         id VARCHAR(80) PRIMARY KEY,
         user_id INT REFERENCES users(id) ON DELETE SET NULL,
         email VARCHAR(255) DEFAULT '',
+        user_name VARCHAR(255) DEFAULT '',
         session_id VARCHAR(80),
         login_at TIMESTAMPTZ,
         logout_at TIMESTAMPTZ,
         ip_address VARCHAR(100) DEFAULT '',
         user_agent TEXT DEFAULT '',
+        success BOOLEAN,
+        role VARCHAR(50),
         status VARCHAR(20) NOT NULL DEFAULT 'active',
         failure_reason VARCHAR(100),
         created_at TIMESTAMPTZ DEFAULT NOW()
       )
     `);
+    await pool.query("ALTER TABLE login_activity ADD COLUMN IF NOT EXISTS user_name VARCHAR(255) DEFAULT ''");
+    await pool.query('ALTER TABLE login_activity ADD COLUMN IF NOT EXISTS success BOOLEAN');
+    await pool.query('ALTER TABLE login_activity ADD COLUMN IF NOT EXISTS role VARCHAR(50)');
     await pool.query(
       `CREATE INDEX IF NOT EXISTS idx_login_activity_user_created ON login_activity (user_id, created_at DESC)`
     );

@@ -20,7 +20,7 @@ export const authMiddleware = async (req, res, next) => {
     if (tokenVersion !== currentVersion) {
       return res.status(401).json({ error: 'Session expired' });
     }
-    req.user = { id: decoded.id, email: decoded.email };
+    req.user = { id: decoded.id, email: decoded.email, sid: decoded.sid || null };
     next();
   } catch {
     return res.status(401).json({ error: 'Invalid or expired token' });

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Helmet } from 'react-helmet';
 import { motion } from 'framer-motion';
-import { Search, UserPlus, Pencil, Trash2, MoreHorizontal, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Search, UserPlus, Pencil, Trash2, MoreHorizontal, ChevronLeft, ChevronRight, RefreshCw } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/components/ui/use-toast';
@@ -22,6 +22,15 @@ const Users = () => {
   const [saving, setSaving] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const [deleteCandidate, setDeleteCandidate] = useState(null);
+  const [activityLoading, setActivityLoading] = useState(true);
+  const [activityRows, setActivityRows] = useState([]);
+  const [activityStats, setActivityStats] = useState({
+    totalUsers: 0,
+    activeUsers: 0,
+    activeSessions: 0,
+    totalSessions: 0,
+  });
+  const [activityUserFilter, setActivityUserFilter] = useState('all');
   const [form, setForm] = useState({
     name: '',
     email: '',
@@ -45,9 +54,36 @@ const Users = () => {
     }
   };
 
+  const loadLoginActivity = async (userId = activityUserFilter) => {
+    setActivityLoading(true);
+    try {
+      const data = await api.users.loginActivity(userId);
+      setActivityRows(Array.isArray(data?.items) ? data.items : []);
+      setActivityStats(data?.stats || {
+        totalUsers: 0,
+        activeUsers: 0,
+        activeSessions: 0,
+        totalSessions: 0,
+      });
+    } catch (err) {
+      toast({
+        title: 'Failed to load login activity',
+        description: err.message || 'Could not fetch session logs',
+        variant: 'destructive',
+      });
+      setActivityRows([]);
+    } finally {
+      setActivityLoading(false);
+    }
+  };
+
   useEffect(() => {
     loadUsers();
   }, []);
+
+  useEffect(() => {
+    loadLoginActivity(activityUserFilter);
+  }, [activityUserFilter]);
 
   useEffect(() => {
     if (searchQuery) {
@@ -144,6 +180,25 @@ const Users = () => {
     }
   };
 
+  const formatDateTime = (d) => {
+    if (!d) return '—';
+    try {
+      return new Date(d).toLocaleString();
+    } catch {
+      return d;
+    }
+  };
+
+  const formatDuration = (s) => {
+    if (!s || s <= 0) return '—';
+    const h = Math.floor(s / 3600);
+    const m = Math.floor((s % 3600) / 60);
+    const sec = s % 60;
+    if (h > 0) return `${h}h ${m}m ${sec}s`;
+    if (m > 0) return `${m}m ${sec}s`;
+    return `${sec}s`;
+  };
+
   const totalPages = Math.max(1, Math.ceil(filteredUsers.length / PER_PAGE));
   const start = (currentPage - 1) * PER_PAGE;
   const pageRows = filteredUsers.slice(start, start + PER_PAGE);
@@ -193,6 +248,118 @@ const Users = () => {
             onChange={(e) => setSearchQuery(e.target.value)}
             className="pl-10 bg-input border border-border"
           />
+        </div>
+
+        <div className="w-full rounded-2xl border border-border bg-card overflow-hidden">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 px-6 py-4 border-b border-border">
+            <div>
+              <h2 className="text-2xl font-bold text-foreground">Login Activity</h2>
+              <p className="text-sm text-muted-foreground">
+                Sessions, active logins, and failed sign-in attempts (email, IP, and time).
+              </p>
+            </div>
+            <div className="flex items-center gap-2">
+              <select
+                className="px-3 py-2 bg-input border border-border rounded-lg text-sm"
+                value={activityUserFilter}
+                onChange={(e) => setActivityUserFilter(e.target.value)}
+              >
+                <option value="all">All users</option>
+                {users.map((u) => (
+                  <option key={u.id} value={u.id}>
+                    {u.name}
+                  </option>
+                ))}
+              </select>
+              <Button
+                variant="outline"
+                onClick={() => loadLoginActivity(activityUserFilter)}
+                disabled={activityLoading}
+              >
+                <RefreshCw className={`w-4 h-4 mr-2 ${activityLoading ? 'animate-spin' : ''}`} />
+                Refresh
+              </Button>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-3 px-6 py-4 border-b border-border">
+            <div className="rounded-xl border border-border p-4 bg-secondary/20">
+              <p className="text-xs text-muted-foreground">Total Users</p>
+              <p className="text-2xl font-semibold">{activityStats.totalUsers}</p>
+            </div>
+            <div className="rounded-xl border border-border p-4 bg-secondary/20">
+              <p className="text-xs text-muted-foreground">Active Users</p>
+              <p className="text-2xl font-semibold text-green-400">{activityStats.activeUsers}</p>
+            </div>
+            <div className="rounded-xl border border-border p-4 bg-secondary/20">
+              <p className="text-xs text-muted-foreground">Active Sessions</p>
+              <p className="text-2xl font-semibold text-blue-400">{activityStats.activeSessions}</p>
+            </div>
+            <div className="rounded-xl border border-border p-4 bg-secondary/20">
+              <p className="text-xs text-muted-foreground">Total Sessions</p>
+              <p className="text-2xl font-semibold">{activityStats.totalSessions}</p>
+            </div>
+          </div>
+
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b border-border text-muted-foreground text-xs uppercase tracking-wide">
+                  <th className="px-4 py-3 text-left font-medium">User</th>
+                  <th className="px-4 py-3 text-left font-medium">Login time</th>
+                  <th className="px-4 py-3 text-left font-medium">Logout time</th>
+                  <th className="px-4 py-3 text-left font-medium">Duration</th>
+                  <th className="px-4 py-3 text-left font-medium">IP address</th>
+                  <th className="px-4 py-3 text-left font-medium">Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                {activityLoading ? (
+                  <tr>
+                    <td colSpan={6} className="px-4 py-8 text-center text-muted-foreground">
+                      Loading activity...
+                    </td>
+                  </tr>
+                ) : activityRows.length === 0 ? (
+                  <tr>
+                    <td colSpan={6} className="px-4 py-8 text-center text-muted-foreground">
+                      No activity found.
+                    </td>
+                  </tr>
+                ) : (
+                  activityRows.map((r) => (
+                    <tr key={r.id} className="border-b border-border hover:bg-secondary/20">
+                      <td className="px-4 py-3">
+                        <div className="font-medium">{r.userName}</div>
+                        <div className="text-xs text-muted-foreground">{r.email || '—'}</div>
+                      </td>
+                      <td className="px-4 py-3">{formatDateTime(r.loginTime)}</td>
+                      <td className="px-4 py-3">
+                        {r.status === 'active' ? 'Active session' : formatDateTime(r.logoutTime)}
+                      </td>
+                      <td className="px-4 py-3">
+                        {r.status === 'active' ? 'Ongoing' : formatDuration(r.durationSeconds)}
+                      </td>
+                      <td className="px-4 py-3">{r.ipAddress || '—'}</td>
+                      <td className="px-4 py-3">
+                        <span
+                          className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium ${
+                            r.status === 'active'
+                              ? 'bg-green-500/20 text-green-400'
+                              : r.status === 'failed'
+                                ? 'bg-red-500/20 text-red-400'
+                                : 'bg-secondary text-muted-foreground'
+                          }`}
+                        >
+                          {r.status === 'failed' && r.errorReason ? `${r.errorReason}` : r.status}
+                        </span>
+                      </td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
         </div>
 
         <div className="w-full max-w-[1600px] rounded-2xl border border-border bg-card overflow-hidden">

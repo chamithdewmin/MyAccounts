@@ -82,7 +82,12 @@ export const AuthProvider = ({ children }) => {
     return { success: false, error: 'Invalid credentials' };
   };
 
-  const logout = () => {
+  const logout = async () => {
+    try {
+      await api.auth.logout();
+    } catch {
+      // Best effort: still clear local session.
+    }
     setIsAuthenticated(false);
     setUser(null);
     localStorage.removeItem('token');

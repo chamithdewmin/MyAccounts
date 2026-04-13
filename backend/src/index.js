@@ -183,6 +183,32 @@ async function initDb() {
     console.warn('scheduled_sms table:', e.message);
   }
   try {
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS login_activity (
+        id BIGSERIAL PRIMARY KEY,
+        user_id INT REFERENCES users(id) ON DELETE SET NULL,
+        session_id VARCHAR(100),
+        email VARCHAR(255) DEFAULT '',
+        login_time TIMESTAMPTZ DEFAULT NOW(),
+        logout_time TIMESTAMPTZ,
+        duration_seconds INT,
+        ip_address VARCHAR(120) DEFAULT '',
+        user_agent TEXT DEFAULT '',
+        status VARCHAR(30) DEFAULT 'active',
+        error_reason VARCHAR(255) DEFAULT ''
+      )
+    `);
+    await pool.query(
+      `CREATE INDEX IF NOT EXISTS idx_login_activity_recent ON login_activity (login_time DESC)`
+    );
+    await pool.query(
+      `CREATE INDEX IF NOT EXISTS idx_login_activity_session ON login_activity (session_id)`
+    );
+    console.log('Login activity table ready.');
+  } catch (e) {
+    console.warn('login_activity table:', e.message);
+  }
+  try {
     await pool.query('ALTER TABLE reminders ADD COLUMN IF NOT EXISTS reason VARCHAR(255) DEFAULT \'\'');
     await pool.query('ALTER TABLE reminders ADD COLUMN IF NOT EXISTS amount DECIMAL(15,2) DEFAULT 0');
     console.log('Reminders columns (reason, amount) ready.');

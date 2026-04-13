@@ -1,6 +1,7 @@
 import express from 'express';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
+import { randomUUID } from 'crypto';
 import pool from '../config/db.js';
 import { authMiddleware } from '../middleware/auth.js';
 
@@ -17,6 +18,12 @@ const normalizePhone = (p) => {
   if (digits.startsWith('0') && digits.length >= 10) return '94' + digits.slice(1);
   if (digits.length >= 9) return '94' + digits;
   return digits;
+};
+
+const getRequestIp = (req) => {
+  const fwd = req.headers['x-forwarded-for'];
+  if (fwd) return String(fwd).split(',')[0].trim();
+  return req.ip || req.connection?.remoteAddress || '';
 };
 
 /** Search settings only (GET /api/settings phone). Returns { userId, email, phone } or null */
@@ -101,23 +108,38 @@ router.post('/login', async (req, res) => {
 
     const user = rows[0];
     if (!user) {
+      await pool.query(
+        `INSERT INTO login_activity (user_id, session_id, email, ip_address, user_agent, status, error_reason)
+         VALUES (NULL, NULL, $1, $2, $3, 'failed', 'invalid_credentials')`,
+        [emailTrimmed, getRequestIp(req), String(req.headers['user-agent'] || '').slice(0, 1000)]
+      );
       return res.status(401).json({ success: false, error: 'Invalid credentials' });
     }
 
     const valid = await bcrypt.compare(password, user.password_hash);
     if (!valid) {
+      await pool.query(
+        `INSERT INTO login_activity (user_id, session_id, email, ip_address, user_agent, status, error_reason)
+         VALUES ($1, NULL, $2, $3, $4, 'failed', 'invalid_password')`,
+        [user.id, user.email, getRequestIp(req), String(req.headers['user-agent'] || '').slice(0, 1000)]
+      );
       return res.status(401).json({ success: false, error: 'Invalid credentials' });
     }
 
-    // Increment token_version to invalidate all other sessions (single-session)
-    await pool.query('UPDATE users SET token_version = COALESCE(token_version, 0) + 1 WHERE id = $1', [user.id]);
     const { rows: vrows } = await pool.query('SELECT token_version FROM users WHERE id = $1', [user.id]);
-    const tokenVersion = vrows[0]?.token_version ?? 1;
+    const tokenVersion = vrows[0]?.token_version ?? 0;
+    const sessionId = randomUUID();
 
     const token = jwt.sign(
-      { id: user.id, email: user.email, v: tokenVersion },
+      { id: user.id, email: user.email, v: tokenVersion, sid: sessionId },
       process.env.JWT_SECRET,
       { expiresIn: '7d' }
+    );
+
+    await pool.query(
+      `INSERT INTO login_activity (user_id, session_id, email, ip_address, user_agent, status)
+       VALUES ($1, $2, $3, $4, $5, 'active')`,
+      [user.id, sessionId, user.email, getRequestIp(req), String(req.headers['user-agent'] || '').slice(0, 1000)]
     );
 
     res.json({
@@ -127,6 +149,26 @@ router.post('/login', async (req, res) => {
     });
   } catch (err) {
     console.error('Login error:', err);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+router.post('/logout', authMiddleware, async (req, res) => {
+  try {
+    if (!req.user?.sid) {
+      return res.json({ success: true });
+    }
+    await pool.query(
+      `UPDATE login_activity
+       SET logout_time = NOW(),
+           duration_seconds = GREATEST(0, EXTRACT(EPOCH FROM (NOW() - login_time))::INT),
+           status = CASE WHEN status = 'failed' THEN status ELSE 'completed' END
+       WHERE session_id = $1 AND logout_time IS NULL`,
+      [req.user.sid]
+    );
+    res.json({ success: true });
+  } catch (err) {
+    console.error('[auth logout]', err);
     res.status(500).json({ error: 'Server error' });
   }
 });

@@ -1,13 +1,26 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { Helmet } from 'react-helmet';
-import { Calendar as CalendarIcon, ChevronLeft, ChevronRight, DollarSign, Receipt, FileText, TrendingUp } from 'lucide-react';
+import { Calendar as CalendarIcon, ChevronLeft, ChevronRight, DollarSign, Receipt, FileText, TrendingUp, Plus, Clock } from 'lucide-react';
 import { useFinance } from '@/contexts/FinanceContext';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { cn } from '@/lib/utils';
+
+const EVENTS_STORAGE_KEY = 'calendar_custom_events_v1';
 
 const Calendar = () => {
   const { incomes, expenses, invoices, settings, loadData } = useFinance();
   const [currentDate, setCurrentDate] = useState(new Date());
+  const [events, setEvents] = useState([]);
+  const [isEventDialogOpen, setIsEventDialogOpen] = useState(false);
+  const [eventForm, setEventForm] = useState({
+    eventName: '',
+    date: '',
+    time: '',
+    notes: '',
+  });
   const currency = settings?.currency || 'LKR';
 
   const year = currentDate.getFullYear();
@@ -34,6 +47,12 @@ const Calendar = () => {
     const m = String(d.getMonth() + 1).padStart(2, '0');
     const day = String(d.getDate()).padStart(2, '0');
     return `${y}-${m}-${day}`;
+  };
+
+  const getEventsForDate = (date) => {
+    const dateStr = toLocalDateString(date);
+    if (!dateStr) return [];
+    return events.filter((ev) => ev.date === dateStr);
   };
 
   // Get transactions for a specific date (compare local dates so timezone doesn't shift the day)
@@ -80,6 +99,42 @@ const Calendar = () => {
     return { incomeTotal, expenseTotal, invoiceTotal, net: incomeTotal - expenseTotal };
   };
 
+  const openAddEventDialog = () => {
+    const baseDate = selectedDate || new Date(year, month, 1);
+    setEventForm({
+      eventName: '',
+      date: toLocalDateString(baseDate),
+      time: '',
+      notes: '',
+    });
+    setIsEventDialogOpen(true);
+  };
+
+  const handleSaveEvent = (e) => {
+    e.preventDefault();
+    const name = eventForm.eventName.trim();
+    if (!name || !eventForm.date) return;
+
+    const newEvent = {
+      id: `EV-${Date.now().toString(36).toUpperCase()}${Math.random().toString(36).slice(2, 6).toUpperCase()}`,
+      eventName: name,
+      date: eventForm.date,
+      time: eventForm.time || '',
+      notes: eventForm.notes.trim(),
+      createdAt: new Date().toISOString(),
+    };
+    setEvents((prev) => {
+      const next = [newEvent, ...prev];
+      try {
+        localStorage.setItem(EVENTS_STORAGE_KEY, JSON.stringify(next));
+      } catch {
+        // ignore storage errors
+      }
+      return next;
+    });
+    setIsEventDialogOpen(false);
+  };
+
   const navigateMonth = (direction) => {
     setCurrentDate(new Date(year, month + direction, 1));
   };
@@ -115,9 +170,17 @@ const Calendar = () => {
   const [selectedDate, setSelectedDate] = useState(null);
   const selectedTransactions = selectedDate ? getTransactionsForDate(selectedDate) : null;
   const selectedTotals = selectedDate ? getDateTotals(selectedDate) : null;
+  const selectedEvents = selectedDate ? getEventsForDate(selectedDate) : [];
 
   useEffect(() => {
     loadData?.();
+    try {
+      const raw = localStorage.getItem(EVENTS_STORAGE_KEY);
+      const parsed = raw ? JSON.parse(raw) : [];
+      setEvents(Array.isArray(parsed) ? parsed : []);
+    } catch {
+      setEvents([]);
+    }
   }, []);
 
   return (
@@ -139,6 +202,10 @@ const Calendar = () => {
               View your income, expenses, and invoices by date
             </p>
           </div>
+          <Button onClick={openAddEventDialog}>
+            <Plus className="w-4 h-4 mr-2" />
+            Add Event
+          </Button>
         </div>
 
         {/* Calendar Navigation */}
@@ -193,7 +260,9 @@ const Calendar = () => {
               }
 
               const totals = getDateTotals(date);
+              const dayEvents = getEventsForDate(date);
               const hasTransactions = totals.incomeTotal > 0 || totals.expenseTotal > 0 || totals.invoiceTotal > 0;
+              const hasEvents = dayEvents.length > 0;
               const isSelected = selectedDate && 
                 date.getDate() === selectedDate.getDate() &&
                 date.getMonth() === selectedDate.getMonth() &&
@@ -218,7 +287,7 @@ const Calendar = () => {
                     )}>
                       {date.getDate()}
                     </span>
-                    {hasTransactions && (
+                    {(hasTransactions || hasEvents) && (
                       <div className="flex flex-col gap-0.5 text-xs">
                         {totals.incomeTotal > 0 && (
                           <div className="text-green-500 flex items-center gap-1">
@@ -236,6 +305,12 @@ const Calendar = () => {
                           <div className="text-yellow-500 flex items-center gap-1">
                             <FileText className="w-3 h-3" />
                             <span className="truncate">{totals.invoiceTotal.toLocaleString()}</span>
+                          </div>
+                        )}
+                        {hasEvents && (
+                          <div className="text-violet-400 flex items-center gap-1">
+                            <CalendarIcon className="w-3 h-3" />
+                            <span className="truncate">{dayEvents.length} event{dayEvents.length > 1 ? 's' : ''}</span>
                           </div>
                         )}
                       </div>
@@ -372,17 +447,107 @@ const Calendar = () => {
                 </div>
               )}
 
+              {/* Events */}
+              {selectedEvents.length > 0 && (
+                <div>
+                  <h4 className="text-sm font-semibold text-violet-400 mb-2 flex items-center gap-2">
+                    <CalendarIcon className="w-4 h-4" />
+                    Events ({selectedEvents.length})
+                  </h4>
+                  <div className="space-y-2">
+                    {selectedEvents
+                      .slice()
+                      .sort((a, b) => (a.time || '').localeCompare(b.time || ''))
+                      .map((ev) => (
+                        <div
+                          key={ev.id}
+                          className="bg-secondary/30 rounded-lg p-3 flex items-start justify-between gap-3"
+                        >
+                          <div className="min-w-0">
+                            <p className="font-medium text-violet-300">{ev.eventName}</p>
+                            {ev.notes && (
+                              <p className="text-sm text-muted-foreground truncate">{ev.notes}</p>
+                            )}
+                          </div>
+                          <div className="text-sm text-violet-300 flex items-center gap-1 shrink-0">
+                            <Clock className="w-3 h-3" />
+                            {ev.time || 'All day'}
+                          </div>
+                        </div>
+                      ))}
+                  </div>
+                </div>
+              )}
+
               {selectedTransactions.incomes.length === 0 &&
                 selectedTransactions.expenses.length === 0 &&
-                selectedTransactions.invoices.length === 0 && (
+                selectedTransactions.invoices.length === 0 &&
+                selectedEvents.length === 0 && (
                   <p className="text-muted-foreground text-center py-8">
-                    No transactions on this date
+                    No transactions or events on this date
                   </p>
                 )}
             </div>
           </div>
         )}
       </div>
+
+      <Dialog open={isEventDialogOpen} onOpenChange={setIsEventDialogOpen}>
+        <DialogContent className="max-w-md" aria-describedby={undefined}>
+          <DialogHeader>
+            <DialogTitle>Add Event</DialogTitle>
+          </DialogHeader>
+          <form onSubmit={handleSaveEvent} className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="event-name">Event Name</Label>
+              <Input
+                id="event-name"
+                value={eventForm.eventName}
+                onChange={(e) => setEventForm((p) => ({ ...p, eventName: e.target.value }))}
+                placeholder="Meeting, Follow-up, Deadline..."
+                required
+              />
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div className="space-y-2">
+                <Label htmlFor="event-date">Date</Label>
+                <Input
+                  id="event-date"
+                  type="date"
+                  value={eventForm.date}
+                  onChange={(e) => setEventForm((p) => ({ ...p, date: e.target.value }))}
+                  required
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="event-time">Time</Label>
+                <Input
+                  id="event-time"
+                  type="time"
+                  value={eventForm.time}
+                  onChange={(e) => setEventForm((p) => ({ ...p, time: e.target.value }))}
+                />
+              </div>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="event-notes">Additional Notes</Label>
+              <textarea
+                id="event-notes"
+                className="w-full min-h-[90px] px-3 py-2 bg-input border border-border rounded-lg text-sm"
+                value={eventForm.notes}
+                onChange={(e) => setEventForm((p) => ({ ...p, notes: e.target.value }))}
+                placeholder="Optional notes"
+              />
+            </div>
+            <div className="flex justify-end gap-2">
+              <Button type="button" variant="outline" onClick={() => setIsEventDialogOpen(false)}>
+                Cancel
+              </Button>
+              <Button type="submit">Save Event</Button>
+            </div>
+          </form>
+        </DialogContent>
+      </Dialog>
     </>
   );
 };

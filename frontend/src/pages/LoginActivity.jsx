@@ -37,6 +37,7 @@ const statusBadge = (status) => {
 
 const failureLabel = (reason) => {
   if (!reason) return null;
+  if (reason === 'invalid_password') return 'Invalid password';
   if (reason === 'invalid_credentials') return 'Invalid password';
   if (reason === 'unauthorized') return 'Unauthorized';
   if (reason === 'invalid_token') return 'Invalid token';

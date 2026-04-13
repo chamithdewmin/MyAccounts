@@ -174,10 +174,11 @@ router.post('/login', async (req, res) => {
     if (!user) {
       await insertLoginActivity({
         email: emailTrimmed,
+        loginAt: new Date().toISOString(),
         ipAddress,
         userAgent,
         success: false,
-        failureReason: 'invalid_credentials',
+        failureReason: 'unauthorized',
       });
       return res.status(401).json({ success: false, error: 'Invalid credentials' });
     }
@@ -188,10 +189,11 @@ router.post('/login', async (req, res) => {
         userId: user.id,
         email: user.email,
         userName: user.name || '',
+        loginAt: new Date().toISOString(),
         ipAddress,
         userAgent,
         success: false,
-        failureReason: 'invalid_credentials',
+        failureReason: 'invalid_password',
       });
       return res.status(401).json({ success: false, error: 'Invalid credentials' });
     }

@@ -230,8 +230,9 @@ router.get('/me', async (req, res) => {
         `SELECT id FROM login_activity
          WHERE session_id = $1 AND user_id = $2 AND status = $3
            AND COALESCE(ip_address, '') = COALESCE($4, '')
+           AND COALESCE(user_agent, '') = COALESCE($5, '')
          LIMIT 1`,
-        [decoded.sid, decoded.id, 'active', ipAddress],
+        [decoded.sid, decoded.id, 'active', ipAddress, userAgent],
       );
       if (!ar[0]) {
         await logLoginActivity({

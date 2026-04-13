@@ -39,7 +39,7 @@ const failureLabel = (reason) => {
   if (!reason) return null;
   if (reason === 'invalid_password') return 'Invalid password';
   if (reason === 'invalid_credentials') return 'Invalid password';
-  if (reason === 'unauthorized') return 'Unauthorized';
+  if (reason === 'unauthorized') return 'unauthorized';
   if (reason === 'invalid_token') return 'Invalid token';
   if (reason === 'session_expired') return 'Session expired';
   if (reason === 'user_not_found') return 'User not found';

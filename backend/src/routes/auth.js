@@ -224,9 +224,14 @@ router.get('/me', async (req, res) => {
       return res.status(401).json({ error: 'Session expired' });
     }
     if (decoded.sid) {
+      const ipAddress = getRequestIp(req);
+      const userAgent = String(req.headers['user-agent'] || '').slice(0, 1000);
       const { rows: ar } = await pool.query(
-        'SELECT id FROM login_activity WHERE session_id = $1 AND user_id = $2 AND status = $3 LIMIT 1',
-        [decoded.sid, decoded.id, 'active'],
+        `SELECT id FROM login_activity
+         WHERE session_id = $1 AND user_id = $2 AND status = $3
+           AND COALESCE(ip_address, '') = COALESCE($4, '')
+         LIMIT 1`,
+        [decoded.sid, decoded.id, 'active', ipAddress],
       );
       if (!ar[0]) {
         await logLoginActivity({
@@ -234,8 +239,8 @@ router.get('/me', async (req, res) => {
           email: rows[0].email,
           sessionId: decoded.sid,
           loginAt: new Date().toISOString(),
-          ipAddress: getRequestIp(req),
-          userAgent: String(req.headers['user-agent'] || '').slice(0, 1000),
+          ipAddress,
+          userAgent,
           status: 'active',
         });
       }

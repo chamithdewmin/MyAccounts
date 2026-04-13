@@ -43,12 +43,13 @@ const insertLoginActivity = async ({
   failureReason = null,
 }) => {
   const status = success ? 'active' : 'failed';
+  const effectiveLoginAt = loginAt || new Date().toISOString();
   const sharedValues = [
     userId,
     email,
     userName,
     sessionId,
-    loginAt,
+    effectiveLoginAt,
     logoutAt,
     ipAddress,
     userAgent,
@@ -348,9 +349,9 @@ router.get('/login-activity', authMiddleware, async (req, res) => {
     const { rows } = await pool.query(
       `SELECT id, user_id AS "userId", email, user_name AS "userName", COALESCE(success, status != 'failed') AS success,
               role, ip_address AS "ipAddress", failure_reason AS "failureReason",
-              login_at AS "loginAt", logout_at AS "logoutAt", status
+              COALESCE(login_at, created_at) AS "loginAt", logout_at AS "logoutAt", status, created_at AS "createdAt"
        FROM login_activity
-       ORDER BY COALESCE(login_at, created_at) DESC
+       ORDER BY COALESCE(login_at, created_at) DESC, created_at DESC
        LIMIT 500`,
     );
     res.json(rows);

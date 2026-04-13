@@ -15,7 +15,7 @@ const logAuthFailure = async (req, reason, decoded = null) => {
     await pool.query(
       `INSERT INTO login_activity (
         id, user_id, email, session_id, login_at, logout_at, ip_address, user_agent, status, failure_reason, created_at
-      ) VALUES ($1, $2, $3, $4, NULL, NULL, $5, $6, 'failed', $7, NOW())`,
+      ) VALUES ($1, $2, $3, $4, NOW(), NULL, $5, $6, 'failed', $7, NOW())`,
       [
         `LA-${Date.now()}-${Math.random().toString(36).slice(2, 10).toUpperCase()}`,
         userId,

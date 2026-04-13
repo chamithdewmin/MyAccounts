@@ -31,27 +31,11 @@ export const AuthProvider = ({ children }) => {
             setIsAuthenticated(true);
             setUser(data.user);
             window.dispatchEvent(new CustomEvent('auth:login'));
-          } else if (res.status === 401) {
-            localStorage.removeItem('token');
           } else {
-            // Network/server error: use JWT payload as fallback so session persists
-            try {
-              const payload = JSON.parse(atob(token.split('.')[1].replace(/-/g, '+').replace(/_/g, '/')));
-              setIsAuthenticated(true);
-              setUser({ id: payload.id, email: payload.email, name: payload.email || 'User' });
-            } catch {
-              localStorage.removeItem('token');
-            }
+            localStorage.removeItem('token');
           }
         } catch {
-          // Fetch failed (e.g. network): use JWT payload so session persists
-          try {
-            const payload = JSON.parse(atob(token.split('.')[1].replace(/-/g, '+').replace(/_/g, '/')));
-            setIsAuthenticated(true);
-            setUser({ id: payload.id, email: payload.email, name: payload.email || 'User' });
-          } catch {
-            localStorage.removeItem('token');
-          }
+          localStorage.removeItem('token');
         }
       }
       setLoading(false);
@@ -70,13 +54,6 @@ export const AuthProvider = ({ children }) => {
         return { success: true };
       }
     } catch (err) {
-      // Fallback: allow demo login when API is unreachable (e.g. backend not deployed)
-      if (email === 'admin@gmail.com' && password === 'admin123') {
-        const userData = { id: 1, email: 'admin@gmail.com', name: 'Admin' };
-        setIsAuthenticated(true);
-        setUser(userData);
-        return { success: true };
-      }
       return { success: false, error: err.message || 'Invalid credentials' };
     }
     return { success: false, error: 'Invalid credentials' };

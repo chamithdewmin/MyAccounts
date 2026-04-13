@@ -193,9 +193,15 @@ export default function LoginActivity() {
                     <td className="px-4 py-3 text-sm">
                       <div className="font-medium">{row.email || 'Unknown'}</div>
                     </td>
-                    <td className="px-4 py-3 text-sm">{formatDateTime(row.loginAt)}</td>
-                    <td className="px-4 py-3 text-sm">{row.logoutAt ? formatDateTime(row.logoutAt) : 'Active session'}</td>
-                    <td className="px-4 py-3 text-sm">{formatDuration(row.loginAt || row.createdAt, row.logoutAt, row.status)}</td>
+                    <td className="px-4 py-3 text-sm">{formatDateTime(row.loginAt || row.createdAt)}</td>
+                    <td className="px-4 py-3 text-sm">
+                      {row.logoutAt ? formatDateTime(row.logoutAt) : row.status === 'active' ? 'Active session' : '—'}
+                    </td>
+                    <td className="px-4 py-3 text-sm">
+                      {row.status === 'failed'
+                        ? '—'
+                        : formatDuration(row.loginAt || row.createdAt, row.logoutAt, row.status)}
+                    </td>
                     <td className="px-4 py-3 text-sm">{row.ipAddress || '—'}</td>
                     <td className="px-4 py-3 text-sm">
                       <span className={`px-2 py-1 rounded-full text-xs ${statusBadge(row.status)}`}>

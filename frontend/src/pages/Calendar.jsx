@@ -7,14 +7,14 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { cn } from '@/lib/utils';
-
-const EVENTS_STORAGE_KEY = 'calendar_custom_events_v1';
+import { api } from '@/lib/api';
 
 const Calendar = () => {
   const { incomes, expenses, invoices, settings, loadData } = useFinance();
   const [currentDate, setCurrentDate] = useState(new Date());
   const [events, setEvents] = useState([]);
   const [isEventDialogOpen, setIsEventDialogOpen] = useState(false);
+  const [savingEvent, setSavingEvent] = useState(false);
   const [eventForm, setEventForm] = useState({
     eventName: '',
     date: '',
@@ -114,25 +114,30 @@ const Calendar = () => {
     e.preventDefault();
     const name = eventForm.eventName.trim();
     if (!name || !eventForm.date) return;
-
-    const newEvent = {
-      id: `EV-${Date.now().toString(36).toUpperCase()}${Math.random().toString(36).slice(2, 6).toUpperCase()}`,
-      eventName: name,
-      date: eventForm.date,
-      time: eventForm.time || '',
-      notes: eventForm.notes.trim(),
-      createdAt: new Date().toISOString(),
-    };
-    setEvents((prev) => {
-      const next = [newEvent, ...prev];
-      try {
-        localStorage.setItem(EVENTS_STORAGE_KEY, JSON.stringify(next));
-      } catch {
-        // ignore storage errors
-      }
-      return next;
-    });
-    setIsEventDialogOpen(false);
+    setSavingEvent(true);
+    api.calendarEvents
+      .create({
+        eventName: name,
+        eventDate: eventForm.date,
+        eventTime: eventForm.time || '',
+        notes: eventForm.notes.trim(),
+      })
+      .then((ev) => {
+        const normalized = {
+          id: ev.id,
+          eventName: ev.eventName,
+          date: ev.eventDate,
+          time: ev.eventTime || '',
+          notes: ev.notes || '',
+          createdAt: ev.createdAt,
+        };
+        setEvents((prev) => [normalized, ...prev]);
+        setIsEventDialogOpen(false);
+      })
+      .catch(() => {
+        // keep dialog open so user can retry
+      })
+      .finally(() => setSavingEvent(false));
   };
 
   const navigateMonth = (direction) => {
@@ -174,13 +179,22 @@ const Calendar = () => {
 
   useEffect(() => {
     loadData?.();
-    try {
-      const raw = localStorage.getItem(EVENTS_STORAGE_KEY);
-      const parsed = raw ? JSON.parse(raw) : [];
-      setEvents(Array.isArray(parsed) ? parsed : []);
-    } catch {
-      setEvents([]);
-    }
+    api.calendarEvents
+      .list()
+      .then((rows) => {
+        const normalized = Array.isArray(rows)
+          ? rows.map((r) => ({
+              id: r.id,
+              eventName: r.eventName,
+              date: r.eventDate,
+              time: r.eventTime || '',
+              notes: r.notes || '',
+              createdAt: r.createdAt,
+            }))
+          : [];
+        setEvents(normalized);
+      })
+      .catch(() => setEvents([]));
   }, []);
 
   return (
@@ -543,7 +557,9 @@ const Calendar = () => {
               <Button type="button" variant="outline" onClick={() => setIsEventDialogOpen(false)}>
                 Cancel
               </Button>
-              <Button type="submit">Save Event</Button>
+              <Button type="submit" disabled={savingEvent}>
+                {savingEvent ? 'Saving...' : 'Save Event'}
+              </Button>
             </div>
           </form>
         </DialogContent>

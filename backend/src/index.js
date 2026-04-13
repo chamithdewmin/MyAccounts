@@ -23,6 +23,7 @@ import bankDetailsRoutes from './routes/bankDetails.js';
 import aiRoutes from './routes/ai.js';
 import backupRoutes from './routes/backup.js';
 import estimatesRoutes from './routes/estimates.js';
+import calendarEventsRoutes from './routes/calendarEvents.js';
 import pool from './config/db.js';
 import { processDueScheduledSms } from './workers/scheduledSmsWorker.js';
 
@@ -201,6 +202,25 @@ async function initDb() {
     console.warn('scheduled_sms table:', e.message);
   }
   try {
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS calendar_events (
+        id VARCHAR(80) PRIMARY KEY,
+        user_id INT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+        event_name VARCHAR(255) NOT NULL,
+        event_date DATE NOT NULL,
+        event_time TIME,
+        notes TEXT DEFAULT '',
+        created_at TIMESTAMPTZ DEFAULT NOW()
+      )
+    `);
+    await pool.query(
+      `CREATE INDEX IF NOT EXISTS idx_calendar_events_user_date ON calendar_events (user_id, event_date, event_time)`
+    );
+    console.log('Calendar events table ready.');
+  } catch (e) {
+    console.warn('calendar_events table:', e.message);
+  }
+  try {
     await pool.query('ALTER TABLE reminders ADD COLUMN IF NOT EXISTS reason VARCHAR(255) DEFAULT \'\'');
     await pool.query('ALTER TABLE reminders ADD COLUMN IF NOT EXISTS amount DECIMAL(15,2) DEFAULT 0');
     console.log('Reminders columns (reason, amount) ready.');
@@ -256,6 +276,7 @@ app.use('/api/reminders', remindersRoutes);
 app.use('/api/ai', aiRoutes);
 app.use('/api/backup', backupRoutes);
 app.use('/api/estimates', estimatesRoutes);
+app.use('/api/calendar-events', calendarEventsRoutes);
 
 const HOST = '0.0.0.0'; // Required for Docker: listen on all interfaces
 

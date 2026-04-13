@@ -223,6 +223,23 @@ router.get('/me', async (req, res) => {
     if (tokenVersion !== currentVersion) {
       return res.status(401).json({ error: 'Session expired' });
     }
+    if (decoded.sid) {
+      const { rows: ar } = await pool.query(
+        'SELECT id FROM login_activity WHERE session_id = $1 AND user_id = $2 AND status = $3 LIMIT 1',
+        [decoded.sid, decoded.id, 'active'],
+      );
+      if (!ar[0]) {
+        await logLoginActivity({
+          userId: decoded.id,
+          email: rows[0].email,
+          sessionId: decoded.sid,
+          loginAt: new Date().toISOString(),
+          ipAddress: getRequestIp(req),
+          userAgent: String(req.headers['user-agent'] || '').slice(0, 1000),
+          status: 'active',
+        });
+      }
+    }
     res.json({ user: { id: rows[0].id, email: rows[0].email, name: rows[0].name } });
   } catch {
     res.status(401).json({ error: 'Invalid token' });

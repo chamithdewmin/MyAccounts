@@ -125,6 +125,11 @@ export const api = {
     cancelScheduled: (id) =>
       request(`/sms/scheduled/${encodeURIComponent(id)}`, { method: 'DELETE' }),
   },
+  calendarEvents: {
+    list: () => request('/calendar-events'),
+    create: (data) => request('/calendar-events', { method: 'POST', body: JSON.stringify(data) }),
+    delete: (id) => request(`/calendar-events/${id}`, { method: 'DELETE' }),
+  },
   transfers: {
     list: () => request('/transfers'),
     create: (data) => request('/transfers', { method: 'POST', body: JSON.stringify(data) }),

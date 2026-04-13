@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Helmet } from 'react-helmet';
-import { Activity, Clock3, LogOut, RefreshCw, ShieldCheck, Users } from 'lucide-react';
+import { Activity, Clock3, LogOut, LogIn, RefreshCw, ShieldCheck, Users } from 'lucide-react';
 import { api } from '@/lib/api';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
@@ -193,7 +193,16 @@ export default function LoginActivity() {
                     <td className="px-4 py-3 text-sm">
                       <div className="font-medium">{row.email || 'Unknown'}</div>
                     </td>
-                    <td className="px-4 py-3 text-sm">{formatDateTime(row.loginAt || row.createdAt)}</td>
+                    <td className="px-4 py-3 text-sm">
+                      {row.loginAt || row.createdAt ? (
+                        <span className="inline-flex items-center gap-1 text-emerald-400">
+                          <LogIn className="w-3.5 h-3.5" />
+                          {formatDateTime(row.loginAt || row.createdAt)}
+                        </span>
+                      ) : (
+                        '—'
+                      )}
+                    </td>
                     <td className="px-4 py-3 text-sm">
                       {row.logoutAt ? (
                         <span className="inline-flex items-center gap-1 text-red-400">

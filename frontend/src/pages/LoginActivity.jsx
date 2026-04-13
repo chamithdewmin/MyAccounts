@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Helmet } from 'react-helmet';
-import { Activity, Clock3, RefreshCw, ShieldCheck, Users } from 'lucide-react';
+import { Activity, Clock3, LogOut, RefreshCw, ShieldCheck, Users } from 'lucide-react';
 import { api } from '@/lib/api';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
@@ -195,16 +195,27 @@ export default function LoginActivity() {
                     </td>
                     <td className="px-4 py-3 text-sm">{formatDateTime(row.loginAt || row.createdAt)}</td>
                     <td className="px-4 py-3 text-sm">
-                      {row.logoutAt ? formatDateTime(row.logoutAt) : row.status === 'active' ? 'Active session' : '—'}
+                      {row.logoutAt ? (
+                        <span className="inline-flex items-center gap-1 text-red-400">
+                          <LogOut className="w-3.5 h-3.5" />
+                          {formatDateTime(row.logoutAt)}
+                        </span>
+                      ) : row.status === 'active' ? (
+                        <span className="text-orange-400">Active session</span>
+                      ) : (
+                        '—'
+                      )}
                     </td>
                     <td className="px-4 py-3 text-sm">
                       {row.status === 'failed'
                         ? '—'
-                        : formatDuration(row.loginAt || row.createdAt, row.logoutAt, row.status)}
+                        : row.status === 'active'
+                          ? <span className="text-blue-400">Ongoing</span>
+                          : formatDuration(row.loginAt || row.createdAt, row.logoutAt, row.status)}
                     </td>
                     <td className="px-4 py-3 text-sm">{row.ipAddress || '—'}</td>
                     <td className="px-4 py-3 text-sm">
-                      <span className={`px-2 py-1 rounded-full text-xs ${statusBadge(row.status)}`}>
+                      <span className={`px-2 py-1 rounded-full text-xs capitalize ${statusBadge(row.status)}`}>
                         {row.status === 'failed' ? (failureLabel(row.failureReason) || 'Failed') : row.status}
                       </span>
                     </td>

@@ -122,6 +122,8 @@ async function initDb() {
     await pool.query("ALTER TABLE login_activity ADD COLUMN IF NOT EXISTS user_name VARCHAR(255) DEFAULT ''");
     await pool.query('ALTER TABLE login_activity ADD COLUMN IF NOT EXISTS success BOOLEAN');
     await pool.query('ALTER TABLE login_activity ADD COLUMN IF NOT EXISTS role VARCHAR(50)');
+    await pool.query('UPDATE login_activity SET created_at = NOW() WHERE created_at IS NULL');
+    await pool.query('UPDATE login_activity SET login_at = COALESCE(login_at, created_at, NOW()) WHERE login_at IS NULL');
     await pool.query(
       `CREATE INDEX IF NOT EXISTS idx_login_activity_user_created ON login_activity (user_id, created_at DESC)`
     );

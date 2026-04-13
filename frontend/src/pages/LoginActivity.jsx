@@ -196,7 +196,7 @@ export default function LoginActivity() {
                     </td>
                     <td className="px-4 py-3 text-sm">
                       {row.loginAt || row.createdAt ? (
-                        <span className="inline-flex items-center gap-1 text-foreground">
+                        <span className="inline-flex items-center gap-1 text-white">
                           <LogIn className="w-3.5 h-3.5 text-emerald-400" />
                           {formatDateTime(row.loginAt || row.createdAt)}
                         </span>
@@ -206,7 +206,7 @@ export default function LoginActivity() {
                     </td>
                     <td className="px-4 py-3 text-sm">
                       {row.logoutAt ? (
-                        <span className="inline-flex items-center gap-1 text-foreground">
+                        <span className="inline-flex items-center gap-1 text-white">
                           <LogOut className="w-3.5 h-3.5 text-red-400" />
                           {formatDateTime(row.logoutAt)}
                         </span>

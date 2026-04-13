@@ -35,6 +35,16 @@ const statusBadge = (status) => {
   return 'bg-slate-500/20 text-slate-300';
 };
 
+const failureLabel = (reason) => {
+  if (!reason) return null;
+  if (reason === 'invalid_credentials') return 'Invalid password';
+  if (reason === 'unauthorized') return 'Unauthorized';
+  if (reason === 'invalid_token') return 'Invalid token';
+  if (reason === 'session_expired') return 'Session expired';
+  if (reason === 'user_not_found') return 'User not found';
+  return reason.replace(/_/g, ' ');
+};
+
 export default function LoginActivity() {
   const { user } = useAuth();
   const isAdmin = String(user?.email || '').toLowerCase() === ADMIN_EMAIL;
@@ -171,7 +181,7 @@ export default function LoginActivity() {
                     <td className="px-4 py-3 text-sm">{row.ipAddress || '—'}</td>
                     <td className="px-4 py-3 text-sm">
                       <span className={`px-2 py-1 rounded-full text-xs ${statusBadge(row.status)}`}>
-                        {row.failureReason === 'invalid_credentials' ? 'Invalid password' : row.status}
+                        {row.status === 'failed' ? (failureLabel(row.failureReason) || 'Failed') : row.status}
                       </span>
                     </td>
                   </tr>

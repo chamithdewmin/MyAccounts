@@ -42,33 +42,46 @@ const insertLoginActivity = async ({
   role = null,
   failureReason = null,
 }) => {
+  const status = success ? 'active' : 'failed';
+  const sharedValues = [
+    userId,
+    email,
+    userName,
+    sessionId,
+    loginAt,
+    logoutAt,
+    ipAddress,
+    userAgent,
+    success,
+    role,
+    status,
+    failureReason,
+  ];
   try {
-    const status = success ? 'active' : 'failed';
+    // Preferred path for latest schema where id is varchar.
     const { rows } = await pool.query(
       `INSERT INTO login_activity (
         id, user_id, email, user_name, session_id, login_at, logout_at, ip_address, user_agent, success, role, status, failure_reason, created_at
       ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, NOW())
-      RETURNING id`,
-      [
-        `LA-${Date.now()}-${Math.random().toString(36).slice(2, 10).toUpperCase()}`,
-        userId,
-        email,
-        userName,
-        sessionId,
-        loginAt,
-        logoutAt,
-        ipAddress,
-        userAgent,
-        success,
-        role,
-        status,
-        failureReason,
-      ],
+      RETURNING id::text AS id`,
+      [`LA-${Date.now()}-${Math.random().toString(36).slice(2, 10).toUpperCase()}`, ...sharedValues],
     );
     return rows[0]?.id || null;
-  } catch (e) {
-    console.error('[auth activity log]', e.message);
-    return null;
+  } catch (firstErr) {
+    try {
+      // Backward compatibility: legacy schema where id is SERIAL/INT.
+      const { rows } = await pool.query(
+        `INSERT INTO login_activity (
+          user_id, email, user_name, session_id, login_at, logout_at, ip_address, user_agent, success, role, status, failure_reason, created_at
+        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, NOW())
+        RETURNING id::text AS id`,
+        sharedValues,
+      );
+      return rows[0]?.id || null;
+    } catch (e) {
+      console.error('[auth activity log]', firstErr.message, '| fallback:', e.message);
+      return null;
+    }
   }
 };
 
@@ -279,7 +292,7 @@ router.post('/logout', authMiddleware, async (req, res) => {
       await pool.query(
         `UPDATE login_activity
          SET logout_at = NOW(), status = 'completed'
-         WHERE id = $1 AND user_id = $2 AND COALESCE(success, true) = true AND logout_at IS NULL`,
+         WHERE id::text = $1 AND user_id = $2 AND COALESCE(success, true) = true AND logout_at IS NULL`,
         [activityId, req.user.id],
       );
     } else if (sid) {

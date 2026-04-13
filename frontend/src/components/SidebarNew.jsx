@@ -428,7 +428,7 @@ export default function SidebarNew() {
             justifyContent: collapsed ? "center" : "space-between",
             padding: collapsed ? "16px 12px" : "16px 16px",
             borderBottom: `1px solid ${c.border}`,
-            minHeight: 64,
+            minHeight: 68,
           }}
         >
           {!collapsed && (
@@ -445,9 +445,9 @@ export default function SidebarNew() {
               <img
                 src={sidebarIcon}
                 alt=""
-                style={{ width: 28, height: 28, objectFit: "contain", flexShrink: 0 }}
+                style={{ width: 34, height: 34, objectFit: "contain", flexShrink: 0 }}
               />
-              <span style={{ fontSize: 15, color: c.text, whiteSpace: "nowrap" }}>
+              <span style={{ fontSize: 16, color: c.text, whiteSpace: "nowrap" }}>
                 <span style={{ fontWeight: 800 }}>Logozo</span>
                 <span style={{ fontWeight: 500 }}>POS</span>
               </span>
@@ -473,8 +473,8 @@ export default function SidebarNew() {
             {collapsed ? (
               <span
                 style={{
-                  width: 24,
-                  height: 24,
+                  width: 28,
+                  height: 28,
                   position: "relative",
                   display: "inline-flex",
                   alignItems: "center",
@@ -485,8 +485,8 @@ export default function SidebarNew() {
                   src={sidebarIcon}
                   alt=""
                   style={{
-                    width: 20,
-                    height: 20,
+                    width: 24,
+                    height: 24,
                     objectFit: "contain",
                     position: "absolute",
                     opacity: hoverToggle ? 0 : 1,

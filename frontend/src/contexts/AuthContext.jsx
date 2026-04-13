@@ -86,7 +86,7 @@ export const AuthProvider = ({ children }) => {
     try {
       await api.auth.logout();
     } catch {
-      // Best effort: still clear local session.
+      // Best-effort logout activity update; still clear local auth state
     }
     setIsAuthenticated(false);
     setUser(null);

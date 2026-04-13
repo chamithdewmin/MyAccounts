@@ -25,6 +25,7 @@ import AIInsights from './pages/AIInsights';
 import Dashboard from './pages/Dashboard';
 import Calendar from './pages/Calendar';
 import BackupRestore from './pages/BackupRestore';
+import LoginActivity from './pages/LoginActivity';
 import Layout from './components/Layout';
 
 function App() {
@@ -79,6 +80,7 @@ function App() {
         <Route path="cash-flow" element={<CashFlow />} />
         <Route path="users" element={user?.email === 'logozodev@gmail.com' ? <Users /> : <Navigate to="/ai-insights" replace />} />
         <Route path="sms" element={<SMS />} />
+        <Route path="login-activity" element={user?.email === 'logozodev@gmail.com' ? <LoginActivity /> : <Navigate to="/dashboard" replace />} />
         <Route path="reminders" element={<Reminders />} />
         <Route path="profile" element={<Profile />} />
         <Route path="settings" element={<Settings />} />

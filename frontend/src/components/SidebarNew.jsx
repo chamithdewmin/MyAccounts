@@ -27,6 +27,7 @@ import {
   Database,
   Cog,
   HardDrive,
+  Activity,
 } from "lucide-react";
 
 // Theme-aware colors
@@ -63,6 +64,7 @@ const reportSubItems = [
 
 const settingsSubItems = [
   { to: "/users", label: "Users", icon: UserPlus, adminOnly: true },
+  { to: "/login-activity", label: "Login Activity", icon: Activity, adminOnly: true },
   { to: "/settings", label: "System Settings", icon: Cog },
   { to: "/backup-restore", label: "Backup & Restore", icon: HardDrive },
 ];
@@ -347,14 +349,14 @@ export default function SidebarNew() {
     if (location.pathname.startsWith("/reports")) {
       setAnalyticsOpen(true);
     }
-    if (location.pathname === "/settings" || location.pathname === "/users" || location.pathname === "/backup-restore") {
+    if (location.pathname === "/settings" || location.pathname === "/users" || location.pathname === "/backup-restore" || location.pathname === "/login-activity") {
       setSettingsOpen(true);
     }
   }, [location.pathname]);
 
   const isActive = (href) => location.pathname === href;
   const isAnalyticsActive = location.pathname.startsWith("/reports");
-  const isSettingsActive = ["/settings", "/users", "/backup-restore"].includes(location.pathname);
+  const isSettingsActive = ["/settings", "/users", "/backup-restore", "/login-activity"].includes(location.pathname);
 
   const closeMiniSubmenu = () => setMiniSubmenu(null);
 

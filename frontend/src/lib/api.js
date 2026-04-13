@@ -31,8 +31,9 @@ const request = async (path, options = {}) => {
 export const api = {
   auth: {
     login: (email, password) => request('/auth/login', { method: 'POST', body: JSON.stringify({ email, password }) }),
-    logout: () => request('/auth/logout', { method: 'POST' }),
     me: () => request('/auth/me'),
+    logout: () => request('/auth/logout', { method: 'POST' }),
+    getActivity: (userId) => request(`/auth/activity${userId ? `?userId=${encodeURIComponent(userId)}` : ''}`),
     forgotPassword: (phone) => request('/auth/forgot-password', { method: 'POST', body: JSON.stringify({ phone }) }),
     verifyOtp: (phone, otp) => request('/auth/verify-otp', { method: 'POST', body: JSON.stringify({ phone, otp }) }),
     resetPassword: (resetToken, newPassword) => request('/auth/reset-password', { method: 'POST', body: JSON.stringify({ resetToken, newPassword }) }),
@@ -110,7 +111,6 @@ export const api = {
   },
   users: {
     list: () => request('/users'),
-    loginActivity: (userId = 'all') => request(`/users/login-activity?userId=${encodeURIComponent(userId)}`),
     create: (data) => request('/users', { method: 'POST', body: JSON.stringify(data) }),
     update: (id, data) => request(`/users/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
     delete: (id) => request(`/users/${id}`, { method: 'DELETE' }),

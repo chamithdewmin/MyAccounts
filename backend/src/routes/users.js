@@ -8,60 +8,6 @@ const PROTECTED_EMAIL = 'logozodev@gmail.com';
 const router = express.Router();
 router.use(authMiddleware);
 
-router.get('/login-activity', async (req, res) => {
-  try {
-    const userFilter = String(req.query.userId || 'all');
-    const params = [];
-    let where = '';
-    if (userFilter !== 'all') {
-      params.push(Number(userFilter));
-      where = `WHERE la.user_id = $${params.length}`;
-    }
-
-    const { rows } = await pool.query(
-      `SELECT la.id, la.user_id, la.email, la.login_time, la.logout_time, la.duration_seconds,
-              la.ip_address, la.status, la.error_reason, u.name as user_name
-       FROM login_activity la
-       LEFT JOIN users u ON u.id = la.user_id
-       ${where}
-       ORDER BY la.login_time DESC
-       LIMIT 200`,
-      params
-    );
-
-    const [totalUsersRes, activeUsersRes, activeSessionsRes, totalSessionsRes] = await Promise.all([
-      pool.query('SELECT COUNT(*)::int AS count FROM users'),
-      pool.query('SELECT COUNT(DISTINCT user_id)::int AS count FROM login_activity WHERE status = \'active\' AND logout_time IS NULL'),
-      pool.query('SELECT COUNT(*)::int AS count FROM login_activity WHERE status = \'active\' AND logout_time IS NULL'),
-      pool.query('SELECT COUNT(*)::int AS count FROM login_activity'),
-    ]);
-
-    res.json({
-      stats: {
-        totalUsers: totalUsersRes.rows[0]?.count || 0,
-        activeUsers: activeUsersRes.rows[0]?.count || 0,
-        activeSessions: activeSessionsRes.rows[0]?.count || 0,
-        totalSessions: totalSessionsRes.rows[0]?.count || 0,
-      },
-      items: rows.map((r) => ({
-        id: r.id,
-        userId: r.user_id,
-        userName: r.user_name || 'Unknown',
-        email: r.email || '',
-        loginTime: r.login_time,
-        logoutTime: r.logout_time,
-        durationSeconds: r.duration_seconds,
-        ipAddress: r.ip_address || '',
-        status: r.status || '',
-        errorReason: r.error_reason || '',
-      })),
-    });
-  } catch (err) {
-    console.error('[users login-activity]', err);
-    res.status(500).json({ error: 'Server error' });
-  }
-});
-
 router.get('/', async (req, res) => {
   try {
     const { rows } = await pool.query(

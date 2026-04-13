@@ -1,0 +1,193 @@
+import React, { useEffect, useMemo, useState } from 'react';
+import { Helmet } from 'react-helmet';
+import { Activity, Clock3, RefreshCw, ShieldCheck, Users } from 'lucide-react';
+import { api } from '@/lib/api';
+import { useAuth } from '@/contexts/AuthContext';
+import { Button } from '@/components/ui/button';
+
+const ADMIN_EMAIL = 'logozodev@gmail.com';
+
+const formatDateTime = (value) => {
+  if (!value) return '—';
+  const d = new Date(value);
+  if (Number.isNaN(d.getTime())) return '—';
+  return d.toLocaleString();
+};
+
+const formatDuration = (start, end, status) => {
+  if (!start) return '—';
+  const s = new Date(start).getTime();
+  if (Number.isNaN(s)) return '—';
+  const e = end ? new Date(end).getTime() : Date.now();
+  if (Number.isNaN(e) || e < s) return status === 'active' ? 'Ongoing' : '—';
+  const sec = Math.floor((e - s) / 1000);
+  const h = Math.floor(sec / 3600);
+  const m = Math.floor((sec % 3600) / 60);
+  const r = sec % 60;
+  if (h > 0) return `${h}h ${m}m ${r}s`;
+  if (m > 0) return `${m}m ${r}s`;
+  return `${r}s`;
+};
+
+const statusBadge = (status) => {
+  if (status === 'active') return 'bg-emerald-500/20 text-emerald-400';
+  if (status === 'failed') return 'bg-red-500/20 text-red-400';
+  return 'bg-slate-500/20 text-slate-300';
+};
+
+export default function LoginActivity() {
+  const { user } = useAuth();
+  const isAdmin = String(user?.email || '').toLowerCase() === ADMIN_EMAIL;
+  const [filter, setFilter] = useState('all');
+  const [items, setItems] = useState([]);
+  const [users, setUsers] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+
+  const loadData = async (userFilter = filter) => {
+    try {
+      const userId = userFilter === 'all' ? undefined : userFilter;
+      const data = await api.auth.getActivity(userId);
+      setItems(Array.isArray(data?.items) ? data.items : []);
+      setUsers(Array.isArray(data?.users) ? data.users : []);
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
+    }
+  };
+
+  useEffect(() => {
+    setLoading(true);
+    loadData('all');
+  }, []);
+
+  useEffect(() => {
+    if (!loading) loadData(filter);
+  }, [filter]);
+
+  const stats = useMemo(() => {
+    const activeSessions = items.filter((x) => x.status === 'active').length;
+    const failedAttempts = items.filter((x) => x.status === 'failed').length;
+    return {
+      totalUsers: users.length,
+      activeSessions,
+      failedAttempts,
+      totalSessions: items.length,
+    };
+  }, [items, users]);
+
+  return (
+    <>
+      <Helmet>
+        <title>Login Activity - LogozoPOS</title>
+        <meta name="description" content="Track login sessions, active users, and failed sign-in attempts" />
+      </Helmet>
+
+      <div className="space-y-5">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <h1 className="text-2xl sm:text-3xl font-bold">Login Activity</h1>
+            <p className="text-muted-foreground text-sm">
+              Sessions, active logins, and failed sign-in attempts.
+            </p>
+          </div>
+          <div className="flex items-center gap-2">
+            {isAdmin && (
+              <select
+                className="px-3 py-2 bg-input border border-border rounded-lg text-sm"
+                value={filter}
+                onChange={(e) => setFilter(e.target.value)}
+              >
+                <option value="all">All users</option>
+                {users.map((u) => (
+                  <option key={u.id} value={String(u.id)}>
+                    {u.name || u.email}
+                  </option>
+                ))}
+              </select>
+            )}
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => {
+                setRefreshing(true);
+                loadData(filter);
+              }}
+              disabled={refreshing}
+            >
+              <RefreshCw className={`w-4 h-4 mr-2 ${refreshing ? 'animate-spin' : ''}`} />
+              Refresh
+            </Button>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3">
+          <div className="rounded-lg border border-border bg-card p-4">
+            <div className="text-xs text-muted-foreground">Total Users</div>
+            <div className="mt-1 text-2xl font-bold">{stats.totalUsers}</div>
+            <Users className="w-4 h-4 text-primary mt-2" />
+          </div>
+          <div className="rounded-lg border border-border bg-card p-4">
+            <div className="text-xs text-muted-foreground">Active Sessions</div>
+            <div className="mt-1 text-2xl font-bold">{stats.activeSessions}</div>
+            <ShieldCheck className="w-4 h-4 text-emerald-400 mt-2" />
+          </div>
+          <div className="rounded-lg border border-border bg-card p-4">
+            <div className="text-xs text-muted-foreground">Total Sessions</div>
+            <div className="mt-1 text-2xl font-bold">{stats.totalSessions}</div>
+            <Activity className="w-4 h-4 text-cyan-400 mt-2" />
+          </div>
+          <div className="rounded-lg border border-border bg-card p-4">
+            <div className="text-xs text-muted-foreground">Failed Attempts</div>
+            <div className="mt-1 text-2xl font-bold">{stats.failedAttempts}</div>
+            <Clock3 className="w-4 h-4 text-red-400 mt-2" />
+          </div>
+        </div>
+
+        <div className="rounded-lg border border-border bg-card overflow-hidden">
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead className="bg-secondary/60">
+                <tr>
+                  <th className="px-4 py-3 text-left text-sm font-semibold">User</th>
+                  <th className="px-4 py-3 text-left text-sm font-semibold">Login time</th>
+                  <th className="px-4 py-3 text-left text-sm font-semibold">Logout time</th>
+                  <th className="px-4 py-3 text-left text-sm font-semibold">Duration</th>
+                  <th className="px-4 py-3 text-left text-sm font-semibold">IP address</th>
+                  <th className="px-4 py-3 text-left text-sm font-semibold">Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                {items.map((row) => (
+                  <tr key={row.id} className="border-t border-border hover:bg-secondary/20">
+                    <td className="px-4 py-3 text-sm">
+                      <div className="font-medium">{row.email || 'Unknown'}</div>
+                    </td>
+                    <td className="px-4 py-3 text-sm">{formatDateTime(row.loginAt || row.createdAt)}</td>
+                    <td className="px-4 py-3 text-sm">
+                      {row.status === 'active' ? 'Active session' : formatDateTime(row.logoutAt)}
+                    </td>
+                    <td className="px-4 py-3 text-sm">{formatDuration(row.loginAt || row.createdAt, row.logoutAt, row.status)}</td>
+                    <td className="px-4 py-3 text-sm">{row.ipAddress || '—'}</td>
+                    <td className="px-4 py-3 text-sm">
+                      <span className={`px-2 py-1 rounded-full text-xs ${statusBadge(row.status)}`}>
+                        {row.failureReason === 'invalid_credentials' ? 'Invalid password' : row.status}
+                      </span>
+                    </td>
+                  </tr>
+                ))}
+                {!loading && items.length === 0 && (
+                  <tr>
+                    <td colSpan={6} className="px-4 py-8 text-center text-sm text-muted-foreground">
+                      No login activity yet.
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </>
+  );
+}

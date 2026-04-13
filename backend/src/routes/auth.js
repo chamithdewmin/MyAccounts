@@ -21,9 +21,45 @@ const normalizePhone = (p) => {
 };
 
 const getRequestIp = (req) => {
-  const fwd = req.headers['x-forwarded-for'];
-  if (fwd) return String(fwd).split(',')[0].trim();
-  return req.ip || req.connection?.remoteAddress || '';
+  const xf = req.headers['x-forwarded-for'];
+  if (xf && typeof xf === 'string') {
+    return xf.split(',')[0].trim();
+  }
+  return req.ip || req.socket?.remoteAddress || '';
+};
+
+const logLoginActivity = async ({
+  userId = null,
+  email = '',
+  sessionId = null,
+  loginAt = null,
+  logoutAt = null,
+  ipAddress = '',
+  userAgent = '',
+  status = 'active',
+  failureReason = null,
+}) => {
+  try {
+    await pool.query(
+      `INSERT INTO login_activity (
+        id, user_id, email, session_id, login_at, logout_at, ip_address, user_agent, status, failure_reason, created_at
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, NOW())`,
+      [
+        `LA-${Date.now()}-${Math.random().toString(36).slice(2, 10).toUpperCase()}`,
+        userId,
+        email,
+        sessionId,
+        loginAt,
+        logoutAt,
+        ipAddress,
+        userAgent,
+        status,
+        failureReason,
+      ],
+    );
+  } catch (e) {
+    console.error('[auth activity log]', e.message);
+  }
 };
 
 /** Search settings only (GET /api/settings phone). Returns { userId, email, phone } or null */
@@ -107,28 +143,36 @@ router.post('/login', async (req, res) => {
     );
 
     const user = rows[0];
+    const ipAddress = getRequestIp(req);
+    const userAgent = String(req.headers['user-agent'] || '').slice(0, 1000);
     if (!user) {
-      await pool.query(
-        `INSERT INTO login_activity (user_id, session_id, email, ip_address, user_agent, status, error_reason)
-         VALUES (NULL, NULL, $1, $2, $3, 'failed', 'invalid_credentials')`,
-        [emailTrimmed, getRequestIp(req), String(req.headers['user-agent'] || '').slice(0, 1000)]
-      );
+      await logLoginActivity({
+        email: emailTrimmed,
+        ipAddress,
+        userAgent,
+        status: 'failed',
+        failureReason: 'invalid_credentials',
+      });
       return res.status(401).json({ success: false, error: 'Invalid credentials' });
     }
 
     const valid = await bcrypt.compare(password, user.password_hash);
     if (!valid) {
-      await pool.query(
-        `INSERT INTO login_activity (user_id, session_id, email, ip_address, user_agent, status, error_reason)
-         VALUES ($1, NULL, $2, $3, $4, 'failed', 'invalid_password')`,
-        [user.id, user.email, getRequestIp(req), String(req.headers['user-agent'] || '').slice(0, 1000)]
-      );
+      await logLoginActivity({
+        userId: user.id,
+        email: user.email,
+        ipAddress,
+        userAgent,
+        status: 'failed',
+        failureReason: 'invalid_credentials',
+      });
       return res.status(401).json({ success: false, error: 'Invalid credentials' });
     }
 
     const { rows: vrows } = await pool.query('SELECT token_version FROM users WHERE id = $1', [user.id]);
     const tokenVersion = vrows[0]?.token_version ?? 0;
     const sessionId = randomUUID();
+    const loginAt = new Date().toISOString();
 
     const token = jwt.sign(
       { id: user.id, email: user.email, v: tokenVersion, sid: sessionId },
@@ -136,11 +180,15 @@ router.post('/login', async (req, res) => {
       { expiresIn: '7d' }
     );
 
-    await pool.query(
-      `INSERT INTO login_activity (user_id, session_id, email, ip_address, user_agent, status)
-       VALUES ($1, $2, $3, $4, $5, 'active')`,
-      [user.id, sessionId, user.email, getRequestIp(req), String(req.headers['user-agent'] || '').slice(0, 1000)]
-    );
+    await logLoginActivity({
+      userId: user.id,
+      email: user.email,
+      sessionId,
+      loginAt,
+      ipAddress,
+      userAgent,
+      status: 'active',
+    });
 
     res.json({
       success: true,
@@ -149,26 +197,6 @@ router.post('/login', async (req, res) => {
     });
   } catch (err) {
     console.error('Login error:', err);
-    res.status(500).json({ error: 'Server error' });
-  }
-});
-
-router.post('/logout', authMiddleware, async (req, res) => {
-  try {
-    if (!req.user?.sid) {
-      return res.json({ success: true });
-    }
-    await pool.query(
-      `UPDATE login_activity
-       SET logout_time = NOW(),
-           duration_seconds = GREATEST(0, EXTRACT(EPOCH FROM (NOW() - login_time))::INT),
-           status = CASE WHEN status = 'failed' THEN status ELSE 'completed' END
-       WHERE session_id = $1 AND logout_time IS NULL`,
-      [req.user.sid]
-    );
-    res.json({ success: true });
-  } catch (err) {
-    console.error('[auth logout]', err);
     res.status(500).json({ error: 'Server error' });
   }
 });
@@ -198,6 +226,90 @@ router.get('/me', async (req, res) => {
     res.json({ user: { id: rows[0].id, email: rows[0].email, name: rows[0].name } });
   } catch {
     res.status(401).json({ error: 'Invalid token' });
+  }
+});
+
+router.post('/logout', authMiddleware, async (req, res) => {
+  try {
+    const sid = req.user.sid;
+    if (sid) {
+      await pool.query(
+        `UPDATE login_activity
+         SET logout_at = NOW(), status = 'completed'
+         WHERE session_id = $1 AND user_id = $2 AND status = 'active'`,
+        [sid, req.user.id],
+      );
+    }
+    res.json({ success: true });
+  } catch (err) {
+    console.error('[logout]', err);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+router.get('/activity', authMiddleware, async (req, res) => {
+  try {
+    const isAdmin = String(req.user.email || '').toLowerCase() === 'logozodev@gmail.com';
+    const filterUserIdRaw = req.query.userId;
+    const filterUserId = filterUserIdRaw ? Number(filterUserIdRaw) : null;
+
+    if (filterUserIdRaw && (!Number.isInteger(filterUserId) || filterUserId <= 0)) {
+      return res.status(400).json({ error: 'Invalid userId' });
+    }
+
+    let rows;
+    if (isAdmin) {
+      if (filterUserId) {
+        ({ rows } = await pool.query(
+          `SELECT id, user_id, email, session_id, login_at, logout_at, ip_address, status, failure_reason, created_at
+           FROM login_activity
+           WHERE user_id = $1
+           ORDER BY created_at DESC
+           LIMIT 500`,
+          [filterUserId],
+        ));
+      } else {
+        ({ rows } = await pool.query(
+          `SELECT id, user_id, email, session_id, login_at, logout_at, ip_address, status, failure_reason, created_at
+           FROM login_activity
+           ORDER BY created_at DESC
+           LIMIT 500`,
+        ));
+      }
+    } else {
+      ({ rows } = await pool.query(
+        `SELECT id, user_id, email, session_id, login_at, logout_at, ip_address, status, failure_reason, created_at
+         FROM login_activity
+         WHERE user_id = $1
+         ORDER BY created_at DESC
+         LIMIT 500`,
+        [req.user.id],
+      ));
+    }
+
+    const usersRes = isAdmin
+      ? await pool.query('SELECT id, name, email FROM users ORDER BY name ASC')
+      : await pool.query('SELECT id, name, email FROM users WHERE id = $1', [req.user.id]);
+    const users = usersRes.rows.map((u) => ({ id: u.id, name: u.name, email: u.email }));
+
+    res.json({
+      items: rows.map((r) => ({
+        id: r.id,
+        userId: r.user_id,
+        email: r.email,
+        sessionId: r.session_id,
+        loginAt: r.login_at,
+        logoutAt: r.logout_at,
+        ipAddress: r.ip_address,
+        status: r.status,
+        failureReason: r.failure_reason,
+        createdAt: r.created_at,
+      })),
+      users,
+    });
+  } catch (err) {
+    console.error('[auth activity]', err);
+    res.status(500).json({ error: 'Server error' });
   }
 });
 

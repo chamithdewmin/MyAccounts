@@ -6,9 +6,7 @@ const router = express.Router();
 router.use(authMiddleware);
 
 const OPENAI_API_KEY = (process.env.OPENAI_API_KEY || '').trim();
-const GROQ_API_KEY = (process.env.GROQ_API_KEY || '').trim();
 const AI_MODEL = process.env.AI_MODEL || 'gpt-4o-mini';
-const GROQ_MODEL = process.env.GROQ_MODEL || 'llama-3.1-8b-instant';
 
 /** Privacy: never send to AI. Only aggregated numbers and this app guide are allowed. */
 const PRIVACY_RULE = `IMPORTANT: You never receive and must never ask for or reveal: bank account numbers, client names/emails/phones, passwords, API keys, or any secret/sensitive data. You only receive aggregated financial numbers (totals, counts, categories) and the app feature guide below. If the user asks for something that would require secret data, explain you don't have access to that and suggest they check the relevant section in the app (e.g. Settings for bank, Clients for client list).`;
@@ -496,15 +494,14 @@ async function getFinancialSummary(uid) {
 }
 
 async function callAI(messages) {
-  const useGroq = !!GROQ_API_KEY;
-  const apiKey = useGroq ? GROQ_API_KEY : OPENAI_API_KEY;
-  const baseUrl = useGroq ? 'https://api.groq.com/openai/v1' : 'https://api.openai.com/v1';
-  const model = useGroq ? GROQ_MODEL : AI_MODEL;
+  const apiKey = OPENAI_API_KEY;
+  const baseUrl = 'https://api.openai.com/v1';
+  const model = AI_MODEL;
 
   if (!apiKey) {
     return {
       error:
-        'No AI API key set. Add GROQ_API_KEY (or OPENAI_API_KEY) in backend .env and restart the server. Get a free key at https://console.groq.com',
+        'No AI API key set. Add OPENAI_API_KEY to backend .env and restart the server. Create a key at https://platform.openai.com/api-keys',
     };
   }
 
@@ -534,10 +531,10 @@ async function callAI(messages) {
     const msg = data.error?.message || data.message || data.error || `HTTP ${res.status}`;
     console.error('[AI] API error:', res.status, msg);
     if (res.status === 401) {
-      return { error: 'Invalid API key. Check GROQ_API_KEY in .env and that the key is active at https://console.groq.com' };
+      return { error: 'Invalid API key. Check OPENAI_API_KEY in .env and that the key is active at https://platform.openai.com/api-keys' };
     }
     if (res.status === 404) {
-      return { error: `Model "${model}" not found. Try GROQ_MODEL=llama-3.1-8b-instant in .env` };
+      return { error: `Model "${model}" not found. Set AI_MODEL in .env to a valid OpenAI model (e.g. gpt-4o-mini).` };
     }
     return { error: typeof msg === 'string' ? msg : JSON.stringify(msg) };
   }

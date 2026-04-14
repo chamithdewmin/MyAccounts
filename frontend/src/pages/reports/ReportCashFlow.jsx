@@ -68,13 +68,24 @@ const Stat=({label,value,color,Icon,sub,C})=>{
     <div style={{position:"absolute",bottom:0,left:0,right:0,height:3,background:`linear-gradient(90deg,${color||c.blue}55,transparent)`}}/>
   </div>
 );};
-const Card=({title,subtitle,children,right,C})=>{
+const Card=({title,subtitle,children,right,C,isMobile})=>{
   const c = C || getColors();
+  const mobile = Boolean(isMobile);
   return (
-  <div style={{background:c.card,borderRadius:16,border:`1px solid ${c.border}`,padding:"22px 24px",boxShadow:"0 1px 3px rgba(0,0,0,0.1)"}}>
-    <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:18}}>
-      <div><h3 style={{color:c.text,fontSize:15,fontWeight:800,margin:0}}>{title}</h3>{subtitle&&<p style={{color:c.muted,fontSize:12,margin:"4px 0 0"}}>{subtitle}</p>}</div>
-      {right}
+  <div style={{background:c.card,borderRadius:16,border:`1px solid ${c.border}`,padding: mobile ? "16px 14px" : "22px 24px",boxShadow:"0 1px 3px rgba(0,0,0,0.1)",minWidth:0}}>
+    <div style={{
+      display:"flex",
+      flexDirection: mobile ? "column" : "row",
+      justifyContent:"space-between",
+      alignItems: mobile ? "stretch" : "flex-start",
+      gap: mobile ? 12 : 0,
+      marginBottom:18,
+    }}>
+      <div style={{ minWidth: 0 }}>
+        <h3 style={{color:c.text,fontSize: mobile ? 14 : 15,fontWeight:800,margin:0,lineHeight:1.3}}>{title}</h3>
+        {subtitle&&<p style={{color:c.muted,fontSize:12,margin:"6px 0 0",lineHeight:1.45}}>{subtitle}</p>}
+      </div>
+      {right ? <div style={{ width: mobile ? "100%" : "auto", minWidth: 0 }}>{right}</div> : null}
     </div>{children}
   </div>
 );};
@@ -259,7 +270,7 @@ export default function CashFlowReport(){
     <div className="-mx-3 sm:-mx-4 lg:-mx-5" style={{minHeight:"100vh",fontFamily:"'Inter', -apple-system, BlinkMacSystemFont, sans-serif",color:C.text}}>
       <style>{`*{box-sizing:border-box;}body{margin:0;}::-webkit-scrollbar{width:4px;}::-webkit-scrollbar-thumb{background:${C.border2};border-radius:99px;}@keyframes fi{from{opacity:0;transform:translateY(10px);}to{opacity:1;transform:translateY(0);}}@keyframes so{from{opacity:1;transform:translateX(0);}to{opacity:0;transform:translateX(40px);}}.row:hover{background:${C.card}!important;}`}</style>
 
-      <div style={{padding:"24px 18px",display:"flex",flexDirection:"column",gap:18,animation:"fi .3s ease"}}>
+      <div style={{padding: isMobileLayout ? "16px 12px" : "24px 18px",display:"flex",flexDirection:"column",gap: isMobileLayout ? 14 : 18,animation:"fi .3s ease"}}>
 
         {/* FILTER */}
         <div style={{background:C.card,borderRadius:12,border:`1px solid ${C.border}`,padding:"16px 20px"}}>
@@ -283,7 +294,7 @@ export default function CashFlowReport(){
 
         {/* AREA + LINE */}
         <div style={{display:"grid",gridTemplateColumns: isMobileLayout ? "1fr" : "3fr 2fr",gap:16}}>
-          <Card title="Inflow vs Outflow" subtitle="Daily cash movement — LKR">
+          <Card title="Inflow vs Outflow" subtitle="Daily cash movement — LKR" C={C} isMobile={isMobileLayout}>
             <ResponsiveContainer width="100%" height={230}>
               <AreaChart data={cfData}>
                 <defs>
@@ -299,7 +310,7 @@ export default function CashFlowReport(){
               </AreaChart>
             </ResponsiveContainer>
           </Card>
-          <Card title="Running Balance" subtitle="Cumulative cash position">
+          <Card title="Running Balance" subtitle="Cumulative cash position" C={C} isMobile={isMobileLayout}>
             <ResponsiveContainer width="100%" height={230}>
               <LineChart data={cfData}>
                 <CartesianGrid strokeDasharray="3 3" stroke={C.border} vertical={false}/>
@@ -313,7 +324,7 @@ export default function CashFlowReport(){
         </div>
 
         {/* BAR CHART */}
-        <Card title="Daily Cash Movement" subtitle="Inflow vs Outflow per day">
+        <Card title="Daily Cash Movement" subtitle="Inflow vs Outflow per day" C={C} isMobile={isMobileLayout}>
           <ResponsiveContainer width="100%" height={200}>
             <BarChart data={cfData} barCategoryGap={28} barGap={4}>
               <CartesianGrid strokeDasharray="3 3" stroke={C.border} vertical={false}/>
@@ -328,7 +339,7 @@ export default function CashFlowReport(){
         </Card>
 
         {/* TRANSACTION TABLE */}
-        <Card title="Transactions" subtitle={`${filtered.length} records`}
+        <Card title="Transactions" subtitle={`${filtered.length} records`} C={C} isMobile={isMobileLayout}
           right={<div style={{display:"flex",gap:8,flexWrap:"wrap",alignItems:"center",justifyContent:"flex-end"}}>
             <div style={{position:"relative"}}>
               <div style={{position:"absolute",left:10,top:"50%",transform:"translateY(-50%)",opacity:0.5}}><I.Search/></div>
@@ -339,7 +350,7 @@ export default function CashFlowReport(){
           </div>}
         >
           <div className="report-table-scroll">
-          <div style={{ minWidth: 640 }}>
+          <div style={{ minWidth: isMobileLayout ? 720 : 640 }}>
           {/* Header */}
           <div style={{display:"grid",gridTemplateColumns:"90px 1fr 1fr 120px 110px 60px",padding:"10px 14px",borderBottom:`1px solid ${C.border2}`,background:C.bg2,borderRadius:"8px 8px 0 0",marginTop:-4}}>
             {["Date","Source","Category","Amount","Status",""].map((h,i)=><p key={i} style={{color:C.muted,fontSize:10,fontWeight:700,letterSpacing:"0.08em",textTransform:"uppercase",margin:0,textAlign:i===3?"right":"left"}}>{h}</p>)}

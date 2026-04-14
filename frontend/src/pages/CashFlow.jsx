@@ -579,14 +579,14 @@ const CashFlow = () => {
       </Helmet>
 
       <div className="space-y-6">
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-3xl font-bold">Cash Flow</h1>
-            <p className="text-muted-foreground">
+        <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+          <div className="min-w-0">
+            <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">Cash Flow</h1>
+            <p className="text-muted-foreground text-sm sm:text-base mt-1 max-w-2xl leading-relaxed">
               When money comes in, when it goes out, and upcoming payments.
             </p>
           </div>
-          <div className="flex gap-3">
+          <div className="flex flex-wrap gap-2 sm:gap-3 w-full lg:w-auto lg:justify-end lg:shrink-0">
             <Button
               variant="outline"
               disabled={refreshLoading}
@@ -611,7 +611,7 @@ const CashFlow = () => {
               <Download className="w-4 h-4 mr-2" />
               Export CSV
             </Button>
-            <Button onClick={() => openAdd('inflow')} className="bg-green-600 hover:bg-green-700">
+            <Button className="bg-green-600 hover:bg-green-700" onClick={() => openAdd('inflow')}>
               <ArrowUpCircle className="w-4 h-4 mr-2" />
               Add Inflow
             </Button>
@@ -735,7 +735,7 @@ const CashFlow = () => {
         )}
 
         {/* Search */}
-        <div className="max-w-xl">
+        <div className="w-full max-w-xl">
           <div className="relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
             <Input
@@ -748,9 +748,9 @@ const CashFlow = () => {
         </div>
 
         {/* Filters */}
-        <div className="flex flex-wrap gap-3 items-center">
+        <div className="grid grid-cols-2 md:flex md:flex-wrap gap-2 md:gap-3 items-stretch md:items-center">
           <select
-            className="px-3 py-2 bg-input border border-border rounded-lg text-sm"
+            className="px-3 py-2 bg-input border border-border rounded-lg text-sm w-full min-w-0 md:w-auto md:min-w-[140px]"
             value={filters.type}
             onChange={(e) => setFilters((p) => ({ ...p, type: e.target.value }))}
           >
@@ -760,7 +760,7 @@ const CashFlow = () => {
             <option value="upcoming">Upcoming (next month)</option>
           </select>
           <select
-            className="px-3 py-2 bg-input border border-border rounded-lg text-sm"
+            className="px-3 py-2 bg-input border border-border rounded-lg text-sm w-full min-w-0 md:w-auto md:min-w-[140px]"
             value={filters.category}
             onChange={(e) => setFilters((p) => ({ ...p, category: e.target.value }))}
           >
@@ -772,7 +772,7 @@ const CashFlow = () => {
             ))}
           </select>
           <select
-            className="px-3 py-2 bg-input border border-border rounded-lg text-sm"
+            className="px-3 py-2 bg-input border border-border rounded-lg text-sm w-full min-w-0 md:w-auto md:min-w-[140px]"
             value={filters.status}
             onChange={(e) => setFilters((p) => ({ ...p, status: e.target.value }))}
           >
@@ -784,20 +784,20 @@ const CashFlow = () => {
           </select>
           <Input
             type="date"
-            className="w-auto px-3 py-2"
+            className="w-full min-w-0 px-3 py-2 md:w-auto"
             value={filters.dateFrom}
             onChange={(e) => setFilters((p) => ({ ...p, dateFrom: e.target.value }))}
             placeholder="From"
           />
           <Input
             type="date"
-            className="w-auto px-3 py-2"
+            className="w-full min-w-0 px-3 py-2 md:w-auto"
             value={filters.dateTo}
             onChange={(e) => setFilters((p) => ({ ...p, dateTo: e.target.value }))}
             placeholder="To"
           />
           <select
-            className="px-3 py-2 bg-input border border-border rounded-lg text-sm"
+            className="px-3 py-2 bg-input border border-border rounded-lg text-sm w-full min-w-0 col-span-2 md:col-span-1 md:w-auto md:min-w-[180px]"
             value={filters.sort}
             onChange={(e) => setFilters((p) => ({ ...p, sort: e.target.value }))}
           >
@@ -811,8 +811,8 @@ const CashFlow = () => {
 
         {/* Table */}
         <div className="bg-card rounded-lg border border-border overflow-hidden">
-          <div className="overflow-x-auto">
-            <table className="w-full">
+          <div className="overflow-x-auto overscroll-x-contain touch-pan-x -mx-1 px-1 sm:mx-0 sm:px-0">
+            <table className="w-full min-w-[920px] text-sm">
               <thead className="bg-secondary">
                 <tr>
                   <th className="px-4 py-3 text-left text-sm font-semibold">Date</th>

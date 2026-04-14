@@ -232,14 +232,14 @@ const Inventory = () => {
       </Helmet>
 
       <div className="space-y-6">
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-3xl font-bold">Expenses</h1>
-            <p className="text-muted-foreground">
+        <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+          <div className="min-w-0">
+            <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">Expenses</h1>
+            <p className="text-muted-foreground text-sm sm:text-base mt-1 max-w-2xl leading-relaxed">
               Track and manage all business expenses and costs.
             </p>
           </div>
-          <div className="flex gap-3">
+          <div className="flex flex-wrap gap-2 sm:gap-3 w-full lg:w-auto lg:justify-end lg:shrink-0">
             <Button
               variant="outline"
               disabled={refreshLoading}
@@ -386,8 +386,8 @@ const Inventory = () => {
           </div>
 
           <div className="bg-card rounded-lg border border-border overflow-hidden">
-            <div className="overflow-x-auto">
-              <table className="w-full">
+            <div className="overflow-x-auto overscroll-x-contain touch-pan-x">
+              <table className="w-full min-w-[880px] text-sm">
                 <thead className="bg-secondary">
                   <tr>
                     <th className="px-4 py-3 text-left text-sm font-semibold">Date</th>

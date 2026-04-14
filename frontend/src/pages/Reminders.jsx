@@ -131,24 +131,24 @@ const Reminders = () => {
       </Helmet>
 
       <div className="space-y-6">
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-3xl font-bold">Reminders</h1>
-            <p className="text-muted-foreground">
+        <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+          <div className="min-w-0">
+            <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">Reminders</h1>
+            <p className="text-muted-foreground text-sm sm:text-base mt-1 max-w-2xl leading-relaxed">
               Create reminders and send them via SMS when ready.
             </p>
           </div>
-          <div className="flex gap-2">
+          <div className="flex flex-col sm:flex-row flex-wrap gap-2 sm:items-center w-full lg:w-auto lg:justify-end lg:shrink-0">
             {!smsConfigured && (
-              <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-amber-500/10 border border-amber-500/30 text-sm">
-                <AlertCircle className="w-4 h-4 text-amber-500" />
+              <div className="flex flex-wrap items-center gap-2 px-3 py-2 rounded-lg bg-amber-500/10 border border-amber-500/30 text-sm w-full sm:w-auto">
+                <AlertCircle className="w-4 h-4 text-amber-500 shrink-0" />
                 <span className="text-muted-foreground">SMS not set up</span>
                 <Button asChild variant="outline" size="sm">
                   <Link to="/sms">Setup</Link>
                 </Button>
               </div>
             )}
-            <Button onClick={() => setAddOpen(true)}>
+            <Button onClick={() => setAddOpen(true)} className="w-full sm:w-auto">
               <Plus className="w-4 h-4 mr-2" />
               Add Reminder
             </Button>

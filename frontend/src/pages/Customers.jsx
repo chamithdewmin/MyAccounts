@@ -148,12 +148,12 @@ const Customers = () => {
       </Helmet>
 
       <div className="space-y-6">
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-3xl font-bold text-foreground">Clients</h1>
-            <p className="text-muted-foreground">Store client details, projects, and balances.</p>
+        <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+          <div className="min-w-0">
+            <h1 className="text-2xl sm:text-3xl font-bold text-foreground tracking-tight">Clients</h1>
+            <p className="text-muted-foreground text-sm sm:text-base mt-1 max-w-2xl leading-relaxed">Store client details, projects, and balances.</p>
           </div>
-          <div className="flex gap-3">
+          <div className="flex flex-wrap gap-2 sm:gap-3 w-full lg:w-auto lg:justify-end lg:shrink-0">
             <Button
               variant="outline"
               disabled={refreshLoading}
@@ -210,8 +210,8 @@ const Customers = () => {
           </div>
 
           {/* Table */}
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
+          <div className="overflow-x-auto overscroll-x-contain touch-pan-x">
+            <table className="w-full min-w-[720px] text-sm">
               <thead>
                 <tr className="border-b border-border text-muted-foreground text-xs uppercase tracking-wide">
                   <th className="px-4 py-3 text-left font-medium">Name</th>

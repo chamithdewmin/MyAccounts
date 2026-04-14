@@ -4,6 +4,7 @@ import { useFinance } from "@/contexts/FinanceContext";
 import { getPrintHtml } from "@/utils/pdfPrint";
 import ReportPreviewModal from "@/components/ReportPreviewModal";
 import MonthYearFilter, { filterDataByMonth, getMonthName } from "@/components/MonthYearFilter";
+import { useIsMobileLayout } from "@/hooks/useIsMobileLayout";
 
 // ── THEME-AWARE COLORS ────────────────────────────────────────────────────────
 const getColors = () => {
@@ -83,6 +84,7 @@ export default function TaxReports(){
   const [activeQ,setActiveQ]=useState(null);
   const [reportPreview, setReportPreview] = useState({ open: false, html: "", filename: "" });
   const [colors, setColors] = useState(getColors);
+  const isMobileLayout = useIsMobileLayout();
 
   useEffect(() => {
     const updateColors = () => setColors(getColors());
@@ -233,7 +235,7 @@ export default function TaxReports(){
         </div>
 
         {/* STATS - Monthly */}
-        <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:14}}>
+        <div style={{display:"grid",gridTemplateColumns: isMobileLayout ? "repeat(2, minmax(0,1fr))" : "repeat(4,1fr)",gap:14}}>
           <Stat label="Monthly Income" value={`LKR ${monthlyIncome.toLocaleString()}`} Icon={I.FileText}      color={C.text2} sub={`${getMonthName(selectedMonth)} ${selectedYear}`}/>
           <Stat label="Monthly Tax"     value={`LKR ${monthlyTax.toLocaleString()}`}   Icon={I.Receipt}       color={C.red}   sub={`${settings.taxRate || 0}% rate`}/>
           <Stat label="Monthly Deductions"   value={`LKR ${monthlyExpense.toLocaleString()}`}   Icon={I.Scissors}      color={C.green} sub="Tax savings" subColor={C.green}/>
@@ -241,7 +243,7 @@ export default function TaxReports(){
         </div>
 
         {/* QUARTERLY BAR + DONUT */}
-        <div style={{display:"grid",gridTemplateColumns:"2.2fr 1fr",gap:16}}>
+        <div style={{display:"grid",gridTemplateColumns: isMobileLayout ? "1fr" : "2.2fr 1fr",gap:16}}>
           <Card title="Quarterly Tax Breakdown" subtitle="Gross income, taxable income & tax owed">
             <ResponsiveContainer width="100%" height={260}>
               <BarChart data={quarterly} barCategoryGap={30} barGap={4}>
@@ -273,6 +275,7 @@ export default function TaxReports(){
 
         {/* CATEGORY TABLE */}
         <Card title="Income Category Analysis" subtitle="Tax liability per income source">
+          <div className="report-table-scroll">
           <table style={{width:"100%",borderCollapse:"collapse"}}>
             <thead><tr style={{borderBottom:`1px solid ${C.border2}`}}>
               {["Category","Amount","Taxable","Tax Rate","Tax Liability","Status"].map(h=><th key={h} style={{color:C.muted,fontSize:11,fontWeight:700,letterSpacing:"0.07em",textTransform:"uppercase",padding:"10px 14px",textAlign:"left"}}>{h}</th>)}
@@ -292,10 +295,12 @@ export default function TaxReports(){
               </tr>)}
             </tbody>
           </table>
+          </div>
         </Card>
 
         {/* QUARTERLY SUMMARY TABLE */}
         <Card title="Quarterly Tax Summary" subtitle="Filing status and payment tracking — click row to highlight">
+          <div className="report-table-scroll">
           <table style={{width:"100%",borderCollapse:"collapse"}}>
             <thead><tr style={{borderBottom:`1px solid ${C.border2}`}}>
               {["Quarter","Gross Income","Deductions","Taxable Income","Tax Rate","Tax Owed","Filing","Payment"].map(h=><th key={h} style={{color:C.muted,fontSize:11,fontWeight:700,letterSpacing:"0.07em",textTransform:"uppercase",padding:"10px 12px",textAlign:"left"}}>{h}</th>)}
@@ -325,6 +330,7 @@ export default function TaxReports(){
               <td colSpan={2}/>
             </tr></tfoot>
           </table>
+          </div>
         </Card>
       </div>
       <ReportPreviewModal open={reportPreview.open} onOpenChange={(open)=>setReportPreview(p=>({...p,open}))} html={reportPreview.html} filename={reportPreview.filename} reportTitle="Tax Report" />

@@ -4,6 +4,7 @@ import { useFinance } from "@/contexts/FinanceContext";
 import { getPrintHtml } from "@/utils/pdfPrint";
 import ReportPreviewModal from "@/components/ReportPreviewModal";
 import MonthYearFilter, { filterDataByMonth, getMonthName } from "@/components/MonthYearFilter";
+import { useIsMobileLayout } from "@/hooks/useIsMobileLayout";
 
 // ── THEME-AWARE COLORS ────────────────────────────────────────────────────────
 const getColors = () => {
@@ -88,6 +89,7 @@ export default function CashFlowReport(){
   const [delId,setDelId]=useState(null);
   const [reportPreview, setReportPreview] = useState({ open: false, html: "", filename: "" });
   const [colors, setColors] = useState(getColors);
+  const isMobileLayout = useIsMobileLayout();
 
   useEffect(() => {
     const updateColors = () => setColors(getColors());
@@ -272,7 +274,7 @@ export default function CashFlowReport(){
         </div>
 
         {/* STATS */}
-        <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:14}}>
+        <div style={{display:"grid",gridTemplateColumns: isMobileLayout ? "repeat(2, minmax(0,1fr))" : "repeat(4,1fr)",gap:14}}>
           <Stat label="Total Money In"  value={`LKR ${totalIn.toLocaleString()}`}  color={C.green} Icon={I.ArrowUp}   sub={`${getMonthName(selectedMonth)} ${selectedYear}`}/>
           <Stat label="Total Money Out" value={`LKR ${totalOut.toLocaleString()}`} color={C.red}   Icon={I.ArrowDown} sub={`${tx.filter(t=>t.type==="out").length} transactions`}/>
           <Stat label="Net Cash Flow"   value={`LKR ${net.toLocaleString()}`}      color={net>=0?C.green:C.red} Icon={I.BarChart}/>
@@ -280,7 +282,7 @@ export default function CashFlowReport(){
         </div>
 
         {/* AREA + LINE */}
-        <div style={{display:"grid",gridTemplateColumns:"3fr 2fr",gap:16}}>
+        <div style={{display:"grid",gridTemplateColumns: isMobileLayout ? "1fr" : "3fr 2fr",gap:16}}>
           <Card title="Inflow vs Outflow" subtitle="Daily cash movement — LKR">
             <ResponsiveContainer width="100%" height={230}>
               <AreaChart data={cfData}>
@@ -327,15 +329,17 @@ export default function CashFlowReport(){
 
         {/* TRANSACTION TABLE */}
         <Card title="Transactions" subtitle={`${filtered.length} records`}
-          right={<div style={{display:"flex",gap:8}}>
+          right={<div style={{display:"flex",gap:8,flexWrap:"wrap",alignItems:"center",justifyContent:"flex-end"}}>
             <div style={{position:"relative"}}>
               <div style={{position:"absolute",left:10,top:"50%",transform:"translateY(-50%)",opacity:0.5}}><I.Search/></div>
-              <input value={search} onChange={e=>setSearch(e.target.value)} placeholder="Search..." style={{background:C.bg2,border:`1px solid ${C.border2}`,borderRadius:9,padding:"7px 12px 7px 34px",color:C.text,fontSize:13,outline:"none",width:180}}/>
+              <input value={search} onChange={e=>setSearch(e.target.value)} placeholder="Search..." style={{background:C.bg2,border:`1px solid ${C.border2}`,borderRadius:9,padding:"7px 12px 7px 34px",color:C.text,fontSize:13,outline:"none",width: isMobileLayout ? 140 : 180}}/>
             </div>
             <select value={fType}   onChange={e=>setFType(e.target.value)}   style={selSty}><option value="all">All</option><option value="in">Inflow</option><option value="out">Outflow</option></select>
             <select value={fStatus} onChange={e=>setFStatus(e.target.value)} style={selSty}><option value="all">All Status</option><option value="Received">Received</option><option value="Paid">Paid</option><option value="Overdue">Overdue</option></select>
           </div>}
         >
+          <div className="report-table-scroll">
+          <div style={{ minWidth: 640 }}>
           {/* Header */}
           <div style={{display:"grid",gridTemplateColumns:"90px 1fr 1fr 120px 110px 60px",padding:"10px 14px",borderBottom:`1px solid ${C.border2}`,background:C.bg2,borderRadius:"8px 8px 0 0",marginTop:-4}}>
             {["Date","Source","Category","Amount","Status",""].map((h,i)=><p key={i} style={{color:C.muted,fontSize:10,fontWeight:700,letterSpacing:"0.08em",textTransform:"uppercase",margin:0,textAlign:i===3?"right":"left"}}>{h}</p>)}
@@ -359,6 +363,8 @@ export default function CashFlowReport(){
           <div style={{display:"grid",gridTemplateColumns:"90px 1fr 1fr 120px 110px 60px",padding:"13px 14px",background:C.bg2,borderTop:`1px solid ${C.border2}`,borderRadius:"0 0 8px 8px",marginBottom:-4}}>
             <p style={{color:C.muted,fontSize:11,fontWeight:700,margin:0,gridColumn:"1/4"}}>SUMMARY ({filtered.length} rows)</p>
             <p style={{color:C.green,fontSize:13,fontWeight:800,margin:0,textAlign:"right"}}>+LKR {filtered.filter(t=>t.amount>0).reduce((s,t)=>s+t.amount,0).toLocaleString()}</p>
+          </div>
+          </div>
           </div>
         </Card>
       </div>

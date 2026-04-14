@@ -155,6 +155,20 @@
   main .overflow-x-auto {
     -webkit-overflow-scrolling: touch;
     overscroll-behavior-x: contain;
+    max-width: 100%;
+  }
+  main .overflow-x-auto > table {
+    min-width: 640px;
+  }
+  .report-table-scroll {
+    width: 100%;
+    max-width: 100%;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior-x: contain;
+  }
+  .report-table-scroll > table {
+    min-width: 640px;
   }
 }
 

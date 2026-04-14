@@ -5,6 +5,7 @@ import {
   Tooltip, ResponsiveContainer, Legend
 } from "recharts";
 import { useFinance } from "@/contexts/FinanceContext";
+import { useIsMobileLayout } from "@/hooks/useIsMobileLayout";
 import { getPrintHtml } from "@/utils/pdfPrint";
 import ReportPreviewModal from "@/components/ReportPreviewModal";
 
@@ -164,6 +165,7 @@ export default function OverviewReports() {
   const [activeInsight, setActiveInsight] = useState(null);
   const [reportPreview, setReportPreview] = useState({ open: false, html: "", filename: "" });
   const [colors, setColors] = useState(getColors);
+  const isMobileLayout = useIsMobileLayout();
 
   useEffect(() => {
     const updateColors = () => setColors(getColors());
@@ -389,17 +391,17 @@ export default function OverviewReports() {
       <div style={{ padding:"24px 18px", display:"flex", flexDirection:"column", gap:20, animation:"fi .4s ease" }}>
 
         {/* PAGE HEADER */}
-        <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-start" }}>
+        <div style={{ display:"flex", flexDirection: isMobileLayout ? "column" : "row", justifyContent:"space-between", alignItems: isMobileLayout ? "stretch" : "flex-start", gap: isMobileLayout ? 16 : 0 }}>
           <div>
             <p style={{ color:C.muted, fontSize:11, fontWeight:700, letterSpacing:"0.1em", textTransform:"uppercase", margin:"0 0 6px" }}>
               {new Date().toLocaleDateString('en-US', { month: 'short', year: 'numeric' })} · Fiscal Year {new Date().getFullYear()}
             </p>
-            <h1 style={{ color:C.text, fontSize:28, fontWeight:900, margin:0, letterSpacing:"-0.03em" }}>Business Overview</h1>
+            <h1 style={{ color:C.text, fontSize: isMobileLayout ? 22 : 28, fontWeight:900, margin:0, letterSpacing:"-0.03em" }}>Business Overview</h1>
             <p style={{ color:C.muted, fontSize:14, margin:"6px 0 0" }}>Unified snapshot across P&L, Cash Flow, Balance Sheet &amp; Tax reports.</p>
           </div>
-          <div style={{ display:"flex", gap:10, alignItems:"center", justifyContent:"flex-end" }}>
+          <div style={{ display:"flex", gap:10, alignItems:"center", justifyContent:"flex-end", flexWrap:"wrap" }}>
             {/* Action buttons */}
-            <div style={{ display:"flex", gap:10, alignItems:"center" }}>
+            <div style={{ display:"flex", gap:10, alignItems:"center", flexWrap:"wrap", justifyContent: isMobileLayout ? "flex-start" : "flex-end" }}>
               <button
                 onClick={() => window.location.reload()}
                 style={{
@@ -465,7 +467,7 @@ export default function OverviewReports() {
         </div>
 
         {/* TOP KPI ROW */}
-        <div style={{ display:"grid", gridTemplateColumns:"repeat(5,1fr)", gap:14 }}>
+        <div style={{ display:"grid", gridTemplateColumns: isMobileLayout ? "repeat(2, minmax(0,1fr))" : "repeat(5,1fr)", gap:14 }}>
           <KpiCard label="Total Revenue (7M)"  value={`LKR ${totalIncome.toLocaleString()}`}   color={C.green}  Icon={I.DollarSign}   sub="7-month total"         delay={0}   />
           <KpiCard label="Total Expenses (7M)" value={`LKR ${totalExpenses.toLocaleString()}`} color={C.red}    Icon={I.TrendingDown} sub="7-month total"         delay={0.05}/>
           <KpiCard label="Net Profit"          value={`LKR ${netProfit.toLocaleString()}`}     color={netProfit>=0?C.green:C.red} Icon={I.BarChart2} sub={`${profitMargin}% margin`} delay={0.1}/>
@@ -474,7 +476,7 @@ export default function OverviewReports() {
         </div>
 
         {/* MAIN 2-COLUMN LAYOUT */}
-        <div style={{ display:"grid", gridTemplateColumns:"2fr 1fr", gap:18 }}>
+        <div style={{ display:"grid", gridTemplateColumns: isMobileLayout ? "1fr" : "2fr 1fr", gap:18 }}>
 
           {/* LEFT */}
           <div style={{ display:"flex", flexDirection:"column", gap:16 }}>
@@ -501,7 +503,7 @@ export default function OverviewReports() {
             </Card>
 
             {/* MINI CHARTS ROW */}
-            <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:14 }}>
+            <div style={{ display:"grid", gridTemplateColumns: isMobileLayout ? "1fr" : "1fr 1fr", gap:14 }}>
               <Card title="Assets vs Liabilities" sub="From Balance Sheet">
                 <ResponsiveContainer width="100%" height={160}>
                   <BarChart data={bsMonthly.slice(-4)} barCategoryGap={20} barGap={3}>
@@ -597,7 +599,7 @@ export default function OverviewReports() {
             </Card>
 
             {/* BEST / WORST MONTH */}
-            <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:12 }}>
+            <div style={{ display:"grid", gridTemplateColumns: isMobileLayout ? "1fr" : "1fr 1fr", gap:12 }}>
               <div style={{ background:"rgba(34,197,94,0.06)", border:"1px solid rgba(34,197,94,0.2)", borderRadius:14, padding:16 }}>
                 <div style={{ display:"flex", alignItems:"center", gap:8, marginBottom:8 }}>
                   <div style={{ width:28, height:28, borderRadius:8, background:"rgba(34,197,94,0.15)", display:"flex", alignItems:"center", justifyContent:"center" }}><I.TrendingUp /></div>
@@ -637,7 +639,7 @@ export default function OverviewReports() {
               <p style={{ color:C.muted, fontSize:13, margin:0 }}>Auto-generated from all 4 reports — click to highlight</p>
             </div>
           </div>
-          <div style={{ display:"grid", gridTemplateColumns:"repeat(3,1fr)", gap:14 }}>
+          <div style={{ display:"grid", gridTemplateColumns: isMobileLayout ? "1fr" : "repeat(3,1fr)", gap:14 }}>
             {insights.map((ins, i) => (
               <div key={i} className="ins"
                 onClick={() => setActiveInsight(activeInsight===i ? null : i)}
@@ -656,7 +658,7 @@ export default function OverviewReports() {
         </div>
 
         {/* BALANCE SHEET EQUATION BANNER */}
-        <div style={{ background:"rgba(34,197,94,0.05)", border:"1px solid rgba(34,197,94,0.15)", borderRadius:16, padding:"18px 24px", display:"flex", alignItems:"center", justifyContent:"space-between" }}>
+        <div style={{ background:"rgba(34,197,94,0.05)", border:"1px solid rgba(34,197,94,0.15)", borderRadius:16, padding:"18px 24px", display:"flex", flexDirection: isMobileLayout ? "column" : "row", alignItems: isMobileLayout ? "stretch" : "center", justifyContent:"space-between", gap: isMobileLayout ? 16 : 0 }}>
           <div style={{ display:"flex", alignItems:"center", gap:14 }}>
             <div style={{ width:44, height:44, borderRadius:12, background:"rgba(34,197,94,0.15)", display:"flex", alignItems:"center", justifyContent:"center" }}><I.CheckCircle /></div>
             <div>
@@ -664,7 +666,7 @@ export default function OverviewReports() {
               <p style={{ color:C.muted, fontSize:12, margin:"3px 0 0" }}>Assets = Liabilities + Equity · Checked against Balance Sheet Report</p>
             </div>
           </div>
-          <div style={{ display:"flex", gap:20, alignItems:"center" }}>
+          <div style={{ display:"flex", gap:20, alignItems:"center", flexWrap:"wrap", justifyContent: isMobileLayout ? "center" : "flex-end" }}>
             {[{ l:"Assets", v:`LKR ${totalAssets.toLocaleString()}`, c:C.green },{ l:"Liabilities", v:`LKR ${totalLiab.toLocaleString()}`, c:C.red },{ l:"Equity", v:`LKR ${equity.toLocaleString()}`, c:C.blue }].map((item, i, arr) => (
               <div key={i} style={{ display:"flex", alignItems:"center", gap:16 }}>
                 <div style={{ textAlign:"center" }}>

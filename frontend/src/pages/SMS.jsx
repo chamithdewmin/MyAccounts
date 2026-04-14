@@ -379,8 +379,8 @@ const SMS = () => {
               <p className="text-sm text-muted-foreground mb-4">
                 {clientsWithPhone.length} customer(s) with phone numbers. Select recipients for instant send.
               </p>
-              <div className="max-h-64 overflow-y-auto border border-border rounded-lg">
-                <table className="w-full">
+              <div className="max-h-64 overflow-y-auto overflow-x-auto border border-border rounded-lg">
+                <table className="w-full min-w-[280px]">
                   <thead className="bg-secondary sticky top-0">
                     <tr>
                       <th className="px-4 py-2 text-left">

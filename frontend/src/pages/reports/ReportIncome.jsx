@@ -142,12 +142,12 @@ const ReportIncome = () => {
         </div>
         
         {/* Summary */}
-        <div style={{ background: "#0a0a0a", borderRadius: 12, border: "1px solid #171717", padding: "20px", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between" style={{ background: "#0a0a0a", borderRadius: 12, border: "1px solid #171717", padding: "20px" }}>
           <div>
             <p style={{ color: "#8b9ab0", fontSize: 12, fontWeight: 600, textTransform: "uppercase", margin: 0 }}>Total Income</p>
             <p style={{ color: "#22c55e", fontSize: 28, fontWeight: 900, margin: "8px 0 0", fontFamily: "monospace" }}>{settings.currency} {totalIncome.toLocaleString()}</p>
           </div>
-          <div style={{ textAlign: "right" }}>
+          <div className="text-left sm:text-right">
             <p style={{ color: "#8b9ab0", fontSize: 12, margin: 0 }}>{filteredIncomes.length} transactions</p>
             <p style={{ color: "#0e5cff", fontSize: 14, fontWeight: 600, margin: "4px 0 0" }}>{getMonthName(selectedMonth)} {selectedYear}</p>
           </div>

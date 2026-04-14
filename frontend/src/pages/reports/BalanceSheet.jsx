@@ -4,6 +4,7 @@ import { useFinance } from "@/contexts/FinanceContext";
 import { getPrintHtml } from "@/utils/pdfPrint";
 import ReportPreviewModal from "@/components/ReportPreviewModal";
 import MonthYearFilter, { getMonthName } from "@/components/MonthYearFilter";
+import { useIsMobileLayout } from "@/hooks/useIsMobileLayout";
 
 // ── THEME-AWARE COLORS ────────────────────────────────────────────────────────
 const getColors = () => {
@@ -94,6 +95,7 @@ export default function BalanceSheet(){
   const [view,setView]=useState("overview");
   const [reportPreview, setReportPreview] = useState({ open: false, html: "", filename: "" });
   const [colors, setColors] = useState(getColors);
+  const isMobileLayout = useIsMobileLayout();
 
   useEffect(() => {
     const updateColors = () => setColors(getColors());
@@ -226,7 +228,7 @@ export default function BalanceSheet(){
         </div>
 
         {/* STATS */}
-        <div style={{display:"grid",gridTemplateColumns:"repeat(5,1fr)",gap:14}}>
+        <div style={{display:"grid",gridTemplateColumns: isMobileLayout ? "repeat(2, minmax(0,1fr))" : "repeat(5,1fr)",gap:14}}>
           <Stat label="Total Assets"      value={`LKR ${totalAssets.toLocaleString()}`} color={C.green}  Icon={I.Building}/>
           <Stat label="Total Liabilities" value={`LKR ${totalLiab.toLocaleString()}`}   color={C.red}    Icon={I.Layers}/>
           <Stat label="Owner's Equity"    value={`LKR ${equity.toLocaleString()}`}       color={C.blue}   Icon={I.Scale}/>
@@ -251,7 +253,7 @@ export default function BalanceSheet(){
         </Card>
 
         {/* DONUTS ROW */}
-        <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:16}}>
+        <div style={{display:"grid",gridTemplateColumns: isMobileLayout ? "1fr" : "1fr 1fr 1fr",gap:16}}>
           <Card title="Asset Breakdown" subtitle="By category">
             <ResponsiveContainer width="100%" height={160}>
               <PieChart><Pie data={assetItems} cx="50%" cy="50%" innerRadius={50} outerRadius={72} dataKey="value" strokeWidth={0}>
@@ -286,9 +288,10 @@ export default function BalanceSheet(){
         </div>
 
         {/* DETAILED TABLES */}
-        {view==="detailed"&&<div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:16}}>
+        {view==="detailed"&&<div style={{display:"grid",gridTemplateColumns: isMobileLayout ? "1fr" : "1fr 1fr",gap:16}}>
           {/* ASSETS TABLE */}
           <Card title="Assets Detail" subtitle="Full breakdown of all assets">
+            <div className="report-table-scroll">
             <table style={{width:"100%",borderCollapse:"collapse"}}>
               <thead><tr style={{borderBottom:`1px solid ${C.border2}`}}>
                 {["Asset","Value","% of Total","Type"].map(h=><th key={h} style={{color:C.muted,fontSize:11,fontWeight:700,letterSpacing:"0.07em",textTransform:"uppercase",padding:"9px 12px",textAlign:"left"}}>{h}</th>)}
@@ -308,10 +311,12 @@ export default function BalanceSheet(){
                 <tr style={{borderTop:`2px solid ${C.border2}`,background:"rgba(255,255,255,0.02)"}}><td style={{color:C.text,fontSize:13,fontWeight:800,padding:"13px 12px"}}>TOTAL ASSETS</td><td style={{color:C.green,fontSize:13,fontWeight:800,padding:"13px 12px"}}>LKR {totalAssets.toLocaleString()}</td><td style={{color:C.muted,fontSize:12,padding:"13px 12px"}}>100%</td><td/></tr>
               </tbody>
             </table>
+            </div>
           </Card>
 
           {/* LIABILITIES TABLE */}
           <Card title="Liabilities & Equity" subtitle="Full breakdown">
+            <div className="report-table-scroll">
             <table style={{width:"100%",borderCollapse:"collapse"}}>
               <thead><tr style={{borderBottom:`1px solid ${C.border2}`}}>
                 {["Item","Value","% of Assets","Due"].map(h=><th key={h} style={{color:C.muted,fontSize:11,fontWeight:700,letterSpacing:"0.07em",textTransform:"uppercase",padding:"9px 12px",textAlign:"left"}}>{h}</th>)}
@@ -332,16 +337,17 @@ export default function BalanceSheet(){
                 <tr style={{borderTop:`2px solid ${C.border2}`,background:"rgba(255,255,255,0.02)"}}><td style={{color:C.text,fontSize:13,fontWeight:800,padding:"13px 12px"}}>TOTAL L + EQUITY</td><td style={{color:C.text,fontSize:13,fontWeight:800,padding:"13px 12px"}}>LKR {totalAssets.toLocaleString()}</td><td style={{color:C.muted,fontSize:12,padding:"13px 12px"}}>100%</td><td/></tr>
               </tbody>
             </table>
+            </div>
           </Card>
         </div>}
 
         {/* EQUATION BANNER */}
-        <div style={{background:"rgba(34,197,94,0.05)",border:"1px solid rgba(34,197,94,0.15)",borderRadius:16,padding:"18px 24px",display:"flex",alignItems:"center",justifyContent:"space-between"}}>
+        <div style={{background:"rgba(34,197,94,0.05)",border:"1px solid rgba(34,197,94,0.15)",borderRadius:16,padding:"18px 24px",display:"flex",flexDirection: isMobileLayout ? "column" : "row",alignItems: isMobileLayout ? "stretch" : "center",justifyContent:"space-between",gap: isMobileLayout ? 16 : 0}}>
           <div style={{display:"flex",alignItems:"center",gap:14}}>
             <div style={{width:44,height:44,borderRadius:12,background:"rgba(34,197,94,0.15)",display:"flex",alignItems:"center",justifyContent:"center"}}><I.CheckCircle/></div>
             <div><p style={{color:C.green,fontSize:13,fontWeight:800,margin:0}}>Balance Sheet Equation Verified</p><p style={{color:C.muted,fontSize:12,margin:"3px 0 0"}}>Assets = Liabilities + Equity · Balanced</p></div>
           </div>
-          <div style={{display:"flex",gap:28,alignItems:"center"}}>
+          <div style={{display:"flex",gap:28,alignItems:"center",flexWrap:"wrap",justifyContent: isMobileLayout ? "center" : "flex-end"}}>
             {[{l:"Assets",v:`LKR ${totalAssets.toLocaleString()}`,c:C.green},{l:"Liabilities",v:`LKR ${totalLiab.toLocaleString()}`,c:C.red},{l:"Equity",v:`LKR ${equity.toLocaleString()}`,c:C.blue}].map((item,i,arr)=>(
               <div key={i} style={{display:"flex",alignItems:"center",gap:16}}>
                 <div style={{textAlign:"center"}}><p style={{color:C.muted,fontSize:11,margin:0,fontWeight:600}}>{item.l}</p><p style={{color:item.c,fontSize:15,fontWeight:900,margin:"3px 0 0"}}>{item.v}</p></div>

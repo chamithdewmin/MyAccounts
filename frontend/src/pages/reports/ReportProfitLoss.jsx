@@ -5,6 +5,7 @@ import { getPrintHtml } from "@/utils/pdfPrint";
 import ReportPreviewModal from "@/components/ReportPreviewModal";
 import { useToast } from "@/components/ui/use-toast";
 import MonthYearFilter, { filterDataByMonth, getMonthName } from "@/components/MonthYearFilter";
+import { useIsMobileLayout } from "@/hooks/useIsMobileLayout";
 
 // ── THEME-AWARE COLORS ────────────────────────────────────────────────────────
 const getColors = () => {
@@ -93,6 +94,7 @@ export default function ProfitLoss(){
   const { toast } = useToast();
   const [reportPreview, setReportPreview] = useState({ open: false, html: "", filename: "" });
   const [colors, setColors] = useState(getColors);
+  const isMobileLayout = useIsMobileLayout();
   
   useEffect(() => {
     const updateColors = () => setColors(getColors());
@@ -222,7 +224,7 @@ export default function ProfitLoss(){
         </div>
 
         {/* STATS */}
-        <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:14}}>
+        <div style={{display:"grid",gridTemplateColumns: isMobileLayout ? "repeat(2, minmax(0,1fr))" : "repeat(4,1fr)",gap:14}}>
           <Stat label="Total Revenue"  value={`LKR ${totalIncome.toLocaleString()}`}         color={C.green}  Icon={I.Revenue}  sub={`${getMonthName(selectedMonth)} ${selectedYear}`} subColor={C.green}/>
           <Stat label="Total Expenses" value={`LKR ${totalExp.toLocaleString()}`}            color={C.red}    Icon={I.Expense}  sub={`${getMonthName(selectedMonth)} ${selectedYear}`}/>
           <Stat label="Net Profit"     value={`LKR ${netProfit.toLocaleString()}`}           color={netProfit>=0?C.green:C.red} Icon={I.Profit} sub={`${margin}% profit margin`} subColor={C.cyan}/>
@@ -230,7 +232,7 @@ export default function ProfitLoss(){
         </div>
 
         {/* MAIN CHART + DONUT */}
-        <div style={{display:"grid",gridTemplateColumns:"2.2fr 1fr",gap:16}}>
+        <div style={{display:"grid",gridTemplateColumns: isMobileLayout ? "1fr" : "2.2fr 1fr",gap:16}}>
           <Card title="Income vs Expenses vs Net Profit" subtitle="Monthly breakdown — LKR">
             <ResponsiveContainer width="100%" height={260}>
               <BarChart data={monthly} barCategoryGap={24} barGap={4}>
@@ -256,7 +258,7 @@ export default function ProfitLoss(){
         </div>
 
         {/* TREND + INCOME SOURCES */}
-        <div style={{display:"grid",gridTemplateColumns:"1.5fr 1fr",gap:16}}>
+        <div style={{display:"grid",gridTemplateColumns: isMobileLayout ? "1fr" : "1.5fr 1fr",gap:16}}>
           <Card title="Net Profit Trend" subtitle="Running profit across months">
             <ResponsiveContainer width="100%" height={200}>
               <LineChart data={monthly}>
@@ -280,6 +282,7 @@ export default function ProfitLoss(){
 
         {/* TABLE */}
         <Card title="Monthly P&L Summary" subtitle="Detailed breakdown per month">
+          <div className="report-table-scroll">
           <table style={{width:"100%",borderCollapse:"collapse"}}>
             <thead><tr style={{borderBottom:`1px solid ${C.border2}`}}>
               {["Month","Income","Expenses","Gross Profit","Margin","vs Prev Month"].map(h=><th key={h} style={{color:C.muted,fontSize:11,fontWeight:700,letterSpacing:"0.07em",textTransform:"uppercase",padding:"10px 14px",textAlign:"left"}}>{h}</th>)}
@@ -308,6 +311,7 @@ export default function ProfitLoss(){
               <td/>
             </tr></tfoot>
           </table>
+          </div>
         </Card>
       </div>
       <ReportPreviewModal

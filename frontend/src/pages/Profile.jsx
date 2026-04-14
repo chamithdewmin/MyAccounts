@@ -276,7 +276,7 @@ const Profile = () => {
         <meta name="description" content="Manage your profile, business details, bank account, and branding" />
       </Helmet>
 
-      <div className="space-y-4 sm:space-y-6 max-w-5xl mx-auto min-w-0 px-0 sm:px-2">
+      <div className="page-y-sm max-w-5xl mx-auto min-w-0 px-0 sm:px-2">
         <div>
           <h1 className="text-2xl sm:text-3xl font-bold flex items-center gap-2">
             <User className="w-6 h-6 sm:w-7 sm:h-7" />
@@ -290,7 +290,7 @@ const Profile = () => {
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="space-y-6"
+          className="page-y"
         >
           {/* 1. Personal Details */}
           <div className="bg-card rounded-lg p-4 sm:p-6 border border-border">

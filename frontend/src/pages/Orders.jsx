@@ -323,7 +323,7 @@ const Orders = () => {
         <meta name="description" content="Create, track, and manage invoices" />
       </Helmet>
 
-      <div className="space-y-4 sm:space-y-6 min-w-0">
+      <div className="page-y-sm min-w-0">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div className="min-w-0">
             <h1 className="text-2xl sm:text-3xl font-bold">Invoices</h1>

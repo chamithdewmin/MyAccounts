@@ -231,7 +231,7 @@ const Inventory = () => {
         <meta name="description" content="Track and manage all business expenses" />
       </Helmet>
 
-      <div className="space-y-6">
+      <div className="page-y">
         <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
           <div className="min-w-0">
             <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">Expenses</h1>

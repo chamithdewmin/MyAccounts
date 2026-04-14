@@ -123,7 +123,7 @@ const ReportIncome = () => {
         <meta name="description" content="Income by client, Income by service" />
       </Helmet>
 
-      <div className="space-y-6" style={{ fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, sans-serif" }}>
+      <div className="page-y" style={{ fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, sans-serif" }}>
         <div className="min-w-0">
           <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">Income Reports</h1>
           <p className="text-muted-foreground text-sm sm:text-base mt-1 leading-relaxed">Income by client, Income by service</p>

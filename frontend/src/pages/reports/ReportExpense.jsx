@@ -81,7 +81,7 @@ const ReportExpense = () => {
         <meta name="description" content="Expense breakdown, Budget vs actual" />
       </Helmet>
 
-      <div className="space-y-6" style={{ fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, sans-serif" }}>
+      <div className="page-y" style={{ fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, sans-serif" }}>
         <div className="min-w-0">
           <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">Expense Reports</h1>
           <p className="text-muted-foreground text-sm sm:text-base mt-1 leading-relaxed">Expense breakdown, Budget vs actual</p>

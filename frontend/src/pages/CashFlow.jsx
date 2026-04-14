@@ -578,7 +578,7 @@ const CashFlow = () => {
         <meta name="description" content="Track money in, money out, and running cash balance" />
       </Helmet>
 
-      <div className="space-y-6">
+      <div className="page-y">
         <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
           <div className="min-w-0">
             <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">Cash Flow</h1>

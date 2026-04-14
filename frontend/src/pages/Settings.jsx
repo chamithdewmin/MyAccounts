@@ -81,7 +81,7 @@ const Settings = () => {
         <meta name="description" content="Organize and manage business settings, invoices, tax, bank, and preferences" />
       </Helmet>
 
-      <div className="space-y-4 sm:space-y-6 max-w-5xl mx-auto min-w-0 px-0 sm:px-2">
+      <div className="page-y-sm max-w-5xl mx-auto min-w-0 px-0 sm:px-2">
         <div>
           <h1 className="text-2xl sm:text-3xl font-bold">Settings</h1>
           <p className="text-muted-foreground text-sm sm:text-base">Organize and manage your business settings.</p>
@@ -90,7 +90,7 @@ const Settings = () => {
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="space-y-6"
+          className="page-y"
         >
           {/* 1. Appearance */}
           <div className="bg-card rounded-lg p-6 border border-border">

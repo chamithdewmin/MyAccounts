@@ -599,9 +599,10 @@ const Topbar = () => {
 
   return (
     <header
-      className="max-lg:px-3 max-lg:pt-3 max-lg:pb-2 lg:pl-5 lg:pr-10 lg:pt-5 lg:pb-3"
+      className="border-b border-border/70 max-lg:px-4 max-lg:pb-3 max-lg:min-h-[60px] lg:border-b-0 lg:px-5 lg:pr-10 lg:pt-5 lg:pb-3"
       style={{
         background: c.pageBg,
+        paddingTop: isMobile ? 'max(12px, env(safe-area-inset-top, 0px))' : undefined,
       }}
     >
       <div

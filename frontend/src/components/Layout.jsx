@@ -21,10 +21,15 @@ const MainContent = () => {
       >
         <Topbar />
       </div>
-      {/* Main: tighter padding on small screens; desktop unchanged at lg+ */}
+      {/* Main: extra top/bottom padding on mobile so content clears the top bar comfortably */}
       <main
-        className="flex-1 w-full min-w-0 px-3 py-2 sm:px-5 sm:py-3 lg:px-10 lg:py-4"
-        style={{ marginTop: 60 }}
+        className={[
+          'flex-1 w-full min-w-0',
+          'px-4 pt-6 pb-9 max-lg:pb-10',
+          'sm:px-5',
+          'lg:px-10 lg:py-4 lg:pt-4 lg:pb-4',
+        ].join(' ')}
+        style={{ marginTop: isMobile ? 68 : 60 }}
       >
         <Outlet />
       </main>

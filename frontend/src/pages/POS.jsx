@@ -222,7 +222,7 @@ const POS = () => {
         <meta name="description" content="Manage all money coming into your business" />
       </Helmet>
 
-      <div className="space-y-6">
+      <div className="page-y">
         <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
           <div className="min-w-0">
             <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">Income Management</h1>

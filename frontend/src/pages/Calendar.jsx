@@ -204,7 +204,7 @@ const Calendar = () => {
         <meta name="description" content="View your financial transactions in a calendar view" />
       </Helmet>
 
-      <div className="space-y-4 sm:space-y-6 min-w-0">
+      <div className="page-y-sm min-w-0">
         {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>

@@ -90,7 +90,7 @@ const AIInsights = () => {
         <meta name="description" content="AI-powered financial analysis, suggestions, and Q&A from your data" />
       </Helmet>
 
-      <div className="space-y-4 sm:space-y-6 min-w-0">
+      <div className="page-y-sm min-w-0">
         <div>
           <h1 className="text-2xl sm:text-3xl font-bold flex items-center gap-2 flex-wrap">
             <Sparkles className="w-7 h-7 sm:w-8 sm:h-8 text-primary shrink-0" />

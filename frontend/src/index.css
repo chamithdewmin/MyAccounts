@@ -143,6 +143,16 @@
   }
 }
 
+@layer components {
+  /* Vertical rhythm for full-page stacks: a bit more gap on narrow screens */
+  .page-y {
+    @apply space-y-6 max-lg:space-y-8;
+  }
+  .page-y-sm {
+    @apply space-y-5 sm:space-y-6;
+  }
+}
+
 /* Prevent horizontal overflow on mobile */
 #root {
   overflow-x: hidden;

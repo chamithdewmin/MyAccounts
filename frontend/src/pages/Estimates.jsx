@@ -229,7 +229,7 @@ export default function Estimates() {
         <meta name="description" content="Create and manage project estimates" />
       </Helmet>
 
-      <div className="space-y-5">
+      <div className="space-y-5 max-lg:space-y-7">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <h1 className="text-2xl sm:text-3xl font-bold">Estimates</h1>

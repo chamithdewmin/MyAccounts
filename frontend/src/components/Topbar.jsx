@@ -1,7 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Search, Calendar, Bell, ChevronLeft, ChevronRight, FileText, Users, Receipt, CreditCard, X, Clock, ArrowRight } from 'lucide-react';
+import { Search, Calendar, Bell, ChevronLeft, ChevronRight, FileText, Users, Receipt, CreditCard, X, Clock, ArrowRight, Menu } from 'lucide-react';
 import { useFinance } from '@/contexts/FinanceContext';
+import { useSidebarState } from '@/components/SidebarNew';
 
 const getColors = () => {
   const isDark = document.documentElement.classList.contains('dark');
@@ -530,6 +531,7 @@ const SearchResults = ({ query, colors, onClose, onSelect }) => {
 };
 
 const Topbar = () => {
+  const { isMobile, openMobileDrawer } = useSidebarState();
   const [searchQuery, setSearchQuery] = useState('');
   const [colors, setColors] = useState(getColors);
   const [calendarOpen, setCalendarOpen] = useState(false);
@@ -596,20 +598,43 @@ const Topbar = () => {
   };
 
   return (
-    <header 
+    <header
+      className="max-lg:px-3 max-lg:pt-3 max-lg:pb-2 lg:pl-5 lg:pr-10 lg:pt-5 lg:pb-3"
       style={{
-        padding: '20px 40px 12px 20px',
         background: c.pageBg,
       }}
     >
-      <div style={{
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        gap: 16,
-      }}>
+      <div
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          gap: 12,
+        }}
+      >
+        {isMobile && (
+          <button
+            type="button"
+            aria-label="Open menu"
+            onClick={openMobileDrawer}
+            style={{
+              background: c.cardBg,
+              border: `1px solid ${c.border}`,
+              borderRadius: 50,
+              padding: 10,
+              cursor: 'pointer',
+              color: c.textMuted,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              flexShrink: 0,
+            }}
+          >
+            <Menu size={20} />
+          </button>
+        )}
         {/* Search */}
-        <div ref={searchRef} style={{ position: 'relative', flex: 1, maxWidth: 420 }}>
+        <div ref={searchRef} style={{ position: 'relative', flex: 1, maxWidth: 420, minWidth: 0 }}>
           <Search 
             size={16} 
             style={{
@@ -624,7 +649,7 @@ const Topbar = () => {
           <input
             ref={inputRef}
             type="text"
-            placeholder="Search clients, invoices, payments..."
+            placeholder={isMobile ? 'Search…' : 'Search clients, invoices, payments...'}
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             onFocus={handleSearchFocus}
@@ -644,8 +669,8 @@ const Topbar = () => {
               transition: 'border-color 0.2s',
             }}
           />
-          {/* Keyboard shortcut hint */}
-          {!searchOpen && (
+          {/* Keyboard shortcut hint (desktop) */}
+          {!searchOpen && !isMobile && (
             <div style={{
               position: 'absolute',
               right: 12,

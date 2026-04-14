@@ -150,6 +150,14 @@
   background-color: hsl(var(--background));
 }
 
+/* Mobile / narrow: smooth horizontal scroll for wide tables (pages use overflow-x-auto wrappers) */
+@media (max-width: 1023px) {
+  main .overflow-x-auto {
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior-x: contain;
+  }
+}
+
 @layer utilities {
   .glass-effect {
     backdrop-filter: blur(10px);

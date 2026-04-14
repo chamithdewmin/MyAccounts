@@ -1,4 +1,4 @@
-import { useState, useEffect, createContext, useContext } from "react";
+import { useState, useEffect, useCallback, createContext, useContext } from "react";
 import { createPortal } from "react-dom";
 import { NavLink, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
@@ -48,8 +48,19 @@ const getColors = () => {
   };
 };
 
-// Sidebar context to share collapsed state
-const SidebarContext = createContext({ collapsed: false, setCollapsed: () => {}, colors: getColors() });
+const MOBILE_MAX_PX = 1023;
+
+// Sidebar context: collapsed (desktop), mobile drawer, theme colors
+const SidebarContext = createContext({
+  collapsed: false,
+  setCollapsed: () => {},
+  colors: getColors(),
+  isMobile: false,
+  mobileDrawerOpen: false,
+  setMobileDrawerOpen: () => {},
+  openMobileDrawer: () => {},
+  closeMobileDrawer: () => {},
+});
 export const useSidebarState = () => useContext(SidebarContext);
 
 const ADMIN_EMAIL = "logozodev@gmail.com";
@@ -289,24 +300,30 @@ function NavItem({
 // Provider component to wrap the app
 export function SidebarProvider({ children }) {
   const [collapsed, setCollapsed] = useState(() => {
-    // Start collapsed on mobile/tablet screens
     if (typeof window !== 'undefined') {
-      return window.innerWidth < 1024;
+      return window.innerWidth <= MOBILE_MAX_PX;
     }
     return false;
   });
+  const [mobileDrawerOpen, setMobileDrawerOpen] = useState(false);
+  const [isMobile, setIsMobile] = useState(() =>
+    typeof window !== 'undefined' ? window.innerWidth <= MOBILE_MAX_PX : false
+  );
   const [colors, setColors] = useState(getColors);
 
-  // Handle window resize
   useEffect(() => {
-    const handleResize = () => {
-      if (window.innerWidth < 768) {
+    const mq = window.matchMedia(`(max-width: ${MOBILE_MAX_PX}px)`);
+    const sync = () => {
+      const mobile = mq.matches;
+      setIsMobile(mobile);
+      if (mobile) {
         setCollapsed(true);
+        setMobileDrawerOpen(false);
       }
     };
-    
-    window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
+    sync();
+    mq.addEventListener('change', sync);
+    return () => mq.removeEventListener('change', sync);
   }, []);
 
   // Handle theme changes
@@ -315,9 +332,23 @@ export function SidebarProvider({ children }) {
     window.addEventListener('theme-change', updateColors);
     return () => window.removeEventListener('theme-change', updateColors);
   }, []);
-  
+
+  const openMobileDrawer = useCallback(() => setMobileDrawerOpen(true), []);
+  const closeMobileDrawer = useCallback(() => setMobileDrawerOpen(false), []);
+
   return (
-    <SidebarContext.Provider value={{ collapsed, setCollapsed, colors }}>
+    <SidebarContext.Provider
+      value={{
+        collapsed,
+        setCollapsed,
+        colors,
+        isMobile,
+        mobileDrawerOpen,
+        setMobileDrawerOpen,
+        openMobileDrawer,
+        closeMobileDrawer,
+      }}
+    >
       {children}
     </SidebarContext.Provider>
   );
@@ -328,8 +359,10 @@ export default function SidebarNew() {
   const { settings } = useFinance();
   const navigate = useNavigate();
   const location = useLocation();
-  const { collapsed, setCollapsed, colors } = useSidebarState();
+  const { collapsed, setCollapsed, colors, isMobile, mobileDrawerOpen, closeMobileDrawer } =
+    useSidebarState();
   const c = colors;
+  const effectiveCollapsed = isMobile ? false : collapsed;
 
   const [analyticsOpen, setAnalyticsOpen] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
@@ -354,6 +387,21 @@ export default function SidebarNew() {
     }
   }, [location.pathname]);
 
+  useEffect(() => {
+    if (isMobile) closeMobileDrawer();
+  }, [location.pathname, isMobile, closeMobileDrawer]);
+
+  useEffect(() => {
+    if (!isMobile || typeof document === "undefined") return;
+    if (mobileDrawerOpen) {
+      const prev = document.body.style.overflow;
+      document.body.style.overflow = "hidden";
+      return () => {
+        document.body.style.overflow = prev;
+      };
+    }
+  }, [isMobile, mobileDrawerOpen]);
+
   const isActive = (href) => location.pathname === href;
   const isAnalyticsActive = location.pathname.startsWith("/reports");
   const isSettingsActive = ["/settings", "/users", "/backup-restore", "/login-activity"].includes(location.pathname);
@@ -374,10 +422,54 @@ export default function SidebarNew() {
     setMiniSubmenu({ title, items, pos: { top, left, width } });
   };
 
-  // Sidebar widths
+  // Sidebar widths (mobile drawer always uses expanded width)
   const EXPANDED_WIDTH = 260;
   const COLLAPSED_WIDTH = 68;
-  const currentWidth = collapsed ? COLLAPSED_WIDTH : EXPANDED_WIDTH;
+  const currentWidth = isMobile ? EXPANDED_WIDTH : collapsed ? COLLAPSED_WIDTH : EXPANDED_WIDTH;
+
+  const desktopSidebarStyle = {
+    width: currentWidth,
+    minWidth: currentWidth,
+    height: "calc(100vh - 40px)",
+    background: c.bg,
+    border: `1px solid ${c.border}`,
+    borderRadius: 16,
+    display: "flex",
+    flexDirection: "column",
+    transition: "width 0.3s cubic-bezier(0.4,0,0.2,1), min-width 0.3s cubic-bezier(0.4,0,0.2,1)",
+    overflow: "hidden",
+    position: "fixed",
+    top: "50%",
+    left: 10,
+    transform: "translateY(-50%)",
+    zIndex: 50,
+    fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, sans-serif",
+  };
+
+  const mobileSidebarStyle = {
+    width: "min(280px, 86vw)",
+    minWidth: "min(280px, 86vw)",
+    minHeight: 0,
+    height: "100%",
+    maxHeight: "100dvh",
+    background: c.bg,
+    border: `1px solid ${c.border}`,
+    borderLeft: "none",
+    borderRadius: "0 16px 16px 0",
+    display: "flex",
+    flexDirection: "column",
+    transition: "transform 0.3s cubic-bezier(0.4,0,0.2,1)",
+    overflow: "hidden",
+    position: "fixed",
+    top: 0,
+    left: 0,
+    paddingTop: "env(safe-area-inset-top, 0px)",
+    paddingBottom: "env(safe-area-inset-bottom, 0px)",
+    transform: mobileDrawerOpen ? "translateX(0)" : "translateX(-105%)",
+    zIndex: 101,
+    fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, sans-serif",
+    boxShadow: mobileDrawerOpen ? "8px 0 32px rgba(0,0,0,0.28)" : "none",
+  };
 
   return (
     <>
@@ -398,40 +490,35 @@ export default function SidebarNew() {
           background: ${c.scrollbarThumb}cc;
         }
       `}</style>
-      
+
+      {isMobile && mobileDrawerOpen && (
+        <div
+          role="presentation"
+          aria-hidden
+          onClick={closeMobileDrawer}
+          style={{
+            position: "fixed",
+            inset: 0,
+            background: "rgba(0,0,0,0.5)",
+            zIndex: 100,
+          }}
+        />
+      )}
+
       {/* Sidebar */}
-      <div
-        style={{
-          width: currentWidth,
-          minWidth: currentWidth,
-          height: "calc(100vh - 40px)",
-          background: c.bg,
-          border: `1px solid ${c.border}`,
-          borderRadius: 16,
-          display: "flex",
-          flexDirection: "column",
-          transition: "width 0.3s cubic-bezier(0.4,0,0.2,1), min-width 0.3s cubic-bezier(0.4,0,0.2,1)",
-          overflow: "hidden",
-          position: "fixed",
-          top: "50%",
-          left: 10,
-          transform: "translateY(-50%)",
-          zIndex: 50,
-          fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, sans-serif",
-        }}
-      >
+      <div style={isMobile ? mobileSidebarStyle : desktopSidebarStyle}>
         {/* Header */}
         <div
           style={{
             display: "flex",
             alignItems: "center",
-            justifyContent: collapsed ? "center" : "space-between",
-            padding: collapsed ? "16px 12px" : "16px 16px",
+            justifyContent: effectiveCollapsed ? "center" : "space-between",
+            padding: effectiveCollapsed ? "16px 12px" : "16px 16px",
             borderBottom: `1px solid ${c.border}`,
             minHeight: 68,
           }}
         >
-          {!collapsed && (
+          {!effectiveCollapsed && (
             <a
               href="/dashboard"
               style={{
@@ -454,7 +541,12 @@ export default function SidebarNew() {
             </a>
           )}
           <button
-            onClick={() => setCollapsed((col) => !col)}
+            type="button"
+            aria-label={isMobile ? "Close menu" : collapsed ? "Expand sidebar" : "Collapse sidebar"}
+            onClick={() => {
+              if (isMobile) closeMobileDrawer();
+              else setCollapsed((col) => !col);
+            }}
             onMouseEnter={() => setHoverToggle(true)}
             onMouseLeave={() => setHoverToggle(false)}
             style={{
@@ -470,7 +562,9 @@ export default function SidebarNew() {
               flexShrink: 0,
             }}
           >
-            {collapsed ? (
+            {isMobile ? (
+              <X size={22} />
+            ) : collapsed ? (
               <span
                 style={{
                   width: 28,
@@ -520,7 +614,7 @@ export default function SidebarNew() {
             scrollbarWidth: "thin",
           }}
         >
-          {!collapsed && (
+          {!effectiveCollapsed && (
             <div
               style={{
                 fontSize: 12,
@@ -553,11 +647,11 @@ export default function SidebarNew() {
                     icon={item.icon}
                     label={item.label}
                     active={isAnalyticsActive}
-                    mini={collapsed}
+                    mini={effectiveCollapsed}
                     chevron={analyticsOpen}
                     onChevronOpen={() => setAnalyticsOpen((o) => !o)}
                     onClick={(e) => {
-                      if (collapsed) {
+                      if (effectiveCollapsed) {
                         openMiniSubmenu(e, "Analytics", item.items);
                         return;
                       }
@@ -565,7 +659,7 @@ export default function SidebarNew() {
                     }}
                     colors={c}
                   />
-                  {!collapsed && (
+                  {!effectiveCollapsed && (
                     <div
                       style={{
                         overflow: "hidden",
@@ -597,11 +691,11 @@ export default function SidebarNew() {
                     icon={item.icon}
                     label={item.label}
                     active={isSettingsActive}
-                    mini={collapsed}
+                    mini={effectiveCollapsed}
                     chevron={settingsOpen}
                     onChevronOpen={() => setSettingsOpen((o) => !o)}
                     onClick={(e) => {
-                      if (collapsed) {
+                      if (effectiveCollapsed) {
                         const subItems = item.items.filter((sub) => !sub.adminOnly || canManageUsers);
                         openMiniSubmenu(e, "Settings", subItems);
                         return;
@@ -610,7 +704,7 @@ export default function SidebarNew() {
                     }}
                     colors={c}
                   />
-                  {!collapsed && (
+                  {!effectiveCollapsed && (
                     <div
                       style={{
                         overflow: "hidden",
@@ -643,7 +737,7 @@ export default function SidebarNew() {
                 label={item.label}
                 href={item.href}
                 active={isActive(item.href)}
-                mini={collapsed}
+                mini={effectiveCollapsed}
                 colors={c}
               />
             );
@@ -666,7 +760,7 @@ export default function SidebarNew() {
                         position: "fixed",
                         bottom: 80,
                         left: 20,
-                        width: collapsed ? 220 : currentWidth - 30,
+                        width: effectiveCollapsed ? 220 : currentWidth - 30,
                         background: c.bg,
                         border: `1px solid ${c.border}`,
                         borderRadius: 10,
@@ -719,7 +813,7 @@ export default function SidebarNew() {
               background: userMenuOpen || hoverUser ? c.hoverBg : "transparent",
               transition: "background 0.2s",
               overflow: "hidden",
-              justifyContent: collapsed ? "center" : "flex-start",
+              justifyContent: effectiveCollapsed ? "center" : "flex-start",
             }}
           >
             <div
@@ -754,7 +848,7 @@ export default function SidebarNew() {
                 }}
               />
             </div>
-            {!collapsed && (
+            {!effectiveCollapsed && (
               <>
                 <div style={{ flex: 1, overflow: "hidden" }}>
                   <div

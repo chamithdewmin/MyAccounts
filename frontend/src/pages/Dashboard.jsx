@@ -9,6 +9,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/components/ui/use-toast";
+import { useIsMobileLayout } from "@/hooks/useIsMobileLayout";
 
 // ─── THEME-AWARE COLORS ───────────────────────────────────────────────────────
 const getThemeColors = () => {
@@ -282,6 +283,7 @@ export default function FinanceDashboard() {
   const [bankModalMode, setBankModalMode] = useState("deposit"); // "deposit" | "withdraw"
   const [transferAmount, setTransferAmount] = useState("");
   const [themeKey, setThemeKey] = useState(0);
+  const isMobileLayout = useIsMobileLayout();
 
   useEffect(() => {
     document.body.classList.add("dashboard-page");
@@ -607,7 +609,7 @@ export default function FinanceDashboard() {
   const s = {
     page: {
       minHeight: "100vh",
-      padding: 22,
+      padding: isMobileLayout ? 12 : 22,
       fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, sans-serif",
       color: tc.text,
     },
@@ -719,7 +721,13 @@ export default function FinanceDashboard() {
       </div>
 
       {/* MAIN GRID */}
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 420px", gap: 16 }}>
+      <div
+        style={{
+          display: "grid",
+          gridTemplateColumns: isMobileLayout ? "1fr" : "1fr 420px",
+          gap: 16,
+        }}
+      >
         {/* LEFT COLUMN */}
         <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
 
@@ -753,7 +761,13 @@ export default function FinanceDashboard() {
           </div>
 
           {/* BOTTOM ROW */}
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
+          <div
+            style={{
+              display: "grid",
+              gridTemplateColumns: isMobileLayout ? "1fr" : "1fr 1fr",
+              gap: 16,
+            }}
+          >
             {/* ACTIVITY */}
             <div style={{ ...s.card, minHeight: 300 }}>
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>

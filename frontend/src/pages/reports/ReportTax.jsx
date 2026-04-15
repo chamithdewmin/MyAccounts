@@ -239,7 +239,7 @@ export default function TaxReports(){
         </div>
 
         {/* STATS - Monthly */}
-        <div style={{display:"grid",gridTemplateColumns: isMobileLayout ? "repeat(2, minmax(0,1fr))" : "repeat(4,1fr)",gap:14}}>
+        <div style={{display:"grid",gridTemplateColumns: isMobileLayout ? "1fr" : "repeat(4, 1fr)",gap:14}}>
           <Stat label="Monthly Income" value={`LKR ${monthlyIncome.toLocaleString()}`} Icon={I.FileText}      color={C.text2} sub={`${getMonthName(selectedMonth)} ${selectedYear}`}/>
           <Stat label="Monthly Tax"     value={`LKR ${monthlyTax.toLocaleString()}`}   Icon={I.Receipt}       color={C.red}   sub={`${settings.taxRate || 0}% rate`}/>
           <Stat label="Monthly Deductions"   value={`LKR ${monthlyExpense.toLocaleString()}`}   Icon={I.Scissors}      color={C.green} sub="Tax savings" subColor={C.green}/>

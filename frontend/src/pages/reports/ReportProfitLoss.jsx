@@ -228,7 +228,7 @@ export default function ProfitLoss(){
         </div>
 
         {/* STATS */}
-        <div style={{display:"grid",gridTemplateColumns: isMobileLayout ? "repeat(2, minmax(0,1fr))" : "repeat(4,1fr)",gap:14}}>
+        <div style={{display:"grid",gridTemplateColumns: isMobileLayout ? "1fr" : "repeat(4, 1fr)",gap:14}}>
           <Stat label="Total Revenue"  value={`LKR ${totalIncome.toLocaleString()}`}         color={C.green}  Icon={I.Revenue}  sub={`${getMonthName(selectedMonth)} ${selectedYear}`} subColor={C.green}/>
           <Stat label="Total Expenses" value={`LKR ${totalExp.toLocaleString()}`}            color={C.red}    Icon={I.Expense}  sub={`${getMonthName(selectedMonth)} ${selectedYear}`}/>
           <Stat label="Net Profit"     value={`LKR ${netProfit.toLocaleString()}`}           color={netProfit>=0?C.green:C.red} Icon={I.Profit} sub={`${margin}% profit margin`} subColor={C.cyan}/>

@@ -232,7 +232,7 @@ export default function BalanceSheet(){
         </div>
 
         {/* STATS */}
-        <div style={{display:"grid",gridTemplateColumns: isMobileLayout ? "repeat(2, minmax(0,1fr))" : "repeat(5,1fr)",gap:14}}>
+        <div style={{display:"grid",gridTemplateColumns: isMobileLayout ? "1fr" : "repeat(5, 1fr)",gap:14}}>
           <Stat label="Total Assets"      value={`LKR ${totalAssets.toLocaleString()}`} color={C.green}  Icon={I.Building}/>
           <Stat label="Total Liabilities" value={`LKR ${totalLiab.toLocaleString()}`}   color={C.red}    Icon={I.Layers}/>
           <Stat label="Owner's Equity"    value={`LKR ${equity.toLocaleString()}`}       color={C.blue}   Icon={I.Scale}/>

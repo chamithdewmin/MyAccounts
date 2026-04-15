@@ -193,6 +193,7 @@ router.post('/login', async (req, res) => {
         userAgent,
         success: false,
         failureReason: 'invalid_password',
+        role: effectiveAppRole(user) === 'admin' ? 'admin' : 'staff',
       });
       return res.status(401).json({ success: false, error: 'Invalid credentials' });
     }
@@ -388,7 +389,7 @@ router.get('/activity', authMiddleware, async (req, res) => {
     if (adminUser) {
       if (filterUserId) {
         ({ rows } = await pool.query(
-          `SELECT id, user_id, email, session_id, login_at, logout_at, ip_address, status, failure_reason, created_at
+          `SELECT id, user_id, email, user_name, role, session_id, login_at, logout_at, ip_address, status, failure_reason, created_at
            FROM login_activity
            WHERE user_id = $1
            ORDER BY created_at DESC
@@ -397,7 +398,7 @@ router.get('/activity', authMiddleware, async (req, res) => {
         ));
       } else {
         ({ rows } = await pool.query(
-          `SELECT id, user_id, email, session_id, login_at, logout_at, ip_address, status, failure_reason, created_at
+          `SELECT id, user_id, email, user_name, role, session_id, login_at, logout_at, ip_address, status, failure_reason, created_at
            FROM login_activity
            ORDER BY created_at DESC
            LIMIT 500`,
@@ -405,7 +406,7 @@ router.get('/activity', authMiddleware, async (req, res) => {
       }
     } else {
       ({ rows } = await pool.query(
-        `SELECT id, user_id, email, session_id, login_at, logout_at, ip_address, status, failure_reason, created_at
+        `SELECT id, user_id, email, user_name, role, session_id, login_at, logout_at, ip_address, status, failure_reason, created_at
          FROM login_activity
          WHERE user_id = $1
          ORDER BY created_at DESC
@@ -415,15 +416,22 @@ router.get('/activity', authMiddleware, async (req, res) => {
     }
 
     const usersRes = adminUser
-      ? await pool.query('SELECT id, name, email FROM users ORDER BY name ASC')
-      : await pool.query('SELECT id, name, email FROM users WHERE id = $1', [req.user.id]);
-    const users = usersRes.rows.map((u) => ({ id: u.id, name: u.name, email: u.email }));
+      ? await pool.query('SELECT id, name, email, role FROM users ORDER BY name ASC')
+      : await pool.query('SELECT id, name, email, role FROM users WHERE id = $1', [req.user.id]);
+    const users = usersRes.rows.map((u) => ({
+      id: u.id,
+      name: u.name,
+      email: u.email,
+      role: u.role,
+    }));
 
     res.json({
       items: rows.map((r) => ({
         id: r.id,
         userId: r.user_id,
         email: r.email,
+        userName: r.user_name,
+        role: r.role,
         sessionId: r.session_id,
         loginAt: r.login_at,
         logoutAt: r.logout_at,

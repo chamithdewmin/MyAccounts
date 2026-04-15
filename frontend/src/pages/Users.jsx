@@ -26,6 +26,7 @@ const Users = () => {
     name: '',
     email: '',
     password: '',
+    role: 'staff',
   });
   const { toast } = useToast();
 
@@ -56,7 +57,8 @@ const Users = () => {
         users.filter(
           (u) =>
             u.name?.toLowerCase().includes(q) ||
-            u.email?.toLowerCase().includes(q)
+            u.email?.toLowerCase().includes(q) ||
+            (u.role && String(u.role).toLowerCase().includes(q))
         )
       );
     } else {
@@ -90,7 +92,11 @@ const Users = () => {
     setSaving(true);
     try {
       if (editingUser) {
-        const payload = { name: form.name.trim(), email: form.email.trim() };
+        const payload = {
+          name: form.name.trim(),
+          email: form.email.trim(),
+          role: form.role === 'admin' ? 'admin' : 'staff',
+        };
         if (form.password) payload.password = form.password;
         await api.users.update(editingUser.id, payload);
         toast({ title: 'User updated', description: `${form.name} has been updated.` });
@@ -99,10 +105,11 @@ const Users = () => {
           name: form.name.trim(),
           email: form.email.trim(),
           password: form.password,
+          role: form.role === 'admin' ? 'admin' : 'staff',
         });
         toast({ title: 'User added', description: `${form.name} can now log in.` });
       }
-      setForm({ name: '', email: '', password: '' });
+      setForm({ name: '', email: '', password: '', role: 'staff' });
       setEditingUser(null);
       setIsDialogOpen(false);
       loadUsers();
@@ -119,7 +126,12 @@ const Users = () => {
 
   const openEdit = (user) => {
     setEditingUser(user);
-    setForm({ name: user.name, email: user.email, password: '' });
+    setForm({
+      name: user.name,
+      email: user.email,
+      password: '',
+      role: String(user.role || '').toLowerCase() === 'admin' ? 'admin' : 'staff',
+    });
     setIsDialogOpen(true);
   };
 
@@ -143,6 +155,10 @@ const Users = () => {
       return d;
     }
   };
+
+  const roleLabel = (user) =>
+    String(user?.role || 'staff').toLowerCase() === 'admin' ? 'Admin' : 'Staff';
+  const isAdminRole = (user) => String(user?.role || '').toLowerCase() === 'admin';
 
   const totalPages = Math.max(1, Math.ceil(filteredUsers.length / PER_PAGE));
   const start = (currentPage - 1) * PER_PAGE;
@@ -178,7 +194,13 @@ const Users = () => {
             <Button variant="outline" onClick={loadUsers} disabled={loading}>
               Refresh
             </Button>
-            <Button onClick={() => setIsDialogOpen(true)}>
+            <Button
+              onClick={() => {
+                setEditingUser(null);
+                setForm({ name: '', email: '', password: '', role: 'staff' });
+                setIsDialogOpen(true);
+              }}
+            >
               <UserPlus className="w-4 h-4 mr-2" />
               Add User
             </Button>
@@ -188,7 +210,7 @@ const Users = () => {
         <div className="relative">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
           <Input
-            placeholder="Search by name or email..."
+            placeholder="Search by name, email, or role..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             className="pl-10 bg-input border border-border"
@@ -211,10 +233,11 @@ const Users = () => {
 
           {/* Table */}
           <div className="overflow-x-auto overscroll-x-contain touch-pan-x">
-            <table className="w-full min-w-[680px] text-sm">
+            <table className="w-full min-w-[760px] text-sm">
               <thead>
                 <tr className="border-b border-border text-muted-foreground text-xs uppercase tracking-wide">
                   <th className="px-4 py-3 text-left font-medium">Name</th>
+                  <th className="px-4 py-3 text-left font-medium">Role</th>
                   <th className="px-4 py-3 text-left font-medium">Status</th>
                   <th className="px-4 py-3 text-left font-medium">Created</th>
                   <th className="px-4 py-3 text-left font-medium">Email address</th>
@@ -224,7 +247,7 @@ const Users = () => {
               <tbody>
                 {loading ? (
                   <tr>
-                    <td colSpan={5} className="px-4 py-8 text-center text-muted-foreground">
+                    <td colSpan={6} className="px-4 py-8 text-center text-muted-foreground">
                       Loading users...
                     </td>
                   </tr>
@@ -247,6 +270,17 @@ const Users = () => {
                             <div className="text-muted-foreground text-xs">{user.email}</div>
                           </div>
                         </div>
+                      </td>
+                      <td className="px-4 py-3">
+                        <span
+                          className={`inline-flex text-xs font-medium px-2.5 py-1 rounded-full border ${
+                            isAdminRole(user)
+                              ? 'bg-primary/15 text-primary border-primary/40'
+                              : 'bg-secondary text-muted-foreground border-border'
+                          }`}
+                        >
+                          {roleLabel(user)}
+                        </span>
                       </td>
                       <td className="px-4 py-3">
                         <span className="inline-flex items-center gap-1.5 bg-secondary border border-border text-green-400 text-xs font-medium px-2.5 py-1 rounded-full">
@@ -372,6 +406,21 @@ const Users = () => {
                   placeholder={editingUser ? 'Leave blank to keep current' : 'Password'}
                   required={!editingUser}
                 />
+              </div>
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Role</label>
+                <select
+                  value={form.role}
+                  onChange={(e) => handleChange('role', e.target.value)}
+                  disabled={editingUser?.email?.toLowerCase() === PROTECTED_EMAIL}
+                  className="flex h-10 w-full rounded-lg border border-border bg-input px-3 py-2 text-sm text-foreground ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60"
+                >
+                  <option value="staff">Staff</option>
+                  <option value="admin">Admin</option>
+                </select>
+                <p className="text-xs text-muted-foreground">
+                  Admins share one dataset; staff share another. The protected account role cannot be changed here.
+                </p>
               </div>
               <div className="flex justify-end gap-2 pt-2">
                 <Button

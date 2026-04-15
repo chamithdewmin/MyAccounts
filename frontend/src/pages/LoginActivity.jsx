@@ -46,6 +46,55 @@ const failureLabel = (reason) => {
   return reason.replace(/_/g, ' ');
 };
 
+/** Resolve display fields for a login_activity row (handles both /login-activity and /activity shapes). */
+const resolveActivityUser = (row, userById) => {
+  const uidRaw = row.userId;
+  const uid = uidRaw != null && uidRaw !== '' ? Number(uidRaw) : NaN;
+  const fromList = Number.isFinite(uid) ? userById[uid] : undefined;
+  const name =
+    (row.userName && String(row.userName).trim()) ||
+    (fromList?.name && String(fromList.name).trim()) ||
+    '';
+  const email = String(row.email || fromList?.email || '').trim();
+  const roleSource = row.role != null && row.role !== '' ? row.role : fromList?.role;
+  let showRole = false;
+  let isAdmin = false;
+  if (roleSource != null && String(roleSource).trim() !== '') {
+    showRole = true;
+    isAdmin = String(roleSource).toLowerCase() === 'admin';
+  } else if (Number.isFinite(uid)) {
+    showRole = true;
+    isAdmin = false;
+  }
+  const roleLabel = isAdmin ? 'Admin' : 'Staff';
+  const primaryTitle = name || email || 'Unknown';
+  const showEmailSubline = Boolean(name && email);
+  return { primaryTitle, email, showEmailSubline, showRole, isAdmin, roleLabel };
+};
+
+function ActivityUserCell({ row, userById }) {
+  const u = resolveActivityUser(row, userById);
+  return (
+    <div className="space-y-1 min-w-[12rem]">
+      <div className="flex flex-wrap items-center gap-2">
+        <span className="font-medium text-foreground">{u.primaryTitle}</span>
+        {u.showRole && (
+          <span
+            className={`inline-flex text-xs font-medium px-2 py-0.5 rounded-full border ${
+              u.isAdmin
+                ? 'bg-primary/15 text-primary border-primary/40'
+                : 'bg-secondary text-muted-foreground border-border'
+            }`}
+          >
+            {u.roleLabel}
+          </span>
+        )}
+      </div>
+      {u.showEmailSubline && <div className="text-xs text-muted-foreground">{u.email}</div>}
+    </div>
+  );
+}
+
 export default function LoginActivity() {
   const { user } = useAuth();
   const isAdmin =
@@ -108,6 +157,14 @@ export default function LoginActivity() {
       totalSessions: items.length,
     };
   }, [items, users]);
+
+  const userById = useMemo(() => {
+    const m = {};
+    for (const u of users) {
+      if (u?.id != null) m[Number(u.id)] = u;
+    }
+    return m;
+  }, [users]);
 
   return (
     <>
@@ -194,7 +251,7 @@ export default function LoginActivity() {
                 {items.map((row) => (
                   <tr key={row.id} className="border-t border-border hover:bg-secondary/20">
                     <td className="px-4 py-3 text-sm">
-                      <div className="font-medium">{row.email || 'Unknown'}</div>
+                      <ActivityUserCell row={row} userById={userById} />
                     </td>
                     <td className="px-4 py-3 text-sm">
                       {row.loginAt || row.createdAt ? (

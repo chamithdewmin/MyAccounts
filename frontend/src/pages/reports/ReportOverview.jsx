@@ -483,7 +483,7 @@ export default function OverviewReports() {
         </div>
 
         {/* TOP KPI ROW */}
-        <div style={{ display:"grid", gridTemplateColumns: isMobileLayout ? "repeat(2, minmax(0,1fr))" : "repeat(5,1fr)", gap:14 }}>
+        <div style={{ display:"grid", gridTemplateColumns: isMobileLayout ? "1fr" : "repeat(5, 1fr)", gap:14 }}>
           <KpiCard label="Total Revenue (7M)"  value={`LKR ${totalIncome.toLocaleString()}`}   color={C.green}  Icon={I.DollarSign}   sub="7-month total"         delay={0}   />
           <KpiCard label="Total Expenses (7M)" value={`LKR ${totalExpenses.toLocaleString()}`} color={C.red}    Icon={I.TrendingDown} sub="7-month total"         delay={0.05}/>
           <KpiCard label="Net Profit"          value={`LKR ${netProfit.toLocaleString()}`}     color={netProfit>=0?C.green:C.red} Icon={I.BarChart2} sub={`${profitMargin}% margin`} delay={0.1}/>

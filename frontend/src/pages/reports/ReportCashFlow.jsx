@@ -60,11 +60,15 @@ const Tip=({active,payload,label,C})=>{
 const Stat=({label,value,color,Icon,sub,C})=>{
   const c = C || getColors();
   return (
-  <div style={{background:c.card,borderRadius:14,border:`1px solid ${c.border}`,padding:"20px 22px",position:"relative",overflow:"hidden",boxShadow:"0 1px 3px rgba(0,0,0,0.1)"}}>
-    <div style={{position:"absolute",right:14,top:14,width:36,height:36,borderRadius:10,background:`${color||c.blue}18`,display:"flex",alignItems:"center",justifyContent:"center",opacity:0.8}}><Icon/></div>
-    <p style={{color:c.muted,fontSize:10,fontWeight:700,letterSpacing:"0.1em",textTransform:"uppercase",margin:0}}>{label}</p>
-    <p style={{color:color||c.text,fontSize:22,fontWeight:900,margin:"8px 0 0",letterSpacing:"-0.02em",fontFamily:"'Inter', -apple-system, BlinkMacSystemFont, sans-serif",fontVariantNumeric:"tabular-nums"}}>{value}</p>
-    {sub&&<p style={{color:c.muted,fontSize:12,margin:"5px 0 0",fontWeight:600}}>{sub}</p>}
+  <div style={{background:c.card,borderRadius:14,border:`1px solid ${c.border}`,padding:"16px 18px",position:"relative",overflow:"hidden",boxShadow:"0 1px 3px rgba(0,0,0,0.1)",minWidth:0}}>
+    <div style={{display:"flex",alignItems:"flex-start",justifyContent:"space-between",gap:12,marginBottom:6}}>
+      <p style={{color:c.muted,fontSize:10,fontWeight:700,letterSpacing:"0.08em",textTransform:"uppercase",margin:0,flex:1,minWidth:0,lineHeight:1.35}}>{label}</p>
+      <div style={{width:40,height:40,borderRadius:10,background:`${color||c.blue}18`,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,opacity:0.92}} aria-hidden>
+        <span style={{display:"flex",alignItems:"center",justifyContent:"center",width:22,height:22,lineHeight:0}}><Icon/></span>
+      </div>
+    </div>
+    <p style={{color:color||c.text,fontSize:22,fontWeight:900,margin:0,letterSpacing:"-0.02em",lineHeight:1.2,fontFamily:"'Inter', -apple-system, BlinkMacSystemFont, sans-serif",fontVariantNumeric:"tabular-nums",wordBreak:"break-word"}}>{value}</p>
+    {sub&&<p style={{color:c.muted,fontSize:12,margin:"6px 0 0",fontWeight:600,lineHeight:1.35}}>{sub}</p>}
     <div style={{position:"absolute",bottom:0,left:0,right:0,height:3,background:`linear-gradient(90deg,${color||c.blue}55,transparent)`}}/>
   </div>
 );};

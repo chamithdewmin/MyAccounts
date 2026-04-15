@@ -98,12 +98,28 @@ const Tip = ({ active, payload, label }) => {
   );
 };
 
+const kpiIconWrap = {
+  width: 40,
+  height: 40,
+  borderRadius: 10,
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "center",
+  flexShrink: 0,
+};
+
 const KpiCard = ({ label, value, color, Icon, sub, delay = 0 }) => (
-  <div style={{ background:C.card, borderRadius:14, border:`1px solid ${C.border}`, padding:"18px 20px", position:"relative", overflow:"hidden", animation:`fi .4s ease ${delay}s both` }}>
-    <div style={{ position:"absolute", right:14, top:14, width:36, height:36, borderRadius:10, background:`${color||C.blue}18`, display:"flex", alignItems:"center", justifyContent:"center", opacity:.85 }}><Icon /></div>
-    <p style={{ color:C.muted, fontSize:10, fontWeight:700, letterSpacing:"0.1em", textTransform:"uppercase", margin:0 }}>{label}</p>
-    <p style={{ color:color||C.text, fontSize:19, fontWeight:900, margin:"8px 0 0", letterSpacing:"-0.02em", lineHeight:1.1, fontFamily:"'Inter', -apple-system, BlinkMacSystemFont, sans-serif", fontVariantNumeric:"tabular-nums" }}>{value}</p>
-    {sub && <p style={{ color:C.muted, fontSize:11, margin:"5px 0 0", fontWeight:500 }}>{sub}</p>}
+  <div style={{ background:C.card, borderRadius:14, border:`1px solid ${C.border}`, padding:"16px 18px", position:"relative", overflow:"hidden", animation:`fi .4s ease ${delay}s both`, minWidth:0 }}>
+    <div style={{ display:"flex", alignItems:"flex-start", justifyContent:"space-between", gap:12, marginBottom:6 }}>
+      <p style={{ color:C.muted, fontSize:10, fontWeight:700, letterSpacing:"0.08em", textTransform:"uppercase", margin:0, flex:1, minWidth:0, lineHeight:1.35 }}>{label}</p>
+      <div style={{ ...kpiIconWrap, background:`${color||C.blue}18`, opacity:0.92 }} aria-hidden>
+        <span style={{ display:"flex", alignItems:"center", justifyContent:"center", width:22, height:22, lineHeight:0 }}>
+          <Icon />
+        </span>
+      </div>
+    </div>
+    <p style={{ color:color||C.text, fontSize:19, fontWeight:900, margin:0, letterSpacing:"-0.02em", lineHeight:1.2, fontFamily:"'Inter', -apple-system, BlinkMacSystemFont, sans-serif", fontVariantNumeric:"tabular-nums", wordBreak:"break-word" }}>{value}</p>
+    {sub && <p style={{ color:C.muted, fontSize:11, margin:"6px 0 0", fontWeight:500, lineHeight:1.35 }}>{sub}</p>}
     <div style={{ position:"absolute", bottom:0, left:0, right:0, height:3, background:`linear-gradient(90deg,${color||C.blue}55,transparent)` }} />
   </div>
 );

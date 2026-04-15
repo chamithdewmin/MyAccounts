@@ -67,7 +67,7 @@ const hasPhoneColumn = async () => {
 
 router.get('/', async (req, res) => {
   try {
-    const uid = req.user.id;
+    const uid = req.user.dataUserId;
     const hasPhone = await hasPhoneColumn();
     
     // Always take the most recently updated settings row for this user
@@ -129,7 +129,7 @@ const hasSettingsJsonColumn = async () => {
 
 router.put('/', async (req, res) => {
   try {
-    const uid = req.user.id;
+    const uid = req.user.dataUserId;
     const d = req.body;
     const usePhone = await hasPhoneColumn();
     const useProfileAvatar = await hasProfileAvatarColumn();

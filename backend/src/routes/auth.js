@@ -4,6 +4,7 @@ import jwt from 'jsonwebtoken';
 import { randomUUID } from 'crypto';
 import pool from '../config/db.js';
 import { authMiddleware } from '../middleware/auth.js';
+import { effectiveAppRole, isAdminRequest } from '../lib/dataScope.js';
 
 const router = express.Router();
 const OTP_EXPIRY_MINUTES = 5;
@@ -86,8 +87,6 @@ const insertLoginActivity = async ({
   }
 };
 
-const isAdmin = (req) => String(req.user?.email || '').toLowerCase() === ADMIN_EMAIL;
-
 /** Search settings only (GET /api/settings phone). Returns { userId, email, phone } or null */
 const findAccountByPhone = async (inputNormalized) => {
   try {
@@ -164,7 +163,7 @@ router.post('/login', async (req, res) => {
     }
 
     const { rows } = await pool.query(
-      'SELECT id, email, name, password_hash FROM users WHERE LOWER(TRIM(email)) = $1',
+      'SELECT id, email, name, password_hash, role FROM users WHERE LOWER(TRIM(email)) = $1',
       [emailTrimmed]
     );
 
@@ -218,14 +217,19 @@ router.post('/login', async (req, res) => {
       ipAddress,
       userAgent,
       success: true,
-      role: isAdmin({ user }) ? 'admin' : 'staff',
+      role: effectiveAppRole(user) === 'admin' ? 'admin' : 'staff',
     });
 
     res.json({
       success: true,
       token,
       loginActivityId,
-      user: { id: user.id, email: user.email, name: user.name },
+      user: {
+        id: user.id,
+        email: user.email,
+        name: user.name,
+        role: effectiveAppRole(user),
+      },
     });
   } catch (err) {
     console.error('Login error:', err);
@@ -244,7 +248,7 @@ router.get('/me', async (req, res) => {
   try {
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
     const { rows } = await pool.query(
-      'SELECT id, email, name, token_version FROM users WHERE id = $1',
+      'SELECT id, email, name, token_version, role FROM users WHERE id = $1',
       [decoded.id]
     );
     if (!rows[0]) {
@@ -276,11 +280,18 @@ router.get('/me', async (req, res) => {
           ipAddress,
           userAgent,
           success: true,
-          role: String(rows[0].email || '').toLowerCase() === ADMIN_EMAIL ? 'admin' : 'staff',
+          role: effectiveAppRole(rows[0]) === 'admin' ? 'admin' : 'staff',
         });
       }
     }
-    res.json({ user: { id: rows[0].id, email: rows[0].email, name: rows[0].name } });
+    res.json({
+      user: {
+        id: rows[0].id,
+        email: rows[0].email,
+        name: rows[0].name,
+        role: effectiveAppRole(rows[0]),
+      },
+    });
   } catch {
     res.status(401).json({ error: 'Invalid token' });
   }
@@ -323,7 +334,7 @@ router.post('/logout', authMiddleware, async (req, res) => {
 
 router.get('/login-activity/stats', authMiddleware, async (req, res) => {
   try {
-    if (!isAdmin(req)) return res.status(403).json({ error: 'Forbidden' });
+    if (!isAdminRequest(req)) return res.status(403).json({ error: 'Forbidden' });
     const [totalUsersR, activeSessionsR, activeUsersR, totalSessionsR, failedR] = await Promise.all([
       pool.query('SELECT COUNT(*)::int AS c FROM users'),
       pool.query("SELECT COUNT(*)::int AS c FROM login_activity WHERE COALESCE(success, true) = true AND logout_at IS NULL"),
@@ -347,7 +358,7 @@ router.get('/login-activity/stats', authMiddleware, async (req, res) => {
 
 router.get('/login-activity', authMiddleware, async (req, res) => {
   try {
-    if (!isAdmin(req)) return res.status(403).json({ error: 'Forbidden' });
+    if (!isAdminRequest(req)) return res.status(403).json({ error: 'Forbidden' });
     const { rows } = await pool.query(
       `SELECT id, user_id AS "userId", email, user_name AS "userName", COALESCE(success, status != 'failed') AS success,
               role, ip_address AS "ipAddress", failure_reason AS "failureReason",
@@ -365,7 +376,7 @@ router.get('/login-activity', authMiddleware, async (req, res) => {
 
 router.get('/activity', authMiddleware, async (req, res) => {
   try {
-    const isAdmin = String(req.user.email || '').toLowerCase() === 'logozodev@gmail.com';
+    const adminUser = isAdminRequest(req);
     const filterUserIdRaw = req.query.userId;
     const filterUserId = filterUserIdRaw ? Number(filterUserIdRaw) : null;
 
@@ -374,7 +385,7 @@ router.get('/activity', authMiddleware, async (req, res) => {
     }
 
     let rows;
-    if (isAdmin) {
+    if (adminUser) {
       if (filterUserId) {
         ({ rows } = await pool.query(
           `SELECT id, user_id, email, session_id, login_at, logout_at, ip_address, status, failure_reason, created_at
@@ -403,7 +414,7 @@ router.get('/activity', authMiddleware, async (req, res) => {
       ));
     }
 
-    const usersRes = isAdmin
+    const usersRes = adminUser
       ? await pool.query('SELECT id, name, email FROM users ORDER BY name ASC')
       : await pool.query('SELECT id, name, email FROM users WHERE id = $1', [req.user.id]);
     const users = usersRes.rows.map((u) => ({ id: u.id, name: u.name, email: u.email }));
@@ -555,7 +566,7 @@ router.post('/verify-otp', async (req, res) => {
 
 router.post('/send-reset-data-otp', authMiddleware, async (req, res) => {
   try {
-    const uid = req.user.id;
+    const uid = req.user.dataUserId;
     const { rows } = await pool.query('SELECT phone FROM settings WHERE user_id = $1', [uid]);
     const phone = rows[0]?.phone?.trim();
     if (!phone) {
@@ -594,7 +605,7 @@ router.post('/send-reset-data-otp', authMiddleware, async (req, res) => {
 
 router.post('/confirm-reset-data', authMiddleware, async (req, res) => {
   try {
-    const uid = req.user.id;
+    const uid = req.user.dataUserId;
     const { otp } = req.body;
     const otpStr = String(otp || '').trim().replace(/\s/g, '');
     if (!otpStr) {

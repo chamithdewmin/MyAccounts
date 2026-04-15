@@ -20,7 +20,7 @@ const toOrder = (row) => ({
 
 router.get('/', async (req, res) => {
   try {
-    const uid = req.user.id;
+    const uid = req.user.dataUserId;
     const { rows } = await pool.query('SELECT * FROM orders WHERE user_id = $1 ORDER BY created_at DESC', [uid]);
     res.json(rows.map(toOrder));
   } catch (err) {
@@ -31,7 +31,7 @@ router.get('/', async (req, res) => {
 
 router.post('/', async (req, res) => {
   try {
-    const uid = req.user.id;
+    const uid = req.user.dataUserId;
     const d = req.body;
     const id = d.id || `INV-${Date.now()}`;
     const subtotal = Number(d.subtotal) || 0;

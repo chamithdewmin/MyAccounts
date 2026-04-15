@@ -48,7 +48,9 @@ const failureLabel = (reason) => {
 
 export default function LoginActivity() {
   const { user } = useAuth();
-  const isAdmin = String(user?.email || '').toLowerCase() === ADMIN_EMAIL;
+  const isAdmin =
+    String(user?.role || '').toLowerCase() === 'admin' ||
+    String(user?.email || '').toLowerCase() === ADMIN_EMAIL;
   const [filter, setFilter] = useState('all');
   const [items, setItems] = useState([]);
   const [users, setUsers] = useState([]);

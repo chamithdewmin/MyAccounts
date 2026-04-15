@@ -7,7 +7,7 @@ router.use(authMiddleware);
 
 router.get('/', async (req, res) => {
   try {
-    const uid = req.user.id;
+    const uid = req.user.dataUserId;
     const { rows } = await pool.query(
       'SELECT id, from_account, to_account, amount, date, notes, created_at FROM transfers WHERE user_id = $1 ORDER BY date DESC, created_at DESC',
       [uid]
@@ -29,7 +29,7 @@ router.get('/', async (req, res) => {
 
 router.post('/', async (req, res) => {
   try {
-    const uid = req.user.id;
+    const uid = req.user.dataUserId;
     const { fromAccount, toAccount, amount, date, notes } = req.body;
     if (!fromAccount || !toAccount || !amount || amount <= 0) {
       return res.status(400).json({ error: 'From account, to account, and positive amount are required' });
@@ -63,7 +63,7 @@ router.post('/', async (req, res) => {
 
 router.delete('/:id', async (req, res) => {
   try {
-    const uid = req.user.id;
+    const uid = req.user.dataUserId;
     const { rowCount } = await pool.query('DELETE FROM transfers WHERE id = $1 AND user_id = $2', [req.params.id, uid]);
     if (rowCount === 0) return res.status(404).json({ error: 'Transfer not found' });
     res.json({ success: true });

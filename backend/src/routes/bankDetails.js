@@ -21,7 +21,7 @@ const parseBankDetails = (encrypted) => {
 // GET - fetch bank details for current user
 router.get('/', async (req, res) => {
   try {
-    const uid = req.user.id;
+    const uid = req.user.dataUserId;
     const { rows } = await pool.query(
       'SELECT data_encrypted FROM bank_details WHERE user_id = $1',
       [uid]
@@ -39,7 +39,7 @@ router.get('/', async (req, res) => {
 // POST - save bank details (upsert)
 router.post('/', async (req, res) => {
   try {
-    const uid = req.user.id;
+    const uid = req.user.dataUserId;
     const d = req.body;
     const accountNumber = String(d.accountNumber || d.account_number || '').trim();
     const accountName = String(d.accountName || d.account_name || '').trim();

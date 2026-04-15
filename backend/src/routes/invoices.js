@@ -81,7 +81,7 @@ const toInvoice = (row) => {
 
 router.get('/', async (req, res) => {
   try {
-    const uid = req.user.id;
+    const uid = req.user.dataUserId;
     const { rows } = await pool.query('SELECT * FROM invoices WHERE user_id = $1 ORDER BY created_at DESC', [uid]);
     res.json(rows.map(toInvoice));
   } catch (err) {
@@ -92,7 +92,7 @@ router.get('/', async (req, res) => {
 
 router.get('/:id', async (req, res) => {
   try {
-    const uid = req.user.id;
+    const uid = req.user.dataUserId;
     const { id } = req.params;
     const { rows } = await pool.query('SELECT * FROM invoices WHERE (id = $1 OR invoice_number = $1) AND user_id = $2', [id, uid]);
     if (!rows[0]) return res.status(404).json({ error: 'Invoice not found' });
@@ -105,7 +105,7 @@ router.get('/:id', async (req, res) => {
 
 router.post('/', async (req, res) => {
   try {
-    const uid = req.user.id;
+    const uid = req.user.dataUserId;
     const email = req.user.email || null;
     const d = req.body;
     let businessName = null;
@@ -178,7 +178,7 @@ router.post('/', async (req, res) => {
 
 router.put('/:id', async (req, res) => {
   try {
-    const uid = req.user.id;
+    const uid = req.user.dataUserId;
     const { id } = req.params;
     const d = req.body;
 
@@ -264,7 +264,7 @@ router.put('/:id', async (req, res) => {
 
 router.patch('/:id/status', async (req, res) => {
   try {
-    const uid = req.user.id;
+    const uid = req.user.dataUserId;
     const { id } = req.params;
     const { status } = req.body;
     await pool.query('UPDATE invoices SET status = $2 WHERE id = $1 AND user_id = $3', [id, status, uid]);
@@ -279,7 +279,7 @@ router.patch('/:id/status', async (req, res) => {
 
 router.delete('/:id', async (req, res) => {
   try {
-    const uid = req.user.id;
+    const uid = req.user.dataUserId;
     const { rowCount } = await pool.query('DELETE FROM invoices WHERE id = $1 AND user_id = $2', [req.params.id, uid]);
     if (rowCount === 0) return res.status(404).json({ error: 'Not found' });
     res.json({ success: true });

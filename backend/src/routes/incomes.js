@@ -24,7 +24,7 @@ const toIncome = (row) => ({
 
 router.get('/', async (req, res) => {
   try {
-    const uid = req.user.id;
+    const uid = req.user.dataUserId;
     const { rows } = await pool.query('SELECT * FROM incomes WHERE user_id = $1 ORDER BY created_at DESC', [uid]);
     res.json(rows.map(toIncome));
   } catch (err) {
@@ -35,7 +35,7 @@ router.get('/', async (req, res) => {
 
 router.post('/', async (req, res) => {
   try {
-    const uid = req.user.id;
+    const uid = req.user.dataUserId;
     const d = req.body;
     const id = `INC-${Date.now().toString(36).toUpperCase()}${Math.random().toString(36).slice(2, 8).toUpperCase()}`;
     await pool.query(
@@ -68,7 +68,7 @@ router.post('/', async (req, res) => {
 
 router.put('/:id', async (req, res) => {
   try {
-    const uid = req.user.id;
+    const uid = req.user.dataUserId;
     const { id } = req.params;
     const d = req.body;
     await pool.query(
@@ -89,7 +89,7 @@ router.put('/:id', async (req, res) => {
 
 router.delete('/:id', async (req, res) => {
   try {
-    const uid = req.user.id;
+    const uid = req.user.dataUserId;
     const { rowCount } = await pool.query('DELETE FROM incomes WHERE id = $1 AND user_id = $2', [req.params.id, uid]);
     if (rowCount === 0) return res.status(404).json({ error: 'Not found' });
     res.json({ success: true });

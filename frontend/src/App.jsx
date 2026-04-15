@@ -29,7 +29,9 @@ import LoginActivity from './pages/LoginActivity';
 import Layout from './components/Layout';
 
 const ADMIN_EMAIL = 'logozodev@gmail.com';
-const isAdminUser = (u) => String(u?.email || '').toLowerCase().trim() === ADMIN_EMAIL;
+const isAdminUser = (u) =>
+  String(u?.role || '').toLowerCase() === 'admin' ||
+  String(u?.email || '').toLowerCase().trim() === ADMIN_EMAIL;
 
 function App() {
   const { isAuthenticated, loading, user } = useAuth();

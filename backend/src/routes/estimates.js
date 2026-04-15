@@ -48,7 +48,7 @@ const toEstimate = (row) => ({
 
 router.get('/', async (req, res) => {
   try {
-    const uid = req.user.id;
+    const uid = req.user.dataUserId;
     const { rows } = await pool.query(
       'SELECT * FROM estimates WHERE user_id = $1 ORDER BY created_at DESC',
       [uid]
@@ -62,7 +62,7 @@ router.get('/', async (req, res) => {
 
 router.get('/:id', async (req, res) => {
   try {
-    const uid = req.user.id;
+    const uid = req.user.dataUserId;
     const { id } = req.params;
     const { rows } = await pool.query(
       'SELECT * FROM estimates WHERE (id = $1 OR estimate_number = $1) AND user_id = $2',
@@ -78,7 +78,7 @@ router.get('/:id', async (req, res) => {
 
 router.post('/', async (req, res) => {
   try {
-    const uid = req.user.id;
+    const uid = req.user.dataUserId;
     const d = req.body || {};
     const estimateNumber = await generateEstimateNumber(uid);
     const subtotal = Number(d.subtotal) || 0;
@@ -136,7 +136,7 @@ router.post('/', async (req, res) => {
 
 router.put('/:id', async (req, res) => {
   try {
-    const uid = req.user.id;
+    const uid = req.user.dataUserId;
     const { id } = req.params;
     const d = req.body || {};
     const subtotal = Number(d.subtotal) || 0;
@@ -205,7 +205,7 @@ router.put('/:id', async (req, res) => {
 
 router.patch('/:id/status', async (req, res) => {
   try {
-    const uid = req.user.id;
+    const uid = req.user.dataUserId;
     const { id } = req.params;
     const { status } = req.body || {};
     const { rows } = await pool.query(
@@ -225,7 +225,7 @@ router.patch('/:id/status', async (req, res) => {
 
 router.post('/:id/convert-to-invoice', async (req, res) => {
   try {
-    const uid = req.user.id;
+    const uid = req.user.dataUserId;
     const { id } = req.params;
     const { rows } = await pool.query(
       'SELECT * FROM estimates WHERE (id = $1 OR estimate_number = $1) AND user_id = $2',
@@ -250,7 +250,7 @@ router.post('/:id/convert-to-invoice', async (req, res) => {
 
 router.delete('/:id', async (req, res) => {
   try {
-    const uid = req.user.id;
+    const uid = req.user.dataUserId;
     const { rowCount } = await pool.query(
       'DELETE FROM estimates WHERE (id = $1 OR estimate_number = $1) AND user_id = $2',
       [req.params.id, uid]

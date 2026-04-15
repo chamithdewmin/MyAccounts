@@ -9,7 +9,7 @@ router.use(authMiddleware);
 
 router.get('/settings', async (req, res) => {
   try {
-    const config = await getSmsConfig(req.user.id);
+    const config = await getSmsConfig(req.user.dataUserId);
     const safe = config ? { ...config, apiKey: config.apiKey ? '••••••••' : '' } : {};
     res.json(config ? safe : {});
   } catch (err) {
@@ -20,7 +20,7 @@ router.get('/settings', async (req, res) => {
 
 router.put('/settings', async (req, res) => {
   try {
-    const uid = req.user.id;
+    const uid = req.user.dataUserId;
     const { userId, apiKey, baseUrl, senderId } = req.body;
     const existing = await getSmsConfig(uid);
     const merged = {
@@ -52,7 +52,7 @@ router.put('/settings', async (req, res) => {
 
 router.post('/test', async (req, res) => {
   try {
-    const config = await getSmsConfig(req.user.id);
+    const config = await getSmsConfig(req.user.dataUserId);
     if (!config) {
       return res.status(400).json({ error: 'SMS gateway not configured. Save your User ID, API Key, Base URL, and Sender ID first.' });
     }
@@ -95,7 +95,7 @@ router.post('/send-bulk', async (req, res) => {
     if (!Array.isArray(contacts) || contacts.length === 0 || !message) {
       return res.status(400).json({ error: 'Contacts array and message are required' });
     }
-    const result = await sendBulkSms(req.user.id, contacts, message);
+    const result = await sendBulkSms(req.user.dataUserId, contacts, message);
     res.json({ success: true, sent: result.sent });
   } catch (err) {
     console.error('[SMS send-bulk]', err);
@@ -114,7 +114,7 @@ router.post('/send-bulk', async (req, res) => {
 /** Schedule bulk SMS for a future time (processed by server worker — sends even when browser is closed). */
 router.post('/schedule', async (req, res) => {
   try {
-    const uid = req.user.id;
+    const uid = req.user.dataUserId;
     const { message, sendAt, clientIds } = req.body;
     if (!message || !String(message).trim()) {
       return res.status(400).json({ error: 'Message is required' });
@@ -162,7 +162,7 @@ router.get('/scheduled', async (req, res) => {
        FROM scheduled_sms
        WHERE user_id = $1
        ORDER BY send_at DESC`,
-      [req.user.id]
+      [req.user.dataUserId]
     );
     res.json(
       rows.map((r) => ({
@@ -186,7 +186,7 @@ router.delete('/scheduled/:id', async (req, res) => {
   try {
     const { rowCount } = await pool.query(
       `DELETE FROM scheduled_sms WHERE id = $1 AND user_id = $2 AND status = 'pending'`,
-      [req.params.id, req.user.id]
+      [req.params.id, req.user.dataUserId]
     );
     if (rowCount === 0) {
       return res.status(404).json({ error: 'Not found or already processed' });

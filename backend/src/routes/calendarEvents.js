@@ -22,7 +22,7 @@ router.get('/', async (req, res) => {
        FROM calendar_events
        WHERE user_id = $1
        ORDER BY event_date ASC, event_time ASC NULLS LAST, created_at DESC`,
-      [req.user.id],
+      [req.user.dataUserId],
     );
     res.json(rows.map(toEvent));
   } catch (err) {
@@ -43,7 +43,7 @@ router.post('/', async (req, res) => {
       `INSERT INTO calendar_events (id, user_id, event_name, event_date, event_time, notes)
        VALUES ($1, $2, $3, $4, $5, $6)
        RETURNING id, user_id, event_name, event_date, event_time, notes, created_at`,
-      [id, req.user.id, name, date, String(eventTime || '').trim() || null, String(notes || '').trim()],
+      [id, req.user.dataUserId, name, date, String(eventTime || '').trim() || null, String(notes || '').trim()],
     );
     res.status(201).json(toEvent(rows[0]));
   } catch (err) {
@@ -56,7 +56,7 @@ router.delete('/:id', async (req, res) => {
   try {
     const { rowCount } = await pool.query(
       'DELETE FROM calendar_events WHERE id = $1 AND user_id = $2',
-      [req.params.id, req.user.id],
+      [req.params.id, req.user.dataUserId],
     );
     if (!rowCount) return res.status(404).json({ error: 'Not found' });
     res.json({ success: true });

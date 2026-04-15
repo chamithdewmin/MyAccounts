@@ -2,16 +2,21 @@ import express from 'express';
 import bcrypt from 'bcryptjs';
 import pool from '../config/db.js';
 import { authMiddleware } from '../middleware/auth.js';
+import { isAdminRequest } from '../lib/dataScope.js';
 
 const PROTECTED_EMAIL = 'logozodev@gmail.com';
 
 const router = express.Router();
 router.use(authMiddleware);
+router.use((req, res, next) => {
+  if (!isAdminRequest(req)) return res.status(403).json({ error: 'Forbidden' });
+  next();
+});
 
 router.get('/', async (req, res) => {
   try {
     const { rows } = await pool.query(
-      'SELECT id, email, name, created_at FROM users ORDER BY created_at DESC'
+      'SELECT id, email, name, role, created_at FROM users ORDER BY created_at DESC'
     );
     res.json(rows);
   } catch (err) {
@@ -22,16 +27,17 @@ router.get('/', async (req, res) => {
 
 router.post('/', async (req, res) => {
   try {
-    const { email, password, name } = req.body;
+    const { email, password, name, role } = req.body;
     if (!email || !password || !name) {
       return res.status(400).json({ error: 'Email, password, and name are required' });
     }
+    const r = String(role || 'staff').toLowerCase() === 'admin' ? 'admin' : 'staff';
     const hash = await bcrypt.hash(password, 10);
     const { rows } = await pool.query(
-      `INSERT INTO users (email, password_hash, name)
-       VALUES ($1, $2, $3)
-       RETURNING id, email, name, created_at`,
-      [email.trim(), hash, name.trim()]
+      `INSERT INTO users (email, password_hash, name, role)
+       VALUES ($1, $2, $3, $4)
+       RETURNING id, email, name, role, created_at`,
+      [email.trim(), hash, name.trim(), r]
     );
     res.status(201).json(rows[0]);
   } catch (err) {
@@ -46,7 +52,7 @@ router.post('/', async (req, res) => {
 router.put('/:id', async (req, res) => {
   try {
     const { id } = req.params;
-    const { name, email, password } = req.body;
+    const { name, email, password, role } = req.body;
     if (!name || !email) {
       return res.status(400).json({ error: 'Name and email are required' });
     }
@@ -57,7 +63,12 @@ router.put('/:id', async (req, res) => {
       query += ', password_hash = $4';
       params.push(hash);
     }
-    query += ' WHERE id = $1 RETURNING id, email, name, created_at';
+    if (role != null && String(role).trim() !== '') {
+      const r = String(role).toLowerCase() === 'admin' ? 'admin' : 'staff';
+      query += `, role = $${params.length + 1}`;
+      params.push(r);
+    }
+    query += ' WHERE id = $1 RETURNING id, email, name, role, created_at';
     const { rows } = await pool.query(query, params);
     if (!rows[0]) return res.status(404).json({ error: 'User not found' });
     res.json(rows[0]);

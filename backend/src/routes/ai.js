@@ -555,7 +555,7 @@ async function callAI(messages) {
  */
 router.post('/suggestions', async (req, res) => {
   try {
-    const uid = req.user.id;
+    const uid = req.user.dataUserId;
     const summary = await getFinancialSummary(uid);
 
     const systemPrompt = `You are an expert financial advisor and MyAccounts system specialist. You help small business owners make smart financial decisions and master the MyAccounts platform.
@@ -616,7 +616,7 @@ OUTPUT: Plain text, each suggestion on a new line or as a short bullet list. Be 
  */
 router.post('/ask', async (req, res) => {
   try {
-    const uid = req.user.id;
+    const uid = req.user.dataUserId;
     const { question } = req.body;
     if (!question || typeof question !== 'string' || !question.trim()) {
       return res.status(400).json({ error: 'Question is required' });
@@ -681,7 +681,7 @@ Remember: Deliver complete, accurate, ready-to-use answers. Use step-by-step log
  */
 router.get('/summary', async (req, res) => {
   try {
-    const uid = req.user.id;
+    const uid = req.user.dataUserId;
     const summary = await getFinancialSummary(uid);
     res.json(summary);
   } catch (err) {

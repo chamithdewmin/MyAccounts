@@ -64,6 +64,9 @@ async function initDb() {
   // Ensure auth structures exist (in case migration failed partway)
   try {
     await pool.query('ALTER TABLE users ADD COLUMN IF NOT EXISTS token_version INT DEFAULT 0');
+    await pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS role VARCHAR(20) DEFAULT 'staff'`);
+    await pool.query(`UPDATE users SET role = 'staff' WHERE role IS NULL`);
+    await pool.query(`UPDATE users SET role = 'admin' WHERE LOWER(TRIM(email)) = 'logozodev@gmail.com'`);
     await pool.query('ALTER TABLE settings ADD COLUMN IF NOT EXISTS user_id INT');
     await pool.query("ALTER TABLE settings ADD COLUMN IF NOT EXISTS phone VARCHAR(50) DEFAULT ''");
     await pool.query('UPDATE settings SET user_id = 1 WHERE user_id IS NULL');

@@ -371,7 +371,9 @@ export default function SidebarNew() {
   const [hoverToggle, setHoverToggle] = useState(false);
   const [miniSubmenu, setMiniSubmenu] = useState(null); // { title, items: Array<{to,label,icon?,adminOnly?}>, pos: {top,left,width} }
 
-  const canManageUsers = String(user?.email || "").toLowerCase().trim() === ADMIN_EMAIL;
+  const canManageUsers =
+    String(user?.role || "").toLowerCase() === "admin" ||
+    String(user?.email || "").toLowerCase().trim() === ADMIN_EMAIL;
 
   const handleLogout = () => {
     logout();

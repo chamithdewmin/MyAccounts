@@ -1,14 +1,13 @@
 import express from 'express';
 import pool from '../config/db.js';
 import { authMiddleware } from '../middleware/auth.js';
+import { isAdminRequest } from '../lib/dataScope.js';
 
 const router = express.Router();
 router.use(authMiddleware);
 
-const ADMIN_EMAIL = 'logozodev@gmail.com';
-
 const requireAdmin = (req, res, next) => {
-  if (req.user?.email !== ADMIN_EMAIL) {
+  if (!isAdminRequest(req)) {
     return res.status(403).json({ error: 'Admin access required' });
   }
   next();

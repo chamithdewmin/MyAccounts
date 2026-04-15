@@ -7,7 +7,7 @@ router.use(authMiddleware);
 
 router.get('/', async (req, res) => {
   try {
-    const uid = req.user?.id;
+    const uid = req.user?.dataUserId;
     if (!uid) return res.status(401).json({ error: 'Unauthorized' });
     let rows = [];
     try {
@@ -49,7 +49,7 @@ router.get('/', async (req, res) => {
 
 router.post('/', async (req, res) => {
   try {
-    const uid = req.user?.id;
+    const uid = req.user?.dataUserId;
     if (!uid) return res.status(401).json({ error: 'Unauthorized' });
     const { type, referenceId, reason, amount, reminderDate, smsContact, message } = req.body;
     if (!reminderDate || !smsContact) {
@@ -108,7 +108,7 @@ router.post('/', async (req, res) => {
 
 router.delete('/:id', async (req, res) => {
   try {
-    const uid = req.user.id;
+    const uid = req.user.dataUserId;
     const { rowCount } = await pool.query('DELETE FROM reminders WHERE id = $1 AND user_id = $2', [req.params.id, uid]);
     if (rowCount === 0) return res.status(404).json({ error: 'Reminder not found' });
     res.json({ success: true });

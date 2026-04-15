@@ -1,5 +1,6 @@
 import jwt from 'jsonwebtoken';
 import pool from '../config/db.js';
+import { effectiveAppRole, resolveDataUserId } from '../lib/dataScope.js';
 
 const getRequestIp = (req) => {
   const xf = req.headers['x-forwarded-for'];
@@ -42,7 +43,10 @@ export const authMiddleware = async (req, res, next) => {
 
   try {
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    const { rows } = await pool.query('SELECT id, token_version FROM users WHERE id = $1', [decoded.id]);
+    const { rows } = await pool.query(
+      'SELECT id, token_version, email, name, role FROM users WHERE id = $1',
+      [decoded.id],
+    );
     if (!rows[0]) {
       await logAuthFailure(req, 'user_not_found', decoded);
       return res.status(401).json({ error: 'User not found' });
@@ -53,7 +57,15 @@ export const authMiddleware = async (req, res, next) => {
       await logAuthFailure(req, 'session_expired', decoded);
       return res.status(401).json({ error: 'Session expired' });
     }
-    req.user = { id: decoded.id, email: decoded.email, sid: decoded.sid || null };
+    const appRole = effectiveAppRole(rows[0]);
+    const dataUserId = await resolveDataUserId(decoded.id, appRole);
+    req.user = {
+      id: decoded.id,
+      email: decoded.email,
+      sid: decoded.sid || null,
+      role: appRole,
+      dataUserId,
+    };
     next();
   } catch {
     await logAuthFailure(req, 'invalid_token');

@@ -182,7 +182,7 @@ export default function Sidebar() {
   const navigate = useNavigate();
   const { settings } = useFinance();
   const { open, setOpen, collapsed, toggleCollapsed } = useSidebar();
-  const canManageUsers = user?.email === ADMIN_EMAIL;
+  const canManageUsers = String(user?.email || '').toLowerCase().trim() === ADMIN_EMAIL;
 
   const handleLogout = () => {
     logout();

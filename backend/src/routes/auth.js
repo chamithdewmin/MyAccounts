@@ -106,32 +106,6 @@ const findAccountByPhone = async (inputNormalized) => {
   return null;
 };
 
-/** Match login email to user + settings phone for password reset SMS */
-const findAccountByEmail = async (rawEmail) => {
-  const em = String(rawEmail || '')
-    .trim()
-    .toLowerCase();
-  if (!em || em.length < 3) return null;
-  try {
-    const { rows } = await pool.query(
-      `SELECT u.id AS user_id, u.email, s.phone
-       FROM users u
-       LEFT JOIN settings s ON s.user_id = u.id
-       WHERE LOWER(TRIM(u.email)) = $1`,
-      [em],
-    );
-    const row = rows[0];
-    if (!row) return null;
-    return {
-      userId: row.user_id,
-      email: row.email,
-      phone: row.phone ? String(row.phone).trim() : null,
-    };
-  } catch {
-    return null;
-  }
-};
-
 const getSmsConfigForUser = async (userId) => {
   try {
     const { rows } = await pool.query('SELECT sms_config FROM settings WHERE user_id = $1', [userId]);
@@ -457,49 +431,28 @@ router.get('/activity', authMiddleware, async (req, res) => {
 
 router.post('/forgot-password', async (req, res) => {
   try {
-    const { phone, email } = req.body;
+    const { phone } = req.body;
+    if (!phone || !String(phone).trim()) {
+      return res.status(400).json({ error: 'Phone number is required' });
+    }
+    const inputNormalized = normalizePhone(phone);
+    if (!inputNormalized || inputNormalized.length < 10) {
+      return res.status(400).json({ error: 'Please enter a valid phone number.' });
+    }
     let matched;
-    if (email != null && String(email).trim()) {
-      try {
-        matched = await findAccountByEmail(String(email).trim());
-      } catch (dbErr) {
-        console.error('[forgot-password] findAccountByEmail:', dbErr.message);
-        return res.status(500).json({
-          error: 'Service unavailable. Please contact your administrator.',
-        });
-      }
-      if (!matched) {
-        return res.status(400).json({
-          error: 'No account found for this email address.',
-        });
-      }
-      if (!matched.phone) {
-        return res.status(400).json({
-          error:
-            'No phone number on file for this account. Add your phone in Settings after logging in, or contact your administrator.',
-        });
-      }
-    } else if (phone != null && String(phone).trim()) {
-      const inputNormalized = normalizePhone(phone);
-      if (!inputNormalized || inputNormalized.length < 10) {
-        return res.status(400).json({ error: 'Please enter a valid phone number.' });
-      }
-      try {
-        matched = await findAccountByPhone(inputNormalized);
-      } catch (dbErr) {
-        console.error('[forgot-password] findAccountByPhone:', dbErr.message);
-        return res.status(500).json({
-          error: 'Service unavailable. Please contact your administrator.',
-        });
-      }
-      if (!matched) {
-        return res.status(400).json({
-          error:
-            'Your number is not in our system. Add your phone in Settings after logging in, or contact your administrator.',
-        });
-      }
-    } else {
-      return res.status(400).json({ error: 'Phone number or email is required' });
+    try {
+      matched = await findAccountByPhone(inputNormalized);
+    } catch (dbErr) {
+      console.error('[forgot-password] findAccountByPhone:', dbErr.message);
+      return res.status(500).json({
+        error: 'Service unavailable. Please contact your administrator.',
+      });
+    }
+    if (!matched) {
+      return res.status(400).json({
+        error:
+          'Your number is not in our system. Add your phone in Settings after logging in, or contact your administrator.',
+      });
     }
     const phoneToSend = matched.phone;
     const em = String(matched.email || '').trim().toLowerCase();
@@ -553,37 +506,23 @@ router.post('/forgot-password', async (req, res) => {
 
 router.post('/verify-otp', async (req, res) => {
   try {
-    const { phone, email, otp } = req.body;
-    if (!otp) {
-      return res.status(400).json({ error: 'OTP is required' });
+    const { phone, otp } = req.body;
+    if (!phone || !otp) {
+      return res.status(400).json({ error: 'Phone number and OTP are required' });
+    }
+    const inputNormalized = normalizePhone(phone);
+    if (!inputNormalized || inputNormalized.length < 10) {
+      return res.status(400).json({ error: 'Please enter a valid phone number.' });
     }
     let matched;
-    if (email != null && String(email).trim()) {
-      try {
-        matched = await findAccountByEmail(String(email).trim());
-      } catch (dbErr) {
-        console.error('[verify-otp] findAccountByEmail:', dbErr.message);
-        return res.status(500).json({ error: 'Service unavailable. Please contact your administrator.' });
-      }
-      if (!matched) {
-        return res.status(400).json({ error: 'No account found for this email address.' });
-      }
-    } else if (phone != null && String(phone).trim()) {
-      const inputNormalized = normalizePhone(phone);
-      if (!inputNormalized || inputNormalized.length < 10) {
-        return res.status(400).json({ error: 'Please enter a valid phone number.' });
-      }
-      try {
-        matched = await findAccountByPhone(inputNormalized);
-      } catch (dbErr) {
-        console.error('[verify-otp] findAccountByPhone:', dbErr.message);
-        return res.status(500).json({ error: 'Service unavailable. Please contact your administrator.' });
-      }
-      if (!matched) {
-        return res.status(400).json({ error: 'Your number is not in our system.' });
-      }
-    } else {
-      return res.status(400).json({ error: 'Phone number or email is required' });
+    try {
+      matched = await findAccountByPhone(inputNormalized);
+    } catch (dbErr) {
+      console.error('[verify-otp] findAccountByPhone:', dbErr.message);
+      return res.status(500).json({ error: 'Service unavailable. Please contact your administrator.' });
+    }
+    if (!matched) {
+      return res.status(400).json({ error: 'Your number is not in our system.' });
     }
     const em = String(matched.email || '').trim().toLowerCase();
     const otpStr = String(otp).trim().replace(/\s/g, '');

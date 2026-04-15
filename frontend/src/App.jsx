@@ -28,6 +28,9 @@ import BackupRestore from './pages/BackupRestore';
 import LoginActivity from './pages/LoginActivity';
 import Layout from './components/Layout';
 
+const ADMIN_EMAIL = 'logozodev@gmail.com';
+const isAdminUser = (u) => String(u?.email || '').toLowerCase().trim() === ADMIN_EMAIL;
+
 function App() {
   const { isAuthenticated, loading, user } = useAuth();
 
@@ -78,13 +81,13 @@ function App() {
         <Route path="reports/tax" element={<ReportTax />} />
         <Route path="reports/balance-sheet" element={<BalanceSheet />} />
         <Route path="cash-flow" element={<CashFlow />} />
-        <Route path="users" element={user?.email === 'logozodev@gmail.com' ? <Users /> : <Navigate to="/ai-insights" replace />} />
+        <Route path="users" element={isAdminUser(user) ? <Users /> : <Navigate to="/ai-insights" replace />} />
         <Route path="sms" element={<SMS />} />
-        <Route path="login-activity" element={user?.email === 'logozodev@gmail.com' ? <LoginActivity /> : <Navigate to="/dashboard" replace />} />
+        <Route path="login-activity" element={isAdminUser(user) ? <LoginActivity /> : <Navigate to="/dashboard" replace />} />
         <Route path="reminders" element={<Reminders />} />
         <Route path="profile" element={<Profile />} />
         <Route path="settings" element={<Settings />} />
-        <Route path="backup-restore" element={user?.email === 'logozodev@gmail.com' ? <BackupRestore /> : <Navigate to="/dashboard" replace />} />
+        <Route path="backup-restore" element={isAdminUser(user) ? <BackupRestore /> : <Navigate to="/dashboard" replace />} />
       </Route>
     </Routes>
   );

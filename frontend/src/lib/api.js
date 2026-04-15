@@ -2,9 +2,7 @@
  * LogozoPOS API client
  * Base URL: same domain /api when deployed, or VITE_API_URL env
  */
-export const getApiUrl = () => import.meta.env.VITE_API_URL || '/api';
-
-const API_BASE = getApiUrl();
+const API_BASE = import.meta.env.VITE_API_URL || '/api';
 
 const getToken = () => localStorage.getItem('token');
 
@@ -20,7 +18,8 @@ const request = async (path, options = {}) => {
   const res = await fetch(url, { ...options, headers });
   const data = await res.json().catch(() => ({}));
   if (!res.ok) {
-    if (res.status === 401) {
+    // Do not clear session on failed sign-in (401 from /auth/login)
+    if (res.status === 401 && path !== '/auth/login') {
       localStorage.removeItem('token');
       window.dispatchEvent(new CustomEvent('auth:logout'));
     }

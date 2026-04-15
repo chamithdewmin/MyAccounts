@@ -23,6 +23,7 @@ import {
   LogOut,
   LayoutDashboard,
   Calendar,
+  Activity,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/contexts/AuthContext';
@@ -77,6 +78,7 @@ const NAV_ITEMS_WITH_DIVIDERS = [
   { label: 'Messages', href: '/sms', icon: MessageSquare },
   { divider: true },
   { label: 'Users', href: '/users', icon: UserPlus, adminOnly: true },
+  { label: 'Login Activity', href: '/login-activity', icon: Activity, adminOnly: true },
   { label: 'Settings', href: '/settings', icon: Settings },
 ];
 

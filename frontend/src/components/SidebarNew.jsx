@@ -74,8 +74,6 @@ const reportSubItems = [
 ];
 
 const settingsSubItems = [
-  { to: "/users", label: "Users", icon: UserPlus, adminOnly: true },
-  { to: "/login-activity", label: "Login Activity", icon: Activity, adminOnly: true },
   { to: "/settings", label: "System Settings", icon: Cog },
   { to: "/backup-restore", label: "Backup & Restore", icon: HardDrive },
 ];
@@ -96,6 +94,9 @@ const NAV_ITEMS = [
   { divider: true },
   { label: "Reminders", href: "/reminders", icon: Bell },
   { label: "Messages", href: "/sms", icon: MessageSquare },
+  { divider: true },
+  { label: "Users", href: "/users", icon: UserPlus, adminOnly: true },
+  { label: "Login Activity", href: "/login-activity", icon: Activity, adminOnly: true },
   { divider: true },
   { label: "Settings", icon: Settings, href: "/settings", items: settingsSubItems },
 ];
@@ -384,7 +385,7 @@ export default function SidebarNew() {
     if (location.pathname.startsWith("/reports")) {
       setAnalyticsOpen(true);
     }
-    if (location.pathname === "/settings" || location.pathname === "/users" || location.pathname === "/backup-restore" || location.pathname === "/login-activity") {
+    if (location.pathname === "/settings" || location.pathname === "/backup-restore") {
       setSettingsOpen(true);
     }
   }, [location.pathname]);
@@ -406,7 +407,7 @@ export default function SidebarNew() {
 
   const isActive = (href) => location.pathname === href;
   const isAnalyticsActive = location.pathname.startsWith("/reports");
-  const isSettingsActive = ["/settings", "/users", "/backup-restore", "/login-activity"].includes(location.pathname);
+  const isSettingsActive = ["/settings", "/backup-restore"].includes(location.pathname);
 
   const closeMiniSubmenu = () => setMiniSubmenu(null);
 

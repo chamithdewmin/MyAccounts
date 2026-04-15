@@ -84,21 +84,27 @@
   text-decoration: none;
 }
 .login-page .logo-image {
-  width: 32px;
-  height: auto;
   display: block;
 }
 .login-page .logo-text {
-  font-size: 1.5rem;
-  font-weight: 700;
+  font-size: 1.125rem;
   letter-spacing: -0.02em;
   color: #f0f0f0;
   position: relative;
-  top: 4px;
+  top: 2px;
 }
-.login-page .logo-text span {
+.login-page .logo-text-split {
+  display: inline-flex;
+  align-items: baseline;
+  white-space: nowrap;
+}
+.login-page .logo-text-strong {
+  font-weight: 800;
   color: #f0f0f0;
-  font-weight: 700;
+}
+.login-page .logo-text-soft {
+  font-weight: 500;
+  color: #f0f0f0;
 }
 .login-page .hotline {
   font-size: 0.75rem;

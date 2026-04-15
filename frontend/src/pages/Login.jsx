@@ -4,7 +4,7 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { getApiUrl } from '@/lib/api';
 import loginBg from '@/assets/login-background.webp';
-import AppleLogoWhite from '@/assets/Apple_logo_white.svg';
+import sidebarLogo from '@/assets/logozopos.png';
 import './Login.css';
 
 const apiMessage = (data) =>
@@ -331,9 +331,17 @@ export default function LoginPage() {
             <div className="hero-bg" />
             <nav className="nav a1">
               <a className="logo" href="/login">
-                <img src={AppleLogoWhite} alt="" className="logo-image" />
-                <span className="logo-text vp-logo-text">
-                  Logozo<span>POS</span>
+                <img
+                  src={sidebarLogo}
+                  alt=""
+                  className="logo-image"
+                  width={34}
+                  height={34}
+                  style={{ objectFit: 'contain', flexShrink: 0 }}
+                />
+                <span className="logo-text vp-logo-text logo-text-split">
+                  <span className="logo-text-strong">Logozo</span>
+                  <span className="logo-text-soft">POS</span>
                 </span>
               </a>
               <div className="hotline">

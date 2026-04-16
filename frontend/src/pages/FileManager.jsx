@@ -367,7 +367,18 @@ const FileManager = () => {
               <Upload className="w-4 h-4" />
               Upload
             </Button>
-            <Button type="button" variant="outline" disabled title="Folders coming later" className="gap-2 opacity-60">
+            <Button
+              type="button"
+              variant="outline"
+              title="Folders coming later"
+              className="gap-2"
+              onClick={() =>
+                toast({
+                  title: 'New Folder coming soon',
+                  description: 'Folder creation is not implemented yet. You can still upload and organize with tags/links.',
+                })
+              }
+            >
               <Folder className="w-4 h-4" />
               New folder
             </Button>

@@ -145,6 +145,7 @@ export const api = {
     },
     listFolders: () => request('/files/folders'),
     createFolder: (name) => request('/files/folders', { method: 'POST', body: JSON.stringify({ name }) }),
+    deleteFolder: (id) => request(`/files/folders/${id}`, { method: 'DELETE' }),
     update: (id, data) => request(`/files/${id}`, { method: 'PATCH', body: JSON.stringify(data) }),
     delete: (id) => request(`/files/${id}`, { method: 'DELETE' }),
     /** XHR upload with progress 0–100; abort via signal */

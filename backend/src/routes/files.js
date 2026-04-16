@@ -149,6 +149,36 @@ router.post('/folders', async (req, res) => {
   }
 });
 
+router.delete('/folders/:id(\\d+)', async (req, res) => {
+  try {
+    const uid = req.user.dataUserId;
+    const id = Number(req.params.id);
+    if (!Number.isInteger(id) || id <= 0) return res.status(400).json({ error: 'Invalid folder id' });
+    const client = await pool.connect();
+    try {
+      await client.query('BEGIN');
+      const { rows } = await client.query('SELECT id, name FROM folders WHERE id = $1 AND user_id = $2', [id, uid]);
+      if (!rows[0]) {
+        await client.query('ROLLBACK');
+        return res.status(404).json({ error: 'Folder not found' });
+      }
+      // Keep files safe: move folder files back to root before deleting folder.
+      await client.query('UPDATE files SET folder_id = NULL WHERE user_id = $1 AND folder_id = $2', [uid, id]);
+      await client.query('DELETE FROM folders WHERE id = $1 AND user_id = $2', [id, uid]);
+      await client.query('COMMIT');
+      res.json({ success: true, movedToRoot: true, folderName: rows[0].name });
+    } catch (e) {
+      await client.query('ROLLBACK');
+      throw e;
+    } finally {
+      client.release();
+    }
+  } catch (err) {
+    console.error('[folders DELETE]', err);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
 router.get('/', async (req, res) => {
   try {
     const uid = req.user.dataUserId;

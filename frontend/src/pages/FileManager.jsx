@@ -13,6 +13,7 @@ import {
   Download,
   Pencil,
   Trash2,
+  Trash,
   Link2,
   FileText,
   Image as ImageIcon,
@@ -105,10 +106,14 @@ const FileManager = () => {
   const [newFolderName, setNewFolderName] = useState('');
   const [creatingFolder, setCreatingFolder] = useState(false);
   const [dragFileId, setDragFileId] = useState(null);
+  const [deletingFolderId, setDeletingFolderId] = useState(null);
 
   const [renameOpen, setRenameOpen] = useState(false);
   const [renameValue, setRenameValue] = useState('');
   const [renameTarget, setRenameTarget] = useState(null);
+  const [deleteTarget, setDeleteTarget] = useState(null);
+  const [deleteConfirmInput, setDeleteConfirmInput] = useState('');
+  const [deleteSubmitting, setDeleteSubmitting] = useState(false);
 
   const [linkOpen, setLinkOpen] = useState(false);
   const [linkTarget, setLinkTarget] = useState(null);
@@ -236,6 +241,29 @@ const FileManager = () => {
     }
   };
 
+  const deleteFolder = async (folder) => {
+    if (!folder) return;
+    const ok = window.confirm(
+      `Delete folder "${folder.name}"?\n\nFiles in this folder will be moved to Root.`,
+    );
+    if (!ok) return;
+    setDeletingFolderId(folder.id);
+    try {
+      await api.files.deleteFolder(folder.id);
+      setFolders((prev) => prev.filter((f) => f.id !== folder.id));
+      if (String(selectedFolderId) === String(folder.id)) setSelectedFolderId('');
+      toast({
+        title: 'Folder deleted',
+        description: `${folder.name} removed. Files were moved to Root.`,
+      });
+      await loadFiles();
+    } catch (e) {
+      toast({ title: 'Could not delete folder', description: e.message, variant: 'destructive' });
+    } finally {
+      setDeletingFolderId(null);
+    }
+  };
+
   const runUpload = (fileList) => {
     const file = fileList?.[0];
     if (!file || uploading) return;
@@ -311,15 +339,30 @@ const FileManager = () => {
     }
   };
 
-  const deleteFile = async (f) => {
-    if (!window.confirm(`Delete "${f.originalName}" permanently?`)) return;
+  const openDeleteDialog = (f) => {
+    setDeleteTarget(f);
+    setDeleteConfirmInput('');
+  };
+
+  const closeDeleteDialog = () => {
+    setDeleteTarget(null);
+    setDeleteConfirmInput('');
+  };
+
+  const deleteFile = async () => {
+    const f = deleteTarget;
+    if (!f || deleteConfirmInput.trim() !== 'DELETE') return;
+    setDeleteSubmitting(true);
     try {
       await api.files.delete(f.id);
       toast({ title: 'File deleted' });
       if (selected?.id === f.id) setSelected(null);
-      loadFiles();
+      closeDeleteDialog();
+      await loadFiles();
     } catch (e) {
       toast({ title: 'Delete failed', description: e.message, variant: 'destructive' });
+    } finally {
+      setDeleteSubmitting(false);
     }
   };
 
@@ -507,10 +550,8 @@ const FileManager = () => {
               </button>
               <div className="mt-1 max-h-56 overflow-auto space-y-1">
                 {folders.map((f) => (
-                  <button
+                  <div
                     key={f.id}
-                    type="button"
-                    onClick={() => setSelectedFolderId(String(f.id))}
                     onDragOver={(e) => {
                       e.preventDefault();
                     }}
@@ -518,15 +559,34 @@ const FileManager = () => {
                       e.preventDefault();
                       if (dragFileId != null) moveFileToFolder(dragFileId, f.id);
                     }}
-                    className={`w-full text-left rounded-lg px-3 py-2 text-sm flex items-center gap-2 ${
+                    className={`w-full rounded-lg text-sm flex items-center gap-1 ${
                       String(selectedFolderId) === String(f.id)
                         ? 'bg-primary/15 text-primary border border-primary/30'
                         : 'hover:bg-secondary text-muted-foreground'
                     }`}
                   >
-                    <Folder className="w-4 h-4" />
-                    <span className="truncate">{f.name}</span>
-                  </button>
+                    <button
+                      type="button"
+                      onClick={() => setSelectedFolderId(String(f.id))}
+                      className="flex-1 min-w-0 text-left px-3 py-2 flex items-center gap-2"
+                    >
+                      <Folder className="w-4 h-4 shrink-0" />
+                      <span className="truncate">{f.name}</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => deleteFolder(f)}
+                      disabled={deletingFolderId === f.id}
+                      className="p-2 rounded-md hover:bg-destructive/15 hover:text-destructive disabled:opacity-50"
+                      title="Delete folder"
+                    >
+                      {deletingFolderId === f.id ? (
+                        <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                      ) : (
+                        <Trash className="w-3.5 h-3.5" />
+                      )}
+                    </button>
+                  </div>
                 ))}
                 {folders.length === 0 ? <p className="text-xs text-muted-foreground px-3 py-2">No folders yet</p> : null}
               </div>
@@ -648,7 +708,10 @@ const FileManager = () => {
                                       Remove link
                                     </DropdownMenuItem>
                                   ) : null}
-                                  <DropdownMenuItem className="text-destructive focus:text-destructive" onClick={() => deleteFile(f)}>
+                                  <DropdownMenuItem
+                                    className="text-destructive focus:text-destructive"
+                                    onClick={() => openDeleteDialog(f)}
+                                  >
                                     <Trash2 className="w-4 h-4 mr-2" />
                                     Delete
                                   </DropdownMenuItem>
@@ -917,6 +980,49 @@ const FileManager = () => {
               Cancel
             </Button>
             <Button onClick={saveRename}>Save</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog
+        open={!!deleteTarget}
+        onOpenChange={(open) => {
+          if (!open && !deleteSubmitting) closeDeleteDialog();
+        }}
+      >
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Delete file?</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3">
+            <p className="text-sm text-muted-foreground">
+              Are you sure you want to permanently delete{' '}
+              <span className="font-medium text-foreground">{deleteTarget?.originalName || 'this file'}</span>?
+            </p>
+            <div className="space-y-2">
+              <Label htmlFor="delete-file-confirm">Type DELETE to confirm</Label>
+              <Input
+                id="delete-file-confirm"
+                value={deleteConfirmInput}
+                onChange={(e) => setDeleteConfirmInput(e.target.value)}
+                placeholder="DELETE"
+                autoComplete="off"
+                disabled={deleteSubmitting}
+                className="font-mono tracking-wide"
+              />
+            </div>
+          </div>
+          <DialogFooter className="gap-2">
+            <Button variant="outline" onClick={closeDeleteDialog} disabled={deleteSubmitting}>
+              Cancel
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={deleteFile}
+              disabled={deleteSubmitting || deleteConfirmInput.trim() !== 'DELETE'}
+            >
+              {deleteSubmitting ? 'Deleting…' : 'Delete file'}
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

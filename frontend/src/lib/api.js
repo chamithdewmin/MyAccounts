@@ -188,8 +188,8 @@ export const api = {
       const token = getToken();
       if (token) headers.Authorization = `Bearer ${token}`;
       const res = await fetch(url, { headers });
-      const errText = await res.text().catch(() => '');
       if (!res.ok) {
+        const errText = await res.text().catch(() => '');
         let msg = `HTTP ${res.status}`;
         try {
           const j = JSON.parse(errText);

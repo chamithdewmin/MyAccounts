@@ -1,12 +1,19 @@
 import React, { useEffect, useState } from 'react';
 import { Helmet } from 'react-helmet';
 import { Link } from 'react-router-dom';
-import { Briefcase, Plus, LayoutGrid, FileText, TrendingUp, TrendingDown, AlertTriangle } from 'lucide-react';
+import { Briefcase, Plus, LayoutGrid, FileText, TrendingUp, TrendingDown, AlertTriangle, Trash2 } from 'lucide-react';
 import { useFinance } from '@/contexts/FinanceContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
 import { useToast } from '@/components/ui/use-toast';
 import { api } from '@/lib/api';
 import { cn } from '@/lib/utils';
@@ -32,6 +39,10 @@ const Projects = () => {
     price: '',
     status: 'in_progress',
   });
+
+  const [deleteTarget, setDeleteTarget] = useState(null);
+  const [deleteConfirmInput, setDeleteConfirmInput] = useState('');
+  const [deleteSubmitting, setDeleteSubmitting] = useState(false);
 
   const load = () => {
     setLoading(true);
@@ -84,6 +95,31 @@ const Projects = () => {
         toast({ title: 'Could not create project', description: err.message, variant: 'destructive' });
       })
       .finally(() => setSaving(false));
+  };
+
+  const openDeleteDialog = (project) => {
+    setDeleteTarget(project);
+    setDeleteConfirmInput('');
+  };
+
+  const closeDeleteDialog = () => {
+    setDeleteTarget(null);
+    setDeleteConfirmInput('');
+  };
+
+  const confirmDeleteProject = async () => {
+    if (!deleteTarget || deleteConfirmInput.trim() !== 'DELETE') return;
+    setDeleteSubmitting(true);
+    try {
+      await api.projects.delete(deleteTarget.id);
+      setList((prev) => prev.filter((x) => x.id !== deleteTarget.id));
+      toast({ title: 'Project deleted' });
+      closeDeleteDialog();
+    } catch (err) {
+      toast({ title: 'Could not delete project', description: err.message, variant: 'destructive' });
+    } finally {
+      setDeleteSubmitting(false);
+    }
   };
 
   return (
@@ -161,6 +197,11 @@ const Projects = () => {
                     <span className="font-semibold text-foreground">{p.progress ?? 0}%</span>
                     <span className="text-muted-foreground"> ({p.taskDone ?? 0}/{p.taskTotal ?? 0} tasks)</span>
                   </div>
+                  {(Number(p.expenseTotal) || 0) > 0 ? (
+                    <p className="text-xs text-orange-400/90">
+                      Project expenses: {currency} {(Number(p.expenseTotal) || 0).toLocaleString()} (included in total cost)
+                    </p>
+                  ) : null}
                   <div className="flex items-center gap-2 text-sm flex-wrap">
                     <span className="text-muted-foreground">Net profit:</span>
                     <span
@@ -192,12 +233,75 @@ const Projects = () => {
                         Invoice
                       </Link>
                     </Button>
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant="outline"
+                      className="gap-1 text-destructive border-destructive/40 hover:bg-destructive/10 hover:text-destructive"
+                      onClick={() => openDeleteDialog(p)}
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                      Delete
+                    </Button>
                   </div>
                 </div>
               );
             })}
           </div>
         )}
+
+        <Dialog
+          open={!!deleteTarget}
+          onOpenChange={(open) => {
+            if (!open && !deleteSubmitting) closeDeleteDialog();
+          }}
+        >
+          <DialogContent className="max-w-md">
+            <DialogHeader>
+              <DialogTitle>Delete project?</DialogTitle>
+              <DialogDescription className="sr-only">
+                Confirm permanent project removal by typing DELETE in the field below.
+              </DialogDescription>
+            </DialogHeader>
+            <div className="space-y-2">
+              <p className="text-lg font-semibold text-foreground">Are you sure?</p>
+              {deleteTarget ? (
+                <p className="text-base text-muted-foreground">
+                  This will permanently delete <span className="font-medium text-foreground">{deleteTarget.name}</span>,
+                  all its tasks, time logs, comments, and project expenses. This cannot be undone.
+                </p>
+              ) : null}
+            </div>
+            <div className="space-y-2 pt-1">
+              <Label htmlFor="delete-project-confirm" className="text-base font-semibold text-foreground">
+                Type DELETE to confirm
+              </Label>
+              <Input
+                id="delete-project-confirm"
+                value={deleteConfirmInput}
+                onChange={(e) => setDeleteConfirmInput(e.target.value)}
+                placeholder="DELETE"
+                autoComplete="off"
+                autoCapitalize="characters"
+                className="h-12 bg-input border-border font-mono tracking-wide"
+                disabled={deleteSubmitting}
+              />
+            </div>
+            <DialogFooter className="gap-2">
+              <Button type="button" variant="outline" onClick={closeDeleteDialog} disabled={deleteSubmitting}>
+                Cancel
+              </Button>
+              <Button
+                type="button"
+                variant="destructive"
+                onClick={confirmDeleteProject}
+                disabled={deleteConfirmInput.trim() !== 'DELETE' || deleteSubmitting}
+              >
+                {deleteSubmitting ? 'Deleting…' : 'Delete project'}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
 
         <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
           <DialogContent className="max-w-md" aria-describedby={undefined}>

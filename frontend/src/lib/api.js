@@ -143,6 +143,18 @@ export const api = {
     delete: (id) => request(`/projects/${encodeURIComponent(id)}`, { method: 'DELETE' }),
     createTask: (projectId, data) =>
       request(`/projects/${encodeURIComponent(projectId)}/tasks`, { method: 'POST', body: JSON.stringify(data) }),
+    listExpenses: (projectId) => request(`/projects/${encodeURIComponent(projectId)}/expenses`),
+    createExpense: (projectId, data) =>
+      request(`/projects/${encodeURIComponent(projectId)}/expenses`, { method: 'POST', body: JSON.stringify(data) }),
+    updateExpense: (projectId, expenseId, data) =>
+      request(`/projects/${encodeURIComponent(projectId)}/expenses/${encodeURIComponent(expenseId)}`, {
+        method: 'PATCH',
+        body: JSON.stringify(data),
+      }),
+    deleteExpense: (projectId, expenseId) =>
+      request(`/projects/${encodeURIComponent(projectId)}/expenses/${encodeURIComponent(expenseId)}`, {
+        method: 'DELETE',
+      }),
   },
   projectTasks: {
     get: (id) => request(`/project-tasks/${encodeURIComponent(id)}`),

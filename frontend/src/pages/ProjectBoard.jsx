@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { Helmet } from 'react-helmet';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import {
@@ -13,6 +13,9 @@ import {
   Square,
   Loader2,
   AlertTriangle,
+  Receipt,
+  Trash2,
+  Pencil,
 } from 'lucide-react';
 import { useFinance } from '@/contexts/FinanceContext';
 import { useAuth } from '@/contexts/AuthContext';
@@ -21,6 +24,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { useToast } from '@/components/ui/use-toast';
+import { SiteConfirmDialog } from '@/components/ui/site-confirm-dialog';
 import { api } from '@/lib/api';
 import { cn } from '@/lib/utils';
 
@@ -37,6 +41,14 @@ const formatDue = (d) => {
   } catch {
     return d;
   }
+};
+
+const todayYmd = () => {
+  const d = new Date();
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${y}-${m}-${day}`;
 };
 
 const ProjectBoard = () => {
@@ -67,6 +79,20 @@ const ProjectBoard = () => {
   const [detail, setDetail] = useState(null);
   const [commentText, setCommentText] = useState('');
   const [savingComment, setSavingComment] = useState(false);
+
+  const [expenseOpen, setExpenseOpen] = useState(false);
+  const [expenseSaving, setExpenseSaving] = useState(false);
+  const [expenseEditingId, setExpenseEditingId] = useState(null);
+  const [expenseForm, setExpenseForm] = useState({
+    amount: '',
+    expenseDate: '',
+    category: 'Other',
+    notes: '',
+  });
+
+  const deleteExpenseRef = useRef(null);
+  const [expenseDeleteConfirmOpen, setExpenseDeleteConfirmOpen] = useState(false);
+  const [expenseDeleteMessage, setExpenseDeleteMessage] = useState('');
 
   const loadProject = () => {
     if (!projectId) return Promise.resolve();
@@ -151,6 +177,43 @@ const ProjectBoard = () => {
     }
   };
 
+  const saveExpense = async (e) => {
+    e.preventDefault();
+    if (!projectId) return;
+    const amt = Number(expenseForm.amount);
+    if (Number.isNaN(amt) || amt < 0) {
+      toast({ title: 'Invalid amount', variant: 'destructive' });
+      return;
+    }
+    if (!expenseForm.expenseDate?.trim()) {
+      toast({ title: 'Expense date required', variant: 'destructive' });
+      return;
+    }
+    setExpenseSaving(true);
+    try {
+      const payload = {
+        amount: amt,
+        expenseDate: expenseForm.expenseDate.trim().slice(0, 10),
+        category: expenseForm.category.trim() || 'Other',
+        notes: expenseForm.notes.trim(),
+      };
+      if (expenseEditingId) {
+        await api.projects.updateExpense(projectId, expenseEditingId, payload);
+        toast({ title: 'Expense updated' });
+      } else {
+        await api.projects.createExpense(projectId, payload);
+        toast({ title: 'Expense added' });
+      }
+      setExpenseOpen(false);
+      setExpenseEditingId(null);
+      await loadProject();
+    } catch (err) {
+      toast({ title: 'Could not save expense', description: err.message, variant: 'destructive' });
+    } finally {
+      setExpenseSaving(false);
+    }
+  };
+
   const openDetail = async (taskId) => {
     setDetailOpen(true);
     setDetailLoading(true);
@@ -209,6 +272,28 @@ const ProjectBoard = () => {
     return task.assigneeName || `User #${task.assignedTo}`;
   };
 
+  const openDeleteExpenseConfirm = (ex) => {
+    deleteExpenseRef.current = ex;
+    setExpenseDeleteMessage(
+      `Delete this expense (${currency} ${Number(ex.amount || 0).toLocaleString()} · ${formatDue(ex.expenseDate)})?`,
+    );
+    setExpenseDeleteConfirmOpen(true);
+  };
+
+  const executeDeleteExpense = async () => {
+    const ex = deleteExpenseRef.current;
+    if (!ex?.id || !projectId) return;
+    try {
+      await api.projects.deleteExpense(projectId, ex.id);
+      await loadProject();
+      toast({ title: 'Expense removed' });
+    } catch (err) {
+      toast({ title: 'Could not delete', description: err.message, variant: 'destructive' });
+    } finally {
+      deleteExpenseRef.current = null;
+    }
+  };
+
   if (loading && !project) {
     return (
       <div className="flex items-center justify-center py-24 text-muted-foreground gap-2">
@@ -233,7 +318,12 @@ const ProjectBoard = () => {
   }
 
   const price = Number(project.price) || 0;
-  const totalCost = Number(project.totalCost) || 0;
+  const expenseTotal = Number(project.expenseTotal) || 0;
+  const taskCostTotal =
+    project.taskCostTotal != null && !Number.isNaN(Number(project.taskCostTotal))
+      ? Number(project.taskCostTotal)
+      : Math.max(0, (Number(project.totalCost) || 0) - expenseTotal);
+  const totalCost = Number(project.totalCost) || taskCostTotal + expenseTotal;
   const netProfit = Number(project.netProfit) || 0;
   const marginWarn = project.marginWarning;
 
@@ -263,7 +353,8 @@ const ProjectBoard = () => {
             <div>
               <p className="font-semibold text-yellow-600 dark:text-yellow-400">Profit margin dropping</p>
               <p className="text-muted-foreground mt-0.5">
-                Total task cost has reached {(price > 0 ? Math.round((totalCost / price) * 100) : 0)}% of the project price.
+                Combined costs (tasks + project expenses) have reached{' '}
+                {price > 0 ? Math.round((totalCost / price) * 100) : 0}% of the project price.
               </p>
             </div>
           </div>
@@ -325,6 +416,96 @@ const ProjectBoard = () => {
                 </div>
               ))}
             </div>
+
+            <div className="rounded-xl border border-border bg-card/50 p-4 space-y-3">
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <h2 className="text-lg font-semibold flex items-center gap-2">
+                  <Receipt className="w-5 h-5 text-orange-400" />
+                  Project expenses
+                </h2>
+                <Button
+                  type="button"
+                  size="sm"
+                  className="gap-1"
+                  onClick={() => {
+                    setExpenseEditingId(null);
+                    setExpenseForm({
+                      amount: '',
+                      expenseDate: todayYmd(),
+                      category: 'Other',
+                      notes: '',
+                    });
+                    setExpenseOpen(true);
+                  }}
+                >
+                  <Plus className="w-3.5 h-3.5" />
+                  Add expense
+                </Button>
+              </div>
+              <p className="text-xs text-muted-foreground">
+                Log costs for this project only. They are included in total cost and net profit ({currency}).
+              </p>
+              {(project.projectExpenses || []).length === 0 ? (
+                <p className="text-sm text-muted-foreground py-2">No project expenses yet.</p>
+              ) : (
+                <div className="overflow-x-auto rounded-lg border border-border">
+                  <table className="w-full text-sm">
+                    <thead>
+                      <tr className="border-b border-border bg-secondary/30 text-left text-xs text-muted-foreground uppercase tracking-wide">
+                        <th className="px-3 py-2 font-medium">Date</th>
+                        <th className="px-3 py-2 font-medium">Category</th>
+                        <th className="px-3 py-2 font-medium text-right">Amount</th>
+                        <th className="px-3 py-2 font-medium">Notes</th>
+                        <th className="px-3 py-2 w-20" />
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {project.projectExpenses.map((ex) => (
+                        <tr key={ex.id} className="border-b border-border last:border-0 hover:bg-secondary/20">
+                          <td className="px-3 py-2 whitespace-nowrap tabular-nums">{formatDue(ex.expenseDate)}</td>
+                          <td className="px-3 py-2">{ex.category}</td>
+                          <td className="px-3 py-2 text-right font-medium tabular-nums">
+                            {currency} {Number(ex.amount).toLocaleString()}
+                          </td>
+                          <td className="px-3 py-2 text-muted-foreground max-w-[200px] truncate">{ex.notes || '—'}</td>
+                          <td className="px-3 py-2 text-right">
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="icon"
+                              className="h-8 w-8"
+                              title="Edit"
+                              onClick={() => {
+                                setExpenseEditingId(ex.id);
+                                setExpenseForm({
+                                  amount: String(ex.amount ?? ''),
+                                  expenseDate: ex.expenseDate || todayYmd(),
+                                  category: ex.category || 'Other',
+                                  notes: ex.notes || '',
+                                });
+                                setExpenseOpen(true);
+                              }}
+                            >
+                              <Pencil className="w-3.5 h-3.5" />
+                            </Button>
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="icon"
+                              className="h-8 w-8 text-destructive"
+                              title="Delete"
+                              onClick={() => openDeleteExpenseConfirm(ex)}
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </Button>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </div>
           </div>
 
           <aside className="rounded-2xl border border-border bg-card p-4 space-y-4 h-fit xl:sticky xl:top-24">
@@ -337,6 +518,18 @@ const ProjectBoard = () => {
                 <dt className="text-muted-foreground">Project price</dt>
                 <dd className="font-medium tabular-nums">
                   {currency} {price.toLocaleString()}
+                </dd>
+              </div>
+              <div className="flex justify-between gap-2 text-xs">
+                <dt className="text-muted-foreground">Task time cost</dt>
+                <dd className="font-medium tabular-nums text-violet-400">
+                  {currency} {taskCostTotal.toLocaleString()}
+                </dd>
+              </div>
+              <div className="flex justify-between gap-2 text-xs">
+                <dt className="text-muted-foreground">Project expenses</dt>
+                <dd className="font-medium tabular-nums text-orange-400">
+                  {currency} {expenseTotal.toLocaleString()}
                 </dd>
               </div>
               <div className="flex justify-between gap-2">
@@ -426,6 +619,69 @@ const ProjectBoard = () => {
               </Button>
               <Button type="submit" disabled={addSaving}>
                 {addSaving ? 'Saving…' : 'Create'}
+              </Button>
+            </div>
+          </form>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog
+        open={expenseOpen}
+        onOpenChange={(o) => {
+          setExpenseOpen(o);
+          if (!o) setExpenseEditingId(null);
+        }}
+      >
+        <DialogContent className="max-w-md" aria-describedby={undefined}>
+          <DialogHeader>
+            <DialogTitle>{expenseEditingId ? 'Edit project expense' : 'Add project expense'}</DialogTitle>
+          </DialogHeader>
+          <form onSubmit={saveExpense} className="space-y-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div className="space-y-2">
+                <Label>Date</Label>
+                <Input
+                  type="date"
+                  required
+                  value={expenseForm.expenseDate}
+                  onChange={(e) => setExpenseForm((f) => ({ ...f, expenseDate: e.target.value }))}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>Amount ({currency})</Label>
+                <Input
+                  type="number"
+                  min={0}
+                  step="0.01"
+                  required
+                  value={expenseForm.amount}
+                  onChange={(e) => setExpenseForm((f) => ({ ...f, amount: e.target.value }))}
+                />
+              </div>
+            </div>
+            <div className="space-y-2">
+              <Label>Category</Label>
+              <Input
+                value={expenseForm.category}
+                onChange={(e) => setExpenseForm((f) => ({ ...f, category: e.target.value }))}
+                placeholder="Materials, travel, subcontractor…"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>Notes</Label>
+              <textarea
+                className="w-full min-h-[72px] rounded-md border border-input bg-background px-3 py-2 text-sm"
+                value={expenseForm.notes}
+                onChange={(e) => setExpenseForm((f) => ({ ...f, notes: e.target.value }))}
+                placeholder="Optional"
+              />
+            </div>
+            <div className="flex justify-end gap-2 pt-2">
+              <Button type="button" variant="outline" onClick={() => setExpenseOpen(false)}>
+                Cancel
+              </Button>
+              <Button type="submit" disabled={expenseSaving}>
+                {expenseSaving ? 'Saving…' : expenseEditingId ? 'Save changes' : 'Add expense'}
               </Button>
             </div>
           </form>
@@ -607,6 +863,13 @@ const ProjectBoard = () => {
           )}
         </DialogContent>
       </Dialog>
+
+      <SiteConfirmDialog
+        open={expenseDeleteConfirmOpen}
+        onOpenChange={setExpenseDeleteConfirmOpen}
+        message={expenseDeleteMessage}
+        onConfirm={executeDeleteExpense}
+      />
     </>
   );
 };

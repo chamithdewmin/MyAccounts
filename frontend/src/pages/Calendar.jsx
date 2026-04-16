@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect, useCallback } from 'react';
+import React, { useState, useMemo, useEffect, useCallback, useRef } from 'react';
 import { Helmet } from 'react-helmet';
 import { Calendar as CalendarIcon, ChevronLeft, ChevronRight, DollarSign, Receipt, FileText, TrendingUp, Plus, Clock, Pencil, Trash2 } from 'lucide-react';
 import { useFinance } from '@/contexts/FinanceContext';
@@ -7,6 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { useToast } from '@/components/ui/use-toast';
+import { SiteConfirmDialog } from '@/components/ui/site-confirm-dialog';
 import { cn } from '@/lib/utils';
 import { api } from '@/lib/api';
 
@@ -19,6 +20,9 @@ const Calendar = () => {
   const [eventEditingId, setEventEditingId] = useState(null);
   const [savingEvent, setSavingEvent] = useState(false);
   const [deletingEventId, setDeletingEventId] = useState(null);
+  const deleteEventRef = useRef(null);
+  const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
+  const [deleteConfirmMessage, setDeleteConfirmMessage] = useState('');
   const [eventForm, setEventForm] = useState({
     eventName: '',
     date: '',
@@ -208,9 +212,16 @@ const Calendar = () => {
       .finally(() => setSavingEvent(false));
   };
 
-  const handleDeleteEvent = async (ev) => {
+  const openDeleteEventConfirm = (ev) => {
     if (!ev?.id) return;
-    if (!window.confirm(`Delete “${ev.eventName}”?`)) return;
+    deleteEventRef.current = ev;
+    setDeleteConfirmMessage(`Delete “${ev.eventName}”?`);
+    setDeleteConfirmOpen(true);
+  };
+
+  const executeDeleteEvent = async () => {
+    const ev = deleteEventRef.current;
+    if (!ev?.id) return;
     setDeletingEventId(ev.id);
     try {
       await api.calendarEvents.delete(ev.id);
@@ -228,6 +239,7 @@ const Calendar = () => {
       });
     } finally {
       setDeletingEventId(null);
+      deleteEventRef.current = null;
     }
   };
 
@@ -590,7 +602,7 @@ const Calendar = () => {
                                 className="h-8 w-8 text-destructive hover:text-destructive"
                                 aria-label="Delete event"
                                 disabled={deletingEventId === ev.id}
-                                onClick={() => handleDeleteEvent(ev)}
+                                onClick={() => openDeleteEventConfirm(ev)}
                               >
                                 <Trash2 className="w-3.5 h-3.5" />
                               </Button>
@@ -679,7 +691,7 @@ const Calendar = () => {
                   disabled={savingEvent || deletingEventId === eventEditingId}
                   onClick={() => {
                     const ev = events.find((row) => row.id === eventEditingId);
-                    if (ev) handleDeleteEvent(ev);
+                    if (ev) openDeleteEventConfirm(ev);
                   }}
                 >
                   {deletingEventId === eventEditingId ? 'Deleting…' : 'Delete'}
@@ -695,6 +707,13 @@ const Calendar = () => {
           </form>
         </DialogContent>
       </Dialog>
+
+      <SiteConfirmDialog
+        open={deleteConfirmOpen}
+        onOpenChange={setDeleteConfirmOpen}
+        message={deleteConfirmMessage}
+        onConfirm={executeDeleteEvent}
+      />
     </>
   );
 };

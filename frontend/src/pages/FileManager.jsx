@@ -14,7 +14,6 @@ import {
   Pencil,
   Trash2,
   Trash,
-  AlertTriangle,
   Link2,
   FileText,
   Image as ImageIcon,
@@ -1001,29 +1000,26 @@ const FileManager = () => {
           <DialogHeader>
             <DialogTitle>Delete file?</DialogTitle>
           </DialogHeader>
-          <div className="space-y-4">
-            <div className="space-y-1 min-w-0">
-              <p className="text-sm text-foreground">Are you sure?</p>
-              <p className="text-sm text-muted-foreground">
-                This will permanently remove{' '}
-                <span className="font-medium text-foreground">{deleteTarget?.originalName || 'this file'}</span>. This cannot be undone.
-              </p>
-            </div>
-            <div className="space-y-2 pt-1">
-              <Label htmlFor="delete-file-confirm" className="text-sm font-medium text-foreground">
-                Type DELETE to confirm
-              </Label>
-              <Input
-                id="delete-file-confirm"
-                value={deleteConfirmInput}
-                onChange={(e) => setDeleteConfirmInput(e.target.value)}
-                placeholder="DELETE"
-                autoComplete="off"
-                autoCapitalize="characters"
-                disabled={deleteSubmitting}
-                className="bg-input border-border font-mono tracking-wide"
-              />
-            </div>
+          <div className="space-y-2">
+            <p className="text-lg font-semibold text-foreground">Are you sure?</p>
+            <p className="text-base text-muted-foreground">
+              This will permanently remove {deleteTarget?.originalName || 'this file'}. This cannot be undone.
+            </p>
+          </div>
+          <div className="space-y-2 pt-1">
+            <Label htmlFor="delete-file-confirm" className="text-base font-semibold text-foreground">
+              Type DELETE to confirm
+            </Label>
+            <Input
+              id="delete-file-confirm"
+              value={deleteConfirmInput}
+              onChange={(e) => setDeleteConfirmInput(e.target.value)}
+              placeholder="DELETE"
+              autoComplete="off"
+              autoCapitalize="characters"
+              disabled={deleteSubmitting}
+              className="h-12 bg-input border-border font-mono tracking-wide"
+            />
           </div>
           <DialogFooter className="gap-2 sm:gap-0">
             <Button variant="outline" onClick={closeDeleteDialog} disabled={deleteSubmitting}>
@@ -1048,34 +1044,28 @@ const FileManager = () => {
       >
         <DialogContent className="max-w-md">
           <DialogHeader>
-            <DialogTitle className="sr-only">Delete folder</DialogTitle>
+            <DialogTitle>Delete folder?</DialogTitle>
           </DialogHeader>
-          <div className="rounded-xl border border-destructive/35 bg-destructive/5 dark:bg-destructive/10 p-4 space-y-4">
-            <div className="flex gap-3">
-              <AlertTriangle className="h-5 w-5 shrink-0 text-amber-500 mt-0.5" aria-hidden />
-              <div className="space-y-1 min-w-0">
-                <h3 className="text-base font-semibold text-foreground tracking-tight">Delete Folder</h3>
-                <p className="text-sm text-foreground">Are you sure?</p>
-                <p className="text-sm text-muted-foreground">
-                  Delete folder{' '}
-                  <span className="font-medium text-foreground">{folderDeleteTarget?.name || 'this folder'}</span>?
-                  Files in this folder will be moved to Root.
-                </p>
-              </div>
-            </div>
-            <div className="space-y-2 pt-1">
-              <Label htmlFor="delete-folder-confirm">Type DELETE to confirm</Label>
-              <Input
-                id="delete-folder-confirm"
-                value={folderDeleteInput}
-                onChange={(e) => setFolderDeleteInput(e.target.value)}
-                placeholder="DELETE"
-                autoComplete="off"
-                autoCapitalize="characters"
-                disabled={folderDeleteSubmitting}
-                className="bg-input border-border font-mono tracking-wide"
-              />
-            </div>
+          <div className="space-y-2">
+            <p className="text-lg font-semibold text-foreground">Are you sure?</p>
+            <p className="text-base text-muted-foreground">
+              Delete folder {folderDeleteTarget?.name || 'this folder'}? Files in this folder will be moved to Root.
+            </p>
+          </div>
+          <div className="space-y-2 pt-1">
+            <Label htmlFor="delete-folder-confirm" className="text-base font-semibold text-foreground">
+              Type DELETE to confirm
+            </Label>
+            <Input
+              id="delete-folder-confirm"
+              value={folderDeleteInput}
+              onChange={(e) => setFolderDeleteInput(e.target.value)}
+              placeholder="DELETE"
+              autoComplete="off"
+              autoCapitalize="characters"
+              disabled={folderDeleteSubmitting}
+              className="h-12 bg-input border-border font-mono tracking-wide"
+            />
           </div>
           <DialogFooter className="gap-2 sm:gap-0">
             <Button variant="outline" onClick={closeFolderDeleteDialog} disabled={folderDeleteSubmitting}>

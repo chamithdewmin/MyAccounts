@@ -11,7 +11,6 @@ import {
   ChevronRight,
   Ban,
   Unlock,
-  AlertTriangle,
 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -586,48 +585,42 @@ const Users = () => {
         >
           <DialogContent className="max-w-md">
             <DialogHeader>
-              <DialogTitle className="sr-only">Delete user</DialogTitle>
+              <DialogTitle>Delete user?</DialogTitle>
               <DialogDescription className="sr-only">
                 Confirm permanent user removal by typing DELETE in the field below.
               </DialogDescription>
             </DialogHeader>
-            <div className="rounded-xl border border-destructive/35 bg-destructive/5 dark:bg-destructive/10 p-4 space-y-4">
-              <div className="flex gap-3">
-                <AlertTriangle className="h-5 w-5 shrink-0 text-amber-500 mt-0.5" aria-hidden />
-                <div className="space-y-1 min-w-0">
-                  <h3 className="text-base font-semibold text-foreground tracking-tight">Delete User</h3>
-                  <p className="text-sm text-foreground">Are you sure?</p>
-                  {deleteCandidate ? (
-                    <p className="text-sm text-muted-foreground">
-                      This will permanently remove <span className="font-medium text-foreground">{deleteCandidate.name}</span>
-                      {deleteCandidate.email ? (
-                        <>
-                          {' '}
-                          (<span className="truncate inline-block max-w-full align-bottom">{deleteCandidate.email}</span>)
-                        </>
-                      ) : null}{' '}
-                      and their data. This cannot be undone.
-                    </p>
-                  ) : null}
-                </div>
-              </div>
-              <div className="space-y-2 pt-1">
-                <label htmlFor="delete-confirm-input" className="text-sm font-medium text-foreground">
-                  Type DELETE to confirm
-                </label>
-                <Input
-                  id="delete-confirm-input"
-                  value={deleteConfirmInput}
-                  onChange={(e) => setDeleteConfirmInput(e.target.value)}
-                  placeholder="DELETE"
-                  autoComplete="off"
-                  autoCapitalize="characters"
-                  className="bg-input border-border font-mono tracking-wide"
-                  disabled={deleteSubmitting}
-                />
-              </div>
+            <div className="space-y-2">
+              <p className="text-lg font-semibold text-foreground">Are you sure?</p>
+              {deleteCandidate ? (
+                <p className="text-base text-muted-foreground">
+                  This will permanently remove {deleteCandidate.name}
+                  {deleteCandidate.email ? (
+                    <>
+                      {' '}
+                      (<span className="truncate inline-block max-w-full align-bottom">{deleteCandidate.email}</span>)
+                    </>
+                  ) : null}{' '}
+                  and their data. This cannot be undone.
+                </p>
+              ) : null}
             </div>
-            <DialogFooter className="gap-2 sm:gap-0">
+            <div className="space-y-2 pt-1">
+              <label htmlFor="delete-confirm-input" className="text-base font-semibold text-foreground">
+                Type DELETE to confirm
+              </label>
+              <Input
+                id="delete-confirm-input"
+                value={deleteConfirmInput}
+                onChange={(e) => setDeleteConfirmInput(e.target.value)}
+                placeholder="DELETE"
+                autoComplete="off"
+                autoCapitalize="characters"
+                className="h-12 bg-input border-border font-mono tracking-wide"
+                disabled={deleteSubmitting}
+              />
+            </div>
+            <DialogFooter className="gap-2">
               <Button type="button" variant="outline" onClick={closeDeleteDialog} disabled={deleteSubmitting}>
                 Cancel
               </Button>

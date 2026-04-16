@@ -27,6 +27,8 @@ import Calendar from './pages/Calendar';
 import BackupRestore from './pages/BackupRestore';
 import LoginActivity from './pages/LoginActivity';
 import FileManager from './pages/FileManager';
+import Projects from './pages/Projects';
+import ProjectBoard from './pages/ProjectBoard';
 import Layout from './components/Layout';
 
 const ADMIN_EMAIL = 'logozodev@gmail.com';
@@ -73,6 +75,8 @@ function App() {
         <Route path="invoices" element={<Orders />} />
         <Route path="estimates" element={<Estimates />} />
         <Route path="clients" element={<Customers />} />
+        <Route path="projects" element={<Projects />} />
+        <Route path="projects/:projectId" element={<ProjectBoard />} />
         <Route path="file-manager" element={<FileManager />} />
         <Route path="cash-flow" element={<CashFlow />} />
         <Route path="calendar" element={<Calendar />} />

@@ -24,6 +24,8 @@ import aiRoutes from './routes/ai.js';
 import backupRoutes from './routes/backup.js';
 import estimatesRoutes from './routes/estimates.js';
 import calendarEventsRoutes from './routes/calendarEvents.js';
+import projectsRoutes from './routes/projects.js';
+import projectTasksRoutes from './routes/projectTasks.js';
 import filesRoutes from './routes/files.js';
 import pool from './config/db.js';
 import { processDueScheduledSms } from './workers/scheduledSmsWorker.js';
@@ -243,6 +245,62 @@ async function initDb() {
   }
   try {
     await pool.query(`
+      CREATE TABLE IF NOT EXISTS projects (
+        id VARCHAR(80) PRIMARY KEY,
+        user_id INT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+        name VARCHAR(255) NOT NULL,
+        client_id VARCHAR(80) REFERENCES clients(id) ON DELETE SET NULL,
+        price DECIMAL(15,2) NOT NULL DEFAULT 0,
+        status VARCHAR(20) NOT NULL DEFAULT 'in_progress',
+        created_at TIMESTAMPTZ DEFAULT NOW(),
+        updated_at TIMESTAMPTZ DEFAULT NOW()
+      )
+    `);
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS tasks (
+        id VARCHAR(80) PRIMARY KEY,
+        project_id VARCHAR(80) NOT NULL REFERENCES projects(id) ON DELETE CASCADE,
+        user_id INT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+        title VARCHAR(500) NOT NULL,
+        description TEXT DEFAULT '',
+        status VARCHAR(20) NOT NULL DEFAULT 'todo',
+        assigned_to INT REFERENCES users(id) ON DELETE SET NULL,
+        hourly_rate DECIMAL(12,2) NOT NULL DEFAULT 0,
+        due_date DATE,
+        position INT NOT NULL DEFAULT 0,
+        created_at TIMESTAMPTZ DEFAULT NOW(),
+        updated_at TIMESTAMPTZ DEFAULT NOW()
+      )
+    `);
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS time_logs (
+        id VARCHAR(80) PRIMARY KEY,
+        task_id VARCHAR(80) NOT NULL REFERENCES tasks(id) ON DELETE CASCADE,
+        user_id INT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+        start_time TIMESTAMPTZ NOT NULL,
+        end_time TIMESTAMPTZ,
+        created_at TIMESTAMPTZ DEFAULT NOW()
+      )
+    `);
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS task_comments (
+        id VARCHAR(80) PRIMARY KEY,
+        task_id VARCHAR(80) NOT NULL REFERENCES tasks(id) ON DELETE CASCADE,
+        user_id INT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+        body TEXT NOT NULL DEFAULT '',
+        created_at TIMESTAMPTZ DEFAULT NOW()
+      )
+    `);
+    await pool.query(`CREATE INDEX IF NOT EXISTS idx_projects_user ON projects (user_id)`);
+    await pool.query(`CREATE INDEX IF NOT EXISTS idx_tasks_project_user ON tasks (project_id, user_id)`);
+    await pool.query(`CREATE INDEX IF NOT EXISTS idx_time_logs_task ON time_logs (task_id)`);
+    await pool.query(`CREATE INDEX IF NOT EXISTS idx_task_comments_task ON task_comments (task_id)`);
+    console.log('Projects / tasks tables ready.');
+  } catch (e) {
+    console.warn('projects tables:', e.message);
+  }
+  try {
+    await pool.query(`
       CREATE TABLE IF NOT EXISTS folders (
         id SERIAL PRIMARY KEY,
         user_id INT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
@@ -333,6 +391,8 @@ app.use('/api/ai', aiRoutes);
 app.use('/api/backup', backupRoutes);
 app.use('/api/estimates', estimatesRoutes);
 app.use('/api/calendar-events', calendarEventsRoutes);
+app.use('/api/projects', projectsRoutes);
+app.use('/api/project-tasks', projectTasksRoutes);
 app.use('/api/files', filesRoutes);
 
 const HOST = '0.0.0.0'; // Required for Docker: listen on all interfaces

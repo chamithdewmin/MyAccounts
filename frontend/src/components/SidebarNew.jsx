@@ -29,6 +29,7 @@ import {
   HardDrive,
   Activity,
   Folder,
+  Briefcase,
 } from "lucide-react";
 
 // Theme-aware colors
@@ -87,6 +88,7 @@ const NAV_ITEMS = [
   { label: "Invoices", href: "/invoices", icon: FileText },
   { label: "Estimates", href: "/estimates", icon: FileText },
   { label: "Clients", href: "/clients", icon: Users },
+  { label: "Projects", href: "/projects", icon: Briefcase },
   { label: "File Manager", href: "/file-manager", icon: Folder },
   { divider: true },
   { label: "Expenses", href: "/expenses", icon: Receipt },

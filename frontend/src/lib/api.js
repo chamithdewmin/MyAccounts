@@ -135,6 +135,27 @@ export const api = {
       request(`/calendar-events/${encodeURIComponent(id)}`, { method: 'PATCH', body: JSON.stringify(data) }),
     delete: (id) => request(`/calendar-events/${encodeURIComponent(id)}`, { method: 'DELETE' }),
   },
+  projects: {
+    list: () => request('/projects'),
+    get: (id) => request(`/projects/${encodeURIComponent(id)}`),
+    create: (data) => request('/projects', { method: 'POST', body: JSON.stringify(data) }),
+    update: (id, data) => request(`/projects/${encodeURIComponent(id)}`, { method: 'PATCH', body: JSON.stringify(data) }),
+    delete: (id) => request(`/projects/${encodeURIComponent(id)}`, { method: 'DELETE' }),
+    createTask: (projectId, data) =>
+      request(`/projects/${encodeURIComponent(projectId)}/tasks`, { method: 'POST', body: JSON.stringify(data) }),
+  },
+  projectTasks: {
+    get: (id) => request(`/project-tasks/${encodeURIComponent(id)}`),
+    update: (id, data) =>
+      request(`/project-tasks/${encodeURIComponent(id)}`, { method: 'PATCH', body: JSON.stringify(data) }),
+    delete: (id) => request(`/project-tasks/${encodeURIComponent(id)}`, { method: 'DELETE' }),
+    startTimer: (id) =>
+      request(`/project-tasks/${encodeURIComponent(id)}/timer/start`, { method: 'POST', body: JSON.stringify({}) }),
+    stopTimer: (id) =>
+      request(`/project-tasks/${encodeURIComponent(id)}/timer/stop`, { method: 'POST', body: JSON.stringify({}) }),
+    addComment: (id, body) =>
+      request(`/project-tasks/${encodeURIComponent(id)}/comments`, { method: 'POST', body: JSON.stringify({ body }) }),
+  },
   files: {
     list: (params = {}) => {
       const q = new URLSearchParams();

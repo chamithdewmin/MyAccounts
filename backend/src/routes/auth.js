@@ -1,10 +1,11 @@
 import express from 'express';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
-import { randomUUID } from 'crypto';
+import { randomInt, randomUUID } from 'crypto';
 import pool from '../config/db.js';
 import { authMiddleware } from '../middleware/auth.js';
 import { effectiveAppRole, isAdminRequest } from '../lib/dataScope.js';
+import { truncateUserAgentForStore, USER_AGENT_STORE_MAX } from '../lib/userAgent.js';
 
 const router = express.Router();
 const OTP_EXPIRY_MINUTES = 5;
@@ -12,6 +13,23 @@ const RESET_TOKEN_EXPIRY = '15m';
 const ADMIN_EMAIL = 'logozodev@gmail.com';
 
 const generateOtp = () => String(Math.floor(100000 + Math.random() * 900000));
+
+/** Sign-in form bad email/password → `failed`. Token / API auth issues → `unauthorized`. */
+const LOGIN_ACTIVITY_CREDENTIAL_FAILURES = new Set(['invalid_password', 'invalid_credentials', 'unauthorized']);
+
+const loginActivityFailureStatus = (failureReason) => {
+  const r = failureReason != null ? String(failureReason) : '';
+  if (LOGIN_ACTIVITY_CREDENTIAL_FAILURES.has(r)) return 'failed';
+  return 'unauthorized';
+};
+
+/** Public session handle (JWT `sid` + login_activity.session_id): stable, short, log-friendly. */
+const makeLoginSessionId = () => {
+  const alphabet = 'abcdefghijklmnopqrstuvwxyz0123456789';
+  let suffix = '';
+  for (let i = 0; i < 9; i++) suffix += alphabet[randomInt(alphabet.length)];
+  return `sess_${suffix}`;
+};
 
 const normalizePhone = (p) => {
   const digits = String(p || '').replace(/\D/g, '');
@@ -43,8 +61,9 @@ const insertLoginActivity = async ({
   role = null,
   failureReason = null,
 }) => {
-  const status = success ? 'active' : 'failed';
+  const status = success ? 'active' : loginActivityFailureStatus(failureReason);
   const effectiveLoginAt = loginAt || new Date().toISOString();
+  const uaStored = truncateUserAgentForStore(userAgent);
   const sharedValues = [
     userId,
     email,
@@ -53,7 +72,7 @@ const insertLoginActivity = async ({
     effectiveLoginAt,
     logoutAt,
     ipAddress,
-    userAgent,
+    uaStored,
     success,
     role,
     status,
@@ -169,7 +188,7 @@ router.post('/login', async (req, res) => {
 
     const user = rows[0];
     const ipAddress = getRequestIp(req);
-    const userAgent = String(req.headers['user-agent'] || '').slice(0, 1000);
+    const userAgent = truncateUserAgentForStore(req.headers['user-agent'] || '');
     if (!user) {
       await insertLoginActivity({
         email: emailTrimmed,
@@ -177,7 +196,7 @@ router.post('/login', async (req, res) => {
         ipAddress,
         userAgent,
         success: false,
-        failureReason: 'unauthorized',
+        failureReason: 'invalid_credentials',
       });
       return res.status(401).json({ success: false, error: 'Invalid credentials' });
     }
@@ -200,7 +219,7 @@ router.post('/login', async (req, res) => {
 
     const { rows: vrows } = await pool.query('SELECT token_version FROM users WHERE id = $1', [user.id]);
     const tokenVersion = vrows[0]?.token_version ?? 0;
-    const sessionId = randomUUID();
+    const sessionId = makeLoginSessionId();
     const loginAt = new Date().toISOString();
 
     const token = jwt.sign(
@@ -225,6 +244,7 @@ router.post('/login', async (req, res) => {
       success: true,
       token,
       loginActivityId,
+      sessionId,
       user: {
         id: user.id,
         email: user.email,
@@ -262,7 +282,7 @@ router.get('/me', async (req, res) => {
     }
     if (decoded.sid) {
       const ipAddress = getRequestIp(req);
-      const userAgent = String(req.headers['user-agent'] || '').slice(0, 1000);
+      const userAgent = truncateUserAgentForStore(req.headers['user-agent'] || '');
       const { rows: ar } = await pool.query(
         `SELECT id FROM login_activity
          WHERE session_id = $1 AND user_id = $2 AND status = $3
@@ -314,7 +334,8 @@ router.post('/logout', authMiddleware, async (req, res) => {
       await pool.query(
         `UPDATE login_activity
          SET logout_at = NOW(), status = 'completed'
-         WHERE session_id = $1 AND user_id = $2 AND status = 'active'`,
+         WHERE session_id = $1 AND user_id = $2
+           AND COALESCE(success, true) = true AND logout_at IS NULL`,
         [sid, req.user.id],
       );
     } else {
@@ -322,7 +343,7 @@ router.post('/logout', authMiddleware, async (req, res) => {
       await pool.query(
         `UPDATE login_activity
          SET logout_at = NOW(), status = 'completed'
-         WHERE user_id = $1 AND status = 'active'`,
+         WHERE user_id = $1 AND COALESCE(success, true) = true AND logout_at IS NULL`,
         [req.user.id],
       );
     }
@@ -336,20 +357,41 @@ router.post('/logout', authMiddleware, async (req, res) => {
 router.get('/login-activity/stats', authMiddleware, async (req, res) => {
   try {
     if (!isAdminRequest(req)) return res.status(403).json({ error: 'Forbidden' });
-    const [totalUsersR, activeSessionsR, activeUsersR, totalSessionsR, failedR] = await Promise.all([
+    // Active session = successful login row with no logout yet (logout_at IS NULL). Failed attempts stay out via success=false.
+    // Failed rows are split: invalid_credentials = sign-in form; failed_login = missing_token & other; blocked_ip = token/session revocation.
+    const [totalUsersR, activeSessionsR, activeUsersR, totalSessionsR, failedBreakdownR] = await Promise.all([
       pool.query('SELECT COUNT(*)::int AS c FROM users'),
       pool.query("SELECT COUNT(*)::int AS c FROM login_activity WHERE COALESCE(success, true) = true AND logout_at IS NULL"),
       pool.query(`SELECT COUNT(DISTINCT user_id)::int AS c FROM login_activity
                   WHERE COALESCE(success, true) = true AND logout_at IS NULL AND user_id IS NOT NULL`),
       pool.query("SELECT COUNT(*)::int AS c FROM login_activity WHERE COALESCE(success, true) = true"),
-      pool.query("SELECT COUNT(*)::int AS c FROM login_activity WHERE COALESCE(success, false) = false"),
+      pool.query(`
+        SELECT
+          COUNT(*) FILTER (WHERE COALESCE(success, false) = false)::int AS failed_total,
+          COUNT(*) FILTER (WHERE COALESCE(success, false) = false
+            AND failure_reason IN ('invalid_password','invalid_credentials','unauthorized'))::int AS invalid_credentials,
+          COUNT(*) FILTER (WHERE COALESCE(success, false) = false
+            AND failure_reason IN ('session_expired','invalid_token','user_not_found','blocked_ip'))::int AS blocked_ip,
+          COUNT(*) FILTER (WHERE COALESCE(success, false) = false AND NOT (
+            COALESCE(failure_reason, '') IN (
+              'invalid_password','invalid_credentials','unauthorized',
+              'session_expired','invalid_token','user_not_found','blocked_ip'
+            )
+          ))::int AS failed_login
+        FROM login_activity
+      `),
     ]);
+    const fb = failedBreakdownR.rows[0] || {};
+    const failedTotal = fb.failed_total ?? 0;
     res.json({
       totalUsers: totalUsersR.rows[0]?.c ?? 0,
       activeSessions: activeSessionsR.rows[0]?.c ?? 0,
       activeUsers: activeUsersR.rows[0]?.c ?? 0,
       totalSessions: totalSessionsR.rows[0]?.c ?? 0,
-      failedAttempts: failedR.rows[0]?.c ?? 0,
+      failedAttempts: failedTotal,
+      failedInvalidCredentials: fb.invalid_credentials ?? 0,
+      failedLogin: fb.failed_login ?? 0,
+      failedBlockedIp: fb.blocked_ip ?? 0,
     });
   } catch (err) {
     console.error('login-activity/stats:', err);
@@ -361,8 +403,11 @@ router.get('/login-activity', authMiddleware, async (req, res) => {
   try {
     if (!isAdminRequest(req)) return res.status(403).json({ error: 'Forbidden' });
     const { rows } = await pool.query(
-      `SELECT id, user_id AS "userId", email, user_name AS "userName", COALESCE(success, status != 'failed') AS success,
-              role, ip_address AS "ipAddress", failure_reason AS "failureReason",
+      `SELECT id, user_id AS "userId", email, user_name AS "userName",
+              COALESCE(success, LOWER(TRIM(COALESCE(status, ''))) NOT IN ('failed', 'unauthorized')) AS success,
+              role, session_id AS "sessionId", ip_address AS "ipAddress",
+              LEFT(COALESCE(user_agent, ''), ${USER_AGENT_STORE_MAX}) AS "userAgent",
+              failure_reason AS "failureReason",
               COALESCE(login_at, created_at) AS "loginAt", logout_at AS "logoutAt", status, created_at AS "createdAt"
        FROM login_activity
        ORDER BY COALESCE(login_at, created_at) DESC, created_at DESC
@@ -389,7 +434,8 @@ router.get('/activity', authMiddleware, async (req, res) => {
     if (adminUser) {
       if (filterUserId) {
         ({ rows } = await pool.query(
-          `SELECT id, user_id, email, user_name, role, session_id, login_at, logout_at, ip_address, status, failure_reason, created_at
+          `SELECT id, user_id, email, user_name, role, session_id, login_at, logout_at, ip_address,
+                  LEFT(COALESCE(user_agent, ''), ${USER_AGENT_STORE_MAX}) AS user_agent, status, failure_reason, created_at
            FROM login_activity
            WHERE user_id = $1
            ORDER BY created_at DESC
@@ -398,7 +444,8 @@ router.get('/activity', authMiddleware, async (req, res) => {
         ));
       } else {
         ({ rows } = await pool.query(
-          `SELECT id, user_id, email, user_name, role, session_id, login_at, logout_at, ip_address, status, failure_reason, created_at
+          `SELECT id, user_id, email, user_name, role, session_id, login_at, logout_at, ip_address,
+                  LEFT(COALESCE(user_agent, ''), ${USER_AGENT_STORE_MAX}) AS user_agent, status, failure_reason, created_at
            FROM login_activity
            ORDER BY created_at DESC
            LIMIT 500`,
@@ -406,7 +453,8 @@ router.get('/activity', authMiddleware, async (req, res) => {
       }
     } else {
       ({ rows } = await pool.query(
-        `SELECT id, user_id, email, user_name, role, session_id, login_at, logout_at, ip_address, status, failure_reason, created_at
+        `SELECT id, user_id, email, user_name, role, session_id, login_at, logout_at, ip_address,
+                LEFT(COALESCE(user_agent, ''), ${USER_AGENT_STORE_MAX}) AS user_agent, status, failure_reason, created_at
          FROM login_activity
          WHERE user_id = $1
          ORDER BY created_at DESC
@@ -436,6 +484,7 @@ router.get('/activity', authMiddleware, async (req, res) => {
         loginAt: r.login_at,
         logoutAt: r.logout_at,
         ipAddress: r.ip_address,
+        userAgent: r.user_agent,
         status: r.status,
         failureReason: r.failure_reason,
         createdAt: r.created_at,

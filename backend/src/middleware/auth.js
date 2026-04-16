@@ -1,5 +1,6 @@
 import jwt from 'jsonwebtoken';
 import pool from '../config/db.js';
+import { truncateUserAgentForStore } from '../lib/userAgent.js';
 import { effectiveAppRole, resolveDataUserId } from '../lib/dataScope.js';
 
 const getRequestIp = (req) => {
@@ -16,14 +17,14 @@ const logAuthFailure = async (req, reason, decoded = null) => {
     await pool.query(
       `INSERT INTO login_activity (
         id, user_id, email, session_id, login_at, logout_at, ip_address, user_agent, status, failure_reason, created_at
-      ) VALUES ($1, $2, $3, $4, NOW(), NULL, $5, $6, 'failed', $7, NOW())`,
+      ) VALUES ($1, $2, $3, $4, NOW(), NULL, $5, $6, 'unauthorized', $7, NOW())`,
       [
         `LA-${Date.now()}-${Math.random().toString(36).slice(2, 10).toUpperCase()}`,
         userId,
         email,
         sessionId,
         getRequestIp(req),
-        String(req.headers['user-agent'] || '').slice(0, 1000),
+        truncateUserAgentForStore(req.headers['user-agent'] || ''),
         reason,
       ],
     );
@@ -37,7 +38,7 @@ export const authMiddleware = async (req, res, next) => {
   const token = authHeader?.startsWith('Bearer ') ? authHeader.slice(7) : null;
 
   if (!token) {
-    await logAuthFailure(req, 'unauthorized');
+    await logAuthFailure(req, 'missing_token');
     return res.status(401).json({ error: 'Authentication required' });
   }
 

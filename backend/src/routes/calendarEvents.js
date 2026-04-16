@@ -5,24 +5,42 @@ import { authMiddleware } from '../middleware/auth.js';
 const router = express.Router();
 router.use(authMiddleware);
 
+/** Always YYYY-MM-DD so the client matches grid cells (avoids ISO string mismatch). */
+const formatEventDate = (v) => {
+  if (v == null || v === '') return '';
+  if (typeof v === 'string') {
+    const m = /^(\d{4}-\d{2}-\d{2})/.exec(v.trim());
+    if (m) return m[1];
+  }
+  if (v instanceof Date && !Number.isNaN(v.getTime())) {
+    const y = v.getFullYear();
+    const mo = String(v.getMonth() + 1).padStart(2, '0');
+    const d = String(v.getDate()).padStart(2, '0');
+    return `${y}-${mo}-${d}`;
+  }
+  return String(v).slice(0, 10);
+};
+
 const toEvent = (r) => ({
   id: r.id,
   userId: r.user_id,
   eventName: r.event_name,
-  eventDate: r.event_date,
-  eventTime: r.event_time || '',
+  eventDate: formatEventDate(r.event_date),
+  eventTime: r.event_time != null ? String(r.event_time).slice(0, 8) : '',
   notes: r.notes || '',
   createdAt: r.created_at,
 });
 
 router.get('/', async (req, res) => {
   try {
+    const bucketId = req.user.dataUserId;
+    const selfId = req.user.id;
     const { rows } = await pool.query(
       `SELECT id, user_id, event_name, event_date, event_time, notes, created_at
        FROM calendar_events
-       WHERE user_id = $1
+       WHERE user_id = $1 OR user_id = $2
        ORDER BY event_date ASC, event_time ASC NULLS LAST, created_at DESC`,
-      [req.user.dataUserId],
+      [bucketId, selfId],
     );
     res.json(rows.map(toEvent));
   } catch (err) {
@@ -59,10 +77,12 @@ router.patch('/:id', async (req, res) => {
     const date = String(eventDate || '').trim();
     if (!name || !date) return res.status(400).json({ error: 'Event name and date are required' });
 
+    const bucketId = req.user.dataUserId;
+    const selfId = req.user.id;
     const { rows } = await pool.query(
       `UPDATE calendar_events
        SET event_name = $1, event_date = $2, event_time = $3, notes = $4
-       WHERE id = $5 AND user_id = $6
+       WHERE id = $5 AND (user_id = $6 OR user_id = $7)
        RETURNING id, user_id, event_name, event_date, event_time, notes, created_at`,
       [
         name,
@@ -70,7 +90,8 @@ router.patch('/:id', async (req, res) => {
         String(eventTime || '').trim() || null,
         String(notes || '').trim(),
         req.params.id,
-        req.user.dataUserId,
+        bucketId,
+        selfId,
       ],
     );
     if (!rows.length) return res.status(404).json({ error: 'Not found' });
@@ -84,8 +105,8 @@ router.patch('/:id', async (req, res) => {
 router.delete('/:id', async (req, res) => {
   try {
     const { rowCount } = await pool.query(
-      'DELETE FROM calendar_events WHERE id = $1 AND user_id = $2',
-      [req.params.id, req.user.dataUserId],
+      'DELETE FROM calendar_events WHERE id = $1 AND (user_id = $2 OR user_id = $3)',
+      [req.params.id, req.user.dataUserId, req.user.id],
     );
     if (!rowCount) return res.status(404).json({ error: 'Not found' });
     res.json({ success: true });

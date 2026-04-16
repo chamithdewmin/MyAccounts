@@ -53,10 +53,26 @@ const Calendar = () => {
     return `${y}-${m}-${day}`;
   };
 
+  /** Calendar-day key for events: DB/API may send "2026-04-17" or ISO "2026-04-17T00:00:00.000Z" — always compare YYYY-MM-DD. */
+  const normalizeEventDateKey = (val) => {
+    if (val == null || val === '') return '';
+    if (typeof val === 'string') {
+      const m = /^(\d{4}-\d{2}-\d{2})/.exec(val.trim());
+      if (m) return m[1];
+    }
+    if (val instanceof Date && !Number.isNaN(val.getTime())) {
+      const y = val.getFullYear();
+      const mo = String(val.getMonth() + 1).padStart(2, '0');
+      const day = String(val.getDate()).padStart(2, '0');
+      return `${y}-${mo}-${day}`;
+    }
+    return toLocalDateString(val);
+  };
+
   const getEventsForDate = (date) => {
     const dateStr = toLocalDateString(date);
     if (!dateStr) return [];
-    return events.filter((ev) => ev.date === dateStr);
+    return events.filter((ev) => normalizeEventDateKey(ev.date) === dateStr);
   };
 
   // Get transactions for a specific date (compare local dates so timezone doesn't shift the day)
@@ -105,11 +121,11 @@ const Calendar = () => {
 
   const normalizeEventRow = (ev) => ({
     id: ev.id,
-    eventName: ev.eventName,
-    date: ev.eventDate,
-    time: ev.eventTime || '',
-    notes: ev.notes || '',
-    createdAt: ev.createdAt,
+    eventName: ev.eventName ?? ev.event_name,
+    date: normalizeEventDateKey(ev.eventDate ?? ev.event_date),
+    time: ev.eventTime != null ? String(ev.eventTime) : ev.event_time != null ? String(ev.event_time) : '',
+    notes: ev.notes != null && ev.notes !== '' ? String(ev.notes) : '',
+    createdAt: ev.createdAt ?? ev.created_at,
   });
 
   const loadCalendarEvents = useCallback(
@@ -117,16 +133,7 @@ const Calendar = () => {
       api.calendarEvents
         .list()
         .then((rows) => {
-          const normalized = Array.isArray(rows)
-            ? rows.map((r) => ({
-                id: r.id,
-                eventName: r.eventName,
-                date: r.eventDate,
-                time: r.eventTime || '',
-                notes: r.notes || '',
-                createdAt: r.createdAt,
-              }))
-            : [];
+          const normalized = Array.isArray(rows) ? rows.map((r) => normalizeEventRow(r)) : [];
           setEvents(normalized);
         })
         .catch((err) => {

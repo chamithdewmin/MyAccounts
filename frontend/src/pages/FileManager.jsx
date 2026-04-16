@@ -999,22 +999,20 @@ const FileManager = () => {
       >
         <DialogContent className="max-w-md">
           <DialogHeader>
-            <DialogTitle className="sr-only">Delete file</DialogTitle>
+            <DialogTitle>Delete file?</DialogTitle>
           </DialogHeader>
-          <div className="rounded-xl border border-destructive/35 bg-destructive/5 dark:bg-destructive/10 p-4 space-y-4">
-            <div className="flex gap-3">
-              <AlertTriangle className="h-5 w-5 shrink-0 text-amber-500 mt-0.5" aria-hidden />
-              <div className="space-y-1 min-w-0">
-                <h3 className="text-base font-semibold text-foreground tracking-tight">Delete File</h3>
-                <p className="text-sm text-foreground">Are you sure?</p>
-                <p className="text-sm text-muted-foreground">
-                  This will permanently remove{' '}
-                  <span className="font-medium text-foreground">{deleteTarget?.originalName || 'this file'}</span>. This cannot be undone.
-                </p>
-              </div>
+          <div className="space-y-4">
+            <div className="space-y-1 min-w-0">
+              <p className="text-sm text-foreground">Are you sure?</p>
+              <p className="text-sm text-muted-foreground">
+                This will permanently remove{' '}
+                <span className="font-medium text-foreground">{deleteTarget?.originalName || 'this file'}</span>. This cannot be undone.
+              </p>
             </div>
             <div className="space-y-2 pt-1">
-              <Label htmlFor="delete-file-confirm" className="text-sm font-medium text-foreground">Type DELETE to confirm</Label>
+              <Label htmlFor="delete-file-confirm" className="text-sm font-medium text-foreground">
+                Type DELETE to confirm
+              </Label>
               <Input
                 id="delete-file-confirm"
                 value={deleteConfirmInput}

@@ -481,15 +481,15 @@ export default function SidebarNew() {
       {/* Scrollbar styles */}
       <style>{`
         .sidebar-nav-scroll::-webkit-scrollbar {
-          width: 6px;
+          width: 4px;
         }
         .sidebar-nav-scroll::-webkit-scrollbar-track {
           background: ${c.scrollbarTrack};
-          border-radius: 3px;
+          border-radius: 2px;
         }
         .sidebar-nav-scroll::-webkit-scrollbar-thumb {
           background: ${c.scrollbarThumb};
-          border-radius: 3px;
+          border-radius: 2px;
         }
         .sidebar-nav-scroll::-webkit-scrollbar-thumb:hover {
           background: ${c.scrollbarThumb}cc;

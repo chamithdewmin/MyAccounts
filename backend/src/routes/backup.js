@@ -176,6 +176,7 @@ router.get('/download/:id', requireAdmin, async (req, res) => {
 });
 
 router.post('/restore', requireAdmin, async (req, res) => {
+  const client = await pool.connect();
   try {
     const { backupData } = req.body;
 
@@ -188,6 +189,8 @@ router.post('/restore', requireAdmin, async (req, res) => {
       skipped: [],
       errors: [],
     };
+    // Atomic restore: if any table fails, rollback everything to avoid partial data loss.
+    await client.query('BEGIN');
 
     for (const [tableName, rows] of Object.entries(backupData.tables)) {
       if (!TABLES.includes(tableName)) {
@@ -196,7 +199,7 @@ router.post('/restore', requireAdmin, async (req, res) => {
       }
 
       try {
-        await pool.query(`DELETE FROM ${tableName}`);
+        await client.query(`DELETE FROM ${tableName}`);
 
         let insertedCount = 0;
         for (const row of rows) {
@@ -206,7 +209,7 @@ router.post('/restore', requireAdmin, async (req, res) => {
           const values = Object.values(row);
           const placeholders = columns.map((_, i) => `$${i + 1}`).join(', ');
 
-          await pool.query(
+          await client.query(
             `INSERT INTO ${tableName} (${columns.join(', ')}) VALUES (${placeholders})
              ON CONFLICT DO NOTHING`,
             values
@@ -217,8 +220,10 @@ router.post('/restore', requireAdmin, async (req, res) => {
         results.restored.push({ table: tableName, rows: insertedCount });
       } catch (e) {
         results.errors.push({ table: tableName, error: e.message });
+        throw new Error(`Restore failed on table "${tableName}": ${e.message}`);
       }
     }
+    await client.query('COMMIT');
 
     res.json({
       success: true,
@@ -226,8 +231,15 @@ router.post('/restore', requireAdmin, async (req, res) => {
       results,
     });
   } catch (err) {
+    try {
+      await client.query('ROLLBACK');
+    } catch {
+      /* ignore */
+    }
     console.error('Restore error:', err);
     res.status(500).json({ error: err.message });
+  } finally {
+    client.release();
   }
 });
 

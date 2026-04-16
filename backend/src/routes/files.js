@@ -243,17 +243,9 @@ router.get('/', async (req, res) => {
       ORDER BY f.created_at DESC
     `;
     const { rows } = await pool.query(sql, params);
-    const staleIds = [];
-    const safeRows = [];
-    for (const row of rows) {
-      const abs = absolutePath(row.file_path);
-      if (abs && fs.existsSync(abs)) safeRows.push(row);
-      else staleIds.push(row.id);
-    }
-    if (staleIds.length > 0) {
-      await pool.query('DELETE FROM files WHERE user_id = $1 AND id = ANY($2::int[])', [uid, staleIds]);
-    }
-    res.json(safeRows.map(toRow));
+    // IMPORTANT: do not auto-delete records when file is temporarily unavailable on disk.
+    // Data must remain until user explicitly deletes.
+    res.json(rows.map(toRow));
   } catch (err) {
     console.error('[files GET]', err);
     res.status(500).json({ error: 'Server error' });
@@ -377,8 +369,7 @@ router.get('/:id(\\d+)/file', async (req, res) => {
     if (!rows[0]) return res.status(404).json({ error: 'Not found' });
     const abs = absolutePath(rows[0].file_path);
     if (!abs || !fs.existsSync(abs)) {
-      await pool.query('DELETE FROM files WHERE id = $1 AND user_id = $2', [id, uid]);
-      return res.status(404).json({ error: 'File missing on disk. Record removed.' });
+      return res.status(404).json({ error: 'File missing on disk' });
     }
     const inline = String(req.query.inline || '') === '1';
     const name = rows[0].original_name || 'download';

@@ -480,21 +480,35 @@ export default function SidebarNew() {
 
   return (
     <>
-      {/* Scrollbar styles */}
+      {/* Scrollbar styles: thin when expanded; hidden when desktop sidebar collapsed (wheel scroll still works) */}
       <style>{`
+        .sidebar-nav-scroll::-webkit-scrollbar-button {
+          display: none;
+          width: 0;
+          height: 0;
+        }
         .sidebar-nav-scroll::-webkit-scrollbar {
-          width: 4px;
+          width: 2px;
         }
         .sidebar-nav-scroll::-webkit-scrollbar-track {
           background: ${c.scrollbarTrack};
-          border-radius: 2px;
+          border-radius: 999px;
         }
         .sidebar-nav-scroll::-webkit-scrollbar-thumb {
           background: ${c.scrollbarThumb};
-          border-radius: 2px;
+          border-radius: 999px;
         }
         .sidebar-nav-scroll::-webkit-scrollbar-thumb:hover {
           background: ${c.scrollbarThumb}cc;
+        }
+        .sidebar-nav-scroll-mini::-webkit-scrollbar {
+          width: 0;
+          height: 0;
+          display: none;
+        }
+        .sidebar-nav-scroll-mini {
+          scrollbar-width: none;
+          -ms-overflow-style: none;
         }
       `}</style>
 
@@ -610,15 +624,16 @@ export default function SidebarNew() {
         </div>
 
         {/* Nav */}
-        <nav 
-          className="sidebar-nav-scroll"
-          style={{ 
-            flex: 1, 
-            padding: "8px 10px", 
-            overflowY: "auto", 
+        <nav
+          className={`sidebar-nav-scroll${effectiveCollapsed && !isMobile ? " sidebar-nav-scroll-mini" : ""}`}
+          style={{
+            flex: 1,
+            padding: "8px 10px",
+            overflowY: "auto",
             overflowX: "hidden",
-            scrollbarColor: `${c.scrollbarThumb} ${c.scrollbarTrack}`,
-            scrollbarWidth: "thin",
+            scrollbarColor:
+              effectiveCollapsed && !isMobile ? "transparent transparent" : `${c.scrollbarThumb} ${c.scrollbarTrack}`,
+            scrollbarWidth: effectiveCollapsed && !isMobile ? "none" : "thin",
           }}
         >
           {!effectiveCollapsed && (

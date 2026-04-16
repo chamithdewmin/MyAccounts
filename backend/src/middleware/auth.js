@@ -1,6 +1,7 @@
 import jwt from 'jsonwebtoken';
 import pool from '../config/db.js';
-import { truncateUserAgentForStore } from '../lib/userAgent.js';
+import { computeLoginRiskScore } from '../lib/loginRiskScore.js';
+import { deriveDeviceType, truncateUserAgentForStore } from '../lib/userAgent.js';
 import { effectiveAppRole, resolveDataUserId } from '../lib/dataScope.js';
 
 const getRequestIp = (req) => {
@@ -14,17 +15,31 @@ const logAuthFailure = async (req, reason, decoded = null) => {
     const email = decoded?.email || '';
     const userId = decoded?.id || null;
     const sessionId = decoded?.sid || null;
+    const rawUa = req.headers['user-agent'] || '';
+    const ip = getRequestIp(req);
+    const uaSt = truncateUserAgentForStore(rawUa);
+    const dev = deriveDeviceType(rawUa);
+    const loginAt = new Date().toISOString();
+    const riskScore = await computeLoginRiskScore(pool, {
+      userId,
+      email,
+      ipAddress: ip,
+      deviceType: dev,
+      loginAt,
+    });
     await pool.query(
       `INSERT INTO login_activity (
-        id, user_id, email, session_id, login_at, logout_at, ip_address, user_agent, status, failure_reason, created_at
-      ) VALUES ($1, $2, $3, $4, NOW(), NULL, $5, $6, 'unauthorized', $7, NOW())`,
+        id, user_id, email, session_id, login_at, logout_at, ip_address, user_agent, device_type, risk_score, status, failure_reason, created_at
+      ) VALUES ($1, $2, $3, $4, NOW(), NULL, $5, $6, $7, $8, 'unauthorized', $9, NOW())`,
       [
         `LA-${Date.now()}-${Math.random().toString(36).slice(2, 10).toUpperCase()}`,
         userId,
         email,
         sessionId,
-        getRequestIp(req),
-        truncateUserAgentForStore(req.headers['user-agent'] || ''),
+        ip,
+        uaSt,
+        dev,
+        riskScore,
         reason,
       ],
     );
@@ -45,12 +60,16 @@ export const authMiddleware = async (req, res, next) => {
   try {
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
     const { rows } = await pool.query(
-      'SELECT id, token_version, email, name, role FROM users WHERE id = $1',
+      'SELECT id, token_version, email, name, role, COALESCE(is_blocked, false) AS is_blocked FROM users WHERE id = $1',
       [decoded.id],
     );
     if (!rows[0]) {
       await logAuthFailure(req, 'user_not_found', decoded);
       return res.status(401).json({ error: 'User not found' });
+    }
+    if (rows[0].is_blocked === true || rows[0].is_blocked === 't') {
+      await logAuthFailure(req, 'user_blocked', decoded);
+      return res.status(403).json({ error: 'This account has been disabled. Contact an administrator.' });
     }
     const currentVersion = rows[0].token_version ?? 0;
     const tokenVersion = decoded.v ?? 0;

@@ -67,6 +67,7 @@ async function initDb() {
     await pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS role VARCHAR(20) DEFAULT 'staff'`);
     await pool.query(`UPDATE users SET role = 'staff' WHERE role IS NULL`);
     await pool.query(`UPDATE users SET role = 'admin' WHERE LOWER(TRIM(email)) = 'logozodev@gmail.com'`);
+    await pool.query('ALTER TABLE users ADD COLUMN IF NOT EXISTS is_blocked BOOLEAN NOT NULL DEFAULT false');
     await pool.query('ALTER TABLE settings ADD COLUMN IF NOT EXISTS user_id INT');
     await pool.query("ALTER TABLE settings ADD COLUMN IF NOT EXISTS phone VARCHAR(50) DEFAULT ''");
     await pool.query('UPDATE settings SET user_id = 1 WHERE user_id IS NULL');
@@ -115,6 +116,8 @@ async function initDb() {
         logout_at TIMESTAMPTZ,
         ip_address VARCHAR(100) DEFAULT '',
         user_agent TEXT DEFAULT '',
+        device_type VARCHAR(20) NOT NULL DEFAULT 'unknown',
+        risk_score SMALLINT NOT NULL DEFAULT 0,
         success BOOLEAN,
         role VARCHAR(50),
         status VARCHAR(20) NOT NULL DEFAULT 'active',
@@ -125,6 +128,12 @@ async function initDb() {
     await pool.query("ALTER TABLE login_activity ADD COLUMN IF NOT EXISTS user_name VARCHAR(255) DEFAULT ''");
     await pool.query('ALTER TABLE login_activity ADD COLUMN IF NOT EXISTS success BOOLEAN');
     await pool.query('ALTER TABLE login_activity ADD COLUMN IF NOT EXISTS role VARCHAR(50)');
+    await pool.query(
+      "ALTER TABLE login_activity ADD COLUMN IF NOT EXISTS device_type VARCHAR(20) NOT NULL DEFAULT 'unknown'",
+    );
+    await pool.query(
+      'ALTER TABLE login_activity ADD COLUMN IF NOT EXISTS risk_score SMALLINT NOT NULL DEFAULT 0',
+    );
     await pool.query('UPDATE login_activity SET created_at = NOW() WHERE created_at IS NULL');
     await pool.query('UPDATE login_activity SET login_at = COALESCE(login_at, created_at, NOW()) WHERE login_at IS NULL');
     await pool.query(

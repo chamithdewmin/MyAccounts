@@ -1,9 +1,24 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Helmet } from 'react-helmet';
-import { Activity, Ban, KeyRound, LogOut, LogIn, RefreshCw, ShieldAlert, ShieldCheck, Users } from 'lucide-react';
+import {
+  Activity,
+  Ban,
+  FileDown,
+  FileText,
+  KeyRound,
+  LogOut,
+  LogIn,
+  RefreshCw,
+  Search,
+  ShieldAlert,
+  ShieldCheck,
+  Users,
+} from 'lucide-react';
 import { api } from '@/lib/api';
+import { deriveDeviceType } from '@/lib/userAgent';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
+import { downloadDocumentPdfFromElement } from '@/utils/pdfPrint';
 
 const ADMIN_EMAIL = 'logozodev@gmail.com';
 
@@ -101,7 +116,12 @@ const statusBadge = (status) => {
   return 'bg-slate-500/20 text-slate-300';
 };
 
-const FAILURE_REASON_INVALID = new Set(['invalid_password', 'invalid_credentials', 'unauthorized']);
+const FAILURE_REASON_INVALID = new Set([
+  'invalid_password',
+  'invalid_credentials',
+  'unauthorized',
+  'user_blocked',
+]);
 const FAILURE_REASON_BLOCKED = new Set(['session_expired', 'invalid_token', 'user_not_found', 'blocked_ip']);
 
 /** Matches /login-activity/stats failure buckets. */
@@ -127,6 +147,7 @@ const displayActivityStatus = (row) => {
 const failureDetail = (reason) => {
   if (!reason) return null;
   if (reason === 'invalid_password') return 'Wrong password';
+  if (reason === 'user_blocked') return 'Account disabled';
   if (reason === 'invalid_credentials') return 'Unknown email or wrong password';
   if (reason === 'unauthorized') return 'Unknown email (legacy code)';
   if (reason === 'missing_token') return 'No bearer token on API request';
@@ -184,6 +205,71 @@ const resolveActivityUser = (row, userById) => {
   return { primaryTitle, email, showEmailSubline, showRole, isAdmin, roleLabel };
 };
 
+const deviceLabel = (row) => {
+  const stored = String(row.deviceType || '').trim().toLowerCase();
+  if (stored && stored !== 'unknown') return stored;
+  return deriveDeviceType(row.userAgent || '');
+};
+
+const loginRiskTier = (score) => {
+  const s = Number(score) || 0;
+  if (s >= 71) return 'high';
+  if (s >= 31) return 'suspicious';
+  return 'safe';
+};
+
+const loginRiskBadgeClass = (tier) => {
+  if (tier === 'high') return 'bg-red-500/20 text-red-400 border border-red-500/35';
+  if (tier === 'suspicious') return 'bg-amber-500/15 text-amber-300 border border-amber-500/30';
+  return 'bg-emerald-500/15 text-emerald-400 border border-emerald-500/30';
+};
+
+const loginRiskLabel = (tier) => {
+  if (tier === 'high') return 'High risk';
+  if (tier === 'suspicious') return 'Suspicious';
+  return 'Safe';
+};
+
+const rowMatchesSearch = (row, userById, query) => {
+  const t = String(query || '').trim().toLowerCase();
+  if (!t) return true;
+  const u = resolveActivityUser(row, userById);
+  const blob = [
+    u.primaryTitle,
+    u.email,
+    row.userId,
+    row.email,
+    row.userName,
+    row.ipAddress,
+    row.sessionId,
+    row.deviceType,
+    deviceLabel(row),
+    row.riskScore != null ? String(row.riskScore) : '',
+  ]
+    .filter((x) => x != null && String(x).trim() !== '')
+    .join(' ')
+    .toLowerCase();
+  return blob.includes(t);
+};
+
+const csvEscape = (val) => {
+  const s = String(val ?? '');
+  if (/[",\n\r]/.test(s)) return `"${s.replace(/"/g, '""')}"`;
+  return s;
+};
+
+const escapePdfHtml = (s) =>
+  String(s ?? '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;');
+
+const exportFilenameStamp = () => new Date().toISOString().slice(0, 19).replace(/[:T]/g, '-');
+
+/** PDF capture height guard: very tall tables can fail in html2canvas; CSV has full data. */
+const PDF_EXPORT_ROW_LIMIT = 200;
+
 function ActivityUserCell({ row, userById }) {
   const u = resolveActivityUser(row, userById);
   return (
@@ -219,6 +305,9 @@ export default function LoginActivity() {
   const [refreshing, setRefreshing] = useState(false);
   const [statsData, setStatsData] = useState(null);
   const [liveTick, setLiveTick] = useState(0);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [exportingPdf, setExportingPdf] = useState(false);
+  const pdfHostRef = useRef(null);
 
   const hasActiveSession = useMemo(() => items.some(isOpenLoginSessionRow), [items]);
 
@@ -293,6 +382,125 @@ export default function LoginActivity() {
     return m;
   }, [users]);
 
+  const filteredItems = useMemo(
+    () => items.filter((row) => rowMatchesSearch(row, userById, searchQuery)),
+    [items, userById, searchQuery],
+  );
+
+  const durationExportLabel = (row) => {
+    const disp = displayActivityStatus(row);
+    if (disp === 'failed' || disp === 'unauthorized') return '—';
+    if (isOpenLoginSessionRow(row)) return `Live (${formatLiveElapsed(row.loginAt || row.createdAt, liveTick)})`;
+    return formatDuration(row.loginAt || row.createdAt, row.logoutAt, disp);
+  };
+
+  const handleExportCsv = () => {
+    const stamp = exportFilenameStamp();
+    const headers = [
+      'User',
+      'Email',
+      'User ID',
+      'Session ID',
+      'Login time',
+      'Logout time',
+      'Duration',
+      'IP address',
+      'User-Agent',
+      'Device',
+      'Risk score',
+      'Status',
+      'Failure reason',
+    ];
+    const lines = [headers.map(csvEscape).join(',')];
+    for (const row of filteredItems) {
+      const u = resolveActivityUser(row, userById);
+      const disp = displayActivityStatus(row);
+      lines.push(
+        [
+          u.primaryTitle,
+          u.email,
+          row.userId ?? '',
+          row.sessionId ?? '',
+          formatDateTime(row.loginAt || row.createdAt),
+          row.logoutAt ? formatDateTime(row.logoutAt) : isOpenLoginSessionRow(row) ? 'Still active' : '—',
+          durationExportLabel(row),
+          row.ipAddress ?? '',
+          row.userAgent ?? '',
+          deviceLabel(row),
+          row.riskScore != null ? String(row.riskScore) : '0',
+          disp,
+          row.failureReason ?? '',
+        ]
+          .map(csvEscape)
+          .join(','),
+      );
+    }
+    const blob = new Blob([`\ufeff${lines.join('\n')}`], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `login-activity-${stamp}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
+  const handleExportPdf = async () => {
+    const host = pdfHostRef.current;
+    if (!host) return;
+    const stamp = exportFilenameStamp();
+    const rows = filteredItems;
+    const slice = rows.slice(0, PDF_EXPORT_ROW_LIMIT);
+    setExportingPdf(true);
+    try {
+      const head =
+        '<thead><tr>' +
+        ['User', 'Email', 'Session ID', 'Login', 'Logout', 'IP', 'Device', 'Risk', 'Status']
+          .map((h) => `<th style="border:1px solid #ccc;padding:4px 6px;font-size:10px;background:#f5f5f5;">${escapePdfHtml(h)}</th>`)
+          .join('') +
+        '</tr></thead>';
+      const bodyRows = slice
+        .map((row) => {
+          const u = resolveActivityUser(row, userById);
+          const disp = displayActivityStatus(row);
+          const cells = [
+            u.primaryTitle,
+            u.email,
+            row.sessionId ?? '—',
+            formatDateTime(row.loginAt || row.createdAt),
+            row.logoutAt ? formatDateTime(row.logoutAt) : isOpenLoginSessionRow(row) ? 'Still active' : '—',
+            row.ipAddress ?? '—',
+            deviceLabel(row),
+            String(row.riskScore ?? 0),
+            disp,
+          ];
+          return `<tr>${cells
+            .map(
+              (c) =>
+                `<td style="border:1px solid #ddd;padding:4px 6px;font-size:9px;vertical-align:top;">${escapePdfHtml(c)}</td>`,
+            )
+            .join('')}</tr>`;
+        })
+        .join('');
+      const note =
+        rows.length > slice.length
+          ? `<p style="font-size:10px;color:#666;margin:8px 0 0;">Showing first ${slice.length} of ${rows.length} rows. Export CSV for the full list.</p>`
+          : '';
+      host.innerHTML = `<div style="font-family:system-ui,-apple-system,sans-serif;color:#111;">
+        <h2 style="font-size:14px;margin:0 0 6px;">Login activity</h2>
+        <p style="font-size:10px;color:#444;margin:0 0 10px;">${escapePdfHtml(new Date().toLocaleString())} · ${rows.length} row(s)</p>
+        ${note}
+        <table style="border-collapse:collapse;width:100%;">${head}<tbody>${bodyRows}</tbody></table>
+      </div>`;
+      await downloadDocumentPdfFromElement(host, `login-activity-${stamp}.pdf`, { scale: 1.35, jpegQuality: 0.9 });
+    } catch (e) {
+      console.error(e);
+      window.alert('Could not create PDF. Try CSV export, or fewer rows.');
+    } finally {
+      host.innerHTML = '';
+      setExportingPdf(false);
+    }
+  };
+
   return (
     <>
       <Helmet>
@@ -306,10 +514,6 @@ export default function LoginActivity() {
             <h1 className="text-2xl sm:text-3xl font-bold">Login Activity</h1>
             <p className="text-muted-foreground text-sm">
               Sessions, active logins, and failed sign-in attempts.
-            </p>
-            <p className="text-muted-foreground text-xs max-w-3xl mt-1">
-              Invalid credentials = wrong email or password on the sign-in form. Failed login = protected API called
-              without a token. Blocked IP = invalid or revoked session (token checks).
             </p>
           </div>
           <div className="flex items-center gap-2">
@@ -376,6 +580,46 @@ export default function LoginActivity() {
         </div>
 
         <div className="rounded-lg border border-border bg-card overflow-hidden">
+          <div className="flex flex-col gap-3 border-b border-border bg-card/40 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
+            <div className="relative min-w-0 flex-1 max-w-md">
+              <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+              <input
+                type="search"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="Search by user, email, IP, device, or risk score…"
+                className="w-full rounded-lg border border-border bg-input py-2 pl-9 pr-3 text-sm outline-none ring-offset-background placeholder:text-muted-foreground focus-visible:ring-2 focus-visible:ring-ring"
+                aria-label="Search login activity by user or IP"
+              />
+            </div>
+            <div className="flex flex-shrink-0 flex-wrap items-center gap-2">
+              {searchQuery.trim() && filteredItems.length !== items.length ? (
+                <span className="text-xs text-muted-foreground whitespace-nowrap">
+                  Showing {filteredItems.length} of {items.length}
+                </span>
+              ) : null}
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={handleExportCsv}
+                disabled={!filteredItems.length}
+              >
+                <FileDown className="mr-1.5 h-4 w-4" />
+                Export CSV
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => void handleExportPdf()}
+                disabled={!filteredItems.length || exportingPdf}
+              >
+                <FileText className="mr-1.5 h-4 w-4" />
+                {exportingPdf ? 'PDF…' : 'Export PDF'}
+              </Button>
+            </div>
+          </div>
           <div className="overflow-x-auto">
             <table className="w-full">
               <thead className="bg-secondary/60">
@@ -387,13 +631,17 @@ export default function LoginActivity() {
                   <th className="px-4 py-3 text-left text-sm font-semibold">Duration</th>
                   <th className="px-4 py-3 text-left text-sm font-semibold">IP address</th>
                   <th className="px-4 py-3 text-left text-sm font-semibold">User-Agent</th>
+                  <th className="px-4 py-3 text-left text-sm font-semibold">Device</th>
+                  <th className="px-4 py-3 text-left text-sm font-semibold">Risk</th>
                   <th className="px-4 py-3 text-left text-sm font-semibold">Status</th>
                 </tr>
               </thead>
               <tbody>
-                {items.map((row) => {
+                {filteredItems.map((row) => {
                   const disp = displayActivityStatus(row);
                   const uaHint = userAgentHint(row.userAgent);
+                  const score = Number(row.riskScore ?? 0);
+                  const tier = loginRiskTier(score);
                   return (
                   <tr key={row.id} className="border-t border-border hover:bg-secondary/20">
                     <td className="px-4 py-3 text-sm">
@@ -453,6 +701,16 @@ export default function LoginActivity() {
                         {uaHint.line}
                       </span>
                     </td>
+                    <td className="px-4 py-3 text-sm capitalize text-muted-foreground">{deviceLabel(row)}</td>
+                    <td className="px-4 py-3 text-sm">
+                      <span
+                        className={`inline-flex flex-col gap-0.5 rounded-md px-2 py-1 text-xs font-medium ${loginRiskBadgeClass(tier)}`}
+                        title={`Risk score ${score} (0–30 safe, 31–70 suspicious, 71–100 high)`}
+                      >
+                        <span className="tabular-nums">{score}</span>
+                        <span className="text-[10px] font-normal opacity-90">{loginRiskLabel(tier)}</span>
+                      </span>
+                    </td>
                     <td className="px-4 py-3 text-sm">
                       <span
                         className={`px-2 py-1 rounded-full text-xs ${statusBadge(disp)}`}
@@ -470,8 +728,15 @@ export default function LoginActivity() {
                 })}
                 {!loading && items.length === 0 && (
                   <tr>
-                    <td colSpan={8} className="px-4 py-8 text-center text-sm text-muted-foreground">
+                    <td colSpan={10} className="px-4 py-8 text-center text-sm text-muted-foreground">
                       No login activity yet.
+                    </td>
+                  </tr>
+                )}
+                {!loading && items.length > 0 && filteredItems.length === 0 && (
+                  <tr>
+                    <td colSpan={10} className="px-4 py-8 text-center text-sm text-muted-foreground">
+                      No rows match your search.
                     </td>
                   </tr>
                 )}
@@ -480,6 +745,11 @@ export default function LoginActivity() {
           </div>
         </div>
       </div>
+      <div
+        ref={pdfHostRef}
+        className="fixed left-[-12000px] top-0 w-[860px] bg-white p-3 text-black"
+        aria-hidden
+      />
     </>
   );
 }

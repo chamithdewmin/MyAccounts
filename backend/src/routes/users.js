@@ -16,7 +16,7 @@ router.use((req, res, next) => {
 router.get('/', async (req, res) => {
   try {
     const { rows } = await pool.query(
-      'SELECT id, email, name, role, created_at FROM users ORDER BY created_at DESC'
+      'SELECT id, email, name, role, created_at, COALESCE(is_blocked, false) AS is_blocked FROM users ORDER BY created_at DESC'
     );
     res.json(rows);
   } catch (err) {
@@ -52,9 +52,17 @@ router.post('/', async (req, res) => {
 router.put('/:id', async (req, res) => {
   try {
     const { id } = req.params;
-    const { name, email, password, role } = req.body;
+    const { name, email, password, role, is_blocked } = req.body;
     if (!name || !email) {
       return res.status(400).json({ error: 'Name and email are required' });
+    }
+    const { rows: existing } = await pool.query('SELECT email FROM users WHERE id = $1', [id]);
+    if (!existing[0]) return res.status(404).json({ error: 'User not found' });
+    if (
+      String(existing[0].email).toLowerCase().trim() === PROTECTED_EMAIL.toLowerCase().trim() &&
+      is_blocked === true
+    ) {
+      return res.status(403).json({ error: 'This account cannot be blocked' });
     }
     let query = 'UPDATE users SET name = $2, email = $3';
     const params = [id, name.trim(), email.trim()];
@@ -68,7 +76,14 @@ router.put('/:id', async (req, res) => {
       query += `, role = $${params.length + 1}`;
       params.push(r);
     }
-    query += ' WHERE id = $1 RETURNING id, email, name, role, created_at';
+    if (typeof is_blocked === 'boolean') {
+      query += `, is_blocked = $${params.length + 1}`;
+      params.push(is_blocked);
+      if (is_blocked === true) {
+        query += `, token_version = COALESCE(token_version, 0) + 1`;
+      }
+    }
+    query += ' WHERE id = $1 RETURNING id, email, name, role, created_at, COALESCE(is_blocked, false) AS is_blocked';
     const { rows } = await pool.query(query, params);
     if (!rows[0]) return res.status(404).json({ error: 'User not found' });
     res.json(rows[0]);

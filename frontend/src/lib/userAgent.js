@@ -1,16 +1,5 @@
-/** Cap stored User-Agent length (debugging only; avoids huge TEXT rows). */
-export const USER_AGENT_STORE_MAX = 150;
+/** Keep heuristic in sync with `backend/src/lib/userAgent.js` (deriveDeviceType). */
 
-export function truncateUserAgentForStore(ua) {
-  const s = String(ua ?? '').trim();
-  if (!s) return '';
-  return s.length <= USER_AGENT_STORE_MAX ? s : s.slice(0, USER_AGENT_STORE_MAX);
-}
-
-/**
- * Coarse device class from User-Agent (no external parser).
- * Call with the raw header string before truncation for best results.
- */
 export function deriveDeviceType(ua) {
   const s = String(ua ?? '').toLowerCase();
   if (!s.trim()) return 'unknown';

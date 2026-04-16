@@ -5,7 +5,8 @@ import { randomInt, randomUUID } from 'crypto';
 import pool from '../config/db.js';
 import { authMiddleware } from '../middleware/auth.js';
 import { effectiveAppRole, isAdminRequest } from '../lib/dataScope.js';
-import { truncateUserAgentForStore, USER_AGENT_STORE_MAX } from '../lib/userAgent.js';
+import { computeLoginRiskScore, riskLevelFromScore } from '../lib/loginRiskScore.js';
+import { deriveDeviceType, truncateUserAgentForStore, USER_AGENT_STORE_MAX } from '../lib/userAgent.js';
 
 const router = express.Router();
 const OTP_EXPIRY_MINUTES = 5;
@@ -15,7 +16,12 @@ const ADMIN_EMAIL = 'logozodev@gmail.com';
 const generateOtp = () => String(Math.floor(100000 + Math.random() * 900000));
 
 /** Sign-in form bad email/password → `failed`. Token / API auth issues → `unauthorized`. */
-const LOGIN_ACTIVITY_CREDENTIAL_FAILURES = new Set(['invalid_password', 'invalid_credentials', 'unauthorized']);
+const LOGIN_ACTIVITY_CREDENTIAL_FAILURES = new Set([
+  'invalid_password',
+  'invalid_credentials',
+  'unauthorized',
+  'user_blocked',
+]);
 
 const loginActivityFailureStatus = (failureReason) => {
   const r = failureReason != null ? String(failureReason) : '';
@@ -63,7 +69,15 @@ const insertLoginActivity = async ({
 }) => {
   const status = success ? 'active' : loginActivityFailureStatus(failureReason);
   const effectiveLoginAt = loginAt || new Date().toISOString();
+  const deviceType = deriveDeviceType(userAgent);
   const uaStored = truncateUserAgentForStore(userAgent);
+  const riskScore = await computeLoginRiskScore(pool, {
+    userId,
+    email,
+    ipAddress,
+    deviceType,
+    loginAt: effectiveLoginAt,
+  });
   const sharedValues = [
     userId,
     email,
@@ -73,32 +87,34 @@ const insertLoginActivity = async ({
     logoutAt,
     ipAddress,
     uaStored,
+    deviceType,
     success,
     role,
     status,
     failureReason,
+    riskScore,
   ];
   try {
     // Preferred path for latest schema where id is varchar.
     const { rows } = await pool.query(
       `INSERT INTO login_activity (
-        id, user_id, email, user_name, session_id, login_at, logout_at, ip_address, user_agent, success, role, status, failure_reason, created_at
-      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, NOW())
-      RETURNING id::text AS id`,
+        id, user_id, email, user_name, session_id, login_at, logout_at, ip_address, user_agent, device_type, success, role, status, failure_reason, risk_score, created_at
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, NOW())
+      RETURNING id::text AS id, risk_score`,
       [`LA-${Date.now()}-${Math.random().toString(36).slice(2, 10).toUpperCase()}`, ...sharedValues],
     );
-    return rows[0]?.id || null;
+    return { id: rows[0]?.id || null, riskScore: Number(rows[0]?.risk_score ?? riskScore) };
   } catch (firstErr) {
     try {
       // Backward compatibility: legacy schema where id is SERIAL/INT.
       const { rows } = await pool.query(
         `INSERT INTO login_activity (
-          user_id, email, user_name, session_id, login_at, logout_at, ip_address, user_agent, success, role, status, failure_reason, created_at
-        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, NOW())
-        RETURNING id::text AS id`,
+          user_id, email, user_name, session_id, login_at, logout_at, ip_address, user_agent, device_type, success, role, status, failure_reason, risk_score, created_at
+        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, NOW())
+        RETURNING id::text AS id, risk_score`,
         sharedValues,
       );
-      return rows[0]?.id || null;
+      return { id: rows[0]?.id || null, riskScore: Number(rows[0]?.risk_score ?? riskScore) };
     } catch (e) {
       console.error('[auth activity log]', firstErr.message, '| fallback:', e.message);
       return null;
@@ -182,19 +198,19 @@ router.post('/login', async (req, res) => {
     }
 
     const { rows } = await pool.query(
-      'SELECT id, email, name, password_hash, role FROM users WHERE LOWER(TRIM(email)) = $1',
+      'SELECT id, email, name, password_hash, role, COALESCE(is_blocked, false) AS is_blocked FROM users WHERE LOWER(TRIM(email)) = $1',
       [emailTrimmed]
     );
 
     const user = rows[0];
     const ipAddress = getRequestIp(req);
-    const userAgent = truncateUserAgentForStore(req.headers['user-agent'] || '');
+    const userAgentRaw = String(req.headers['user-agent'] || '');
     if (!user) {
       await insertLoginActivity({
         email: emailTrimmed,
         loginAt: new Date().toISOString(),
         ipAddress,
-        userAgent,
+        userAgent: userAgentRaw,
         success: false,
         failureReason: 'invalid_credentials',
       });
@@ -209,12 +225,30 @@ router.post('/login', async (req, res) => {
         userName: user.name || '',
         loginAt: new Date().toISOString(),
         ipAddress,
-        userAgent,
+        userAgent: userAgentRaw,
         success: false,
         failureReason: 'invalid_password',
         role: effectiveAppRole(user) === 'admin' ? 'admin' : 'staff',
       });
       return res.status(401).json({ success: false, error: 'Invalid credentials' });
+    }
+
+    if (user.is_blocked === true || user.is_blocked === 't') {
+      await insertLoginActivity({
+        userId: user.id,
+        email: user.email,
+        userName: user.name || '',
+        loginAt: new Date().toISOString(),
+        ipAddress,
+        userAgent: userAgentRaw,
+        success: false,
+        failureReason: 'user_blocked',
+        role: effectiveAppRole(user) === 'admin' ? 'admin' : 'staff',
+      });
+      return res.status(403).json({
+        success: false,
+        error: 'This account has been disabled. Contact an administrator.',
+      });
     }
 
     const { rows: vrows } = await pool.query('SELECT token_version FROM users WHERE id = $1', [user.id]);
@@ -228,23 +262,28 @@ router.post('/login', async (req, res) => {
       { expiresIn: '7d' }
     );
 
-    const loginActivityId = await insertLoginActivity({
+    const activityRow = await insertLoginActivity({
       userId: user.id,
       email: user.email,
       userName: user.name || '',
       sessionId,
       loginAt,
       ipAddress,
-      userAgent,
+      userAgent: userAgentRaw,
       success: true,
       role: effectiveAppRole(user) === 'admin' ? 'admin' : 'staff',
     });
+    const loginActivityId = activityRow?.id ?? null;
+    const loginRiskScore = activityRow?.riskScore ?? 0;
+    const loginRiskLevel = riskLevelFromScore(loginRiskScore);
 
     res.json({
       success: true,
       token,
       loginActivityId,
       sessionId,
+      loginRiskScore,
+      loginRiskLevel,
       user: {
         id: user.id,
         email: user.email,
@@ -269,11 +308,14 @@ router.get('/me', async (req, res) => {
   try {
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
     const { rows } = await pool.query(
-      'SELECT id, email, name, token_version, role FROM users WHERE id = $1',
+      'SELECT id, email, name, token_version, role, COALESCE(is_blocked, false) AS is_blocked FROM users WHERE id = $1',
       [decoded.id]
     );
     if (!rows[0]) {
       return res.status(401).json({ error: 'User not found' });
+    }
+    if (rows[0].is_blocked === true || rows[0].is_blocked === 't') {
+      return res.status(403).json({ error: 'This account has been disabled. Contact an administrator.' });
     }
     const currentVersion = rows[0].token_version ?? 0;
     const tokenVersion = decoded.v ?? 0;
@@ -282,14 +324,15 @@ router.get('/me', async (req, res) => {
     }
     if (decoded.sid) {
       const ipAddress = getRequestIp(req);
-      const userAgent = truncateUserAgentForStore(req.headers['user-agent'] || '');
+      const userAgentRaw = String(req.headers['user-agent'] || '');
+      const userAgentStored = truncateUserAgentForStore(userAgentRaw);
       const { rows: ar } = await pool.query(
         `SELECT id FROM login_activity
          WHERE session_id = $1 AND user_id = $2 AND status = $3
            AND COALESCE(ip_address, '') = COALESCE($4, '')
            AND COALESCE(user_agent, '') = COALESCE($5, '')
          LIMIT 1`,
-        [decoded.sid, decoded.id, 'active', ipAddress, userAgent],
+        [decoded.sid, decoded.id, 'active', ipAddress, userAgentStored],
       );
       if (!ar[0]) {
         await insertLoginActivity({
@@ -299,7 +342,7 @@ router.get('/me', async (req, res) => {
           sessionId: decoded.sid,
           loginAt: new Date().toISOString(),
           ipAddress,
-          userAgent,
+          userAgent: userAgentRaw,
           success: true,
           role: effectiveAppRole(rows[0]) === 'admin' ? 'admin' : 'staff',
         });
@@ -369,12 +412,12 @@ router.get('/login-activity/stats', authMiddleware, async (req, res) => {
         SELECT
           COUNT(*) FILTER (WHERE COALESCE(success, false) = false)::int AS failed_total,
           COUNT(*) FILTER (WHERE COALESCE(success, false) = false
-            AND failure_reason IN ('invalid_password','invalid_credentials','unauthorized'))::int AS invalid_credentials,
+            AND failure_reason IN ('invalid_password','invalid_credentials','unauthorized','user_blocked'))::int AS invalid_credentials,
           COUNT(*) FILTER (WHERE COALESCE(success, false) = false
             AND failure_reason IN ('session_expired','invalid_token','user_not_found','blocked_ip'))::int AS blocked_ip,
           COUNT(*) FILTER (WHERE COALESCE(success, false) = false AND NOT (
             COALESCE(failure_reason, '') IN (
-              'invalid_password','invalid_credentials','unauthorized',
+              'invalid_password','invalid_credentials','unauthorized','user_blocked',
               'session_expired','invalid_token','user_not_found','blocked_ip'
             )
           ))::int AS failed_login
@@ -407,6 +450,8 @@ router.get('/login-activity', authMiddleware, async (req, res) => {
               COALESCE(success, LOWER(TRIM(COALESCE(status, ''))) NOT IN ('failed', 'unauthorized')) AS success,
               role, session_id AS "sessionId", ip_address AS "ipAddress",
               LEFT(COALESCE(user_agent, ''), ${USER_AGENT_STORE_MAX}) AS "userAgent",
+              COALESCE(NULLIF(TRIM(device_type), ''), 'unknown') AS "deviceType",
+              LEAST(100, GREATEST(0, COALESCE(risk_score, 0)))::int AS "riskScore",
               failure_reason AS "failureReason",
               COALESCE(login_at, created_at) AS "loginAt", logout_at AS "logoutAt", status, created_at AS "createdAt"
        FROM login_activity
@@ -435,7 +480,9 @@ router.get('/activity', authMiddleware, async (req, res) => {
       if (filterUserId) {
         ({ rows } = await pool.query(
           `SELECT id, user_id, email, user_name, role, session_id, login_at, logout_at, ip_address,
-                  LEFT(COALESCE(user_agent, ''), ${USER_AGENT_STORE_MAX}) AS user_agent, status, failure_reason, created_at
+                  LEFT(COALESCE(user_agent, ''), ${USER_AGENT_STORE_MAX}) AS user_agent,
+                  COALESCE(NULLIF(TRIM(device_type), ''), 'unknown') AS device_type,
+                  LEAST(100, GREATEST(0, COALESCE(risk_score, 0)))::int AS risk_score, status, failure_reason, created_at
            FROM login_activity
            WHERE user_id = $1
            ORDER BY created_at DESC
@@ -445,7 +492,9 @@ router.get('/activity', authMiddleware, async (req, res) => {
       } else {
         ({ rows } = await pool.query(
           `SELECT id, user_id, email, user_name, role, session_id, login_at, logout_at, ip_address,
-                  LEFT(COALESCE(user_agent, ''), ${USER_AGENT_STORE_MAX}) AS user_agent, status, failure_reason, created_at
+                  LEFT(COALESCE(user_agent, ''), ${USER_AGENT_STORE_MAX}) AS user_agent,
+                  COALESCE(NULLIF(TRIM(device_type), ''), 'unknown') AS device_type,
+                  LEAST(100, GREATEST(0, COALESCE(risk_score, 0)))::int AS risk_score, status, failure_reason, created_at
            FROM login_activity
            ORDER BY created_at DESC
            LIMIT 500`,
@@ -454,7 +503,9 @@ router.get('/activity', authMiddleware, async (req, res) => {
     } else {
       ({ rows } = await pool.query(
         `SELECT id, user_id, email, user_name, role, session_id, login_at, logout_at, ip_address,
-                LEFT(COALESCE(user_agent, ''), ${USER_AGENT_STORE_MAX}) AS user_agent, status, failure_reason, created_at
+                LEFT(COALESCE(user_agent, ''), ${USER_AGENT_STORE_MAX}) AS user_agent,
+                COALESCE(NULLIF(TRIM(device_type), ''), 'unknown') AS device_type,
+                LEAST(100, GREATEST(0, COALESCE(risk_score, 0)))::int AS risk_score, status, failure_reason, created_at
          FROM login_activity
          WHERE user_id = $1
          ORDER BY created_at DESC
@@ -485,6 +536,8 @@ router.get('/activity', authMiddleware, async (req, res) => {
         logoutAt: r.logout_at,
         ipAddress: r.ip_address,
         userAgent: r.user_agent,
+        deviceType: r.device_type,
+        riskScore: r.risk_score != null ? Number(r.risk_score) : 0,
         status: r.status,
         failureReason: r.failure_reason,
         createdAt: r.created_at,

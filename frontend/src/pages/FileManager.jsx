@@ -106,7 +106,9 @@ const FileManager = () => {
   const [newFolderName, setNewFolderName] = useState('');
   const [creatingFolder, setCreatingFolder] = useState(false);
   const [dragFileId, setDragFileId] = useState(null);
-  const [deletingFolderId, setDeletingFolderId] = useState(null);
+  const [folderDeleteTarget, setFolderDeleteTarget] = useState(null);
+  const [folderDeleteInput, setFolderDeleteInput] = useState('');
+  const [folderDeleteSubmitting, setFolderDeleteSubmitting] = useState(false);
 
   const [renameOpen, setRenameOpen] = useState(false);
   const [renameValue, setRenameValue] = useState('');
@@ -241,13 +243,20 @@ const FileManager = () => {
     }
   };
 
-  const deleteFolder = async (folder) => {
-    if (!folder) return;
-    const ok = window.confirm(
-      `Delete folder "${folder.name}"?\n\nFiles in this folder will be moved to Root.`,
-    );
-    if (!ok) return;
-    setDeletingFolderId(folder.id);
+  const openFolderDeleteDialog = (folder) => {
+    setFolderDeleteTarget(folder);
+    setFolderDeleteInput('');
+  };
+
+  const closeFolderDeleteDialog = () => {
+    setFolderDeleteTarget(null);
+    setFolderDeleteInput('');
+  };
+
+  const deleteFolder = async () => {
+    const folder = folderDeleteTarget;
+    if (!folder || folderDeleteInput.trim() !== 'DELETE') return;
+    setFolderDeleteSubmitting(true);
     try {
       await api.files.deleteFolder(folder.id);
       setFolders((prev) => prev.filter((f) => f.id !== folder.id));
@@ -260,7 +269,8 @@ const FileManager = () => {
     } catch (e) {
       toast({ title: 'Could not delete folder', description: e.message, variant: 'destructive' });
     } finally {
-      setDeletingFolderId(null);
+      setFolderDeleteSubmitting(false);
+      closeFolderDeleteDialog();
     }
   };
 
@@ -575,16 +585,12 @@ const FileManager = () => {
                     </button>
                     <button
                       type="button"
-                      onClick={() => deleteFolder(f)}
-                      disabled={deletingFolderId === f.id}
+                      onClick={() => openFolderDeleteDialog(f)}
+                      disabled={folderDeleteSubmitting}
                       className="p-2 rounded-md hover:bg-destructive/15 hover:text-destructive disabled:opacity-50"
                       title="Delete folder"
                     >
-                      {deletingFolderId === f.id ? (
-                        <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                      ) : (
-                        <Trash className="w-3.5 h-3.5" />
-                      )}
+                      <Trash className="w-3.5 h-3.5" />
                     </button>
                   </div>
                 ))}
@@ -1022,6 +1028,50 @@ const FileManager = () => {
               disabled={deleteSubmitting || deleteConfirmInput.trim() !== 'DELETE'}
             >
               {deleteSubmitting ? 'Deleting…' : 'Delete file'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog
+        open={!!folderDeleteTarget}
+        onOpenChange={(open) => {
+          if (!open && !folderDeleteSubmitting) closeFolderDeleteDialog();
+        }}
+      >
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Delete folder?</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3">
+            <p className="text-sm text-foreground">Are you sure?</p>
+            <p className="text-sm text-muted-foreground">
+              Delete folder <span className="font-medium text-foreground">{folderDeleteTarget?.name || 'this folder'}</span>?
+              Files in this folder will be moved to Root.
+            </p>
+            <div className="space-y-2">
+              <Label htmlFor="delete-folder-confirm">Type DELETE to confirm</Label>
+              <Input
+                id="delete-folder-confirm"
+                value={folderDeleteInput}
+                onChange={(e) => setFolderDeleteInput(e.target.value)}
+                placeholder="DELETE"
+                autoComplete="off"
+                disabled={folderDeleteSubmitting}
+                className="font-mono tracking-wide"
+              />
+            </div>
+          </div>
+          <DialogFooter className="gap-2">
+            <Button variant="outline" onClick={closeFolderDeleteDialog} disabled={folderDeleteSubmitting}>
+              Cancel
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={deleteFolder}
+              disabled={folderDeleteSubmitting || folderDeleteInput.trim() !== 'DELETE'}
+            >
+              {folderDeleteSubmitting ? 'Deleting…' : 'Delete folder'}
             </Button>
           </DialogFooter>
         </DialogContent>

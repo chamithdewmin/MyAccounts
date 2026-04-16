@@ -14,6 +14,7 @@ import {
   Pencil,
   Trash2,
   Trash,
+  AlertTriangle,
   Link2,
   FileText,
   Image as ImageIcon,
@@ -1039,17 +1040,24 @@ const FileManager = () => {
           if (!open && !folderDeleteSubmitting) closeFolderDeleteDialog();
         }}
       >
-        <DialogContent>
+        <DialogContent className="max-w-md">
           <DialogHeader>
-            <DialogTitle>Delete folder?</DialogTitle>
+            <DialogTitle className="sr-only">Delete folder</DialogTitle>
           </DialogHeader>
-          <div className="space-y-3">
-            <p className="text-sm text-foreground">Are you sure?</p>
-            <p className="text-sm text-muted-foreground">
-              Delete folder <span className="font-medium text-foreground">{folderDeleteTarget?.name || 'this folder'}</span>?
-              Files in this folder will be moved to Root.
-            </p>
-            <div className="space-y-2">
+          <div className="rounded-xl border border-destructive/35 bg-destructive/5 dark:bg-destructive/10 p-4 space-y-4">
+            <div className="flex gap-3">
+              <AlertTriangle className="h-5 w-5 shrink-0 text-amber-500 mt-0.5" aria-hidden />
+              <div className="space-y-1 min-w-0">
+                <h3 className="text-base font-semibold text-foreground tracking-tight">Delete Folder</h3>
+                <p className="text-sm text-foreground">Are you sure?</p>
+                <p className="text-sm text-muted-foreground">
+                  Delete folder{' '}
+                  <span className="font-medium text-foreground">{folderDeleteTarget?.name || 'this folder'}</span>?
+                  Files in this folder will be moved to Root.
+                </p>
+              </div>
+            </div>
+            <div className="space-y-2 pt-1">
               <Label htmlFor="delete-folder-confirm">Type DELETE to confirm</Label>
               <Input
                 id="delete-folder-confirm"
@@ -1057,12 +1065,13 @@ const FileManager = () => {
                 onChange={(e) => setFolderDeleteInput(e.target.value)}
                 placeholder="DELETE"
                 autoComplete="off"
+                autoCapitalize="characters"
                 disabled={folderDeleteSubmitting}
-                className="font-mono tracking-wide"
+                className="bg-input border-border font-mono tracking-wide"
               />
             </div>
           </div>
-          <DialogFooter className="gap-2">
+          <DialogFooter className="gap-2 sm:gap-0">
             <Button variant="outline" onClick={closeFolderDeleteDialog} disabled={folderDeleteSubmitting}>
               Cancel
             </Button>

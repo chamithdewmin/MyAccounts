@@ -165,7 +165,10 @@ router.put('/', async (req, res) => {
     };
     const settingsJson = useSettingsJson ? JSON.stringify(additionalSettings) : null;
 
-    const invoiceThemeColor = (d.invoiceThemeColor || '#F97316').toString().trim().slice(0, 20);
+    const hasOwn = (key) => Object.prototype.hasOwnProperty.call(d, key);
+    const invoiceThemeColor = hasOwn('invoiceThemeColor')
+      ? String(d.invoiceThemeColor || '#F97316').trim().slice(0, 20)
+      : null;
     if (usePhone) {
       // Build params array and query parts dynamically
       const params = [];
@@ -178,22 +181,23 @@ router.put('/', async (req, res) => {
         paramIndex++;
       };
       
-      addUpdate(d.businessName, 'business_name');
-      addUpdate(d.phone != null ? d.phone : '', 'phone');
-      addUpdate(d.currency, 'currency');
-      addUpdate(d.taxRate != null ? d.taxRate : null, 'tax_rate');
-      addUpdate(d.taxEnabled, 'tax_enabled');
-      addUpdate(d.theme, 'theme');
-      addUpdate(d.logo, 'logo');
+      addUpdate(hasOwn('businessName') ? d.businessName : null, 'business_name');
+      // Preserve phone unless client explicitly sends it.
+      addUpdate(hasOwn('phone') ? d.phone : null, 'phone');
+      addUpdate(hasOwn('currency') ? d.currency : null, 'currency');
+      addUpdate(hasOwn('taxRate') ? d.taxRate : null, 'tax_rate');
+      addUpdate(hasOwn('taxEnabled') ? d.taxEnabled : null, 'tax_enabled');
+      addUpdate(hasOwn('theme') ? d.theme : null, 'theme');
+      addUpdate(hasOwn('logo') ? d.logo : null, 'logo');
       
       if (useProfileAvatar) {
-        addUpdate(d.profileAvatar, 'profile_avatar');
+        addUpdate(hasOwn('profileAvatar') ? d.profileAvatar : null, 'profile_avatar');
       }
       
       addUpdate(invoiceThemeColor, 'invoice_theme_color');
-      addUpdate(d.openingCash, 'opening_cash');
-      addUpdate(d.ownerCapital, 'owner_capital');
-      addUpdate(d.payables, 'payables');
+      addUpdate(hasOwn('openingCash') ? d.openingCash : null, 'opening_cash');
+      addUpdate(hasOwn('ownerCapital') ? d.ownerCapital : null, 'owner_capital');
+      addUpdate(hasOwn('payables') ? d.payables : null, 'payables');
       addUpdate(expenseCategoriesJson, 'expense_categories');
       
       if (useSettingsJson) {
@@ -246,21 +250,21 @@ router.put('/', async (req, res) => {
         paramIndex++;
       };
       
-      addUpdate(d.businessName, 'business_name');
-      addUpdate(d.currency, 'currency');
-      addUpdate(d.taxRate != null ? d.taxRate : null, 'tax_rate');
-      addUpdate(d.taxEnabled, 'tax_enabled');
-      addUpdate(d.theme, 'theme');
-      addUpdate(d.logo, 'logo');
+      addUpdate(hasOwn('businessName') ? d.businessName : null, 'business_name');
+      addUpdate(hasOwn('currency') ? d.currency : null, 'currency');
+      addUpdate(hasOwn('taxRate') ? d.taxRate : null, 'tax_rate');
+      addUpdate(hasOwn('taxEnabled') ? d.taxEnabled : null, 'tax_enabled');
+      addUpdate(hasOwn('theme') ? d.theme : null, 'theme');
+      addUpdate(hasOwn('logo') ? d.logo : null, 'logo');
       
       if (useProfileAvatar) {
-        addUpdate(d.profileAvatar, 'profile_avatar');
+        addUpdate(hasOwn('profileAvatar') ? d.profileAvatar : null, 'profile_avatar');
       }
       
       addUpdate(invoiceThemeColor, 'invoice_theme_color');
-      addUpdate(d.openingCash, 'opening_cash');
-      addUpdate(d.ownerCapital, 'owner_capital');
-      addUpdate(d.payables, 'payables');
+      addUpdate(hasOwn('openingCash') ? d.openingCash : null, 'opening_cash');
+      addUpdate(hasOwn('ownerCapital') ? d.ownerCapital : null, 'owner_capital');
+      addUpdate(hasOwn('payables') ? d.payables : null, 'payables');
       addUpdate(expenseCategoriesJson, 'expense_categories');
       
       if (useSettingsJson) {

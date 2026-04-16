@@ -139,9 +139,12 @@ export const api = {
       if (params.q) q.set('q', params.q);
       if (params.type) q.set('type', params.type);
       if (params.scope) q.set('scope', params.scope);
+      if (params.folderId != null && params.folderId !== '') q.set('folder_id', String(params.folderId));
       const s = q.toString();
       return request(`/files${s ? `?${s}` : ''}`);
     },
+    listFolders: () => request('/files/folders'),
+    createFolder: (name) => request('/files/folders', { method: 'POST', body: JSON.stringify({ name }) }),
     update: (id, data) => request(`/files/${id}`, { method: 'PATCH', body: JSON.stringify(data) }),
     delete: (id) => request(`/files/${id}`, { method: 'DELETE' }),
     /** XHR upload with progress 0–100; abort via signal */
@@ -151,6 +154,7 @@ export const api = {
         const fd = new FormData();
         fd.append('file', file);
         if (fields.tags != null && fields.tags !== '') fd.append('tags', String(fields.tags));
+        if (fields.folder_id != null && fields.folder_id !== '') fd.append('folder_id', String(fields.folder_id));
         if (fields.linked_type && fields.linked_id) {
           fd.append('linked_type', String(fields.linked_type));
           fd.append('linked_id', String(fields.linked_id));

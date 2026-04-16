@@ -183,6 +183,14 @@ CREATE TABLE IF NOT EXISTS orders (
 );
 
 -- File manager uploads (per-tenant via user_id)
+CREATE TABLE IF NOT EXISTS folders (
+  id SERIAL PRIMARY KEY,
+  user_id INT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  name VARCHAR(255) NOT NULL,
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  UNIQUE (user_id, name)
+);
+
 CREATE TABLE IF NOT EXISTS files (
   id SERIAL PRIMARY KEY,
   user_id INT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
@@ -192,6 +200,7 @@ CREATE TABLE IF NOT EXISTS files (
   file_size BIGINT NOT NULL DEFAULT 0,
   file_path TEXT NOT NULL,
   uploaded_by INT REFERENCES users(id) ON DELETE SET NULL,
+  folder_id INT REFERENCES folders(id) ON DELETE SET NULL,
   linked_type VARCHAR(20) DEFAULT NULL,
   linked_id VARCHAR(100) DEFAULT NULL,
   tags TEXT DEFAULT '',
@@ -199,6 +208,7 @@ CREATE TABLE IF NOT EXISTS files (
 );
 CREATE INDEX IF NOT EXISTS idx_files_user_created ON files (user_id, created_at DESC);
 CREATE INDEX IF NOT EXISTS idx_files_user_link ON files (user_id, linked_type, linked_id);
+CREATE INDEX IF NOT EXISTS idx_files_folder ON files (user_id, folder_id);
 
 -- Default settings row (id=1)
 INSERT INTO settings (id, business_name) VALUES (1, 'My Business')

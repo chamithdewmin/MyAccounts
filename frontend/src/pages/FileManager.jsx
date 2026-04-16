@@ -5,6 +5,7 @@ import {
   Search,
   Upload,
   Folder,
+  FolderPlus,
   LayoutGrid,
   List,
   MoreVertical,
@@ -90,6 +91,7 @@ const FileManager = () => {
   const [uploadLinkType, setUploadLinkType] = useState('');
   const [uploadLinkClient, setUploadLinkClient] = useState('');
   const [uploadLinkInvoice, setUploadLinkInvoice] = useState('');
+  const [uploadFolderId, setUploadFolderId] = useState('');
   const [uploadPct, setUploadPct] = useState(0);
   const [uploadName, setUploadName] = useState('');
   const [uploading, setUploading] = useState(false);
@@ -97,6 +99,12 @@ const FileManager = () => {
 
   const [clients, setClients] = useState([]);
   const [invoices, setInvoices] = useState([]);
+  const [folders, setFolders] = useState([]);
+  const [selectedFolderId, setSelectedFolderId] = useState('');
+  const [newFolderOpen, setNewFolderOpen] = useState(false);
+  const [newFolderName, setNewFolderName] = useState('');
+  const [creatingFolder, setCreatingFolder] = useState(false);
+  const [dragFileId, setDragFileId] = useState(null);
 
   const [renameOpen, setRenameOpen] = useState(false);
   const [renameValue, setRenameValue] = useState('');
@@ -123,6 +131,7 @@ const FileManager = () => {
         q: debouncedSearch.trim() || undefined,
         type: typeFilter,
         scope,
+        folderId: selectedFolderId || undefined,
       });
       setFiles(Array.isArray(list) ? list : []);
     } catch (e) {
@@ -135,7 +144,7 @@ const FileManager = () => {
     } finally {
       setLoading(false);
     }
-  }, [debouncedSearch, typeFilter, scope, toast]);
+  }, [debouncedSearch, typeFilter, scope, selectedFolderId, toast]);
 
   useEffect(() => {
     const t = setTimeout(() => setDebouncedSearch(searchInput), 350);
@@ -149,12 +158,14 @@ const FileManager = () => {
   useEffect(() => {
     const loadRefs = async () => {
       try {
-        const [c, inv] = await Promise.all([api.clients.list(), api.invoices.list()]);
+        const [c, inv, fs] = await Promise.all([api.clients.list(), api.invoices.list(), api.files.listFolders()]);
         setClients(Array.isArray(c) ? c : []);
         setInvoices(Array.isArray(inv) ? inv : []);
+        setFolders(Array.isArray(fs) ? fs : []);
       } catch {
         setClients([]);
         setInvoices([]);
+        setFolders([]);
       }
     };
     loadRefs();
@@ -197,9 +208,32 @@ const FileManager = () => {
     setUploadLinkType('');
     setUploadLinkClient('');
     setUploadLinkInvoice('');
+    setUploadFolderId(selectedFolderId || '');
     setUploadPct(0);
     setUploadName('');
     setUploadOpen(true);
+  };
+
+  const createFolder = async () => {
+    const name = newFolderName.trim();
+    if (!name) {
+      toast({ title: 'Folder name required', variant: 'destructive' });
+      return;
+    }
+    setCreatingFolder(true);
+    try {
+      const f = await api.files.createFolder(name);
+      setFolders((prev) => [...prev, f].sort((a, b) => String(a.name).localeCompare(String(b.name))));
+      setSelectedFolderId(String(f.id));
+      setNewFolderOpen(false);
+      setNewFolderName('');
+      toast({ title: 'Folder created', description: name });
+      await loadFiles();
+    } catch (e) {
+      toast({ title: 'Could not create folder', description: e.message, variant: 'destructive' });
+    } finally {
+      setCreatingFolder(false);
+    }
   };
 
   const runUpload = (fileList) => {
@@ -210,6 +244,7 @@ const FileManager = () => {
     setUploadPct(0);
     setUploadName(file.name);
     const fields = { tags: uploadTags.trim() };
+    if (uploadFolderId) fields.folder_id = uploadFolderId;
     if (uploadLinkType === 'client' && uploadLinkClient) {
       fields.linked_type = 'client';
       fields.linked_id = uploadLinkClient;
@@ -241,6 +276,25 @@ const FileManager = () => {
 
   const cancelUpload = () => {
     uploadAbortRef.current?.abort();
+  };
+
+  const moveFileToFolder = async (fileId, folderId) => {
+    try {
+      await api.files.update(fileId, { folderId: folderId || null });
+      toast({
+        title: folderId ? 'File moved' : 'Moved to root',
+        description: folderId
+          ? `Moved to ${folders.find((f) => String(f.id) === String(folderId))?.name || 'folder'}`
+          : 'File is now in root',
+      });
+      if (selected?.id === fileId) {
+        const nextName = folderId ? folders.find((f) => String(f.id) === String(folderId))?.name || null : null;
+        setSelected((s) => (s ? { ...s, folderId: folderId ? Number(folderId) : null, folderName: nextName } : s));
+      }
+      await loadFiles();
+    } catch (e) {
+      toast({ title: 'Move failed', description: e.message, variant: 'destructive' });
+    }
   };
 
   const downloadFile = async (f) => {
@@ -367,19 +421,8 @@ const FileManager = () => {
               <Upload className="w-4 h-4" />
               Upload
             </Button>
-            <Button
-              type="button"
-              variant="outline"
-              title="Folders coming later"
-              className="gap-2"
-              onClick={() =>
-                toast({
-                  title: 'New Folder coming soon',
-                  description: 'Folder creation is not implemented yet. You can still upload and organize with tags/links.',
-                })
-              }
-            >
-              <Folder className="w-4 h-4" />
+            <Button type="button" variant="outline" className="gap-2" onClick={() => setNewFolderOpen(true)}>
+              <FolderPlus className="w-4 h-4" />
               New folder
             </Button>
             <select
@@ -443,6 +486,51 @@ const FileManager = () => {
                 );
               })}
             </nav>
+            <div className="mt-3 border-t border-border pt-3">
+              <p className="text-[11px] font-medium text-muted-foreground uppercase tracking-wide px-2 pb-1">Folders</p>
+              <button
+                type="button"
+                onClick={() => setSelectedFolderId('')}
+                onDragOver={(e) => {
+                  e.preventDefault();
+                }}
+                onDrop={(e) => {
+                  e.preventDefault();
+                  if (dragFileId != null) moveFileToFolder(dragFileId, null);
+                }}
+                className={`w-full text-left rounded-lg px-3 py-2 text-sm flex items-center gap-2 ${
+                  selectedFolderId === '' ? 'bg-primary/15 text-primary border border-primary/30' : 'hover:bg-secondary text-muted-foreground'
+                }`}
+              >
+                <FolderOpen className="w-4 h-4" />
+                Root
+              </button>
+              <div className="mt-1 max-h-56 overflow-auto space-y-1">
+                {folders.map((f) => (
+                  <button
+                    key={f.id}
+                    type="button"
+                    onClick={() => setSelectedFolderId(String(f.id))}
+                    onDragOver={(e) => {
+                      e.preventDefault();
+                    }}
+                    onDrop={(e) => {
+                      e.preventDefault();
+                      if (dragFileId != null) moveFileToFolder(dragFileId, f.id);
+                    }}
+                    className={`w-full text-left rounded-lg px-3 py-2 text-sm flex items-center gap-2 ${
+                      String(selectedFolderId) === String(f.id)
+                        ? 'bg-primary/15 text-primary border border-primary/30'
+                        : 'hover:bg-secondary text-muted-foreground'
+                    }`}
+                  >
+                    <Folder className="w-4 h-4" />
+                    <span className="truncate">{f.name}</span>
+                  </button>
+                ))}
+                {folders.length === 0 ? <p className="text-xs text-muted-foreground px-3 py-2">No folders yet</p> : null}
+              </div>
+            </div>
           </aside>
 
           <div className="flex-1 min-w-0 flex flex-col lg:flex-row gap-4">
@@ -484,6 +572,9 @@ const FileManager = () => {
                             animate={{ opacity: 1 }}
                             transition={{ delay: i * 0.02 }}
                             onClick={() => setSelected(f)}
+                            draggable
+                            onDragStart={() => setDragFileId(f.id)}
+                            onDragEnd={() => setDragFileId(null)}
                             className={`border-b border-border cursor-pointer transition-colors hover:bg-secondary/40 ${
                               selected?.id === f.id ? 'bg-primary/10' : ''
                             }`}
@@ -502,7 +593,10 @@ const FileManager = () => {
                             </td>
                             <td className="px-4 py-3 text-muted-foreground">{fileKindLabel(f.fileType)}</td>
                             <td className="px-4 py-3 text-muted-foreground tabular-nums">{formatBytes(f.fileSize)}</td>
-                            <td className="px-4 py-3 text-muted-foreground text-xs max-w-[200px] truncate">{linkedCell(f)}</td>
+                            <td className="px-4 py-3 text-muted-foreground text-xs max-w-[200px] truncate">
+                              <div>{linkedCell(f)}</div>
+                              <div className="text-[11px] mt-0.5">{f.folderName ? `Folder · ${f.folderName}` : 'Root'}</div>
+                            </td>
                             <td className="px-4 py-3 text-muted-foreground whitespace-nowrap">
                               {f.createdAt ? new Date(f.createdAt).toLocaleDateString() : '—'}
                             </td>
@@ -580,6 +674,9 @@ const FileManager = () => {
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ delay: i * 0.02 }}
                         onClick={() => setSelected(f)}
+                        draggable
+                        onDragStart={() => setDragFileId(f.id)}
+                        onDragEnd={() => setDragFileId(null)}
                         className={`rounded-xl border p-3 text-left flex flex-col gap-2 transition-colors hover:bg-secondary/50 ${
                           selected?.id === f.id ? 'border-primary ring-1 ring-primary/40 bg-primary/5' : 'border-border bg-secondary/20'
                         }`}
@@ -722,6 +819,22 @@ const FileManager = () => {
               </div>
             ) : null}
             <div className="space-y-2">
+              <Label>Upload to folder</Label>
+              <select
+                value={uploadFolderId}
+                onChange={(e) => setUploadFolderId(e.target.value)}
+                disabled={uploading}
+                className="h-10 w-full rounded-lg border border-border bg-input px-3 text-sm"
+              >
+                <option value="">Root</option>
+                {folders.map((f) => (
+                  <option key={f.id} value={f.id}>
+                    {f.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div className="space-y-2">
               <Label htmlFor="fm-tags">Tags (optional)</Label>
               <Input
                 id="fm-tags"
@@ -804,6 +917,35 @@ const FileManager = () => {
               Cancel
             </Button>
             <Button onClick={saveRename}>Save</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={newFolderOpen} onOpenChange={(o) => !creatingFolder && setNewFolderOpen(o)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Create folder</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-2">
+            <Label htmlFor="folder-name">Folder name</Label>
+            <Input
+              id="folder-name"
+              value={newFolderName}
+              onChange={(e) => setNewFolderName(e.target.value)}
+              placeholder="e.g. Contracts"
+              disabled={creatingFolder}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') createFolder();
+              }}
+            />
+          </div>
+          <DialogFooter className="gap-2">
+            <Button variant="outline" onClick={() => setNewFolderOpen(false)} disabled={creatingFolder}>
+              Cancel
+            </Button>
+            <Button onClick={createFolder} disabled={creatingFolder || !newFolderName.trim()}>
+              {creatingFolder ? 'Creating…' : 'Create folder'}
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

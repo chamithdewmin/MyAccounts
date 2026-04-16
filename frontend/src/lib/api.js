@@ -4,7 +4,7 @@
  */
 const API_BASE = import.meta.env.VITE_API_URL || '/api';
 
-const getToken = () => localStorage.getItem('token');
+export const getToken = () => localStorage.getItem('token');
 
 const request = async (path, options = {}) => {
   const url = `${API_BASE}${path}`;
@@ -132,6 +132,75 @@ export const api = {
     list: () => request('/calendar-events'),
     create: (data) => request('/calendar-events', { method: 'POST', body: JSON.stringify(data) }),
     delete: (id) => request(`/calendar-events/${id}`, { method: 'DELETE' }),
+  },
+  files: {
+    list: (params = {}) => {
+      const q = new URLSearchParams();
+      if (params.q) q.set('q', params.q);
+      if (params.type) q.set('type', params.type);
+      if (params.scope) q.set('scope', params.scope);
+      const s = q.toString();
+      return request(`/files${s ? `?${s}` : ''}`);
+    },
+    update: (id, data) => request(`/files/${id}`, { method: 'PATCH', body: JSON.stringify(data) }),
+    delete: (id) => request(`/files/${id}`, { method: 'DELETE' }),
+    /** XHR upload with progress 0–100; abort via signal */
+    upload: (file, fields = {}, { onProgress, signal } = {}) =>
+      new Promise((resolve, reject) => {
+        const xhr = new XMLHttpRequest();
+        const fd = new FormData();
+        fd.append('file', file);
+        if (fields.tags != null && fields.tags !== '') fd.append('tags', String(fields.tags));
+        if (fields.linked_type && fields.linked_id) {
+          fd.append('linked_type', String(fields.linked_type));
+          fd.append('linked_id', String(fields.linked_id));
+        }
+        const url = `${API_BASE}/files/upload`;
+        xhr.open('POST', url);
+        const token = getToken();
+        if (token) xhr.setRequestHeader('Authorization', `Bearer ${token}`);
+        xhr.upload.onprogress = (e) => {
+          if (e.lengthComputable && onProgress) onProgress(Math.min(100, Math.round((100 * e.loaded) / e.total)));
+        };
+        xhr.onload = () => {
+          try {
+            const data = JSON.parse(xhr.responseText || '{}');
+            if (xhr.status >= 200 && xhr.status < 300) resolve(data);
+            else reject(new Error(data.error || data.message || `HTTP ${xhr.status}`));
+          } catch {
+            reject(new Error(xhr.status >= 200 && xhr.status < 300 ? 'Invalid response' : `HTTP ${xhr.status}`));
+          }
+        };
+        xhr.onerror = () => reject(new Error('Network error'));
+        xhr.onabort = () => reject(new Error('Upload cancelled'));
+        if (signal) {
+          if (signal.aborted) {
+            reject(new Error('Upload cancelled'));
+            return;
+          }
+          signal.addEventListener('abort', () => xhr.abort(), { once: true });
+        }
+        xhr.send(fd);
+      }),
+    fetchBlob: async (id, { inline = false } = {}) => {
+      const url = `${API_BASE}/files/${id}/file${inline ? '?inline=1' : ''}`;
+      const headers = {};
+      const token = getToken();
+      if (token) headers.Authorization = `Bearer ${token}`;
+      const res = await fetch(url, { headers });
+      const errText = await res.text().catch(() => '');
+      if (!res.ok) {
+        let msg = `HTTP ${res.status}`;
+        try {
+          const j = JSON.parse(errText);
+          if (j.error) msg = j.error;
+        } catch {
+          /* ignore */
+        }
+        throw new Error(msg);
+      }
+      return res.blob();
+    },
   },
   transfers: {
     list: () => request('/transfers'),

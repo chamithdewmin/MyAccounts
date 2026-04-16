@@ -182,6 +182,24 @@ CREATE TABLE IF NOT EXISTS orders (
   created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
+-- File manager uploads (per-tenant via user_id)
+CREATE TABLE IF NOT EXISTS files (
+  id SERIAL PRIMARY KEY,
+  user_id INT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  filename VARCHAR(255) NOT NULL,
+  original_name VARCHAR(512) NOT NULL,
+  file_type VARCHAR(255) NOT NULL DEFAULT 'application/octet-stream',
+  file_size BIGINT NOT NULL DEFAULT 0,
+  file_path TEXT NOT NULL,
+  uploaded_by INT REFERENCES users(id) ON DELETE SET NULL,
+  linked_type VARCHAR(20) DEFAULT NULL,
+  linked_id VARCHAR(100) DEFAULT NULL,
+  tags TEXT DEFAULT '',
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+CREATE INDEX IF NOT EXISTS idx_files_user_created ON files (user_id, created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_files_user_link ON files (user_id, linked_type, linked_id);
+
 -- Default settings row (id=1)
 INSERT INTO settings (id, business_name) VALUES (1, 'My Business')
 ON CONFLICT (id) DO NOTHING;

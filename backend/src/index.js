@@ -24,6 +24,7 @@ import aiRoutes from './routes/ai.js';
 import backupRoutes from './routes/backup.js';
 import estimatesRoutes from './routes/estimates.js';
 import calendarEventsRoutes from './routes/calendarEvents.js';
+import filesRoutes from './routes/files.js';
 import pool from './config/db.js';
 import { processDueScheduledSms } from './workers/scheduledSmsWorker.js';
 
@@ -241,6 +242,29 @@ async function initDb() {
     console.warn('calendar_events table:', e.message);
   }
   try {
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS files (
+        id SERIAL PRIMARY KEY,
+        user_id INT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+        filename VARCHAR(255) NOT NULL,
+        original_name VARCHAR(512) NOT NULL,
+        file_type VARCHAR(255) NOT NULL DEFAULT 'application/octet-stream',
+        file_size BIGINT NOT NULL DEFAULT 0,
+        file_path TEXT NOT NULL,
+        uploaded_by INT REFERENCES users(id) ON DELETE SET NULL,
+        linked_type VARCHAR(20) DEFAULT NULL,
+        linked_id VARCHAR(100) DEFAULT NULL,
+        tags TEXT DEFAULT '',
+        created_at TIMESTAMPTZ DEFAULT NOW()
+      )
+    `);
+    await pool.query('CREATE INDEX IF NOT EXISTS idx_files_user_created ON files (user_id, created_at DESC)');
+    await pool.query('CREATE INDEX IF NOT EXISTS idx_files_user_link ON files (user_id, linked_type, linked_id)');
+    console.log('Files table ready.');
+  } catch (e) {
+    console.warn('files table:', e.message);
+  }
+  try {
     await pool.query('ALTER TABLE reminders ADD COLUMN IF NOT EXISTS reason VARCHAR(255) DEFAULT \'\'');
     await pool.query('ALTER TABLE reminders ADD COLUMN IF NOT EXISTS amount DECIMAL(15,2) DEFAULT 0');
     console.log('Reminders columns (reason, amount) ready.');
@@ -297,6 +321,7 @@ app.use('/api/ai', aiRoutes);
 app.use('/api/backup', backupRoutes);
 app.use('/api/estimates', estimatesRoutes);
 app.use('/api/calendar-events', calendarEventsRoutes);
+app.use('/api/files', filesRoutes);
 
 const HOST = '0.0.0.0'; // Required for Docker: listen on all interfaces
 

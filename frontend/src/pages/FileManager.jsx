@@ -1,0 +1,854 @@
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { Helmet } from 'react-helmet';
+import { motion } from 'framer-motion';
+import {
+  Search,
+  Upload,
+  Folder,
+  LayoutGrid,
+  List,
+  MoreVertical,
+  Eye,
+  Download,
+  Pencil,
+  Trash2,
+  Link2,
+  FileText,
+  Image as ImageIcon,
+  File,
+  Loader2,
+  X,
+  FolderOpen,
+  Users,
+  Receipt,
+  Unlink,
+} from 'lucide-react';
+import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
+import { Label } from '@/components/ui/label';
+import { useToast } from '@/components/ui/use-toast';
+import {
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import { api } from '@/lib/api';
+
+const TYPE_OPTIONS = [
+  { value: 'all', label: 'All types' },
+  { value: 'images', label: 'Images' },
+  { value: 'pdfs', label: 'PDFs' },
+  { value: 'docs', label: 'Docs' },
+  { value: 'others', label: 'Others' },
+];
+
+const formatBytes = (n) => {
+  const v = Number(n) || 0;
+  if (v < 1024) return `${v} B`;
+  if (v < 1024 * 1024) return `${(v / 1024).toFixed(1)} KB`;
+  if (v < 1024 * 1024 * 1024) return `${(v / (1024 * 1024)).toFixed(1)} MB`;
+  return `${(v / (1024 * 1024 * 1024)).toFixed(1)} GB`;
+};
+
+const isImageType = (t) => String(t || '').toLowerCase().startsWith('image/');
+const isPdfType = (t) => String(t || '').toLowerCase() === 'application/pdf';
+
+const fileKindLabel = (t) => {
+  if (isImageType(t)) return 'Image';
+  if (isPdfType(t)) return 'PDF';
+  const s = String(t || '');
+  if (s.includes('word') || s.includes('document')) return 'Document';
+  if (s.includes('sheet') || s.includes('excel') || s === 'text/csv') return 'Spreadsheet';
+  if (s.startsWith('text/')) return 'Text';
+  return 'File';
+};
+
+const FileManager = () => {
+  const { toast } = useToast();
+  const [files, setFiles] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [searchInput, setSearchInput] = useState('');
+  const [debouncedSearch, setDebouncedSearch] = useState('');
+  const [typeFilter, setTypeFilter] = useState('all');
+  const [scope, setScope] = useState('all');
+  const [viewMode, setViewMode] = useState('table');
+  const [selected, setSelected] = useState(null);
+  const [previewBlob, setPreviewBlob] = useState(null);
+  const [previewLoading, setPreviewLoading] = useState(false);
+  const previewUrlRef = useRef(null);
+
+  const [uploadOpen, setUploadOpen] = useState(false);
+  const [uploadTags, setUploadTags] = useState('');
+  const [uploadLinkType, setUploadLinkType] = useState('');
+  const [uploadLinkClient, setUploadLinkClient] = useState('');
+  const [uploadLinkInvoice, setUploadLinkInvoice] = useState('');
+  const [uploadPct, setUploadPct] = useState(0);
+  const [uploadName, setUploadName] = useState('');
+  const [uploading, setUploading] = useState(false);
+  const uploadAbortRef = useRef(null);
+
+  const [clients, setClients] = useState([]);
+  const [invoices, setInvoices] = useState([]);
+
+  const [renameOpen, setRenameOpen] = useState(false);
+  const [renameValue, setRenameValue] = useState('');
+  const [renameTarget, setRenameTarget] = useState(null);
+
+  const [linkOpen, setLinkOpen] = useState(false);
+  const [linkTarget, setLinkTarget] = useState(null);
+  const [linkKind, setLinkKind] = useState('client');
+  const [linkClientId, setLinkClientId] = useState('');
+  const [linkInvoiceId, setLinkInvoiceId] = useState('');
+
+  const revokePreview = useCallback(() => {
+    if (previewUrlRef.current) {
+      URL.revokeObjectURL(previewUrlRef.current);
+      previewUrlRef.current = null;
+    }
+    setPreviewBlob(null);
+  }, []);
+
+  const loadFiles = useCallback(async () => {
+    setLoading(true);
+    try {
+      const list = await api.files.list({
+        q: debouncedSearch.trim() || undefined,
+        type: typeFilter,
+        scope,
+      });
+      setFiles(Array.isArray(list) ? list : []);
+    } catch (e) {
+      toast({
+        title: 'Could not load files',
+        description: e.message || 'Request failed',
+        variant: 'destructive',
+      });
+      setFiles([]);
+    } finally {
+      setLoading(false);
+    }
+  }, [debouncedSearch, typeFilter, scope, toast]);
+
+  useEffect(() => {
+    const t = setTimeout(() => setDebouncedSearch(searchInput), 350);
+    return () => clearTimeout(t);
+  }, [searchInput]);
+
+  useEffect(() => {
+    loadFiles();
+  }, [loadFiles]);
+
+  useEffect(() => {
+    const loadRefs = async () => {
+      try {
+        const [c, inv] = await Promise.all([api.clients.list(), api.invoices.list()]);
+        setClients(Array.isArray(c) ? c : []);
+        setInvoices(Array.isArray(inv) ? inv : []);
+      } catch {
+        setClients([]);
+        setInvoices([]);
+      }
+    };
+    loadRefs();
+  }, []);
+
+  useEffect(() => {
+    if (!selected) {
+      revokePreview();
+      return;
+    }
+    let cancelled = false;
+    (async () => {
+      setPreviewLoading(true);
+      revokePreview();
+      try {
+        if (isImageType(selected.fileType) || isPdfType(selected.fileType)) {
+          const blob = await api.files.fetchBlob(selected.id, { inline: true });
+          if (cancelled) return;
+          const url = URL.createObjectURL(blob);
+          previewUrlRef.current = url;
+          setPreviewBlob(url);
+        }
+      } catch (e) {
+        if (!cancelled) {
+          toast({ title: 'Preview failed', description: e.message, variant: 'destructive' });
+        }
+      } finally {
+        if (!cancelled) setPreviewLoading(false);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [selected, revokePreview, toast]);
+
+  useEffect(() => () => revokePreview(), [revokePreview]);
+
+  const openUpload = () => {
+    setUploadTags('');
+    setUploadLinkType('');
+    setUploadLinkClient('');
+    setUploadLinkInvoice('');
+    setUploadPct(0);
+    setUploadName('');
+    setUploadOpen(true);
+  };
+
+  const runUpload = (fileList) => {
+    const file = fileList?.[0];
+    if (!file || uploading) return;
+    uploadAbortRef.current = new AbortController();
+    setUploading(true);
+    setUploadPct(0);
+    setUploadName(file.name);
+    const fields = { tags: uploadTags.trim() };
+    if (uploadLinkType === 'client' && uploadLinkClient) {
+      fields.linked_type = 'client';
+      fields.linked_id = uploadLinkClient;
+    } else if (uploadLinkType === 'invoice' && uploadLinkInvoice) {
+      fields.linked_type = 'invoice';
+      fields.linked_id = uploadLinkInvoice;
+    }
+    api.files
+      .upload(file, fields, {
+        signal: uploadAbortRef.current.signal,
+        onProgress: (p) => setUploadPct(p),
+      })
+      .then(() => {
+        toast({ title: 'Upload complete', description: file.name });
+        setUploadOpen(false);
+        loadFiles();
+      })
+      .catch((e) => {
+        if (e.message !== 'Upload cancelled') {
+          toast({ title: 'Upload failed', description: e.message, variant: 'destructive' });
+        }
+      })
+      .finally(() => {
+        setUploading(false);
+        setUploadPct(0);
+        setUploadName('');
+      });
+  };
+
+  const cancelUpload = () => {
+    uploadAbortRef.current?.abort();
+  };
+
+  const downloadFile = async (f) => {
+    try {
+      const blob = await api.files.fetchBlob(f.id, { inline: false });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = f.originalName || 'download';
+      a.click();
+      URL.revokeObjectURL(url);
+    } catch (e) {
+      toast({ title: 'Download failed', description: e.message, variant: 'destructive' });
+    }
+  };
+
+  const deleteFile = async (f) => {
+    if (!window.confirm(`Delete "${f.originalName}" permanently?`)) return;
+    try {
+      await api.files.delete(f.id);
+      toast({ title: 'File deleted' });
+      if (selected?.id === f.id) setSelected(null);
+      loadFiles();
+    } catch (e) {
+      toast({ title: 'Delete failed', description: e.message, variant: 'destructive' });
+    }
+  };
+
+  const saveRename = async () => {
+    if (!renameTarget || !renameValue.trim()) return;
+    try {
+      await api.files.update(renameTarget.id, { originalName: renameValue.trim() });
+      toast({ title: 'Renamed' });
+      setRenameOpen(false);
+      setRenameTarget(null);
+      loadFiles();
+      setSelected((s) => (s && s.id === renameTarget.id ? { ...s, originalName: renameValue.trim() } : s));
+    } catch (e) {
+      toast({ title: 'Rename failed', description: e.message, variant: 'destructive' });
+    }
+  };
+
+  const saveLink = async () => {
+    if (!linkTarget) return;
+    try {
+      if (linkKind === 'client') {
+        if (!linkClientId) {
+          toast({ title: 'Pick a client', variant: 'destructive' });
+          return;
+        }
+        await api.files.update(linkTarget.id, { linkedType: 'client', linkedId: linkClientId });
+      } else {
+        if (!linkInvoiceId) {
+          toast({ title: 'Pick an invoice', variant: 'destructive' });
+          return;
+        }
+        await api.files.update(linkTarget.id, { linkedType: 'invoice', linkedId: linkInvoiceId });
+      }
+      toast({ title: 'Link saved' });
+      setLinkOpen(false);
+      setLinkTarget(null);
+      loadFiles();
+    } catch (e) {
+      toast({ title: 'Link failed', description: e.message, variant: 'destructive' });
+    }
+  };
+
+  const clearLink = async (f) => {
+    try {
+      await api.files.update(f.id, { linkedType: null, linkedId: null });
+      toast({ title: 'Link removed' });
+      loadFiles();
+    } catch (e) {
+      toast({ title: 'Could not unlink', description: e.message, variant: 'destructive' });
+    }
+  };
+
+  const scopeNav = useMemo(
+    () => [
+      { id: 'all', label: 'All files', icon: FolderOpen },
+      { id: 'unlinked', label: 'Unlinked', icon: Unlink },
+      { id: 'client', label: 'Clients', icon: Users },
+      { id: 'invoice', label: 'Invoices', icon: Receipt },
+    ],
+    [],
+  );
+
+  const linkedCell = (f) => {
+    if (!f.linkedType || !f.linkedId) return '—';
+    if (f.linkedType === 'client') return f.linkedLabel ? `Client · ${f.linkedLabel}` : 'Client';
+    if (f.linkedType === 'invoice') return f.linkedLabel ? `Invoice · ${f.linkedLabel}` : 'Invoice';
+    return '—';
+  };
+
+  return (
+    <>
+      <Helmet>
+        <title>File Manager - LogozoPOS</title>
+        <meta name="description" content="Upload, search, and link files to clients and invoices" />
+      </Helmet>
+
+      <div className="page-y flex flex-col gap-5 min-h-0">
+        <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
+          <div className="min-w-0">
+            <h1 className="text-2xl sm:text-3xl font-bold text-foreground tracking-tight">File Manager</h1>
+            <p className="text-muted-foreground text-sm sm:text-base mt-1 max-w-2xl leading-relaxed">
+              Upload files, search by name or tags, and link documents to clients or invoices.
+            </p>
+          </div>
+        </div>
+
+        <div className="rounded-2xl border border-border bg-card/80 p-3 sm:p-4 flex flex-col gap-3 lg:flex-row lg:flex-wrap lg:items-center shadow-sm">
+          <div className="relative flex-1 min-w-[200px] max-w-xl">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+            <Input
+              placeholder="Search file name, type, or tags…"
+              value={searchInput}
+              onChange={(e) => setSearchInput(e.target.value)}
+              className="pl-10 bg-input border-border"
+            />
+          </div>
+          <div className="flex flex-wrap items-center gap-2">
+            <Button onClick={openUpload} className="gap-2">
+              <Upload className="w-4 h-4" />
+              Upload
+            </Button>
+            <Button type="button" variant="outline" disabled title="Folders coming later" className="gap-2 opacity-60">
+              <Folder className="w-4 h-4" />
+              New folder
+            </Button>
+            <select
+              value={typeFilter}
+              onChange={(e) => setTypeFilter(e.target.value)}
+              className="h-10 rounded-lg border border-border bg-input px-3 text-sm text-foreground min-w-[140px]"
+            >
+              {TYPE_OPTIONS.map((o) => (
+                <option key={o.value} value={o.value}>
+                  {o.label}
+                </option>
+              ))}
+            </select>
+            <div className="flex rounded-lg border border-border overflow-hidden">
+              <Button
+                type="button"
+                variant={viewMode === 'table' ? 'secondary' : 'ghost'}
+                size="sm"
+                className="rounded-none gap-1"
+                onClick={() => setViewMode('table')}
+              >
+                <List className="w-4 h-4" />
+                Table
+              </Button>
+              <Button
+                type="button"
+                variant={viewMode === 'grid' ? 'secondary' : 'ghost'}
+                size="sm"
+                className="rounded-none gap-1"
+                onClick={() => setViewMode('grid')}
+              >
+                <LayoutGrid className="w-4 h-4" />
+                Grid
+              </Button>
+            </div>
+            <Button variant="outline" size="sm" onClick={loadFiles} disabled={loading}>
+              {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Refresh'}
+            </Button>
+          </div>
+        </div>
+
+        <div className="flex flex-col lg:flex-row gap-4 min-h-[480px] flex-1 min-w-0">
+          <aside className="lg:w-52 shrink-0 rounded-2xl border border-border bg-card p-2 h-fit">
+            <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide px-2 py-1.5">Browse</p>
+            <nav className="flex flex-row flex-wrap gap-1 lg:flex-col">
+              {scopeNav.map((item) => {
+                const Icon = item.icon;
+                const active = scope === item.id;
+                return (
+                  <button
+                    key={item.id}
+                    type="button"
+                    onClick={() => setScope(item.id)}
+                    className={`flex items-center gap-2 rounded-lg px-3 py-2 text-sm transition-colors w-full text-left ${
+                      active ? 'bg-primary/15 text-primary border border-primary/30' : 'hover:bg-secondary text-muted-foreground hover:text-foreground'
+                    }`}
+                  >
+                    <Icon className="w-4 h-4 shrink-0" />
+                    {item.label}
+                  </button>
+                );
+              })}
+            </nav>
+          </aside>
+
+          <div className="flex-1 min-w-0 flex flex-col lg:flex-row gap-4">
+            <div className="flex-1 min-w-0 rounded-2xl border border-border bg-card overflow-hidden flex flex-col">
+              <div className="px-4 py-3 border-b border-border flex items-center justify-between gap-2">
+                <span className="font-semibold text-foreground">Files</span>
+                <span className="text-xs text-muted-foreground">{files.length} item{files.length === 1 ? '' : 's'}</span>
+              </div>
+              {loading ? (
+                <div className="flex items-center justify-center py-20 text-muted-foreground gap-2">
+                  <Loader2 className="w-5 h-5 animate-spin" />
+                  Loading…
+                </div>
+              ) : viewMode === 'table' ? (
+                <div className="overflow-x-auto">
+                  <table className="w-full min-w-[720px] text-sm">
+                    <thead>
+                      <tr className="border-b border-border text-muted-foreground text-xs uppercase tracking-wide">
+                        <th className="px-4 py-3 text-left font-medium">File name</th>
+                        <th className="px-4 py-3 text-left font-medium">Type</th>
+                        <th className="px-4 py-3 text-left font-medium">Size</th>
+                        <th className="px-4 py-3 text-left font-medium">Linked to</th>
+                        <th className="px-4 py-3 text-left font-medium">Date</th>
+                        <th className="px-4 py-3 w-12" />
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {files.length === 0 ? (
+                        <tr>
+                          <td colSpan={6} className="px-4 py-12 text-center text-muted-foreground">
+                            No files yet. Upload a document to get started.
+                          </td>
+                        </tr>
+                      ) : (
+                        files.map((f, i) => (
+                          <motion.tr
+                            key={f.id}
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            transition={{ delay: i * 0.02 }}
+                            onClick={() => setSelected(f)}
+                            className={`border-b border-border cursor-pointer transition-colors hover:bg-secondary/40 ${
+                              selected?.id === f.id ? 'bg-primary/10' : ''
+                            }`}
+                          >
+                            <td className="px-4 py-3">
+                              <div className="flex items-center gap-2 min-w-0">
+                                {isImageType(f.fileType) ? (
+                                  <ImageIcon className="w-4 h-4 text-sky-400 shrink-0" />
+                                ) : isPdfType(f.fileType) ? (
+                                  <FileText className="w-4 h-4 text-red-400 shrink-0" />
+                                ) : (
+                                  <File className="w-4 h-4 text-muted-foreground shrink-0" />
+                                )}
+                                <span className="font-medium text-foreground truncate">{f.originalName}</span>
+                              </div>
+                            </td>
+                            <td className="px-4 py-3 text-muted-foreground">{fileKindLabel(f.fileType)}</td>
+                            <td className="px-4 py-3 text-muted-foreground tabular-nums">{formatBytes(f.fileSize)}</td>
+                            <td className="px-4 py-3 text-muted-foreground text-xs max-w-[200px] truncate">{linkedCell(f)}</td>
+                            <td className="px-4 py-3 text-muted-foreground whitespace-nowrap">
+                              {f.createdAt ? new Date(f.createdAt).toLocaleDateString() : '—'}
+                            </td>
+                            <td className="px-4 py-3 text-right" onClick={(e) => e.stopPropagation()}>
+                              <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                  <Button variant="ghost" size="icon" className="h-8 w-8" aria-label="Actions">
+                                    <MoreVertical className="w-4 h-4" />
+                                  </Button>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent align="end" className="w-48">
+                                  <DropdownMenuItem
+                                    onClick={() => {
+                                      setSelected(f);
+                                    }}
+                                  >
+                                    <Eye className="w-4 h-4 mr-2" />
+                                    View
+                                  </DropdownMenuItem>
+                                  <DropdownMenuItem onClick={() => downloadFile(f)}>
+                                    <Download className="w-4 h-4 mr-2" />
+                                    Download
+                                  </DropdownMenuItem>
+                                  <DropdownMenuItem
+                                    onClick={() => {
+                                      setRenameTarget(f);
+                                      setRenameValue(f.originalName);
+                                      setRenameOpen(true);
+                                    }}
+                                  >
+                                    <Pencil className="w-4 h-4 mr-2" />
+                                    Rename
+                                  </DropdownMenuItem>
+                                  <DropdownMenuItem
+                                    onClick={() => {
+                                      setLinkTarget(f);
+                                      setLinkKind('client');
+                                      setLinkClientId(f.linkedType === 'client' ? f.linkedId : '');
+                                      setLinkInvoiceId(f.linkedType === 'invoice' ? f.linkedId : '');
+                                      setLinkOpen(true);
+                                    }}
+                                  >
+                                    <Link2 className="w-4 h-4 mr-2" />
+                                    Link to…
+                                  </DropdownMenuItem>
+                                  {f.linkedType ? (
+                                    <DropdownMenuItem onClick={() => clearLink(f)}>
+                                      <Unlink className="w-4 h-4 mr-2" />
+                                      Remove link
+                                    </DropdownMenuItem>
+                                  ) : null}
+                                  <DropdownMenuItem className="text-destructive focus:text-destructive" onClick={() => deleteFile(f)}>
+                                    <Trash2 className="w-4 h-4 mr-2" />
+                                    Delete
+                                  </DropdownMenuItem>
+                                </DropdownMenuContent>
+                              </DropdownMenu>
+                            </td>
+                          </motion.tr>
+                        ))
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+              ) : (
+                <div className="p-4 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
+                  {files.length === 0 ? (
+                    <div className="col-span-full text-center text-muted-foreground py-12">No files yet.</div>
+                  ) : (
+                    files.map((f, i) => (
+                      <motion.button
+                        key={f.id}
+                        type="button"
+                        initial={{ opacity: 0, y: 6 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: i * 0.02 }}
+                        onClick={() => setSelected(f)}
+                        className={`rounded-xl border p-3 text-left flex flex-col gap-2 transition-colors hover:bg-secondary/50 ${
+                          selected?.id === f.id ? 'border-primary ring-1 ring-primary/40 bg-primary/5' : 'border-border bg-secondary/20'
+                        }`}
+                      >
+                        <div className="flex justify-center py-4">
+                          {isImageType(f.fileType) ? (
+                            <ImageIcon className="w-10 h-10 text-sky-400" />
+                          ) : isPdfType(f.fileType) ? (
+                            <FileText className="w-10 h-10 text-red-400" />
+                          ) : (
+                            <File className="w-10 h-10 text-muted-foreground" />
+                          )}
+                        </div>
+                        <div className="text-xs font-medium text-foreground line-clamp-2 min-h-[2.5rem]">{f.originalName}</div>
+                        <div className="text-[10px] text-muted-foreground flex justify-between gap-1">
+                          <span>{formatBytes(f.fileSize)}</span>
+                          <span className="truncate">{f.linkedLabel || '—'}</span>
+                        </div>
+                      </motion.button>
+                    ))
+                  )}
+                </div>
+              )}
+            </div>
+
+            {selected ? (
+              <aside className="w-full lg:w-[380px] shrink-0 rounded-2xl border border-border bg-card flex flex-col max-h-[70vh] lg:max-h-[calc(100vh-220px)] overflow-hidden">
+                <div className="px-4 py-3 border-b border-border flex items-center justify-between gap-2">
+                  <span className="font-semibold text-sm">Preview</span>
+                  <Button variant="ghost" size="icon" className="h-8 w-8 shrink-0" onClick={() => setSelected(null)} aria-label="Close panel">
+                    <X className="w-4 h-4" />
+                  </Button>
+                </div>
+                <div className="p-4 space-y-3 overflow-y-auto flex-1">
+                  <div>
+                    <p className="text-sm font-medium text-foreground break-words">{selected.originalName}</p>
+                    <p className="text-xs text-muted-foreground mt-1">{fileKindLabel(selected.fileType)} · {formatBytes(selected.fileSize)}</p>
+                  </div>
+                  <dl className="text-xs space-y-2 border-t border-border pt-3">
+                    <div className="flex justify-between gap-2">
+                      <dt className="text-muted-foreground">Uploaded by</dt>
+                      <dd className="text-foreground text-right">{selected.uploadedByName || '—'}</dd>
+                    </div>
+                    <div className="flex justify-between gap-2">
+                      <dt className="text-muted-foreground">Uploaded</dt>
+                      <dd className="text-foreground text-right">{selected.createdAt ? new Date(selected.createdAt).toLocaleString() : '—'}</dd>
+                    </div>
+                    <div className="flex justify-between gap-2">
+                      <dt className="text-muted-foreground">Linked</dt>
+                      <dd className="text-foreground text-right break-words max-w-[200px]">{linkedCell(selected)}</dd>
+                    </div>
+                    {selected.tags ? (
+                      <div className="flex justify-between gap-2">
+                        <dt className="text-muted-foreground">Tags</dt>
+                        <dd className="text-foreground text-right break-words max-w-[200px]">{selected.tags}</dd>
+                      </div>
+                    ) : null}
+                  </dl>
+                  <div className="flex flex-wrap gap-2 pt-2">
+                    <Button size="sm" variant="outline" className="gap-1" onClick={() => downloadFile(selected)}>
+                      <Download className="w-3.5 h-3.5" />
+                      Download
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="gap-1"
+                      onClick={() => {
+                        if (previewBlob) window.open(previewBlob, '_blank', 'noopener,noreferrer');
+                        else downloadFile(selected);
+                      }}
+                    >
+                      <Eye className="w-3.5 h-3.5" />
+                      Open
+                    </Button>
+                  </div>
+                  <div className="rounded-xl border border-border bg-background/50 min-h-[200px] flex items-center justify-center overflow-hidden">
+                    {previewLoading ? (
+                      <Loader2 className="w-8 h-8 animate-spin text-muted-foreground" />
+                    ) : isImageType(selected.fileType) && previewBlob ? (
+                      <img src={previewBlob} alt="" className="max-h-64 w-full object-contain" />
+                    ) : isPdfType(selected.fileType) && previewBlob ? (
+                      <iframe title="PDF preview" src={previewBlob} className="w-full h-72 border-0 bg-background" />
+                    ) : (
+                      <p className="text-xs text-muted-foreground px-4 text-center">No in-app preview for this type. Use Download.</p>
+                    )}
+                  </div>
+                </div>
+              </aside>
+            ) : null}
+          </div>
+        </div>
+      </div>
+
+      <Dialog open={uploadOpen} onOpenChange={(o) => !uploading && setUploadOpen(o)}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Upload files</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div
+              onDragOver={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+              }}
+              onDrop={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                if (uploading) return;
+                runUpload(e.dataTransfer.files);
+              }}
+              className="rounded-xl border-2 border-dashed border-border bg-secondary/30 px-6 py-10 text-center cursor-pointer hover:border-primary/50 transition-colors"
+              onClick={() => document.getElementById('fm-file-input')?.click()}
+            >
+              <Upload className="w-10 h-10 mx-auto text-muted-foreground mb-2" />
+              <p className="text-sm font-medium text-foreground">Drop files here or click to upload</p>
+              <p className="text-xs text-muted-foreground mt-1">Single file per upload · up to ~52 MB</p>
+              <input
+                id="fm-file-input"
+                type="file"
+                className="hidden"
+                onChange={(e) => {
+                  runUpload(e.target.files);
+                  e.target.value = '';
+                }}
+              />
+            </div>
+            {uploading ? (
+              <div className="space-y-2 rounded-lg border border-border p-3 bg-card">
+                <div className="flex justify-between text-xs text-muted-foreground">
+                  <span className="truncate pr-2">Uploading {uploadName}…</span>
+                  <span>{uploadPct}%</span>
+                </div>
+                <div className="h-2 rounded-full bg-secondary overflow-hidden">
+                  <div className="h-full bg-primary transition-all duration-150" style={{ width: `${uploadPct}%` }} />
+                </div>
+                <Button type="button" variant="outline" size="sm" onClick={cancelUpload}>
+                  Cancel upload
+                </Button>
+              </div>
+            ) : null}
+            <div className="space-y-2">
+              <Label htmlFor="fm-tags">Tags (optional)</Label>
+              <Input
+                id="fm-tags"
+                placeholder="e.g. contract, 2026, signed"
+                value={uploadTags}
+                onChange={(e) => setUploadTags(e.target.value)}
+                disabled={uploading}
+              />
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div className="space-y-2">
+                <Label>Link while uploading (optional)</Label>
+                <select
+                  value={uploadLinkType}
+                  onChange={(e) => setUploadLinkType(e.target.value)}
+                  disabled={uploading}
+                  className="h-10 w-full rounded-lg border border-border bg-input px-3 text-sm"
+                >
+                  <option value="">No link</option>
+                  <option value="client">Client</option>
+                  <option value="invoice">Invoice</option>
+                </select>
+              </div>
+              {uploadLinkType === 'client' ? (
+                <div className="space-y-2">
+                  <Label>Client</Label>
+                  <select
+                    value={uploadLinkClient}
+                    onChange={(e) => setUploadLinkClient(e.target.value)}
+                    disabled={uploading}
+                    className="h-10 w-full rounded-lg border border-border bg-input px-3 text-sm"
+                  >
+                    <option value="">Select…</option>
+                    {clients.map((c) => (
+                      <option key={c.id} value={c.id}>
+                        {c.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              ) : uploadLinkType === 'invoice' ? (
+                <div className="space-y-2">
+                  <Label>Invoice</Label>
+                  <select
+                    value={uploadLinkInvoice}
+                    onChange={(e) => setUploadLinkInvoice(e.target.value)}
+                    disabled={uploading}
+                    className="h-10 w-full rounded-lg border border-border bg-input px-3 text-sm"
+                  >
+                    <option value="">Select…</option>
+                    {invoices.map((inv) => (
+                      <option key={inv.id} value={inv.id}>
+                        {inv.invoiceNumber || inv.id}
+                        {inv.clientName ? ` · ${inv.clientName}` : ''}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              ) : (
+                <div />
+              )}
+            </div>
+          </div>
+          <DialogFooter>
+            <Button type="button" variant="outline" onClick={() => setUploadOpen(false)} disabled={uploading}>
+              Close
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={renameOpen} onOpenChange={setRenameOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Rename file</DialogTitle>
+          </DialogHeader>
+          <Input value={renameValue} onChange={(e) => setRenameValue(e.target.value)} placeholder="Display name" />
+          <DialogFooter className="gap-2">
+            <Button variant="outline" onClick={() => setRenameOpen(false)}>
+              Cancel
+            </Button>
+            <Button onClick={saveRename}>Save</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={linkOpen} onOpenChange={setLinkOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Link file</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3">
+            <div className="flex gap-2">
+              <Button type="button" size="sm" variant={linkKind === 'client' ? 'secondary' : 'outline'} onClick={() => setLinkKind('client')}>
+                Client
+              </Button>
+              <Button type="button" size="sm" variant={linkKind === 'invoice' ? 'secondary' : 'outline'} onClick={() => setLinkKind('invoice')}>
+                Invoice
+              </Button>
+            </div>
+            {linkKind === 'client' ? (
+              <select
+                className="h-10 w-full rounded-lg border border-border bg-input px-3 text-sm"
+                value={linkClientId}
+                onChange={(e) => setLinkClientId(e.target.value)}
+              >
+                <option value="">Select client…</option>
+                {clients.map((c) => (
+                  <option key={c.id} value={c.id}>
+                    {c.name}
+                  </option>
+                ))}
+              </select>
+            ) : (
+              <select
+                className="h-10 w-full rounded-lg border border-border bg-input px-3 text-sm"
+                value={linkInvoiceId}
+                onChange={(e) => setLinkInvoiceId(e.target.value)}
+              >
+                <option value="">Select invoice…</option>
+                {invoices.map((inv) => (
+                  <option key={inv.id} value={inv.id}>
+                    {inv.invoiceNumber || inv.id}
+                  </option>
+                ))}
+              </select>
+            )}
+          </div>
+          <DialogFooter className="gap-2">
+            <Button variant="outline" onClick={() => setLinkOpen(false)}>
+              Cancel
+            </Button>
+            <Button onClick={saveLink}>Save link</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </>
+  );
+};
+
+export default FileManager;

@@ -28,6 +28,7 @@ import {
   Cog,
   HardDrive,
   Activity,
+  Folder,
 } from "lucide-react";
 
 // Theme-aware colors
@@ -86,6 +87,7 @@ const NAV_ITEMS = [
   { label: "Invoices", href: "/invoices", icon: FileText },
   { label: "Estimates", href: "/estimates", icon: FileText },
   { label: "Clients", href: "/clients", icon: Users },
+  { label: "File Manager", href: "/file-manager", icon: Folder },
   { divider: true },
   { label: "Expenses", href: "/expenses", icon: Receipt },
   { label: "Cash Flow", href: "/cash-flow", icon: TrendingUp },

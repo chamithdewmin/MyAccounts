@@ -52,6 +52,35 @@ router.post('/', async (req, res) => {
   }
 });
 
+router.patch('/:id', async (req, res) => {
+  try {
+    const { eventName, eventDate, eventTime, notes } = req.body;
+    const name = String(eventName || '').trim();
+    const date = String(eventDate || '').trim();
+    if (!name || !date) return res.status(400).json({ error: 'Event name and date are required' });
+
+    const { rows } = await pool.query(
+      `UPDATE calendar_events
+       SET event_name = $1, event_date = $2, event_time = $3, notes = $4
+       WHERE id = $5 AND user_id = $6
+       RETURNING id, user_id, event_name, event_date, event_time, notes, created_at`,
+      [
+        name,
+        date,
+        String(eventTime || '').trim() || null,
+        String(notes || '').trim(),
+        req.params.id,
+        req.user.dataUserId,
+      ],
+    );
+    if (!rows.length) return res.status(404).json({ error: 'Not found' });
+    res.json(toEvent(rows[0]));
+  } catch (err) {
+    console.error('[calendar-events update]', err);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
 router.delete('/:id', async (req, res) => {
   try {
     const { rowCount } = await pool.query(

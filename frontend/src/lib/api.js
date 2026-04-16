@@ -131,7 +131,9 @@ export const api = {
   calendarEvents: {
     list: () => request('/calendar-events'),
     create: (data) => request('/calendar-events', { method: 'POST', body: JSON.stringify(data) }),
-    delete: (id) => request(`/calendar-events/${id}`, { method: 'DELETE' }),
+    update: (id, data) =>
+      request(`/calendar-events/${encodeURIComponent(id)}`, { method: 'PATCH', body: JSON.stringify(data) }),
+    delete: (id) => request(`/calendar-events/${encodeURIComponent(id)}`, { method: 'DELETE' }),
   },
   files: {
     list: (params = {}) => {

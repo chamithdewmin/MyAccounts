@@ -1,20 +1,24 @@
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo, useEffect, useCallback } from 'react';
 import { Helmet } from 'react-helmet';
-import { Calendar as CalendarIcon, ChevronLeft, ChevronRight, DollarSign, Receipt, FileText, TrendingUp, Plus, Clock } from 'lucide-react';
+import { Calendar as CalendarIcon, ChevronLeft, ChevronRight, DollarSign, Receipt, FileText, TrendingUp, Plus, Clock, Pencil, Trash2 } from 'lucide-react';
 import { useFinance } from '@/contexts/FinanceContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { useToast } from '@/components/ui/use-toast';
 import { cn } from '@/lib/utils';
 import { api } from '@/lib/api';
 
 const Calendar = () => {
+  const { toast } = useToast();
   const { incomes, expenses, invoices, settings, loadData } = useFinance();
   const [currentDate, setCurrentDate] = useState(new Date());
   const [events, setEvents] = useState([]);
   const [isEventDialogOpen, setIsEventDialogOpen] = useState(false);
+  const [eventEditingId, setEventEditingId] = useState(null);
   const [savingEvent, setSavingEvent] = useState(false);
+  const [deletingEventId, setDeletingEventId] = useState(null);
   const [eventForm, setEventForm] = useState({
     eventName: '',
     date: '',
@@ -99,8 +103,46 @@ const Calendar = () => {
     return { incomeTotal, expenseTotal, invoiceTotal, net: incomeTotal - expenseTotal };
   };
 
-  const openAddEventDialog = () => {
-    const baseDate = selectedDate || new Date(year, month, 1);
+  const normalizeEventRow = (ev) => ({
+    id: ev.id,
+    eventName: ev.eventName,
+    date: ev.eventDate,
+    time: ev.eventTime || '',
+    notes: ev.notes || '',
+    createdAt: ev.createdAt,
+  });
+
+  const loadCalendarEvents = useCallback(
+    () =>
+      api.calendarEvents
+        .list()
+        .then((rows) => {
+          const normalized = Array.isArray(rows)
+            ? rows.map((r) => ({
+                id: r.id,
+                eventName: r.eventName,
+                date: r.eventDate,
+                time: r.eventTime || '',
+                notes: r.notes || '',
+                createdAt: r.createdAt,
+              }))
+            : [];
+          setEvents(normalized);
+        })
+        .catch((err) => {
+          setEvents([]);
+          toast({
+            title: 'Could not load events',
+            description: err?.message || 'Request failed',
+            variant: 'destructive',
+          });
+        }),
+    [toast],
+  );
+
+  const openAddEventDialog = (dateOverride) => {
+    const baseDate = dateOverride ?? selectedDate ?? new Date(year, month, 1);
+    setEventEditingId(null);
     setEventForm({
       eventName: '',
       date: toLocalDateString(baseDate),
@@ -110,34 +152,76 @@ const Calendar = () => {
     setIsEventDialogOpen(true);
   };
 
+  const openEditEventDialog = (ev) => {
+    setEventEditingId(ev.id);
+    setEventForm({
+      eventName: ev.eventName,
+      date: ev.date,
+      time: ev.time || '',
+      notes: ev.notes || '',
+    });
+    setIsEventDialogOpen(true);
+  };
+
   const handleSaveEvent = (e) => {
     e.preventDefault();
     const name = eventForm.eventName.trim();
     if (!name || !eventForm.date) return;
     setSavingEvent(true);
-    api.calendarEvents
-      .create({
-        eventName: name,
-        eventDate: eventForm.date,
-        eventTime: eventForm.time || '',
-        notes: eventForm.notes.trim(),
-      })
+    const payload = {
+      eventName: name,
+      eventDate: eventForm.date,
+      eventTime: eventForm.time || '',
+      notes: eventForm.notes.trim(),
+    };
+    const req = eventEditingId
+      ? api.calendarEvents.update(eventEditingId, payload)
+      : api.calendarEvents.create(payload);
+
+    req
       .then((ev) => {
-        const normalized = {
-          id: ev.id,
-          eventName: ev.eventName,
-          date: ev.eventDate,
-          time: ev.eventTime || '',
-          notes: ev.notes || '',
-          createdAt: ev.createdAt,
-        };
-        setEvents((prev) => [normalized, ...prev]);
+        const normalized = normalizeEventRow(ev);
+        if (eventEditingId) {
+          setEvents((prev) => prev.map((row) => (row.id === normalized.id ? normalized : row)));
+          toast({ title: 'Event updated' });
+        } else {
+          setEvents((prev) => [normalized, ...prev]);
+          toast({ title: 'Event added' });
+        }
         setIsEventDialogOpen(false);
+        setEventEditingId(null);
       })
-      .catch(() => {
-        // keep dialog open so user can retry
+      .catch((err) => {
+        toast({
+          title: eventEditingId ? 'Could not update event' : 'Could not add event',
+          description: err?.message || 'Request failed',
+          variant: 'destructive',
+        });
       })
       .finally(() => setSavingEvent(false));
+  };
+
+  const handleDeleteEvent = async (ev) => {
+    if (!ev?.id) return;
+    if (!window.confirm(`Delete “${ev.eventName}”?`)) return;
+    setDeletingEventId(ev.id);
+    try {
+      await api.calendarEvents.delete(ev.id);
+      setEvents((prev) => prev.filter((row) => row.id !== ev.id));
+      toast({ title: 'Event deleted' });
+      if (eventEditingId === ev.id) {
+        setIsEventDialogOpen(false);
+        setEventEditingId(null);
+      }
+    } catch (err) {
+      toast({
+        title: 'Could not delete event',
+        description: err?.message || 'Request failed',
+        variant: 'destructive',
+      });
+    } finally {
+      setDeletingEventId(null);
+    }
   };
 
   const navigateMonth = (direction) => {
@@ -179,22 +263,9 @@ const Calendar = () => {
 
   useEffect(() => {
     loadData?.();
-    api.calendarEvents
-      .list()
-      .then((rows) => {
-        const normalized = Array.isArray(rows)
-          ? rows.map((r) => ({
-              id: r.id,
-              eventName: r.eventName,
-              date: r.eventDate,
-              time: r.eventTime || '',
-              notes: r.notes || '',
-              createdAt: r.createdAt,
-            }))
-          : [];
-        setEvents(normalized);
-      })
-      .catch(() => setEvents([]));
+    loadCalendarEvents();
+    // loadData from FinanceContext is not referentially stable; still safe to call once on mount
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   return (
@@ -291,7 +362,7 @@ const Calendar = () => {
                     "hover:bg-secondary/50 focus:outline-none focus:ring-2 focus:ring-primary",
                     isToday(date) && "border-primary border-2",
                     isSelected && "bg-primary/10 border-primary",
-                    !hasTransactions && "border-transparent"
+                    !hasTransactions && !hasEvents && "border-border"
                   )}
                 >
                   <div className="flex flex-col h-full">
@@ -461,13 +532,19 @@ const Calendar = () => {
                 </div>
               )}
 
-              {/* Events */}
-              {selectedEvents.length > 0 && (
-                <div>
-                  <h4 className="text-sm font-semibold text-violet-400 mb-2 flex items-center gap-2">
+              {/* Events — always show when a day is selected */}
+              <div>
+                <div className="flex flex-wrap items-center justify-between gap-2 mb-2">
+                  <h4 className="text-sm font-semibold text-violet-400 flex items-center gap-2">
                     <CalendarIcon className="w-4 h-4" />
                     Events ({selectedEvents.length})
                   </h4>
+                  <Button type="button" size="sm" variant="outline" className="gap-1" onClick={() => openAddEventDialog(selectedDate)}>
+                    <Plus className="w-3.5 h-3.5" />
+                    Add event this day
+                  </Button>
+                </div>
+                {selectedEvents.length > 0 ? (
                   <div className="space-y-2">
                     {selectedEvents
                       .slice()
@@ -477,28 +554,55 @@ const Calendar = () => {
                           key={ev.id}
                           className="bg-secondary/30 rounded-lg p-3 flex items-start justify-between gap-3"
                         >
-                          <div className="min-w-0">
+                          <div className="min-w-0 flex-1">
                             <p className="font-medium text-violet-300">{ev.eventName}</p>
-                            {ev.notes && (
-                              <p className="text-sm text-muted-foreground truncate">{ev.notes}</p>
-                            )}
+                            {ev.notes ? (
+                              <p className="text-sm text-muted-foreground line-clamp-2">{ev.notes}</p>
+                            ) : null}
                           </div>
-                          <div className="text-sm text-violet-300 flex items-center gap-1 shrink-0">
-                            <Clock className="w-3 h-3" />
-                            {ev.time || 'All day'}
+                          <div className="flex flex-col items-end gap-2 shrink-0">
+                            <div className="text-sm text-violet-300 flex items-center gap-1">
+                              <Clock className="w-3 h-3" />
+                              {ev.time || 'All day'}
+                            </div>
+                            <div className="flex items-center gap-1">
+                              <Button
+                                type="button"
+                                size="icon"
+                                variant="ghost"
+                                className="h-8 w-8"
+                                aria-label="Edit event"
+                                onClick={() => openEditEventDialog(ev)}
+                              >
+                                <Pencil className="w-3.5 h-3.5" />
+                              </Button>
+                              <Button
+                                type="button"
+                                size="icon"
+                                variant="ghost"
+                                className="h-8 w-8 text-destructive hover:text-destructive"
+                                aria-label="Delete event"
+                                disabled={deletingEventId === ev.id}
+                                onClick={() => handleDeleteEvent(ev)}
+                              >
+                                <Trash2 className="w-3.5 h-3.5" />
+                              </Button>
+                            </div>
                           </div>
                         </div>
                       ))}
                   </div>
-                </div>
-              )}
+                ) : (
+                  <p className="text-sm text-muted-foreground py-2">No events on this date yet.</p>
+                )}
+              </div>
 
               {selectedTransactions.incomes.length === 0 &&
                 selectedTransactions.expenses.length === 0 &&
                 selectedTransactions.invoices.length === 0 &&
                 selectedEvents.length === 0 && (
-                  <p className="text-muted-foreground text-center py-8">
-                    No transactions or events on this date
+                  <p className="text-muted-foreground text-center py-6 border-t border-border mt-4">
+                    No income, expenses, or invoices on this date.
                   </p>
                 )}
             </div>
@@ -506,10 +610,16 @@ const Calendar = () => {
         )}
       </div>
 
-      <Dialog open={isEventDialogOpen} onOpenChange={setIsEventDialogOpen}>
+      <Dialog
+        open={isEventDialogOpen}
+        onOpenChange={(open) => {
+          setIsEventDialogOpen(open);
+          if (!open) setEventEditingId(null);
+        }}
+      >
         <DialogContent className="max-w-md" aria-describedby={undefined}>
           <DialogHeader>
-            <DialogTitle>Add Event</DialogTitle>
+            <DialogTitle>{eventEditingId ? 'Edit event' : 'Add event'}</DialogTitle>
           </DialogHeader>
           <form onSubmit={handleSaveEvent} className="space-y-4">
             <div className="space-y-2">
@@ -553,12 +663,26 @@ const Calendar = () => {
                 placeholder="Optional notes"
               />
             </div>
-            <div className="flex justify-end gap-2">
+            <div className="flex justify-end gap-2 flex-wrap">
+              {eventEditingId ? (
+                <Button
+                  type="button"
+                  variant="destructive"
+                  className="mr-auto"
+                  disabled={savingEvent || deletingEventId === eventEditingId}
+                  onClick={() => {
+                    const ev = events.find((row) => row.id === eventEditingId);
+                    if (ev) handleDeleteEvent(ev);
+                  }}
+                >
+                  {deletingEventId === eventEditingId ? 'Deleting…' : 'Delete'}
+                </Button>
+              ) : null}
               <Button type="button" variant="outline" onClick={() => setIsEventDialogOpen(false)}>
                 Cancel
               </Button>
               <Button type="submit" disabled={savingEvent}>
-                {savingEvent ? 'Saving...' : 'Save Event'}
+                {savingEvent ? 'Saving…' : eventEditingId ? 'Save changes' : 'Save event'}
               </Button>
             </div>
           </form>

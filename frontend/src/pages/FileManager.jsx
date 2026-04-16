@@ -1021,7 +1021,7 @@ const FileManager = () => {
               className="h-12 bg-input border-border font-mono tracking-wide"
             />
           </div>
-          <DialogFooter className="gap-2 sm:gap-0">
+          <DialogFooter className="gap-2">
             <Button variant="outline" onClick={closeDeleteDialog} disabled={deleteSubmitting}>
               Cancel
             </Button>
@@ -1067,7 +1067,7 @@ const FileManager = () => {
               className="h-12 bg-input border-border font-mono tracking-wide"
             />
           </div>
-          <DialogFooter className="gap-2 sm:gap-0">
+          <DialogFooter className="gap-2">
             <Button variant="outline" onClick={closeFolderDeleteDialog} disabled={folderDeleteSubmitting}>
               Cancel
             </Button>

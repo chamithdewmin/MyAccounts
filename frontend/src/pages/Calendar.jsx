@@ -711,6 +711,7 @@ const Calendar = () => {
       <SiteConfirmDialog
         open={deleteConfirmOpen}
         onOpenChange={setDeleteConfirmOpen}
+        title="Delete event?"
         message={deleteConfirmMessage}
         onConfirm={executeDeleteEvent}
       />

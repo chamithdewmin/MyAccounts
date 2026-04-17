@@ -1,27 +1,22 @@
 import React, { useState } from 'react';
 import * as DialogPrimitive from '@radix-ui/react-dialog';
+import { X } from 'lucide-react';
 import { cn } from '@/lib/utils';
-
-const hostnameSays = () => {
-  if (typeof window === 'undefined') return 'This app says';
-  const h = window.location.hostname || 'App';
-  return `${h} says`;
-};
+import { Button } from '@/components/ui/button';
 
 /**
- * Browser-style confirm (dark panel, pill OK / Cancel) — replaces window.confirm.
+ * App-styled confirm dialog (title, muted description, close X, Cancel + destructive primary).
  */
 export function SiteConfirmDialog({
   open,
   onOpenChange,
-  headline = hostnameSays,
+  title = 'Are you sure?',
   message,
-  confirmLabel = 'OK',
+  confirmLabel = 'Delete',
   cancelLabel = 'Cancel',
   onConfirm,
 }) {
   const [submitting, setSubmitting] = useState(false);
-  const titleLine = typeof headline === 'function' ? headline() : headline;
 
   const handleOpenChange = (v) => {
     if (v === false && submitting) return;
@@ -44,46 +39,51 @@ export function SiteConfirmDialog({
       <DialogPrimitive.Portal>
         <DialogPrimitive.Overlay
           className={cn(
-            'fixed inset-0 z-[100] bg-black/55 data-[state=open]:animate-dialog-overlay-in data-[state=closed]:animate-dialog-overlay-out',
+            'fixed inset-0 z-[100] bg-black/60 data-[state=open]:animate-dialog-overlay-in data-[state=closed]:animate-dialog-overlay-out',
           )}
         />
         <DialogPrimitive.Content
           className={cn(
-            'fixed left-[50%] top-[50%] z-[100] w-[min(92vw,420px)] translate-x-[-50%] translate-y-[-50%]',
-            'rounded-[18px] border border-[#3d3229] bg-[#1a1511] p-6 shadow-2xl',
+            'fixed left-[50%] top-[50%] z-[100] w-[min(92vw,400px)] translate-x-[-50%] translate-y-[-50%]',
+            'overflow-hidden rounded-2xl border border-border bg-card shadow-2xl',
             'data-[state=open]:animate-dialog-content-in data-[state=closed]:animate-dialog-content-out',
-            'focus:outline-none',
+            'focus:outline-none p-0 gap-0',
           )}
         >
-          <DialogPrimitive.Title className="text-[15px] font-semibold text-white tracking-tight">
-            {titleLine}
-          </DialogPrimitive.Title>
-          <DialogPrimitive.Description className="mt-2 text-[14px] font-normal text-white/95 leading-relaxed">
-            {message}
-          </DialogPrimitive.Description>
-          <div className="mt-8 flex flex-wrap justify-end gap-3">
-            <button
+          <div className="relative border-b border-border px-5 pt-5 pb-4 pr-12">
+            <DialogPrimitive.Title className="text-base font-semibold text-foreground tracking-tight pr-1">
+              {title}
+            </DialogPrimitive.Title>
+            <DialogPrimitive.Close
               type="button"
               disabled={submitting}
-              onClick={() => onOpenChange?.(false)}
               className={cn(
-                'rounded-full px-7 py-2.5 text-sm font-medium text-white transition-colors',
-                'bg-[#6b3018] hover:bg-[#7e3a1f] disabled:opacity-50',
+                'absolute right-3 top-3 rounded-md p-1.5 text-muted-foreground opacity-80 transition-opacity',
+                'hover:bg-secondary hover:text-foreground hover:opacity-100',
+                'focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 focus:ring-offset-background',
+                'disabled:pointer-events-none disabled:opacity-40',
+              )}
+              aria-label="Close"
+            >
+              <X className="h-4 w-4" />
+            </DialogPrimitive.Close>
+            <DialogPrimitive.Description
+              className={cn(
+                'mt-2 text-sm leading-relaxed',
+                message ? 'text-muted-foreground' : 'sr-only',
               )}
             >
+              {message || 'Confirm this action.'}
+            </DialogPrimitive.Description>
+          </div>
+
+          <div className="flex flex-wrap items-center justify-end gap-2 px-5 py-4 bg-muted/20">
+            <Button type="button" variant="outline" disabled={submitting} onClick={() => onOpenChange?.(false)}>
               {cancelLabel}
-            </button>
-            <button
-              type="button"
-              disabled={submitting}
-              onClick={handleConfirm}
-              className={cn(
-                'rounded-full px-7 py-2.5 text-sm font-semibold transition-colors',
-                'border border-[#e8a882] bg-[#f4c2a8] text-[#2a1810] hover:bg-[#ffd4b8] disabled:opacity-50',
-              )}
-            >
+            </Button>
+            <Button type="button" variant="destructive" disabled={submitting} onClick={handleConfirm}>
               {submitting ? '…' : confirmLabel}
-            </button>
+            </Button>
           </div>
         </DialogPrimitive.Content>
       </DialogPrimitive.Portal>

@@ -804,6 +804,7 @@ const ProjectBoard = () => {
       <SiteConfirmDialog
         open={expenseDeleteConfirmOpen}
         onOpenChange={setExpenseDeleteConfirmOpen}
+        title="Delete expense?"
         message={expenseDeleteMessage}
         onConfirm={executeDeleteExpense}
       />

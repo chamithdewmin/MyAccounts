@@ -28,6 +28,7 @@ import {
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
+import { Checkbox } from '@/components/ui/checkbox';
 import { useToast } from '@/components/ui/use-toast';
 import {
   Dialog,
@@ -117,6 +118,11 @@ const FileManager = () => {
   const [deleteConfirmInput, setDeleteConfirmInput] = useState('');
   const [deleteSubmitting, setDeleteSubmitting] = useState(false);
 
+  const [checkedIds, setCheckedIds] = useState(() => new Set());
+  const [bulkDeleteOpen, setBulkDeleteOpen] = useState(false);
+  const [bulkDeleteConfirmInput, setBulkDeleteConfirmInput] = useState('');
+  const [bulkDeleteSubmitting, setBulkDeleteSubmitting] = useState(false);
+
   const [linkOpen, setLinkOpen] = useState(false);
   const [linkTarget, setLinkTarget] = useState(null);
   const [linkKind, setLinkKind] = useState('client');
@@ -161,6 +167,10 @@ const FileManager = () => {
   useEffect(() => {
     loadFiles();
   }, [loadFiles]);
+
+  useEffect(() => {
+    setCheckedIds(new Set());
+  }, [selectedFolderId, scope, debouncedSearch, typeFilter]);
 
   useEffect(() => {
     const loadRefs = async () => {
@@ -374,6 +384,11 @@ const FileManager = () => {
       await api.files.delete(f.id);
       toast({ title: 'File deleted' });
       if (selected?.id === f.id) setSelected(null);
+      setCheckedIds((prev) => {
+        const next = new Set(prev);
+        next.delete(f.id);
+        return next;
+      });
       closeDeleteDialog();
       await loadFiles();
     } catch (e) {
@@ -449,6 +464,95 @@ const FileManager = () => {
     return '—';
   };
 
+  const checkedCount = checkedIds.size;
+
+  const tableHeaderCheckboxState = useMemo(() => {
+    if (!files.length) return false;
+    let n = 0;
+    for (let i = 0; i < files.length; i += 1) {
+      if (checkedIds.has(files[i].id)) n += 1;
+    }
+    if (n === files.length) return true;
+    if (n > 0) return 'indeterminate';
+    return false;
+  }, [files, checkedIds]);
+
+  const toggleFileChecked = (id, nextChecked) => {
+    setCheckedIds((prev) => {
+      const s = new Set(prev);
+      if (nextChecked) s.add(id);
+      else s.delete(id);
+      return s;
+    });
+  };
+
+  const onTableHeaderCheckChange = (checked) => {
+    setCheckedIds((prev) => {
+      const next = new Set(prev);
+      if (checked === true) {
+        files.forEach((f) => next.add(f.id));
+      } else {
+        files.forEach((f) => next.delete(f.id));
+      }
+      return next;
+    });
+  };
+
+  const openBulkDeleteDialog = () => {
+    if (checkedIds.size === 0) return;
+    setBulkDeleteConfirmInput('');
+    setBulkDeleteOpen(true);
+  };
+
+  const closeBulkDeleteDialog = () => {
+    if (bulkDeleteSubmitting) return;
+    setBulkDeleteOpen(false);
+    setBulkDeleteConfirmInput('');
+  };
+
+  const deleteCheckedFiles = async () => {
+    if (bulkDeleteConfirmInput.trim() !== 'DELETE' || checkedIds.size === 0) return;
+    const ids = [...checkedIds];
+    setBulkDeleteSubmitting(true);
+    let ok = 0;
+    const errors = [];
+    const failedIds = new Set(ids);
+    try {
+      for (let i = 0; i < ids.length; i += 1) {
+        const id = ids[i];
+        try {
+          await api.files.delete(id);
+          ok += 1;
+          failedIds.delete(id);
+        } catch (e) {
+          errors.push(String(e?.message || 'Request failed'));
+        }
+      }
+      if (ok > 0) {
+        toast({
+          title: ok === ids.length ? 'Files deleted' : 'Some files deleted',
+          description:
+            errors.length > 0
+              ? `${ok} removed, ${errors.length} failed${errors[0] ? ` (${errors[0]})` : ''}`
+              : `${ok} file${ok === 1 ? '' : 's'} removed.`,
+        });
+      } else {
+        toast({
+          title: 'Delete failed',
+          description: errors[0] || 'Could not delete selected files.',
+          variant: 'destructive',
+        });
+      }
+      if (selected && ids.includes(selected.id) && !failedIds.has(selected.id)) setSelected(null);
+      setCheckedIds(failedIds);
+      setBulkDeleteOpen(false);
+      setBulkDeleteConfirmInput('');
+      await loadFiles();
+    } finally {
+      setBulkDeleteSubmitting(false);
+    }
+  };
+
   return (
     <>
       <Helmet>
@@ -481,6 +585,17 @@ const FileManager = () => {
               <Upload className="w-4 h-4" />
               Upload
             </Button>
+            {checkedCount > 0 ? (
+              <>
+                <Button type="button" variant="outline" size="sm" onClick={() => setCheckedIds(new Set())}>
+                  Clear selection ({checkedCount})
+                </Button>
+                <Button type="button" variant="destructive" size="sm" className="gap-2" onClick={openBulkDeleteDialog}>
+                  <Trash2 className="w-4 h-4" />
+                  Delete selected ({checkedCount})
+                </Button>
+              </>
+            ) : null}
             <Button type="button" variant="outline" className="gap-2" onClick={() => setNewFolderOpen(true)}>
               <FolderPlus className="w-4 h-4" />
               New folder
@@ -622,6 +737,15 @@ const FileManager = () => {
                   <table className="w-full min-w-[720px] text-sm">
                     <thead>
                       <tr className="border-b border-border text-muted-foreground text-xs uppercase tracking-wide">
+                        <th className="w-12 px-3 py-3 text-left font-medium align-middle">
+                          <Checkbox
+                            checked={tableHeaderCheckboxState}
+                            onCheckedChange={onTableHeaderCheckChange}
+                            disabled={!files.length}
+                            aria-label="Select all files in this list"
+                            className="translate-y-0.5"
+                          />
+                        </th>
                         <th className="px-4 py-3 text-left font-medium">File name</th>
                         <th className="px-4 py-3 text-left font-medium">Type</th>
                         <th className="px-4 py-3 text-left font-medium">Size</th>
@@ -633,7 +757,7 @@ const FileManager = () => {
                     <tbody>
                       {files.length === 0 ? (
                         <tr>
-                          <td colSpan={6} className="px-4 py-12 text-center text-muted-foreground">
+                          <td colSpan={7} className="px-4 py-12 text-center text-muted-foreground">
                             No files yet. Upload a document to get started.
                           </td>
                         </tr>
@@ -650,8 +774,20 @@ const FileManager = () => {
                             onDragEnd={() => setDragFileId(null)}
                             className={`border-b border-border cursor-pointer transition-colors hover:bg-secondary/40 ${
                               selected?.id === f.id ? 'bg-primary/10' : ''
-                            }`}
+                            } ${checkedIds.has(f.id) ? 'bg-accent/25' : ''}`}
                           >
+                            <td
+                              className="w-12 px-3 py-3 align-middle"
+                              onClick={(e) => e.stopPropagation()}
+                              onPointerDown={(e) => e.stopPropagation()}
+                            >
+                              <Checkbox
+                                checked={checkedIds.has(f.id)}
+                                onCheckedChange={(c) => toggleFileChecked(f.id, c === true)}
+                                aria-label={`Select ${f.originalName || 'file'}`}
+                                className="translate-y-0.5"
+                              />
+                            </td>
                             <td className="px-4 py-3">
                               <div className="flex items-center gap-2 min-w-0">
                                 {isImageType(f.fileType) ? (
@@ -743,21 +879,40 @@ const FileManager = () => {
                     <div className="col-span-full text-center text-muted-foreground py-12">No files yet.</div>
                   ) : (
                     files.map((f, i) => (
-                      <motion.button
+                      <motion.div
                         key={f.id}
-                        type="button"
+                        role="button"
+                        tabIndex={0}
                         initial={{ opacity: 0, y: 6 }}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ delay: i * 0.02 }}
                         onClick={() => setSelected(f)}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter' || e.key === ' ') {
+                            e.preventDefault();
+                            setSelected(f);
+                          }
+                        }}
                         draggable
                         onDragStart={() => setDragFileId(f.id)}
                         onDragEnd={() => setDragFileId(null)}
-                        className={`rounded-xl border p-3 text-left flex flex-col gap-2 transition-colors hover:bg-secondary/50 ${
+                        className={`relative rounded-xl border p-3 text-left flex flex-col gap-2 transition-colors hover:bg-secondary/50 cursor-pointer outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background ${
                           selected?.id === f.id ? 'border-primary ring-1 ring-primary/40 bg-primary/5' : 'border-border bg-secondary/20'
-                        }`}
+                        } ${checkedIds.has(f.id) ? 'ring-1 ring-accent/50 bg-accent/10' : ''}`}
                       >
-                        <div className="flex justify-center py-4">
+                        <div
+                          className="absolute top-2 left-2 z-10"
+                          onClick={(e) => e.stopPropagation()}
+                          onPointerDown={(e) => e.stopPropagation()}
+                          onKeyDown={(e) => e.stopPropagation()}
+                        >
+                          <Checkbox
+                            checked={checkedIds.has(f.id)}
+                            onCheckedChange={(c) => toggleFileChecked(f.id, c === true)}
+                            aria-label={`Select ${f.originalName || 'file'}`}
+                          />
+                        </div>
+                        <div className="flex justify-center py-4 mt-5">
                           {isImageType(f.fileType) ? (
                             <ImageIcon className="w-10 h-10 text-sky-400" />
                           ) : isPdfType(f.fileType) ? (
@@ -771,7 +926,7 @@ const FileManager = () => {
                           <span>{formatBytes(f.fileSize)}</span>
                           <span className="truncate">{f.linkedLabel || '—'}</span>
                         </div>
-                      </motion.button>
+                      </motion.div>
                     ))
                   )}
                 </div>
@@ -1038,6 +1193,52 @@ const FileManager = () => {
               disabled={deleteSubmitting || deleteConfirmInput.trim() !== 'DELETE'}
             >
               {deleteSubmitting ? 'Deleting…' : 'Delete file'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog
+        open={bulkDeleteOpen}
+        onOpenChange={(open) => {
+          if (!open && !bulkDeleteSubmitting) closeBulkDeleteDialog();
+        }}
+      >
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Delete selected files?</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-2">
+            <p className="text-lg font-semibold text-foreground">Are you sure?</p>
+            <p className="text-base text-muted-foreground">
+              This will permanently remove {checkedCount} file{checkedCount === 1 ? '' : 's'}. This cannot be undone.
+            </p>
+          </div>
+          <div className="space-y-2 pt-1">
+            <Label htmlFor="bulk-delete-file-confirm" className="text-base font-semibold text-foreground">
+              Type DELETE to confirm
+            </Label>
+            <Input
+              id="bulk-delete-file-confirm"
+              value={bulkDeleteConfirmInput}
+              onChange={(e) => setBulkDeleteConfirmInput(e.target.value)}
+              placeholder="DELETE"
+              autoComplete="off"
+              autoCapitalize="characters"
+              disabled={bulkDeleteSubmitting}
+              className="h-12 bg-input border-border font-mono tracking-wide"
+            />
+          </div>
+          <DialogFooter className="gap-2">
+            <Button variant="outline" onClick={closeBulkDeleteDialog} disabled={bulkDeleteSubmitting}>
+              Cancel
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={deleteCheckedFiles}
+              disabled={bulkDeleteSubmitting || bulkDeleteConfirmInput.trim() !== 'DELETE'}
+            >
+              {bulkDeleteSubmitting ? 'Deleting…' : `Delete ${checkedCount} file${checkedCount === 1 ? '' : 's'}`}
             </Button>
           </DialogFooter>
         </DialogContent>

@@ -26,11 +26,9 @@ import {
   Receipt,
   Unlink,
   HardDrive,
-  AlertTriangle,
   ArrowDownWideNarrow,
   ArrowUpNarrowWide,
 } from 'lucide-react';
-import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip as RechartsTooltip } from 'recharts';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
@@ -101,20 +99,6 @@ const storageBand = (t) => {
   if (isPdfType(t)) return 'pdfs';
   if (isDocsType(t)) return 'docs';
   return 'others';
-};
-
-const DONUT_COLORS = {
-  images: '#38bdf8',
-  pdfs: '#fb7185',
-  docs: '#a78bfa',
-  others: '#64748b',
-  empty: 'hsl(var(--muted))',
-};
-
-const quotaBytesFromEnv = () => {
-  const mb = Number(import.meta.env?.VITE_FILE_STORAGE_QUOTA_MB);
-  const n = Number.isFinite(mb) && mb > 0 ? mb : 100;
-  return n * 1024 * 1024;
 };
 
 const FileManager = () => {
@@ -220,8 +204,6 @@ const FileManager = () => {
     setCheckedIds(new Set());
   }, [selectedFolderId, scope, debouncedSearch, typeFilter, sizeBand, sizeSort]);
 
-  const STORAGE_QUOTA_BYTES = quotaBytesFromEnv();
-
   const storageTotals = useMemo(() => {
     let images = 0;
     let pdfs = 0;
@@ -261,17 +243,6 @@ const FileManager = () => {
     else if (sizeSort === 'asc') list.sort((a, b) => (Number(a.fileSize) || 0) - (Number(b.fileSize) || 0));
     return list;
   }, [files, sizeBand, sizeSort]);
-
-  const donutSlices = useMemo(() => {
-    const { images, pdfs, docs, others, totalBytes } = storageTotals;
-    if (!totalBytes) return [];
-    return [
-      { key: 'images', name: 'Images', value: images },
-      { key: 'pdfs', name: 'PDFs', value: pdfs },
-      { key: 'docs', name: 'Docs', value: docs },
-      { key: 'others', name: 'Other', value: others },
-    ].filter((r) => r.value > 0);
-  }, [storageTotals]);
 
   const tableListTotals = useMemo(() => {
     let t = 0;
@@ -682,10 +653,6 @@ const FileManager = () => {
     }
   };
 
-  const quotaUsedRatio = STORAGE_QUOTA_BYTES > 0 ? Math.min(1, storageTotals.totalBytes / STORAGE_QUOTA_BYTES) : 0;
-  const quotaPctRounded = Math.min(100, Math.round(quotaUsedRatio * 1000) / 10);
-  const quotaNearFull = quotaUsedRatio >= 0.9 && storageTotals.totalBytes > 0;
-
   return (
     <>
       <Helmet>
@@ -704,109 +671,6 @@ const FileManager = () => {
           <Button variant="outline" size="sm" className="shrink-0 gap-2 self-start" asChild>
             <Link to="/reports/storage-overview">View Storage Overview →</Link>
           </Button>
-        </div>
-
-        <div className="rounded-2xl border border-border bg-card/80 p-4 sm:p-5 shadow-sm space-y-4">
-          <div className="flex flex-col lg:flex-row gap-6 lg:gap-8 lg:items-stretch">
-            <div className="flex-1 min-w-0 space-y-3">
-              <div className="flex items-start justify-between gap-3">
-                <div className="flex items-center gap-2 text-foreground font-semibold">
-                  <HardDrive className="w-4 h-4 text-sky-400 shrink-0" />
-                  Storage overview
-                </div>
-                {quotaNearFull ? (
-                  <div className="flex items-center gap-1.5 text-amber-400 text-xs shrink-0 font-medium">
-                    <AlertTriangle className="w-3.5 h-3.5 shrink-0" />
-                    {quotaPctRounded}% used
-                  </div>
-                ) : null}
-              </div>
-              <p className="text-sm text-muted-foreground">
-                <span className="text-foreground font-semibold tabular-nums">{formatBytes(storageTotals.totalBytes)}</span>
-                <span> used of </span>
-                <span className="tabular-nums font-medium text-foreground">{formatBytes(STORAGE_QUOTA_BYTES)}</span>
-                <span className="text-xs ml-2 opacity-90 tabular-nums">({quotaPctRounded}%)</span>
-              </p>
-              <div className="h-2.5 w-full rounded-full bg-secondary/80 overflow-hidden ring-1 ring-border/50">
-                <div
-                  className={`h-full rounded-full transition-all duration-500 ${
-                    quotaNearFull ? 'bg-gradient-to-r from-amber-500 to-orange-400' : 'bg-gradient-to-r from-sky-500 to-cyan-400'
-                  }`}
-                  style={{ width: `${quotaPctRounded}%` }}
-                />
-              </div>
-              {quotaNearFull ? (
-                <p className="text-xs text-amber-200/90 leading-relaxed">
-                  You are using most of your configured storage quota. Raise <span className="font-mono text-[10px] bg-secondary/80 px-1 py-0.5 rounded">VITE_FILE_STORAGE_QUOTA_MB</span> in the
-                  frontend env if you need a higher cap for this bar.
-                </p>
-              ) : (
-                <p className="text-[11px] text-muted-foreground leading-relaxed">
-                  Chart and totals follow your current filters (folder, scope, search, and file type).
-                </p>
-              )}
-            </div>
-            <div className="lg:w-[360px] shrink-0 flex flex-col sm:flex-row gap-5 sm:items-center lg:items-stretch">
-              <div className="flex-1 min-h-[188px] w-full max-w-[280px] mx-auto">
-                {donutSlices.length ? (
-                  <ResponsiveContainer width="100%" height={200}>
-                    <PieChart>
-                      <Pie
-                        data={donutSlices}
-                        dataKey="value"
-                        nameKey="name"
-                        cx="50%"
-                        cy="50%"
-                        innerRadius={58}
-                        outerRadius={86}
-                        paddingAngle={2}
-                        strokeWidth={0}
-                      >
-                        {donutSlices.map((e) => (
-                          <Cell key={e.key} fill={DONUT_COLORS[e.key] || DONUT_COLORS.others} />
-                        ))}
-                      </Pie>
-                      <RechartsTooltip
-                        formatter={(value) => [formatBytes(value), 'Size']}
-                        contentStyle={{
-                          background: 'hsl(var(--card))',
-                          border: '1px solid hsl(var(--border))',
-                          borderRadius: '10px',
-                          fontSize: '12px',
-                          color: 'hsl(var(--foreground))',
-                        }}
-                      />
-                    </PieChart>
-                  </ResponsiveContainer>
-                ) : (
-                  <div className="h-[200px] flex flex-col items-center justify-center text-muted-foreground text-sm border border-dashed border-border/80 rounded-xl bg-secondary/15">
-                    No files in this view yet
-                  </div>
-                )}
-              </div>
-              <div className="flex-1 w-full min-w-[160px] space-y-2 text-sm pt-1">
-                <p className="text-[11px] font-medium text-muted-foreground uppercase tracking-wide">Quick type sizes</p>
-                <ul className="space-y-2">
-                  <li className="flex justify-between gap-3 items-baseline">
-                    <span className="text-sky-400/90">Images</span>
-                    <span className="tabular-nums text-foreground font-medium">{formatBytes(storageTotals.images)}</span>
-                  </li>
-                  <li className="flex justify-between gap-3 items-baseline">
-                    <span className="text-rose-400/90">PDFs</span>
-                    <span className="tabular-nums text-foreground font-medium">{formatBytes(storageTotals.pdfs)}</span>
-                  </li>
-                  <li className="flex justify-between gap-3 items-baseline">
-                    <span className="text-violet-400/90">Docs</span>
-                    <span className="tabular-nums text-foreground font-medium">{formatBytes(storageTotals.docs)}</span>
-                  </li>
-                  <li className="flex justify-between gap-3 items-baseline">
-                    <span className="text-slate-400">Other</span>
-                    <span className="tabular-nums text-foreground font-medium">{formatBytes(storageTotals.others)}</span>
-                  </li>
-                </ul>
-              </div>
-            </div>
-          </div>
         </div>
 
         <div className="rounded-2xl border border-border bg-card/80 p-3 sm:p-4 flex flex-col gap-3 lg:flex-row lg:flex-wrap lg:items-center shadow-sm">

@@ -33,7 +33,9 @@ const request = async (path, options = {}) => {
       window.dispatchEvent(new CustomEvent('auth:logout'));
     }
     const err = data.error || data.message || (data.data && (data.data.error || data.data.message)) || `HTTP ${res.status}`;
-    throw new Error(typeof err === 'string' ? err : JSON.stringify(err));
+    const detail = data.detail ? ` — ${data.detail}` : '';
+    const msg = typeof err === 'string' ? `${err}${detail}` : JSON.stringify(err);
+    throw new Error(msg);
   }
   return data;
 };

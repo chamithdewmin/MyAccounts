@@ -2,7 +2,16 @@
  * LogozoPOS API client
  * Base URL: same domain /api when deployed, or VITE_API_URL env
  */
-const API_BASE = import.meta.env.VITE_API_URL || '/api';
+const normalizeApiBase = (raw) => {
+  const fallback = '/api';
+  const value = String(raw ?? '').trim();
+  if (!value) return fallback;
+  if (/^https?:\/\//i.test(value) || value.startsWith('//')) return value.replace(/\/+$/, '');
+  const withLeadingSlash = value.startsWith('/') ? value : `/${value}`;
+  return withLeadingSlash.replace(/\/+$/, '') || fallback;
+};
+
+const API_BASE = normalizeApiBase(import.meta.env.VITE_API_URL);
 
 export const getToken = () => localStorage.getItem('token');
 

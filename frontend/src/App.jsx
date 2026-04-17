@@ -15,6 +15,7 @@ import ReportTax from './pages/reports/ReportTax';
 import BalanceSheet from './pages/reports/BalanceSheet';
 import ReportProfitLoss from './pages/reports/ReportProfitLoss';
 import ReportCashFlow from './pages/reports/ReportCashFlow';
+import StorageOverview from './pages/reports/StorageOverview';
 import CashFlow from './pages/CashFlow';
 import Settings from './pages/Settings';
 import Profile from './pages/Profile';
@@ -88,6 +89,7 @@ function App() {
         <Route path="reports/expense" element={<ReportExpense />} />
         <Route path="reports/tax" element={<ReportTax />} />
         <Route path="reports/balance-sheet" element={<BalanceSheet />} />
+        <Route path="reports/storage-overview" element={<StorageOverview />} />
         <Route path="cash-flow" element={<CashFlow />} />
         <Route path="users" element={isAdminUser(user) ? <Users /> : <Navigate to="/ai-insights" replace />} />
         <Route path="sms" element={<SMS />} />

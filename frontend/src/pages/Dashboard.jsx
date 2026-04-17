@@ -1,4 +1,5 @@
 import { useState, useMemo, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import {
   BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer,
   Cell, PieChart, Pie
@@ -10,6 +11,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/components/ui/use-toast";
 import { useIsMobileLayout } from "@/hooks/useIsMobileLayout";
+import { api } from "@/lib/api";
 
 // ─── THEME-AWARE COLORS ───────────────────────────────────────────────────────
 const getThemeColors = () => {
@@ -268,11 +270,20 @@ function isDateInRange(dateStr, start, end) {
   return d >= s && d <= e;
 }
 
+function formatStorageBytes(n) {
+  const v = Number(n) || 0;
+  if (v < 1024) return `${v} B`;
+  if (v < 1024 * 1024) return `${(v / 1024).toFixed(1)} KB`;
+  if (v < 1024 * 1024 * 1024) return `${(v / (1024 * 1024)).toFixed(1)} MB`;
+  return `${(v / (1024 * 1024 * 1024)).toFixed(2)} GB`;
+}
+
 // ─── MAIN DASHBOARD ───────────────────────────────────────────────────────────
 export default function FinanceDashboard() {
   const { incomes, expenses, totals, settings, addTransfer, loadData } = useFinance();
   const { user } = useAuth();
   const { toast } = useToast();
+  const navigate = useNavigate();
   const [dateRange, setDateRange] = useState("month");
   const [activeBar, setActiveBar] = useState(null);
   const [currentCard, setCurrentCard] = useState(0);
@@ -284,10 +295,26 @@ export default function FinanceDashboard() {
   const [transferAmount, setTransferAmount] = useState("");
   const [themeKey, setThemeKey] = useState(0);
   const isMobileLayout = useIsMobileLayout();
+  const [storageOverview, setStorageOverview] = useState(null);
 
   useEffect(() => {
     document.body.classList.add("dashboard-page");
     return () => document.body.classList.remove("dashboard-page");
+  }, []);
+
+  useEffect(() => {
+    let cancelled = false;
+    api.storage
+      .overview()
+      .then((d) => {
+        if (!cancelled) setStorageOverview(d);
+      })
+      .catch(() => {
+        if (!cancelled) setStorageOverview(null);
+      });
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   useEffect(() => {
@@ -719,6 +746,63 @@ export default function FinanceDashboard() {
           badgeColor="red"
         />
       </div>
+
+      {/* STORAGE (workspace-wide) */}
+      {storageOverview ? (
+        <div
+          role="button"
+          tabIndex={0}
+          onClick={() => navigate("/reports/storage-overview")}
+          onKeyDown={(e) => {
+            if (e.key === "Enter" || e.key === " ") {
+              e.preventDefault();
+              navigate("/reports/storage-overview");
+            }
+          }}
+          style={{
+            ...s.card,
+            marginBottom: 16,
+            cursor: "pointer",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+            gap: 16,
+            flexWrap: "wrap",
+          }}
+        >
+          <div style={{ display: "flex", alignItems: "center", gap: 14, minWidth: 0 }}>
+            <div
+              style={{
+                width: 44,
+                height: 44,
+                borderRadius: 12,
+                background: "rgba(56,189,248,0.14)",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                fontSize: 22,
+                flexShrink: 0,
+              }}
+              aria-hidden
+            >
+              💾
+            </div>
+            <div>
+              <p style={{ ...s.label, marginBottom: 4 }}>Workspace storage</p>
+              <p style={{ ...s.val, fontSize: 20, margin: 0 }}>
+                {formatStorageBytes(storageOverview.totalBytes)}{" "}
+                <span style={{ color: tc.muted, fontSize: 14, fontWeight: 600 }}>
+                  / {formatStorageBytes(storageOverview.quotaBytes)}
+                </span>
+              </p>
+              <p style={{ color: tc.muted, fontSize: 12, margin: "6px 0 0", lineHeight: 1.45 }}>
+                Files, invoices, clients, and logs — open the full Storage Overview report
+              </p>
+            </div>
+          </div>
+          <span style={{ color: "#38bdf8", fontSize: 13, fontWeight: 700, flexShrink: 0 }}>View storage →</span>
+        </div>
+      ) : null}
 
       {/* MAIN GRID */}
       <div

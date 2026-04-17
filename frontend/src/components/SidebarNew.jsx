@@ -69,6 +69,7 @@ const ADMIN_EMAIL = "logozodev@gmail.com";
 
 const reportSubItems = [
   { to: "/reports/overview", label: "Overview Reports" },
+  { to: "/reports/storage-overview", label: "Storage Overview" },
   { to: "/reports/profit-loss", label: "Profit & Loss" },
   { to: "/reports/cash-flow", label: "Cash Flow" },
   { to: "/reports/tax", label: "Tax Reports" },

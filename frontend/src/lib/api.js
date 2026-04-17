@@ -251,6 +251,9 @@ export const api = {
       return res.blob();
     },
   },
+  storage: {
+    overview: () => request('/storage/overview'),
+  },
   transfers: {
     list: () => request('/transfers'),
     create: (data) => request('/transfers', { method: 'POST', body: JSON.stringify(data) }),

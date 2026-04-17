@@ -27,6 +27,7 @@ import calendarEventsRoutes from './routes/calendarEvents.js';
 import projectsRoutes from './routes/projects.js';
 import projectTasksRoutes from './routes/projectTasks.js';
 import filesRoutes from './routes/files.js';
+import storageRoutes from './routes/storage.js';
 import pool from './config/db.js';
 import { processDueScheduledSms } from './workers/scheduledSmsWorker.js';
 
@@ -409,6 +410,7 @@ app.use('/api/calendar-events', calendarEventsRoutes);
 app.use('/api/projects', projectsRoutes);
 app.use('/api/project-tasks', projectTasksRoutes);
 app.use('/api/files', filesRoutes);
+app.use('/api/storage', storageRoutes);
 
 const HOST = '0.0.0.0'; // Required for Docker: listen on all interfaces
 

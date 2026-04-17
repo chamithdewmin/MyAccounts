@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { Link } from 'react-router-dom';
 import { Helmet } from 'react-helmet';
 import { motion } from 'framer-motion';
 import {
@@ -24,7 +25,12 @@ import {
   Users,
   Receipt,
   Unlink,
+  HardDrive,
+  AlertTriangle,
+  ArrowDownWideNarrow,
+  ArrowUpNarrowWide,
 } from 'lucide-react';
+import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip as RechartsTooltip } from 'recharts';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
@@ -72,6 +78,43 @@ const fileKindLabel = (t) => {
   if (s.includes('sheet') || s.includes('excel') || s === 'text/csv') return 'Spreadsheet';
   if (s.startsWith('text/')) return 'Text';
   return 'File';
+};
+
+const isDocsType = (t) => {
+  const s = String(t || '').toLowerCase();
+  return (
+    s.includes('word') ||
+    s.includes('document') ||
+    s.includes('excel') ||
+    s.includes('sheet') ||
+    s.includes('spreadsheet') ||
+    s === 'text/plain' ||
+    s === 'text/csv' ||
+    s.includes('csv') ||
+    s.includes('powerpoint') ||
+    s.includes('opendocument')
+  );
+};
+
+const storageBand = (t) => {
+  if (isImageType(t)) return 'images';
+  if (isPdfType(t)) return 'pdfs';
+  if (isDocsType(t)) return 'docs';
+  return 'others';
+};
+
+const DONUT_COLORS = {
+  images: '#38bdf8',
+  pdfs: '#fb7185',
+  docs: '#a78bfa',
+  others: '#64748b',
+  empty: 'hsl(var(--muted))',
+};
+
+const quotaBytesFromEnv = () => {
+  const mb = Number(import.meta.env?.VITE_FILE_STORAGE_QUOTA_MB);
+  const n = Number.isFinite(mb) && mb > 0 ? mb : 100;
+  return n * 1024 * 1024;
 };
 
 const FileManager = () => {
@@ -123,6 +166,11 @@ const FileManager = () => {
   const [bulkDeleteConfirmInput, setBulkDeleteConfirmInput] = useState('');
   const [bulkDeleteSubmitting, setBulkDeleteSubmitting] = useState(false);
 
+  const [sizeBand, setSizeBand] = useState('all');
+  const [sizeSort, setSizeSort] = useState('none');
+  const [uploadFlash, setUploadFlash] = useState(null);
+  const pendingUploadAddedRef = useRef(null);
+
   const [linkOpen, setLinkOpen] = useState(false);
   const [linkTarget, setLinkTarget] = useState(null);
   const [linkKind, setLinkKind] = useState('client');
@@ -170,7 +218,80 @@ const FileManager = () => {
 
   useEffect(() => {
     setCheckedIds(new Set());
-  }, [selectedFolderId, scope, debouncedSearch, typeFilter]);
+  }, [selectedFolderId, scope, debouncedSearch, typeFilter, sizeBand, sizeSort]);
+
+  const STORAGE_QUOTA_BYTES = quotaBytesFromEnv();
+
+  const storageTotals = useMemo(() => {
+    let images = 0;
+    let pdfs = 0;
+    let docs = 0;
+    let others = 0;
+    let ni = 0;
+    let np = 0;
+    let nd = 0;
+    let no = 0;
+    for (let i = 0; i < files.length; i += 1) {
+      const f = files[i];
+      const sz = Number(f.fileSize) || 0;
+      const b = storageBand(f.fileType);
+      if (b === 'images') {
+        images += sz;
+        ni += 1;
+      } else if (b === 'pdfs') {
+        pdfs += sz;
+        np += 1;
+      } else if (b === 'docs') {
+        docs += sz;
+        nd += 1;
+      } else {
+        others += sz;
+        no += 1;
+      }
+    }
+    const totalBytes = images + pdfs + docs + others;
+    return { images, pdfs, docs, others, totalBytes, ni, np, nd, no, count: files.length };
+  }, [files]);
+
+  const displayedFiles = useMemo(() => {
+    let list = files.slice();
+    if (sizeBand === 'large') list = list.filter((f) => (Number(f.fileSize) || 0) > 1024 * 1024);
+    if (sizeBand === 'small') list = list.filter((f) => (Number(f.fileSize) || 0) < 100 * 1024);
+    if (sizeSort === 'desc') list.sort((a, b) => (Number(b.fileSize) || 0) - (Number(a.fileSize) || 0));
+    else if (sizeSort === 'asc') list.sort((a, b) => (Number(a.fileSize) || 0) - (Number(b.fileSize) || 0));
+    return list;
+  }, [files, sizeBand, sizeSort]);
+
+  const donutSlices = useMemo(() => {
+    const { images, pdfs, docs, others, totalBytes } = storageTotals;
+    if (!totalBytes) return [];
+    return [
+      { key: 'images', name: 'Images', value: images },
+      { key: 'pdfs', name: 'PDFs', value: pdfs },
+      { key: 'docs', name: 'Docs', value: docs },
+      { key: 'others', name: 'Other', value: others },
+    ].filter((r) => r.value > 0);
+  }, [storageTotals]);
+
+  const tableListTotals = useMemo(() => {
+    let t = 0;
+    for (let i = 0; i < displayedFiles.length; i += 1) t += Number(displayedFiles[i].fileSize) || 0;
+    return { bytes: t, count: displayedFiles.length };
+  }, [displayedFiles]);
+
+  useEffect(() => {
+    const add = pendingUploadAddedRef.current;
+    if (add == null) return;
+    pendingUploadAddedRef.current = null;
+    const total = files.reduce((s, f) => s + (Number(f.fileSize) || 0), 0);
+    setUploadFlash({ added: add, total });
+  }, [files]);
+
+  useEffect(() => {
+    if (!uploadFlash) return undefined;
+    const t = setTimeout(() => setUploadFlash(null), 6000);
+    return () => clearTimeout(t);
+  }, [uploadFlash]);
 
   useEffect(() => {
     const loadRefs = async () => {
@@ -312,10 +433,14 @@ const FileManager = () => {
         signal: uploadAbortRef.current.signal,
         onProgress: (p) => setUploadPct(p),
       })
-      .then(() => {
-        toast({ title: 'Upload complete', description: file.name });
+      .then(async () => {
+        pendingUploadAddedRef.current = file.size;
         setUploadOpen(false);
-        loadFiles();
+        await loadFiles();
+        toast({
+          title: 'Upload complete',
+          description: `+${formatBytes(file.size)} added`,
+        });
       })
       .catch((e) => {
         if (e.message !== 'Upload cancelled') {
@@ -467,15 +592,15 @@ const FileManager = () => {
   const checkedCount = checkedIds.size;
 
   const tableHeaderCheckboxState = useMemo(() => {
-    if (!files.length) return false;
+    if (!displayedFiles.length) return false;
     let n = 0;
-    for (let i = 0; i < files.length; i += 1) {
-      if (checkedIds.has(files[i].id)) n += 1;
+    for (let i = 0; i < displayedFiles.length; i += 1) {
+      if (checkedIds.has(displayedFiles[i].id)) n += 1;
     }
-    if (n === files.length) return true;
+    if (n === displayedFiles.length) return true;
     if (n > 0) return 'indeterminate';
     return false;
-  }, [files, checkedIds]);
+  }, [displayedFiles, checkedIds]);
 
   const toggleFileChecked = (id, nextChecked) => {
     setCheckedIds((prev) => {
@@ -490,12 +615,16 @@ const FileManager = () => {
     setCheckedIds((prev) => {
       const next = new Set(prev);
       if (checked === true) {
-        files.forEach((f) => next.add(f.id));
+        displayedFiles.forEach((f) => next.add(f.id));
       } else {
-        files.forEach((f) => next.delete(f.id));
+        displayedFiles.forEach((f) => next.delete(f.id));
       }
       return next;
     });
+  };
+
+  const cycleSizeSort = () => {
+    setSizeSort((s) => (s === 'none' ? 'desc' : s === 'desc' ? 'asc' : 'none'));
   };
 
   const openBulkDeleteDialog = () => {
@@ -553,6 +682,10 @@ const FileManager = () => {
     }
   };
 
+  const quotaUsedRatio = STORAGE_QUOTA_BYTES > 0 ? Math.min(1, storageTotals.totalBytes / STORAGE_QUOTA_BYTES) : 0;
+  const quotaPctRounded = Math.min(100, Math.round(quotaUsedRatio * 1000) / 10);
+  const quotaNearFull = quotaUsedRatio >= 0.9 && storageTotals.totalBytes > 0;
+
   return (
     <>
       <Helmet>
@@ -567,6 +700,112 @@ const FileManager = () => {
             <p className="text-muted-foreground text-sm sm:text-base mt-1 max-w-2xl leading-relaxed">
               Upload files, search by name or tags, and link documents to clients or invoices.
             </p>
+          </div>
+          <Button variant="outline" size="sm" className="shrink-0 gap-2 self-start" asChild>
+            <Link to="/reports/storage-overview">View Storage Overview →</Link>
+          </Button>
+        </div>
+
+        <div className="rounded-2xl border border-border bg-card/80 p-4 sm:p-5 shadow-sm space-y-4">
+          <div className="flex flex-col lg:flex-row gap-6 lg:gap-8 lg:items-stretch">
+            <div className="flex-1 min-w-0 space-y-3">
+              <div className="flex items-start justify-between gap-3">
+                <div className="flex items-center gap-2 text-foreground font-semibold">
+                  <HardDrive className="w-4 h-4 text-sky-400 shrink-0" />
+                  Storage overview
+                </div>
+                {quotaNearFull ? (
+                  <div className="flex items-center gap-1.5 text-amber-400 text-xs shrink-0 font-medium">
+                    <AlertTriangle className="w-3.5 h-3.5 shrink-0" />
+                    {quotaPctRounded}% used
+                  </div>
+                ) : null}
+              </div>
+              <p className="text-sm text-muted-foreground">
+                <span className="text-foreground font-semibold tabular-nums">{formatBytes(storageTotals.totalBytes)}</span>
+                <span> used of </span>
+                <span className="tabular-nums font-medium text-foreground">{formatBytes(STORAGE_QUOTA_BYTES)}</span>
+                <span className="text-xs ml-2 opacity-90 tabular-nums">({quotaPctRounded}%)</span>
+              </p>
+              <div className="h-2.5 w-full rounded-full bg-secondary/80 overflow-hidden ring-1 ring-border/50">
+                <div
+                  className={`h-full rounded-full transition-all duration-500 ${
+                    quotaNearFull ? 'bg-gradient-to-r from-amber-500 to-orange-400' : 'bg-gradient-to-r from-sky-500 to-cyan-400'
+                  }`}
+                  style={{ width: `${quotaPctRounded}%` }}
+                />
+              </div>
+              {quotaNearFull ? (
+                <p className="text-xs text-amber-200/90 leading-relaxed">
+                  You are using most of your configured storage quota. Raise <span className="font-mono text-[10px] bg-secondary/80 px-1 py-0.5 rounded">VITE_FILE_STORAGE_QUOTA_MB</span> in the
+                  frontend env if you need a higher cap for this bar.
+                </p>
+              ) : (
+                <p className="text-[11px] text-muted-foreground leading-relaxed">
+                  Chart and totals follow your current filters (folder, scope, search, and file type).
+                </p>
+              )}
+            </div>
+            <div className="lg:w-[360px] shrink-0 flex flex-col sm:flex-row gap-5 sm:items-center lg:items-stretch">
+              <div className="flex-1 min-h-[188px] w-full max-w-[280px] mx-auto">
+                {donutSlices.length ? (
+                  <ResponsiveContainer width="100%" height={200}>
+                    <PieChart>
+                      <Pie
+                        data={donutSlices}
+                        dataKey="value"
+                        nameKey="name"
+                        cx="50%"
+                        cy="50%"
+                        innerRadius={58}
+                        outerRadius={86}
+                        paddingAngle={2}
+                        strokeWidth={0}
+                      >
+                        {donutSlices.map((e) => (
+                          <Cell key={e.key} fill={DONUT_COLORS[e.key] || DONUT_COLORS.others} />
+                        ))}
+                      </Pie>
+                      <RechartsTooltip
+                        formatter={(value) => [formatBytes(value), 'Size']}
+                        contentStyle={{
+                          background: 'hsl(var(--card))',
+                          border: '1px solid hsl(var(--border))',
+                          borderRadius: '10px',
+                          fontSize: '12px',
+                          color: 'hsl(var(--foreground))',
+                        }}
+                      />
+                    </PieChart>
+                  </ResponsiveContainer>
+                ) : (
+                  <div className="h-[200px] flex flex-col items-center justify-center text-muted-foreground text-sm border border-dashed border-border/80 rounded-xl bg-secondary/15">
+                    No files in this view yet
+                  </div>
+                )}
+              </div>
+              <div className="flex-1 w-full min-w-[160px] space-y-2 text-sm pt-1">
+                <p className="text-[11px] font-medium text-muted-foreground uppercase tracking-wide">Quick type sizes</p>
+                <ul className="space-y-2">
+                  <li className="flex justify-between gap-3 items-baseline">
+                    <span className="text-sky-400/90">Images</span>
+                    <span className="tabular-nums text-foreground font-medium">{formatBytes(storageTotals.images)}</span>
+                  </li>
+                  <li className="flex justify-between gap-3 items-baseline">
+                    <span className="text-rose-400/90">PDFs</span>
+                    <span className="tabular-nums text-foreground font-medium">{formatBytes(storageTotals.pdfs)}</span>
+                  </li>
+                  <li className="flex justify-between gap-3 items-baseline">
+                    <span className="text-violet-400/90">Docs</span>
+                    <span className="tabular-nums text-foreground font-medium">{formatBytes(storageTotals.docs)}</span>
+                  </li>
+                  <li className="flex justify-between gap-3 items-baseline">
+                    <span className="text-slate-400">Other</span>
+                    <span className="tabular-nums text-foreground font-medium">{formatBytes(storageTotals.others)}</span>
+                  </li>
+                </ul>
+              </div>
+            </div>
           </div>
         </div>
 
@@ -633,11 +872,107 @@ const FileManager = () => {
                 Grid
               </Button>
             </div>
+            <div className="flex items-center gap-0.5 rounded-lg border border-border bg-background/40 p-0.5">
+              <span className="text-[10px] text-muted-foreground px-1.5 uppercase tracking-wide hidden sm:inline shrink-0">
+                Size
+              </span>
+              <Button
+                type="button"
+                variant={sizeBand === 'all' ? 'secondary' : 'ghost'}
+                size="sm"
+                className="h-8 px-2 text-xs rounded-md"
+                onClick={() => setSizeBand('all')}
+              >
+                All
+              </Button>
+              <Button
+                type="button"
+                variant={sizeBand === 'large' ? 'secondary' : 'ghost'}
+                size="sm"
+                className="h-8 px-2 text-xs rounded-md"
+                onClick={() => setSizeBand('large')}
+                title="Files larger than 1 MB"
+              >
+                &gt;1 MB
+              </Button>
+              <Button
+                type="button"
+                variant={sizeBand === 'small' ? 'secondary' : 'ghost'}
+                size="sm"
+                className="h-8 px-2 text-xs rounded-md"
+                onClick={() => setSizeBand('small')}
+                title="Files smaller than 100 KB"
+              >
+                &lt;100 KB
+              </Button>
+            </div>
             <Button variant="outline" size="sm" onClick={loadFiles} disabled={loading}>
               {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Refresh'}
             </Button>
           </div>
         </div>
+
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-2 sm:gap-3">
+          {[
+            {
+              icon: Folder,
+              label: 'Total files',
+              value: String(storageTotals.count),
+              sub: 'In current list',
+              tone: 'text-sky-400',
+            },
+            {
+              icon: HardDrive,
+              label: 'Total size',
+              value: formatBytes(storageTotals.totalBytes),
+              sub: 'All types combined',
+              tone: 'text-cyan-400',
+            },
+            {
+              icon: ImageIcon,
+              label: 'Images',
+              value: `${storageTotals.ni} file${storageTotals.ni === 1 ? '' : 's'}`,
+              sub: formatBytes(storageTotals.images),
+              tone: 'text-sky-400',
+            },
+            {
+              icon: FileText,
+              label: 'PDFs',
+              value: `${storageTotals.np} file${storageTotals.np === 1 ? '' : 's'}`,
+              sub: formatBytes(storageTotals.pdfs),
+              tone: 'text-rose-400',
+            },
+          ].map((card) => {
+            const Icon = card.icon;
+            return (
+              <div
+                key={card.label}
+                className="rounded-xl border border-border bg-card/90 px-3 py-3 sm:px-4 sm:py-3.5 shadow-sm flex flex-col gap-1 min-h-[88px] justify-center"
+              >
+                <div className="flex items-center gap-2 text-muted-foreground text-[11px] uppercase tracking-wide font-medium">
+                  <Icon className={`w-3.5 h-3.5 shrink-0 ${card.tone}`} />
+                  {card.label}
+                </div>
+                <p className="text-lg sm:text-xl font-semibold text-foreground tabular-nums leading-tight">{card.value}</p>
+                <p className="text-[11px] text-muted-foreground leading-snug">{card.sub}</p>
+              </div>
+            );
+          })}
+        </div>
+
+        {uploadFlash ? (
+          <motion.div
+            initial={{ opacity: 0, y: -8 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="rounded-xl border border-cyan-500/35 bg-cyan-500/10 px-4 py-3 text-sm text-foreground flex flex-wrap items-center gap-2 shadow-sm"
+          >
+            <span className="font-semibold text-cyan-300 tabular-nums">+{formatBytes(uploadFlash.added)} added</span>
+            <span className="text-muted-foreground">→</span>
+            <span className="text-muted-foreground">
+              Total: <span className="font-semibold text-foreground tabular-nums">{formatBytes(uploadFlash.total)}</span>
+            </span>
+          </motion.div>
+        ) : null}
 
         <div className="flex flex-col lg:flex-row gap-4 min-h-[480px] flex-1 min-w-0">
           <aside className="lg:w-52 shrink-0 rounded-2xl border border-border bg-card p-2 h-fit">
@@ -725,7 +1060,13 @@ const FileManager = () => {
             <div className="flex-1 min-w-0 rounded-2xl border border-border bg-card overflow-hidden flex flex-col">
               <div className="px-4 py-3 border-b border-border flex items-center justify-between gap-2">
                 <span className="font-semibold text-foreground">Files</span>
-                <span className="text-xs text-muted-foreground">{files.length} item{files.length === 1 ? '' : 's'}</span>
+                <span className="text-xs text-muted-foreground tabular-nums text-right">
+                  {files.length === 0
+                    ? '0 items'
+                    : tableListTotals.count === files.length
+                      ? `${files.length} item${files.length === 1 ? '' : 's'}`
+                      : `${tableListTotals.count} shown · ${files.length} total`}
+                </span>
               </div>
               {loading ? (
                 <div className="flex items-center justify-center py-20 text-muted-foreground gap-2">
@@ -741,14 +1082,32 @@ const FileManager = () => {
                           <Checkbox
                             checked={tableHeaderCheckboxState}
                             onCheckedChange={onTableHeaderCheckChange}
-                            disabled={!files.length}
-                            aria-label="Select all files in this list"
+                            disabled={!displayedFiles.length}
+                            aria-label="Select all visible files"
                             className="translate-y-0.5"
                           />
                         </th>
                         <th className="px-4 py-3 text-left font-medium">File name</th>
                         <th className="px-4 py-3 text-left font-medium">Type</th>
-                        <th className="px-4 py-3 text-left font-medium">Size</th>
+                        <th className="px-4 py-3 text-left font-medium">
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.preventDefault();
+                              e.stopPropagation();
+                              cycleSizeSort();
+                            }}
+                            className="inline-flex items-center gap-1.5 rounded-md -mx-1 px-1 py-0.5 hover:bg-secondary/80 hover:text-foreground transition-colors"
+                            title="Sort by size (click to cycle: default, largest first, smallest first)"
+                          >
+                            Size
+                            {sizeSort === 'desc' ? (
+                              <ArrowDownWideNarrow className="w-3.5 h-3.5 text-sky-400 shrink-0" aria-hidden />
+                            ) : sizeSort === 'asc' ? (
+                              <ArrowUpNarrowWide className="w-3.5 h-3.5 text-sky-400 shrink-0" aria-hidden />
+                            ) : null}
+                          </button>
+                        </th>
                         <th className="px-4 py-3 text-left font-medium">Linked to</th>
                         <th className="px-4 py-3 text-left font-medium">Date</th>
                         <th className="px-4 py-3 w-12" />
@@ -761,8 +1120,14 @@ const FileManager = () => {
                             No files yet. Upload a document to get started.
                           </td>
                         </tr>
+                      ) : displayedFiles.length === 0 ? (
+                        <tr>
+                          <td colSpan={7} className="px-4 py-12 text-center text-muted-foreground">
+                            No files match the current size filters. Try switching size filters back to All.
+                          </td>
+                        </tr>
                       ) : (
-                        files.map((f, i) => (
+                        displayedFiles.map((f, i) => (
                           <motion.tr
                             key={f.id}
                             initial={{ opacity: 0 }}
@@ -871,14 +1236,43 @@ const FileManager = () => {
                         ))
                       )}
                     </tbody>
+                    {files.length > 0 && displayedFiles.length > 0 ? (
+                      <tfoot>
+                        <tr className="border-t-2 border-border bg-secondary/25">
+                          <td colSpan={3} className="px-4 py-3 text-xs text-muted-foreground">
+                            {tableListTotals.count === files.length ? (
+                              <>
+                                Total files:{' '}
+                                <span className="font-semibold text-foreground tabular-nums">{tableListTotals.count}</span>
+                              </>
+                            ) : (
+                              <>
+                                Visible:{' '}
+                                <span className="font-semibold text-foreground tabular-nums">{tableListTotals.count}</span>
+                                <span> of </span>
+                                <span className="font-semibold text-foreground tabular-nums">{files.length}</span>
+                              </>
+                            )}
+                          </td>
+                          <td className="px-4 py-3 text-xs font-semibold text-foreground tabular-nums whitespace-nowrap">
+                            {formatBytes(tableListTotals.bytes)}
+                          </td>
+                          <td colSpan={3} className="px-4 py-3 text-xs text-muted-foreground text-right">
+                            Total size (visible rows)
+                          </td>
+                        </tr>
+                      </tfoot>
+                    ) : null}
                   </table>
                 </div>
               ) : (
                 <div className="p-4 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
                   {files.length === 0 ? (
                     <div className="col-span-full text-center text-muted-foreground py-12">No files yet.</div>
+                  ) : displayedFiles.length === 0 ? (
+                    <div className="col-span-full text-center text-muted-foreground py-12">No files match the current size filters.</div>
                   ) : (
-                    files.map((f, i) => (
+                    displayedFiles.map((f, i) => (
                       <motion.div
                         key={f.id}
                         role="button"

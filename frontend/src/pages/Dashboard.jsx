@@ -151,7 +151,7 @@ const CustomTooltip = ({ active, payload, label, currency = "" }) => {
 };
 
 // ─── STAT CARD ────────────────────────────────────────────────────────────────
-const StatCard = ({ icon, iconBg, label, value, badge, badgeColor }) => {
+const StatCard = ({ icon, iconBg, label, value, badge, badgeColor, sub, onClick }) => {
   const tc = getThemeColors();
   const isPositive = badgeColor === "green";
   const badgeBg = isPositive 
@@ -162,26 +162,45 @@ const StatCard = ({ icon, iconBg, label, value, badge, badgeColor }) => {
     ? "0 0 8px rgba(34,197,94,0.4), 0 0 4px rgba(34,197,94,0.2)"
     : "0 0 8px rgba(239,68,68,0.4), 0 0 4px rgba(239,68,68,0.2)";
 
+  const interactive = typeof onClick === "function";
+  const onKeyDown = interactive
+    ? (e) => {
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault();
+          onClick();
+        }
+      }
+    : undefined;
+
   return (
-    <div style={{
-      background: tc.card,
-      borderRadius: 16,
-      padding: "18px 20px",
-      display: "flex",
-      alignItems: "center",
-      gap: 16,
-      flex: 1,
-      border: `1px solid ${tc.border}`,
-      boxShadow: "0 1px 3px rgba(0,0,0,0.1)",
-    }}>
+    <div
+      role={interactive ? "button" : undefined}
+      tabIndex={interactive ? 0 : undefined}
+      onClick={onClick}
+      onKeyDown={onKeyDown}
+      style={{
+        background: tc.card,
+        borderRadius: 16,
+        padding: "18px 20px",
+        display: "flex",
+        alignItems: "center",
+        gap: 16,
+        flex: 1,
+        minWidth: interactive ? 160 : undefined,
+        border: `1px solid ${tc.border}`,
+        boxShadow: "0 1px 3px rgba(0,0,0,0.1)",
+        cursor: interactive ? "pointer" : undefined,
+        outline: "none",
+      }}
+    >
       <div style={{
         width: 44, height: 44, borderRadius: 12,
         background: iconBg,
         display: "flex", alignItems: "center", justifyContent: "center",
         fontSize: 18, flexShrink: 0,
       }}>{icon}</div>
-      <div>
-        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+      <div style={{ minWidth: 0 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
           <p style={{ color: tc.muted, fontSize: 12, margin: 0, fontWeight: 500 }}>{label}</p>
           {badge && (
             <span style={{
@@ -196,7 +215,10 @@ const StatCard = ({ icon, iconBg, label, value, badge, badgeColor }) => {
             }}>{badge}</span>
           )}
         </div>
-        <p style={{ color: tc.text, fontSize: 22, fontWeight: 800, margin: "4px 0 0", letterSpacing: "-0.03em" }}>{value}</p>
+        <p style={{ color: tc.text, fontSize: 22, fontWeight: 800, margin: "4px 0 0", letterSpacing: "-0.03em", wordBreak: "break-word" }}>{value}</p>
+        {sub && (
+          <p style={{ color: tc.muted, fontSize: 11, margin: "6px 0 0", fontWeight: 500, lineHeight: 1.35 }}>{sub}</p>
+        )}
       </div>
     </div>
   );
@@ -745,64 +767,28 @@ export default function FinanceDashboard() {
           badge={statPercentages.pending !== "0.00" ? `${statPercentages.pending}%` : null}
           badgeColor="red"
         />
+        {storageOverview && storageOverview.quotaBytes > 0 ? (
+          <StatCard
+            icon="💾"
+            iconBg="rgba(56,189,248,0.2)"
+            label="Storage overview"
+            value={formatStorageBytes(storageOverview.totalBytes)}
+            sub={`of ${formatStorageBytes(storageOverview.quotaBytes)} quota · files, invoices, clients & logs`}
+            badge={`${(Math.min(100, Math.round((storageOverview.totalBytes / storageOverview.quotaBytes) * 1000) / 10))}%`}
+            badgeColor={storageOverview.totalBytes / storageOverview.quotaBytes >= 0.9 ? "red" : "green"}
+            onClick={() => navigate("/reports/storage-overview")}
+          />
+        ) : storageOverview ? (
+          <StatCard
+            icon="💾"
+            iconBg="rgba(56,189,248,0.2)"
+            label="Storage overview"
+            value={formatStorageBytes(storageOverview.totalBytes)}
+            sub="Files, invoices, clients & logs — open full report"
+            onClick={() => navigate("/reports/storage-overview")}
+          />
+        ) : null}
       </div>
-
-      {/* STORAGE (workspace-wide) */}
-      {storageOverview ? (
-        <div
-          role="button"
-          tabIndex={0}
-          onClick={() => navigate("/reports/storage-overview")}
-          onKeyDown={(e) => {
-            if (e.key === "Enter" || e.key === " ") {
-              e.preventDefault();
-              navigate("/reports/storage-overview");
-            }
-          }}
-          style={{
-            ...s.card,
-            marginBottom: 16,
-            cursor: "pointer",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "space-between",
-            gap: 16,
-            flexWrap: "wrap",
-          }}
-        >
-          <div style={{ display: "flex", alignItems: "center", gap: 14, minWidth: 0 }}>
-            <div
-              style={{
-                width: 44,
-                height: 44,
-                borderRadius: 12,
-                background: "rgba(56,189,248,0.14)",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                fontSize: 22,
-                flexShrink: 0,
-              }}
-              aria-hidden
-            >
-              💾
-            </div>
-            <div>
-              <p style={{ ...s.label, marginBottom: 4 }}>Workspace storage</p>
-              <p style={{ ...s.val, fontSize: 20, margin: 0 }}>
-                {formatStorageBytes(storageOverview.totalBytes)}{" "}
-                <span style={{ color: tc.muted, fontSize: 14, fontWeight: 600 }}>
-                  / {formatStorageBytes(storageOverview.quotaBytes)}
-                </span>
-              </p>
-              <p style={{ color: tc.muted, fontSize: 12, margin: "6px 0 0", lineHeight: 1.45 }}>
-                Files, invoices, clients, and logs — open the full Storage Overview report
-              </p>
-            </div>
-          </div>
-          <span style={{ color: "#38bdf8", fontSize: 13, fontWeight: 700, flexShrink: 0 }}>View storage →</span>
-        </div>
-      ) : null}
 
       {/* MAIN GRID */}
       <div

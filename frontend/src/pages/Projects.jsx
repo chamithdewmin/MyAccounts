@@ -188,6 +188,23 @@ const Projects = () => {
                     <span className="font-semibold text-foreground">{p.progress ?? 0}%</span>
                     <span className="text-muted-foreground"> ({p.taskDone ?? 0}/{p.taskTotal ?? 0} tasks)</span>
                   </div>
+                  <div className="text-sm flex flex-wrap justify-between gap-2">
+                    <span className="text-muted-foreground">Expenses</span>
+                    <span className="font-medium tabular-nums text-orange-400">
+                      {currency} {(Number(p.expenseTotal) || 0).toLocaleString()}
+                    </span>
+                  </div>
+                  <div className="text-sm flex flex-wrap justify-between gap-2">
+                    <span className="text-muted-foreground">Profit</span>
+                    <span
+                      className={cn(
+                        'font-semibold tabular-nums',
+                        (Number(p.profit) || 0) >= 0 ? 'text-green-500' : 'text-red-500',
+                      )}
+                    >
+                      {currency} {(Number(p.profit) || 0).toLocaleString()}
+                    </span>
+                  </div>
                   <div className="flex flex-wrap gap-2 pt-2 mt-auto border-t border-border">
                     <Button asChild size="sm" className="gap-1">
                       <Link to={`/projects/${encodeURIComponent(p.id)}`}>

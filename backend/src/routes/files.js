@@ -7,8 +7,17 @@ import pool from '../config/db.js';
 import { authMiddleware } from '../middleware/auth.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const UPLOADS_ROOT = path.join(__dirname, '..', '..', 'uploads');
+/** Persistent disk path (required in Docker/production). Default: backend/uploads next to this package. */
+const UPLOADS_ROOT = (() => {
+  const raw = process.env.UPLOADS_DIR != null ? String(process.env.UPLOADS_DIR).trim() : '';
+  if (raw) return path.resolve(raw);
+  return path.join(__dirname, '..', '..', 'uploads');
+})();
 const MAX_BYTES = 52 * 1024 * 1024;
+
+if (process.env.NODE_ENV !== 'test') {
+  console.log('[files] UPLOADS_ROOT =', UPLOADS_ROOT);
+}
 
 const ensureUploadsRoot = () => {
   try {
@@ -368,9 +377,13 @@ router.get('/:id(\\d+)/file', async (req, res) => {
     );
     if (!rows[0]) return res.status(404).json({ error: 'Not found' });
     const abs = absolutePath(rows[0].file_path);
-    if (!abs || !fs.existsSync(abs)) {
+    if (!abs) return res.status(404).json({ error: 'File missing on disk' });
+    try {
+      await fs.promises.access(abs, fs.constants.R_OK);
+    } catch {
       return res.status(404).json({ error: 'File missing on disk' });
     }
+
     const inline = String(req.query.inline || '') === '1';
     const name = rows[0].original_name || 'download';
     res.setHeader('Content-Type', rows[0].file_type || 'application/octet-stream');
@@ -378,7 +391,20 @@ router.get('/:id(\\d+)/file', async (req, res) => {
       'Content-Disposition',
       `${inline ? 'inline' : 'attachment'}; filename="${encodeURIComponent(name).replace(/'/g, '%27')}"`,
     );
-    fs.createReadStream(abs).pipe(res);
+    const stream = fs.createReadStream(abs);
+    stream.on('error', (streamErr) => {
+      console.error('[files file stream]', streamErr.message, abs);
+      if (!res.headersSent) {
+        res.status(500).json({ error: 'File read failed' });
+      } else {
+        try {
+          res.destroy(streamErr);
+        } catch {
+          /* ignore */
+        }
+      }
+    });
+    stream.pipe(res);
   } catch (err) {
     console.error('[files file]', err);
     res.status(500).json({ error: 'Server error' });

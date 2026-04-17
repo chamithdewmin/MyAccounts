@@ -218,17 +218,45 @@ const loginRiskTier = (score) => {
   return 'safe';
 };
 
-const loginRiskBadgeClass = (tier) => {
-  if (tier === 'high') return 'bg-red-500/20 text-red-400 border border-red-500/35';
-  if (tier === 'suspicious') return 'bg-amber-500/15 text-amber-300 border border-amber-500/30';
-  return 'bg-emerald-500/15 text-emerald-400 border border-emerald-500/30';
-};
-
 const loginRiskLabel = (tier) => {
   if (tier === 'high') return 'High risk';
-  if (tier === 'suspicious') return 'Suspicious';
-  return 'Safe';
+  if (tier === 'suspicious') return 'Elevated';
+  return 'Low risk';
 };
+
+const loginRiskLabelClass = (tier) => {
+  if (tier === 'high') return 'text-red-400';
+  if (tier === 'suspicious') return 'text-amber-400';
+  return 'text-emerald-400';
+};
+
+const loginRiskTooltip = (score, tier) =>
+  `Login risk score ${score} out of 100. ` +
+  `Green (0–30) low, amber (31–70) elevated, red (71+) high. This row: ${loginRiskLabel(tier)}.`;
+
+/** Three mini dots — active tier is bright with a soft ring; others stay dimmed. */
+const LoginRiskDots = ({ tier }) => (
+  <div className="flex items-center gap-1" role="img" aria-label={loginRiskLabel(tier)}>
+    <span
+      title="0–30: low risk"
+      className={`h-2 w-2 shrink-0 rounded-full bg-emerald-500 ${
+        tier === 'safe' ? 'opacity-100 ring-2 ring-emerald-400/45 ring-offset-2 ring-offset-background' : 'opacity-25'
+      }`}
+    />
+    <span
+      title="31–70: elevated"
+      className={`h-2 w-2 shrink-0 rounded-full bg-amber-400 ${
+        tier === 'suspicious' ? 'opacity-100 ring-2 ring-amber-400/45 ring-offset-2 ring-offset-background' : 'opacity-25'
+      }`}
+    />
+    <span
+      title="71–100: high risk"
+      className={`h-2 w-2 shrink-0 rounded-full bg-red-500 ${
+        tier === 'high' ? 'opacity-100 ring-2 ring-red-400/45 ring-offset-2 ring-offset-background' : 'opacity-25'
+      }`}
+    />
+  </div>
+);
 
 const rowMatchesSearch = (row, userById, query) => {
   const t = String(query || '').trim().toLowerCase();
@@ -245,6 +273,7 @@ const rowMatchesSearch = (row, userById, query) => {
     row.deviceType,
     deviceLabel(row),
     row.riskScore != null ? String(row.riskScore) : '',
+    loginRiskLabel(loginRiskTier(Number(row.riskScore ?? 0))),
   ]
     .filter((x) => x != null && String(x).trim() !== '')
     .join(' ')
@@ -407,7 +436,7 @@ export default function LoginActivity() {
       'IP address',
       'User-Agent',
       'Device',
-      'Risk score',
+      'Risk (score — level)',
       'Status',
       'Failure reason',
     ];
@@ -415,6 +444,8 @@ export default function LoginActivity() {
     for (const row of filteredItems) {
       const u = resolveActivityUser(row, userById);
       const disp = displayActivityStatus(row);
+      const rs = Number(row.riskScore ?? 0);
+      const rt = loginRiskTier(rs);
       lines.push(
         [
           u.primaryTitle,
@@ -427,7 +458,7 @@ export default function LoginActivity() {
           row.ipAddress ?? '',
           row.userAgent ?? '',
           deviceLabel(row),
-          row.riskScore != null ? String(row.riskScore) : '0',
+          `${rs} — ${loginRiskLabel(rt)}`,
           disp,
           row.failureReason ?? '',
         ]
@@ -454,7 +485,7 @@ export default function LoginActivity() {
     try {
       const head =
         '<thead><tr>' +
-        ['User', 'Email', 'Session ID', 'Login', 'Logout', 'IP', 'Device', 'Risk', 'Status']
+        ['User', 'Email', 'Session ID', 'Login', 'Logout', 'IP', 'Device', 'Risk (0–100)', 'Status']
           .map((h) => `<th style="border:1px solid #ccc;padding:4px 6px;font-size:10px;background:#f5f5f5;">${escapePdfHtml(h)}</th>`)
           .join('') +
         '</tr></thead>';
@@ -462,6 +493,8 @@ export default function LoginActivity() {
         .map((row) => {
           const u = resolveActivityUser(row, userById);
           const disp = displayActivityStatus(row);
+          const rs = Number(row.riskScore ?? 0);
+          const rt = loginRiskTier(rs);
           const cells = [
             u.primaryTitle,
             u.email,
@@ -470,7 +503,7 @@ export default function LoginActivity() {
             row.logoutAt ? formatDateTime(row.logoutAt) : isOpenLoginSessionRow(row) ? 'Still active' : '—',
             row.ipAddress ?? '—',
             deviceLabel(row),
-            String(row.riskScore ?? 0),
+            `${rs} — ${loginRiskLabel(rt)}`,
             disp,
           ];
           return `<tr>${cells
@@ -632,7 +665,7 @@ export default function LoginActivity() {
                   <th className="px-4 py-3 text-left text-sm font-semibold">IP address</th>
                   <th className="px-4 py-3 text-left text-sm font-semibold">User-Agent</th>
                   <th className="px-4 py-3 text-left text-sm font-semibold">Device</th>
-                  <th className="px-4 py-3 text-left text-sm font-semibold">Risk</th>
+                  <th className="px-4 py-3 text-left text-sm font-semibold">Risk (0–100)</th>
                   <th className="px-4 py-3 text-left text-sm font-semibold">Status</th>
                 </tr>
               </thead>
@@ -702,14 +735,22 @@ export default function LoginActivity() {
                       </span>
                     </td>
                     <td className="px-4 py-3 text-sm capitalize text-muted-foreground">{deviceLabel(row)}</td>
-                    <td className="px-4 py-3 text-sm">
-                      <span
-                        className={`inline-flex flex-col gap-0.5 rounded-md px-2 py-1 text-xs font-medium ${loginRiskBadgeClass(tier)}`}
-                        title={`Risk score ${score} (0–30 safe, 31–70 suspicious, 71–100 high)`}
+                    <td className="px-4 py-3 text-sm align-top">
+                      <div
+                        className="inline-flex max-w-[11rem] items-start gap-2 rounded-lg border border-border/80 bg-card/60 px-2.5 py-2 shadow-sm"
+                        title={loginRiskTooltip(score, tier)}
                       >
-                        <span className="tabular-nums">{score}</span>
-                        <span className="text-[10px] font-normal opacity-90">{loginRiskLabel(tier)}</span>
-                      </span>
+                        <LoginRiskDots tier={tier} />
+                        <div className="flex min-w-0 flex-col gap-0.5 leading-tight">
+                          <div className="flex items-baseline gap-1">
+                            <span className="text-base font-semibold tabular-nums text-foreground">{score}</span>
+                            <span className="text-[10px] font-medium text-muted-foreground">/ 100</span>
+                          </div>
+                          <span className={`text-[11px] font-semibold ${loginRiskLabelClass(tier)}`}>
+                            {loginRiskLabel(tier)}
+                          </span>
+                        </div>
+                      </div>
                     </td>
                     <td className="px-4 py-3 text-sm">
                       <span

@@ -197,7 +197,14 @@ const FileManager = () => {
         }
       } catch (e) {
         if (!cancelled) {
-          toast({ title: 'Preview failed', description: e.message, variant: 'destructive' });
+          const msg = String(e?.message || 'Unknown error');
+          let desc = msg;
+          if (/missing on disk|file missing/i.test(msg)) {
+            desc = `${msg} The listing is from the database, but the file bytes are not on the server disk (often after a deploy without a persistent upload folder). Ask your host to set UPLOADS_DIR to a volume-backed path.`;
+          } else if (/502|bad gateway/i.test(msg)) {
+            desc = `${msg} The API may have crashed while reading the file or the gateway timed out. Retry; check server logs if it persists.`;
+          }
+          toast({ title: 'Preview failed', description: desc, variant: 'destructive' });
         }
       } finally {
         if (!cancelled) setPreviewLoading(false);

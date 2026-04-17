@@ -31,8 +31,17 @@ import {
 // Theme-aware colors
 const getColors = () => {
   const isDark = document.documentElement.classList.contains('dark');
+  /** Match layout `bg-background` / `--background` (page canvas). */
+  const pageBg = (() => {
+    if (typeof window === 'undefined') {
+      return isDark ? '#000000' : 'hsl(220 33% 98%)';
+    }
+    const raw = getComputedStyle(document.documentElement).getPropertyValue('--background').trim();
+    if (raw) return `hsl(${raw})`;
+    return isDark ? '#000000' : 'hsl(220 33% 98%)';
+  })();
   return {
-    bg: isDark ? "#0a0a0a" : "#ffffff",
+    bg: pageBg,
     border: isDark ? "#171717" : "#e2e8f0",
     text: isDark ? "#fff" : "#0a1420",
     textMuted: isDark ? "#8b9ab0" : "#0a1420",

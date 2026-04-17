@@ -18,6 +18,7 @@ import { api } from '@/lib/api';
 import { deriveDeviceType } from '@/lib/userAgent';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
+import { cn } from '@/lib/utils';
 import { downloadDocumentPdfFromElement } from '@/utils/pdfPrint';
 
 const ADMIN_EMAIL = 'logozodev@gmail.com';
@@ -218,9 +219,17 @@ const loginRiskTier = (score) => {
   return 'safe';
 };
 
+/** Used in exports, search, and tooltips */
 const loginRiskLabel = (tier) => {
   if (tier === 'high') return 'High risk';
-  if (tier === 'suspicious') return 'Elevated';
+  if (tier === 'suspicious') return 'Medium risk';
+  return 'Low risk';
+};
+
+/** Bottom line inside the risk card */
+const loginRiskShortLabel = (tier) => {
+  if (tier === 'high') return 'High';
+  if (tier === 'suspicious') return 'Medium';
   return 'Low risk';
 };
 
@@ -232,31 +241,68 @@ const loginRiskLabelClass = (tier) => {
 
 const loginRiskTooltip = (score, tier) =>
   `Login risk score ${score} out of 100. ` +
-  `Green (0–30) low, amber (31–70) elevated, red (71+) high. This row: ${loginRiskLabel(tier)}.`;
+  `0–30: low (green), 31–70: medium (amber), 71+: high (red). This session: ${loginRiskLabel(tier)}.`;
 
-/** Three mini dots — active tier is bright with a soft ring; others stay dimmed. */
-const LoginRiskDots = ({ tier }) => (
-  <div className="flex items-center gap-1" role="img" aria-label={loginRiskLabel(tier)}>
-    <span
-      title="0–30: low risk"
-      className={`h-2 w-2 shrink-0 rounded-full bg-emerald-500 ${
-        tier === 'safe' ? 'opacity-100 ring-2 ring-emerald-400/45 ring-offset-2 ring-offset-background' : 'opacity-25'
-      }`}
-    />
-    <span
-      title="31–70: elevated"
-      className={`h-2 w-2 shrink-0 rounded-full bg-amber-400 ${
-        tier === 'suspicious' ? 'opacity-100 ring-2 ring-amber-400/45 ring-offset-2 ring-offset-background' : 'opacity-25'
-      }`}
-    />
-    <span
-      title="71–100: high risk"
-      className={`h-2 w-2 shrink-0 rounded-full bg-red-500 ${
-        tier === 'high' ? 'opacity-100 ring-2 ring-red-400/45 ring-offset-2 ring-offset-background' : 'opacity-25'
-      }`}
-    />
-  </div>
-);
+const LoginRiskScoreLine = ({ score }) => {
+  const s = Number(score) || 0;
+  return (
+    <div className="flex min-w-0 items-baseline gap-0.5 tabular-nums leading-none">
+      <span className="text-lg font-bold tracking-tight text-foreground">{s}</span>
+      <span className="text-[10px] font-medium tracking-wide text-muted-foreground">/ 100</span>
+    </div>
+  );
+};
+
+/** Tier-specific layout: low = emoji + score + label; medium/high = emoji + Risk, score, level */
+const LoginRiskCard = ({ score, tier }) => {
+  const s = Number(score) || 0;
+  const aria = `${loginRiskLabel(tier)}, score ${s} out of 100`;
+  const emoji = tier === 'high' ? '🔴' : tier === 'suspicious' ? '🟡' : '🟢';
+
+  return (
+    <div
+      role="group"
+      aria-label={aria}
+      title={loginRiskTooltip(s, tier)}
+      className={cn(
+        'min-w-[7rem] max-w-[9.5rem] rounded-xl border px-3 py-2.5 shadow-sm transition-colors',
+        'bg-card/80 backdrop-blur-sm',
+        tier === 'safe' && 'border-emerald-500/25',
+        tier === 'suspicious' && 'border-amber-500/30',
+        tier === 'high' && 'border-red-500/30',
+      )}
+    >
+      {tier === 'safe' ? (
+        <>
+          <div className="flex items-baseline gap-2">
+            <span className="text-[1.125rem] leading-none select-none" aria-hidden>
+              {emoji}
+            </span>
+            <LoginRiskScoreLine score={s} />
+          </div>
+          <p className={cn('mt-1.5 text-[11px] font-semibold leading-snug', loginRiskLabelClass(tier))}>
+            {loginRiskShortLabel(tier)}
+          </p>
+        </>
+      ) : (
+        <>
+          <div className="flex items-center gap-1.5">
+            <span className="text-[1.125rem] leading-none select-none" aria-hidden>
+              {emoji}
+            </span>
+            <span className={cn('text-xs font-bold uppercase tracking-wide', loginRiskLabelClass(tier))}>Risk</span>
+          </div>
+          <div className="mt-1">
+            <LoginRiskScoreLine score={s} />
+          </div>
+          <p className={cn('mt-1.5 text-[11px] font-semibold leading-snug', loginRiskLabelClass(tier))}>
+            {loginRiskShortLabel(tier)}
+          </p>
+        </>
+      )}
+    </div>
+  );
+};
 
 const rowMatchesSearch = (row, userById, query) => {
   const t = String(query || '').trim().toLowerCase();
@@ -736,21 +782,7 @@ export default function LoginActivity() {
                     </td>
                     <td className="px-4 py-3 text-sm capitalize text-muted-foreground">{deviceLabel(row)}</td>
                     <td className="px-4 py-3 text-sm align-top">
-                      <div
-                        className="inline-flex max-w-[11rem] items-start gap-2 rounded-lg border border-border/80 bg-card/60 px-2.5 py-2 shadow-sm"
-                        title={loginRiskTooltip(score, tier)}
-                      >
-                        <LoginRiskDots tier={tier} />
-                        <div className="flex min-w-0 flex-col gap-0.5 leading-tight">
-                          <div className="flex items-baseline gap-1">
-                            <span className="text-base font-semibold tabular-nums text-foreground">{score}</span>
-                            <span className="text-[10px] font-medium text-muted-foreground">/ 100</span>
-                          </div>
-                          <span className={`text-[11px] font-semibold ${loginRiskLabelClass(tier)}`}>
-                            {loginRiskLabel(tier)}
-                          </span>
-                        </div>
-                      </div>
+                      <LoginRiskCard score={score} tier={tier} />
                     </td>
                     <td className="px-4 py-3 text-sm">
                       <span

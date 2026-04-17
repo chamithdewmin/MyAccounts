@@ -99,6 +99,80 @@ const absolutePath = (relative) => {
   return path.join(UPLOADS_ROOT, ...parts);
 };
 
+/** Canonical relative path under UPLOADS_ROOT (POSIX slashes). Root = flat `uid/name`; folder = `uid/folders/{id}/name`. */
+const storageRelPath = (uid, folderId, filename) => {
+  const u = String(uid);
+  const base = path.basename(String(filename || '').replace(/\\/g, '/')) || '';
+  if (!base) return null;
+  if (folderId == null || folderId === '') return `${u}/${base}`;
+  const fid = Number(folderId);
+  if (!Number.isInteger(fid) || fid <= 0) return `${u}/${base}`;
+  return `${u}/folders/${fid}/${base}`;
+};
+
+const canReadFile = async (abs) => {
+  if (!abs) return false;
+  try {
+    await fs.promises.access(abs, fs.constants.R_OK);
+    return true;
+  } catch {
+    return false;
+  }
+};
+
+/**
+ * Find bytes on disk for a file row (handles legacy flat layout + folder layout).
+ */
+const findExistingFileAbs = async (uid, filename, storedRel, folderIdFromRow) => {
+  const u = String(uid);
+  const fn = String(filename || path.basename(String(storedRel || '').replace(/\\/g, '/')) || '');
+  if (!fn) return null;
+  const attempts = [];
+  const a0 = absolutePath(storedRel);
+  if (a0) attempts.push(a0);
+  attempts.push(path.join(UPLOADS_ROOT, u, fn));
+  const fid = folderIdFromRow != null && folderIdFromRow !== '' ? Number(folderIdFromRow) : null;
+  if (Number.isInteger(fid) && fid > 0) {
+    attempts.push(path.join(UPLOADS_ROOT, u, 'folders', String(fid), fn));
+  }
+  const seen = new Set();
+  for (const p of attempts) {
+    const key = path.normalize(p);
+    if (seen.has(key)) continue;
+    seen.add(key);
+    if (await canReadFile(p)) return p;
+  }
+  return null;
+};
+
+const moveFileAcrossDirs = async (fromAbs, toAbs) => {
+  if (!fromAbs || !toAbs) throw new Error('moveFileAcrossDirs: missing path');
+  if (path.normalize(fromAbs) === path.normalize(toAbs)) return;
+  await fs.promises.mkdir(path.dirname(toAbs), { recursive: true });
+  try {
+    await fs.promises.rename(fromAbs, toAbs);
+  } catch (e) {
+    if (e && e.code === 'EXDEV') {
+      await fs.promises.copyFile(fromAbs, toAbs);
+      await fs.promises.unlink(fromAbs);
+    } else {
+      throw e;
+    }
+  }
+};
+
+/** Move on-disk object to match folder_id; updates relative path string for DB. */
+const relocateToFolderLayout = async (uid, filename, storedRel, folderIdFromRow, nextFolderId) => {
+  const fromAbs = await findExistingFileAbs(uid, filename, storedRel, folderIdFromRow);
+  if (!fromAbs) return { error: 'File missing on disk' };
+  const nextRel = storageRelPath(uid, nextFolderId, filename);
+  const toAbs = absolutePath(nextRel);
+  if (!toAbs) return { error: 'Invalid file path' };
+  if (path.normalize(fromAbs) === path.normalize(toAbs)) return { relativePath: nextRel };
+  await moveFileAcrossDirs(fromAbs, toAbs);
+  return { relativePath: nextRel };
+};
+
 const validateLink = async (client, { linkedType, linkedId, userId }) => {
   const lt = linkedType != null ? String(linkedType).toLowerCase().trim() : '';
   const lid = linkedId != null ? String(linkedId).trim() : '';
@@ -171,8 +245,26 @@ router.delete('/folders/:id(\\d+)', async (req, res) => {
         await client.query('ROLLBACK');
         return res.status(404).json({ error: 'Folder not found' });
       }
-      // Keep files safe: move folder files back to root before deleting folder.
-      await client.query('UPDATE files SET folder_id = NULL WHERE user_id = $1 AND folder_id = $2', [uid, id]);
+      const { rows: folderFiles } = await client.query(
+        'SELECT id, filename, file_path, folder_id FROM files WHERE user_id = $1 AND folder_id = $2',
+        [uid, id],
+      );
+      for (let i = 0; i < folderFiles.length; i += 1) {
+        const f = folderFiles[i];
+        const moved = await relocateToFolderLayout(uid, f.filename, f.file_path, f.folder_id, null);
+        if (moved.error) {
+          await client.query('ROLLBACK');
+          return res.status(400).json({
+            error: moved.error,
+            detail: `Could not move file id ${f.id} when deleting folder. Fix disk or UPLOADS_DIR.`,
+          });
+        }
+        await client.query('UPDATE files SET folder_id = NULL, file_path = $1 WHERE id = $2 AND user_id = $3', [
+          moved.relativePath,
+          f.id,
+          uid,
+        ]);
+      }
       await client.query('DELETE FROM folders WHERE id = $1 AND user_id = $2', [id, uid]);
       await client.query('COMMIT');
       res.json({ success: true, movedToRoot: true, folderName: rows[0].name });
@@ -303,7 +395,31 @@ router.post('/upload', upload.single('file'), async (req, res) => {
       return res.status(400).json({ error: folder.error });
     }
 
-    const relativePath = `${uid}/${file.filename}`;
+    let relativePath = `${uid}/${file.filename}`;
+    if (folder.folderId) {
+      const targetRel = storageRelPath(uid, folder.folderId, file.filename);
+      const targetAbs = absolutePath(targetRel);
+      if (!targetAbs) {
+        try {
+          fs.unlinkSync(file.path);
+        } catch {
+          /* ignore */
+        }
+        return res.status(500).json({ error: 'Invalid storage path' });
+      }
+      try {
+        await moveFileAcrossDirs(file.path, targetAbs);
+      } catch (e) {
+        console.error('[files upload move]', e.message);
+        try {
+          fs.unlinkSync(file.path);
+        } catch {
+          /* ignore */
+        }
+        return res.status(500).json({ error: 'Could not place file in folder on disk' });
+      }
+      relativePath = targetRel;
+    }
     const { rows: ins } = await client.query(
       `INSERT INTO files (
         user_id, filename, original_name, file_type, file_size, file_path, uploaded_by, folder_id, linked_type, linked_id, tags
@@ -372,17 +488,12 @@ router.get('/:id(\\d+)/file', async (req, res) => {
     const id = parseInt(req.params.id, 10);
     if (Number.isNaN(id)) return res.status(400).json({ error: 'Invalid id' });
     const { rows } = await pool.query(
-      'SELECT original_name, file_type, file_path FROM files WHERE id = $1 AND user_id = $2',
+      'SELECT original_name, file_type, file_path, filename, folder_id FROM files WHERE id = $1 AND user_id = $2',
       [id, uid],
     );
     if (!rows[0]) return res.status(404).json({ error: 'Not found' });
-    const abs = absolutePath(rows[0].file_path);
+    const abs = await findExistingFileAbs(uid, rows[0].filename, rows[0].file_path, rows[0].folder_id);
     if (!abs) return res.status(404).json({ error: 'File missing on disk' });
-    try {
-      await fs.promises.access(abs, fs.constants.R_OK);
-    } catch {
-      return res.status(404).json({ error: 'File missing on disk' });
-    }
 
     const inline = String(req.query.inline || '') === '1';
     const name = rows[0].original_name || 'download';
@@ -462,9 +573,28 @@ router.patch('/:id(\\d+)', async (req, res) => {
         nextFolderId = folder.folderId;
       }
 
+      let nextFilePath = existing[0].file_path;
+      const prevFolderNorm =
+        existing[0].folder_id == null || existing[0].folder_id === ''
+          ? null
+          : Number(existing[0].folder_id);
+      const nextFolderNorm =
+        nextFolderId == null || nextFolderId === '' ? null : Number(nextFolderId);
+      if (folder_id !== undefined && prevFolderNorm !== nextFolderNorm) {
+        const moved = await relocateToFolderLayout(
+          uid,
+          existing[0].filename,
+          existing[0].file_path,
+          existing[0].folder_id,
+          nextFolderId,
+        );
+        if (moved.error) return res.status(400).json({ error: moved.error });
+        nextFilePath = moved.relativePath;
+      }
+
       await client.query(
-        `UPDATE files SET original_name = $2, tags = $3, folder_id = $4, linked_type = $5, linked_id = $6 WHERE id = $1 AND user_id = $7`,
-        [id, nextName, nextTags, nextFolderId, nextLt, nextLid, uid],
+        `UPDATE files SET original_name = $2, tags = $3, folder_id = $4, linked_type = $5, linked_id = $6, file_path = $7 WHERE id = $1 AND user_id = $8`,
+        [id, nextName, nextTags, nextFolderId, nextLt, nextLid, nextFilePath, uid],
       );
 
       const { rows } = await client.query(
@@ -503,9 +633,12 @@ router.delete('/:id(\\d+)', async (req, res) => {
     const uid = req.user.dataUserId;
     const id = parseInt(req.params.id, 10);
     if (Number.isNaN(id)) return res.status(400).json({ error: 'Invalid id' });
-    const { rows } = await pool.query('SELECT file_path FROM files WHERE id = $1 AND user_id = $2', [id, uid]);
+    const { rows } = await pool.query(
+      'SELECT file_path, filename, folder_id FROM files WHERE id = $1 AND user_id = $2',
+      [id, uid],
+    );
     if (!rows[0]) return res.status(404).json({ error: 'Not found' });
-    const abs = absolutePath(rows[0].file_path);
+    const abs = await findExistingFileAbs(uid, rows[0].filename, rows[0].file_path, rows[0].folder_id);
     await pool.query('DELETE FROM files WHERE id = $1 AND user_id = $2', [id, uid]);
     if (abs) {
       try {

@@ -13,15 +13,12 @@ import {
   RefreshCw,
   AlertTriangle,
   Database,
-  TrendingUp,
-  TrendingDown,
 } from 'lucide-react';
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip as RechartsTooltip } from 'recharts';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/components/ui/use-toast';
 import { api } from '@/lib/api';
 import { useAuth } from '@/contexts/AuthContext';
-import { useFinance } from '@/contexts/FinanceContext';
 
 const ADMIN_EMAIL = 'logozodev@gmail.com';
 const isAdminUser = (u) =>
@@ -33,11 +30,6 @@ const formatBytes = (n) => {
   if (v < 1024 * 1024) return `${(v / 1024).toFixed(1)} KB`;
   if (v < 1024 * 1024 * 1024) return `${(v / (1024 * 1024)).toFixed(1)} MB`;
   return `${(v / (1024 * 1024 * 1024)).toFixed(2)} GB`;
-};
-
-const formatCurrency = (amount, currency) => {
-  const c = currency || 'LKR';
-  return `${c} ${(Number(amount) || 0).toLocaleString(undefined, { maximumFractionDigits: 2 })}`;
 };
 
 const DONUT = {
@@ -70,20 +62,8 @@ const StorageStatRow = ({ icon: Icon, iconClassName, iconBgClass, label, value, 
 const StorageOverview = () => {
   const { toast } = useToast();
   const { user } = useAuth();
-  const { incomes, expenses, settings } = useFinance();
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
-
-  const financeTotals = useMemo(() => {
-    const incomeSum = incomes.reduce((s, x) => s + (Number(x.amount) || 0), 0);
-    const expenseSum = expenses.reduce((s, x) => s + (Number(x.amount) || 0), 0);
-    return {
-      incomeSum,
-      expenseSum,
-      incomeCount: incomes.length,
-      expenseCount: expenses.length,
-    };
-  }, [incomes, expenses]);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -342,61 +322,6 @@ const StorageOverview = () => {
               </div>
             </motion.div>
 
-            {/* Finance DATA — income & expenses (same card pattern as file uploads / records) */}
-            <motion.div
-              initial={{ opacity: 0, y: 14 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: listDuration, delay: 0.22, ease: [0.22, 1, 0.36, 1] }}
-              className="rounded-2xl border border-border bg-card shadow-sm overflow-hidden ring-1 ring-emerald-500/10"
-            >
-              <div className="px-5 pt-4 sm:px-6 sm:pt-5 border-b border-border/60 bg-secondary/10">
-                <p className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground m-0">Finance DATA</p>
-                <p className="text-xs text-muted-foreground mt-1 mb-0 leading-relaxed">
-                  All-time income and expense totals from your workspace ledger (same data as Payments and Expenses).
-                </p>
-              </div>
-              <div className="grid grid-cols-1 sm:grid-cols-2 divide-y sm:divide-y-0 sm:divide-x divide-border">
-                <div className="p-5 sm:p-6">
-                  <StorageStatRow
-                    icon={TrendingUp}
-                    iconBgClass="bg-emerald-500/15"
-                    iconClassName="text-emerald-400"
-                    label="Income"
-                    value={formatCurrency(financeTotals.incomeSum, settings?.currency)}
-                    sub={`${financeTotals.incomeCount} payment record${financeTotals.incomeCount === 1 ? '' : 's'}`}
-                  />
-                  <div className="mt-4 pt-4 border-t border-border/80">
-                    <Link
-                      to="/income"
-                      className="inline-flex items-center gap-1 text-sm font-semibold text-emerald-400 hover:underline"
-                    >
-                      Open Payments
-                      <ChevronRight className="h-4 w-4" />
-                    </Link>
-                  </div>
-                </div>
-                <div className="p-5 sm:p-6 bg-secondary/20">
-                  <StorageStatRow
-                    icon={TrendingDown}
-                    iconBgClass="bg-rose-500/15"
-                    iconClassName="text-rose-400"
-                    label="Expenses"
-                    value={formatCurrency(financeTotals.expenseSum, settings?.currency)}
-                    sub={`${financeTotals.expenseCount} expense record${financeTotals.expenseCount === 1 ? '' : 's'}`}
-                  />
-                  <div className="mt-4 pt-4 border-t border-border/80 flex flex-wrap gap-x-4 gap-y-1 text-xs font-medium">
-                    <Link to="/expenses" className="text-rose-400/90 hover:underline">
-                      View expenses
-                    </Link>
-                    <span className="text-muted-foreground">·</span>
-                    <Link to="/cash-flow" className="text-sky-400/90 hover:underline">
-                      Cash flow
-                    </Link>
-                  </div>
-                </div>
-              </div>
-            </motion.div>
-
             {/* Category cards — same visual language as dashboard stat rows, slower stagger */}
             <div className="flex flex-col gap-3">
               {cards.map((card, i) => {
@@ -407,7 +332,7 @@ const StorageOverview = () => {
                     initial={{ opacity: 0, y: 16 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{
-                      delay: 0.45 + i * listStagger,
+                      delay: 0.32 + i * listStagger,
                       duration: listDuration,
                       ease: [0.22, 1, 0.36, 1],
                     }}

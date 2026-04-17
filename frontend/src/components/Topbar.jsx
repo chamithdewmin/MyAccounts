@@ -23,24 +23,145 @@ import { useFinance } from '@/contexts/FinanceContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { useSidebarState } from '@/components/SidebarNew';
 
+const TOPBAR_TRANSITION = 'all 0.2s ease';
+
 const getColors = () => {
   const isDark = document.documentElement.classList.contains('dark');
+  const accent = '#0e5cff';
+  const base = {
+    blue: accent,
+    green: '#22c55e',
+    red: '#ef4444',
+    yellow: '#eab308',
+    purple: '#a78bfa',
+    todayBg: accent,
+  };
+  if (isDark) {
+    return {
+      ...base,
+      border: '#171717',
+      text: '#fff',
+      textMuted: '#8b9ab0',
+      inputBg: '#1e293b',
+      cardBg: '#0f172a',
+      pageBg: '#000000',
+      hoverBg: 'rgba(255,255,255,0.08)',
+      headerGlassBg: 'rgba(15, 23, 42, 0.72)',
+      headerBorderBottom: '1px solid rgba(255, 255, 255, 0.06)',
+      headerTopLine: 'rgba(255, 255, 255, 0.08)',
+      searchBg: 'linear-gradient(145deg, #1e293b, #0f172a)',
+      searchInset: 'inset 0 1px 2px rgba(255, 255, 255, 0.05)',
+      searchBorderIdle: '1px solid rgba(148, 163, 184, 0.14)',
+      searchBorderFocus: '1px solid rgba(14, 92, 255, 0.55)',
+      searchGlowFocus: '0 0 0 3px rgba(14, 92, 255, 0.2), 0 0 22px rgba(14, 92, 255, 0.14)',
+      topbarIconBg: 'rgba(255, 255, 255, 0.04)',
+      topbarIconBorder: 'rgba(255, 255, 255, 0.08)',
+      topbarIconInset: 'inset 0 1px 0 rgba(255, 255, 255, 0.05)',
+      datePillBg: 'rgba(255, 255, 255, 0.04)',
+      datePillBgHover: 'rgba(255, 255, 255, 0.09)',
+      datePillBorder: '1px solid rgba(255, 255, 255, 0.06)',
+      profileBg: 'rgba(255, 255, 255, 0.03)',
+      profileBorder: 'rgba(255, 255, 255, 0.06)',
+      profileHoverGlow: '0 0 0 1px rgba(59, 130, 246, 0.35), 0 8px 28px rgba(0, 0, 0, 0.18)',
+      avatarStatusRing: 'rgba(15, 23, 42, 0.96)',
+    };
+  }
   return {
-    border: isDark ? "#171717" : "#e2e8f0",
-    text: isDark ? "#fff" : "#0f172a",
-    textMuted: isDark ? "#8b9ab0" : "#64748b",
-    inputBg: isDark ? "#1e293b" : "#f1f5f9",
-    cardBg: isDark ? "#0a0a0a" : "#ffffff",
-    pageBg: isDark ? "#000000" : "#f8fafc",
-    hoverBg: isDark ? "rgba(255,255,255,0.06)" : "rgba(0,0,0,0.04)",
-    todayBg: isDark ? "#0e5cff" : "#0e5cff",
-    blue: "#0e5cff",
-    green: "#22c55e",
-    red: "#ef4444",
-    yellow: "#eab308",
-    purple: "#a78bfa",
+    ...base,
+    border: '#e2e8f0',
+    text: '#0f172a',
+    textMuted: '#64748b',
+    inputBg: '#f1f5f9',
+    cardBg: '#ffffff',
+    pageBg: '#f8fafc',
+    hoverBg: 'rgba(0, 0, 0, 0.05)',
+    headerGlassBg: 'rgba(255, 255, 255, 0.78)',
+    headerBorderBottom: '1px solid rgba(15, 23, 42, 0.08)',
+    headerTopLine: 'rgba(15, 23, 42, 0.06)',
+    searchBg: 'linear-gradient(145deg, #ffffff, #f1f5f9)',
+    searchInset: 'inset 0 1px 2px rgba(255, 255, 255, 0.95)',
+    searchBorderIdle: '1px solid rgba(148, 163, 184, 0.28)',
+    searchBorderFocus: '1px solid rgba(14, 92, 255, 0.45)',
+    searchGlowFocus: '0 0 0 3px rgba(14, 92, 255, 0.16), 0 0 18px rgba(14, 92, 255, 0.1)',
+    topbarIconBg: 'rgba(255, 255, 255, 0.92)',
+    topbarIconBorder: 'rgba(148, 163, 184, 0.35)',
+    topbarIconInset: 'inset 0 1px 0 rgba(255, 255, 255, 0.98)',
+    datePillBg: 'rgba(15, 23, 42, 0.04)',
+    datePillBgHover: 'rgba(15, 23, 42, 0.08)',
+    datePillBorder: '1px solid rgba(148, 163, 184, 0.32)',
+    profileBg: 'rgba(255, 255, 255, 0.92)',
+    profileBorder: 'rgba(15, 23, 42, 0.1)',
+    profileHoverGlow: '0 0 0 1px rgba(14, 92, 255, 0.32), 0 8px 22px rgba(15, 23, 42, 0.08)',
+    avatarStatusRing: '#ffffff',
   };
 };
+
+/** Circular header control: soft pill, icon opacity / scale on hover & press */
+function TopbarIconButton({ ariaLabel, onClick, colors: c, notificationDot, active, children }) {
+  const [hover, setHover] = useState(false);
+  const [down, setDown] = useState(false);
+  const scale = down ? 0.96 : hover ? 1.08 : 1;
+  const ring = active ? `, 0 0 0 2px rgba(14, 92, 255, 0.28)` : '';
+  return (
+    <button
+      type="button"
+      aria-label={ariaLabel}
+      onClick={onClick}
+      onMouseEnter={() => setHover(true)}
+      onMouseLeave={() => {
+        setHover(false);
+        setDown(false);
+      }}
+      onMouseDown={() => setDown(true)}
+      onMouseUp={() => setDown(false)}
+      style={{
+        background: c.topbarIconBg,
+        border: `1px solid ${c.topbarIconBorder}`,
+        borderRadius: 9999,
+        padding: 10,
+        cursor: 'pointer',
+        color: c.textMuted,
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        position: 'relative',
+        flexShrink: 0,
+        transition: TOPBAR_TRANSITION,
+        boxShadow: `${c.topbarIconInset}${ring}`,
+      }}
+    >
+      <span
+        style={{
+          display: 'inline-flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          opacity: hover ? 1 : 0.7,
+          transform: `scale(${scale})`,
+          transition: TOPBAR_TRANSITION,
+          color: 'inherit',
+        }}
+      >
+        {children}
+      </span>
+      {notificationDot ? (
+        <span
+          aria-hidden
+          style={{
+            position: 'absolute',
+            top: 6,
+            right: 6,
+            width: 6,
+            height: 6,
+            background: '#ef4444',
+            borderRadius: '50%',
+            boxShadow: '0 0 6px rgba(239, 68, 68, 0.6)',
+            pointerEvents: 'none',
+          }}
+        />
+      ) : null}
+    </button>
+  );
+}
 
 const MiniCalendar = ({ colors, onClose }) => {
   const c = colors;
@@ -561,6 +682,8 @@ const Topbar = () => {
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const [userMenuPos, setUserMenuPos] = useState({ top: 0, left: 0, width: 224 });
   const [userChipHover, setUserChipHover] = useState(false);
+  const [searchInputFocused, setSearchInputFocused] = useState(false);
+  const [dateHover, setDateHover] = useState(false);
   const calendarRef = useRef(null);
   const searchRef = useRef(null);
   const inputRef = useRef(null);
@@ -649,16 +772,41 @@ const Topbar = () => {
     inputRef.current?.focus();
   };
 
+  const searchRimActive = searchInputFocused;
+
   return (
     <header
-      className="border-b border-border/70 max-lg:px-4 max-lg:pb-3 max-lg:min-h-[60px] lg:border-b-0 lg:px-5 lg:pr-10 lg:pt-5 lg:pb-3"
+      className="max-lg:min-h-[56px]"
       style={{
-        background: c.pageBg,
-        paddingTop: isMobile ? 'max(12px, env(safe-area-inset-top, 0px))' : undefined,
+        position: 'relative',
+        isolation: 'isolate',
+        background: c.headerGlassBg,
+        backdropFilter: 'blur(12px)',
+        WebkitBackdropFilter: 'blur(12px)',
+        borderBottom: c.headerBorderBottom,
+        boxSizing: 'border-box',
+        padding: isMobile
+          ? `max(10px, env(safe-area-inset-top, 0px)) 16px 10px 16px`
+          : '10px 16px',
       }}
     >
       <div
+        aria-hidden
         style={{
+          position: 'absolute',
+          top: 0,
+          left: 0,
+          right: 0,
+          height: 1,
+          background: c.headerTopLine,
+          zIndex: 0,
+          pointerEvents: 'none',
+        }}
+      />
+      <div
+        style={{
+          position: 'relative',
+          zIndex: 1,
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between',
@@ -666,30 +814,14 @@ const Topbar = () => {
         }}
       >
         {isMobile && (
-          <button
-            type="button"
-            aria-label="Open menu"
-            onClick={openMobileDrawer}
-            style={{
-              background: c.cardBg,
-              border: `1px solid ${c.border}`,
-              borderRadius: 50,
-              padding: 10,
-              cursor: 'pointer',
-              color: c.textMuted,
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              flexShrink: 0,
-            }}
-          >
+          <TopbarIconButton ariaLabel="Open menu" onClick={openMobileDrawer} colors={c}>
             <Menu size={20} />
-          </button>
+          </TopbarIconButton>
         )}
         {/* Search */}
         <div ref={searchRef} style={{ position: 'relative', flex: 1, maxWidth: 420, minWidth: 0 }}>
-          <Search 
-            size={16} 
+          <Search
+            size={16}
             style={{
               position: 'absolute',
               left: 12,
@@ -697,6 +829,8 @@ const Topbar = () => {
               transform: 'translateY(-50%)',
               color: c.textMuted,
               pointerEvents: 'none',
+              opacity: searchRimActive ? 1 : 0.7,
+              transition: TOPBAR_TRANSITION,
             }}
           />
           <input
@@ -705,21 +839,26 @@ const Topbar = () => {
             placeholder={isMobile ? 'Search…' : 'Search clients, invoices, payments...'}
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            onFocus={handleSearchFocus}
+            onFocus={(e) => {
+              handleSearchFocus();
+              setSearchInputFocused(true);
+            }}
+            onBlur={() => setSearchInputFocused(false)}
             style={{
               width: '100%',
               paddingLeft: 38,
               paddingRight: 70,
               paddingTop: 10,
               paddingBottom: 10,
-              background: c.inputBg,
-              border: `1px solid ${searchOpen ? c.blue : c.border}`,
-              borderRadius: 50,
+              background: c.searchBg,
+              border: searchRimActive ? c.searchBorderFocus : c.searchBorderIdle,
+              borderRadius: 9999,
               fontSize: 14,
               color: c.text,
               outline: 'none',
               fontFamily: "'Inter', sans-serif",
-              transition: 'border-color 0.2s',
+              transition: TOPBAR_TRANSITION,
+              boxShadow: searchRimActive ? `${c.searchInset}, ${c.searchGlowFocus}` : c.searchInset,
             }}
           />
           {/* Keyboard shortcut hint (desktop) */}
@@ -734,29 +873,42 @@ const Topbar = () => {
               gap: 2,
               pointerEvents: 'none',
             }}>
-              <kbd style={{ 
-                background: c.hoverBg, 
-                border: `1px solid ${c.border}`, 
-                borderRadius: 4, 
-                padding: '2px 5px', 
-                fontSize: 10, 
-                color: c.textMuted,
-                fontFamily: 'system-ui, sans-serif',
-              }}>⌘</kbd>
-              <kbd style={{ 
-                background: c.hoverBg, 
-                border: `1px solid ${c.border}`, 
-                borderRadius: 4, 
-                padding: '2px 5px', 
-                fontSize: 10, 
-                color: c.textMuted,
-                fontFamily: 'system-ui, sans-serif',
-              }}>K</kbd>
+              <kbd
+                style={{
+                  background: c.topbarIconBg,
+                  border: `1px solid ${c.topbarIconBorder}`,
+                  borderRadius: 4,
+                  padding: '2px 5px',
+                  fontSize: 10,
+                  color: c.textMuted,
+                  fontFamily: 'system-ui, sans-serif',
+                  opacity: 0.75,
+                  transition: TOPBAR_TRANSITION,
+                }}
+              >
+                ⌘
+              </kbd>
+              <kbd
+                style={{
+                  background: c.topbarIconBg,
+                  border: `1px solid ${c.topbarIconBorder}`,
+                  borderRadius: 4,
+                  padding: '2px 5px',
+                  fontSize: 10,
+                  color: c.textMuted,
+                  fontFamily: 'system-ui, sans-serif',
+                  opacity: 0.75,
+                  transition: TOPBAR_TRANSITION,
+                }}
+              >
+                K
+              </kbd>
             </div>
           )}
           {/* Clear button */}
           {searchOpen && searchQuery && (
             <button
+              type="button"
               onClick={() => {
                 setSearchQuery('');
                 inputRef.current?.focus();
@@ -774,6 +926,15 @@ const Topbar = () => {
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
+                borderRadius: 8,
+                opacity: 0.7,
+                transition: TOPBAR_TRANSITION,
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.opacity = '1';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.opacity = '0.7';
               }}
             >
               <X size={14} />
@@ -794,67 +955,51 @@ const Topbar = () => {
         </div>
 
         {/* Right side — date, calendar, notifications, account (must not shrink behind search) */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexShrink: 0 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexShrink: 0 }}>
           {/* Date */}
-          <div 
-            style={{ 
-              background: c.cardBg,
-              border: `1px solid ${c.border}`,
-              borderRadius: 50,
-              padding: '8px 18px',
-              display: 'none',
+          <button
+            type="button"
+            className="hidden sm:inline-flex items-center"
+            onMouseEnter={() => setDateHover(true)}
+            onMouseLeave={() => setDateHover(false)}
+            style={{
+              background: dateHover ? c.datePillBgHover : c.datePillBg,
+              border: c.datePillBorder,
+              borderRadius: 9999,
+              padding: '6px 12px',
+              cursor: 'default',
+              transition: TOPBAR_TRANSITION,
             }}
-            className="sm:!flex"
           >
-            <span style={{ 
-              color: c.textMuted, 
-              fontSize: 13, 
-              fontWeight: 500,
-              whiteSpace: 'nowrap',
-            }}>
-              {formatDate()}
-            </span>
-          </div>
-
-          {/* Calendar Icon */}
-          <div ref={calendarRef} style={{ position: 'relative' }}>
-            <button
-              onClick={() => setCalendarOpen(!calendarOpen)}
+            <span
               style={{
-                background: c.cardBg,
-                border: `1px solid ${c.border}`,
-                borderRadius: 50,
-                padding: 10,
-                cursor: 'pointer',
                 color: c.textMuted,
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
+                fontSize: 13,
+                fontWeight: 500,
+                whiteSpace: 'nowrap',
               }}
             >
+              {formatDate()}
+            </span>
+          </button>
+
+          {/* Calendar */}
+          <div ref={calendarRef} style={{ position: 'relative' }}>
+            <TopbarIconButton
+              ariaLabel={calendarOpen ? 'Close calendar' : 'Open calendar'}
+              onClick={() => setCalendarOpen(!calendarOpen)}
+              colors={c}
+              active={calendarOpen}
+            >
               <Calendar size={18} />
-            </button>
+            </TopbarIconButton>
             {calendarOpen && <MiniCalendar colors={c} onClose={() => setCalendarOpen(false)} />}
           </div>
 
-          {/* Notification Icon */}
-          <button
-            type="button"
-            style={{
-              background: c.cardBg,
-              border: `1px solid ${c.border}`,
-              borderRadius: 50,
-              padding: 10,
-              cursor: 'pointer',
-              color: c.textMuted,
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              position: 'relative',
-            }}
-          >
+          {/* Notifications */}
+          <TopbarIconButton ariaLabel="Notifications" onClick={() => {}} colors={c} notificationDot>
             <Bell size={18} />
-          </button>
+          </TopbarIconButton>
 
           {/* Account */}
           <div ref={userTriggerRef} style={{ position: 'relative', flexShrink: 0 }}>
@@ -873,9 +1018,10 @@ const Topbar = () => {
                 padding: '6px 10px 6px 6px',
                 borderRadius: 12,
                 cursor: 'pointer',
-                background: userMenuOpen || userChipHover ? c.hoverBg : c.cardBg,
-                border: `1px solid ${c.border}`,
-                transition: 'background 0.15s',
+                background: userMenuOpen || userChipHover ? c.hoverBg : c.profileBg,
+                border: `1px solid ${c.profileBorder}`,
+                boxShadow: userMenuOpen || userChipHover ? c.profileHoverGlow : 'none',
+                transition: TOPBAR_TRANSITION,
                 maxWidth: isMobile ? 200 : 280,
               }}
             >
@@ -907,7 +1053,7 @@ const Topbar = () => {
                     height: 10,
                     background: '#22c55e',
                     borderRadius: '50%',
-                    border: `2px solid ${c.cardBg}`,
+                    border: `2px solid ${c.avatarStatusRing}`,
                   }}
                 />
               </div>
@@ -939,7 +1085,15 @@ const Topbar = () => {
                   {user?.email}
                 </div>
               </div>
-              <ChevronsUpDown size={16} style={{ color: c.textMuted, flexShrink: 0 }} />
+              <ChevronsUpDown
+                size={16}
+                style={{
+                  color: c.textMuted,
+                  flexShrink: 0,
+                  opacity: userChipHover || userMenuOpen ? 1 : 0.7,
+                  transition: TOPBAR_TRANSITION,
+                }}
+              />
             </button>
 
             {userMenuOpen &&

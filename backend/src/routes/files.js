@@ -7,16 +7,20 @@ import pool from '../config/db.js';
 import { authMiddleware } from '../middleware/auth.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const UPLOADS_DIR_ENV = process.env.UPLOADS_DIR != null ? String(process.env.UPLOADS_DIR).trim() : '';
 /** Persistent disk path (required in Docker/production). Default: backend/uploads next to this package. */
-const UPLOADS_ROOT = (() => {
-  const raw = process.env.UPLOADS_DIR != null ? String(process.env.UPLOADS_DIR).trim() : '';
-  if (raw) return path.resolve(raw);
-  return path.join(__dirname, '..', '..', 'uploads');
-})();
+const UPLOADS_ROOT = UPLOADS_DIR_ENV
+  ? path.resolve(UPLOADS_DIR_ENV)
+  : path.join(__dirname, '..', '..', 'uploads');
 const MAX_BYTES = 52 * 1024 * 1024;
 
 if (process.env.NODE_ENV !== 'test') {
   console.log('[files] UPLOADS_ROOT =', UPLOADS_ROOT);
+  if (process.env.NODE_ENV === 'production' && !UPLOADS_DIR_ENV) {
+    console.warn(
+      '[files] UPLOADS_DIR is not set. New uploads go under the app tree and are usually wiped on container redeploy. Set UPLOADS_DIR to a host-mounted or named volume path (see .env.example, docker-compose.uploads.example.yml).',
+    );
+  }
 }
 
 const ensureUploadsRoot = () => {

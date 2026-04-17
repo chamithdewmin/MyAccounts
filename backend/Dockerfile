@@ -7,8 +7,9 @@ RUN npm ci --omit=dev
 
 COPY . .
 
-# File uploads default to backend/uploads. For Docker/production, set UPLOADS_DIR to a mounted path, e.g.:
+# File uploads: set UPLOADS_DIR to a mounted path or uploads are lost on redeploy. Example:
 #   -e UPLOADS_DIR=/data/uploads -v myaccounts_uploads:/data/uploads
+# See docker-compose.uploads.example.yml and .env.example
 
 EXPOSE 5000
 

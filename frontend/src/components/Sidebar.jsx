@@ -1,12 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { useNavigate } from 'react-router-dom';
 import {
   Receipt,
   FileText,
   Users,
-  User,
   UserPlus,
   MessageSquare,
   Bell,
@@ -17,23 +15,19 @@ import {
   ChevronDown,
   ChevronLeft,
   ChevronRight,
-  ChevronsUpDown,
   CreditCard,
   Sparkles,
-  LogOut,
   LayoutDashboard,
   Calendar,
   Activity,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/contexts/AuthContext';
-import { useFinance } from '@/contexts/FinanceContext';
 import sidebarIcon from '@/assets/logozopos.png';
 import {
   Sidebar as SidebarRoot,
   SidebarHeader,
   SidebarContent,
-  SidebarFooter,
   SidebarMenu,
   SidebarMenuItem,
   SidebarMenuSub,
@@ -42,13 +36,6 @@ import {
   SidebarGroupLabel,
   useSidebar,
 } from '@/components/ui/sidebar';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
-import { AvatarLabelGroup, AvatarWithStatus, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 
 const reportSubItems = [
   { to: '/reports/overview', label: 'Overview Reports' },
@@ -181,18 +168,11 @@ function ExpandableNavItem({ item }) {
 }
 
 export default function Sidebar() {
-  const { user, logout } = useAuth();
-  const navigate = useNavigate();
-  const { settings } = useFinance();
+  const { user } = useAuth();
   const { open, setOpen, collapsed, toggleCollapsed } = useSidebar();
   const canManageUsers =
     String(user?.role || '').toLowerCase() === 'admin' ||
     String(user?.email || '').toLowerCase().trim() === ADMIN_EMAIL;
-
-  const handleLogout = () => {
-    logout();
-    navigate('/login');
-  };
 
   return (
     <>
@@ -275,47 +255,6 @@ export default function Sidebar() {
             })}
           </SidebarMenu>
         </SidebarContent>
-
-        <SidebarFooter>
-          <DropdownMenu>
-            <DropdownMenuTrigger className={cn(
-              'flex w-full min-w-0 items-center gap-2.5 rounded-lg p-2 hover:bg-secondary transition-colors touch-manipulation outline-none focus-visible:ring-2 focus-visible:ring-ring',
-              collapsed && 'justify-center'
-            )}>
-              <AvatarWithStatus online className="h-7 w-7 shrink-0">
-                {settings?.profileAvatar && <AvatarImage src={settings.profileAvatar} alt="Profile" />}
-                <AvatarFallback className="text-xs">{(user?.name || 'U').charAt(0).toUpperCase()}</AvatarFallback>
-              </AvatarWithStatus>
-              {!collapsed && (
-                <div className="sidebar-label min-w-0 flex-1 text-left">
-                  <div className="text-sm font-semibold text-foreground truncate">{user?.name || 'User'}</div>
-                  <div className="text-xs text-muted-foreground truncate">{user?.email}</div>
-                </div>
-              )}
-              {!collapsed && <ChevronsUpDown className="h-4 w-4 shrink-0 text-muted-foreground" />}
-            </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" side="top" className="w-56 p-2">
-                  <div className="px-3 py-2 mb-1 border-b border-border">
-                    <p className="text-sm font-semibold text-foreground">My Account</p>
-                    <p className="text-xs text-muted-foreground truncate">{user?.email}</p>
-                  </div>
-                  <DropdownMenuItem
-                    onClick={() => { setOpen(false); navigate('/profile'); }}
-                    className="rounded-md px-3 py-2.5 cursor-pointer focus:bg-secondary flex items-center gap-2"
-                  >
-                    <User className="w-4 h-4 shrink-0" />
-                    Profile
-                  </DropdownMenuItem>
-                  <DropdownMenuItem
-                    onClick={handleLogout}
-                    className="rounded-md px-3 py-2.5 cursor-pointer focus:bg-secondary flex items-center gap-2"
-                  >
-                    <LogOut className="w-4 h-4 shrink-0" />
-                    Log out
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
-        </SidebarFooter>
       </SidebarRoot>
     </>
   );

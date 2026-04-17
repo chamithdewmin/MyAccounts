@@ -2,13 +2,11 @@ import { useState, useEffect, useCallback, createContext, useContext } from "rea
 import { createPortal } from "react-dom";
 import { NavLink, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
-import { useFinance } from "@/contexts/FinanceContext";
 import sidebarIcon from "@/assets/logozopos.png";
 import {
   Receipt,
   FileText,
   Users,
-  User,
   UserPlus,
   MessageSquare,
   Bell,
@@ -17,11 +15,9 @@ import {
   Settings,
   CreditCard,
   Sparkles,
-  LogOut,
   LayoutDashboard,
   Calendar,
   ChevronDown,
-  ChevronsUpDown,
   Menu,
   X,
   Database,
@@ -361,8 +357,7 @@ export function SidebarProvider({ children }) {
 }
 
 export default function SidebarNew() {
-  const { user, logout } = useAuth();
-  const { settings } = useFinance();
+  const { user } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   const { collapsed, setCollapsed, colors, isMobile, mobileDrawerOpen, closeMobileDrawer } =
@@ -372,19 +367,12 @@ export default function SidebarNew() {
 
   const [analyticsOpen, setAnalyticsOpen] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
-  const [hoverUser, setHoverUser] = useState(false);
-  const [userMenuOpen, setUserMenuOpen] = useState(false);
   const [hoverToggle, setHoverToggle] = useState(false);
   const [miniSubmenu, setMiniSubmenu] = useState(null); // { title, items: Array<{to,label,icon?,adminOnly?}>, pos: {top,left,width} }
 
   const canManageUsers =
     String(user?.role || "").toLowerCase() === "admin" ||
     String(user?.email || "").toLowerCase().trim() === ADMIN_EMAIL;
-
-  const handleLogout = () => {
-    logout();
-    navigate("/login");
-  };
 
   useEffect(() => {
     if (location.pathname.startsWith("/reports")) {
@@ -766,145 +754,6 @@ export default function SidebarNew() {
             );
           })}
         </nav>
-
-        {/* User */}
-        <div style={{ padding: 10, borderTop: `1px solid ${c.border}`, position: "relative" }}>
-          {/* Popup Menu */}
-          {userMenuOpen && (
-            typeof document !== "undefined"
-              ? createPortal(
-                  <>
-                    <div
-                      onClick={() => setUserMenuOpen(false)}
-                      style={{ position: "fixed", inset: 0, zIndex: 998 }}
-                    />
-                    <div
-                      style={{
-                        position: "fixed",
-                        bottom: 80,
-                        left: 20,
-                        width: effectiveCollapsed ? 220 : currentWidth - 30,
-                        background: c.bg,
-                        border: `1px solid ${c.border}`,
-                        borderRadius: 10,
-                        padding: 4,
-                        zIndex: 999,
-                        boxShadow: "0 8px 32px rgba(0,0,0,0.15)",
-                      }}
-                    >
-                      <div style={{ padding: "10px 12px 8px" }}>
-                        <div style={{ fontSize: 13, fontWeight: 600, color: c.text }}>My Account</div>
-                        <div style={{ fontSize: 12, color: c.textMuted, marginTop: 2, wordBreak: "break-all" }}>{user?.email}</div>
-                      </div>
-                      <div style={{ height: 1, background: c.divider, margin: "4px 0" }} />
-                      <MenuPopupItem
-                        icon={<User size={16} />}
-                        label="Profile"
-                        onClick={() => {
-                          setUserMenuOpen(false);
-                          navigate("/profile");
-                        }}
-                        colors={c}
-                      />
-                      <MenuPopupItem
-                        icon={<LogOut size={16} />}
-                        label="Log out"
-                        onClick={() => {
-                          setUserMenuOpen(false);
-                          handleLogout();
-                        }}
-                        colors={c}
-                      />
-                    </div>
-                  </>,
-                  document.body
-                )
-              : null
-          )}
-
-          <div
-            onClick={() => setUserMenuOpen((o) => !o)}
-            onMouseEnter={() => setHoverUser(true)}
-            onMouseLeave={() => setHoverUser(false)}
-            style={{
-              display: "flex",
-              alignItems: "center",
-              gap: 10,
-              padding: 10,
-              borderRadius: 8,
-              cursor: "pointer",
-              background: userMenuOpen || hoverUser ? c.hoverBg : "transparent",
-              transition: "background 0.2s",
-              overflow: "hidden",
-              justifyContent: effectiveCollapsed ? "center" : "flex-start",
-            }}
-          >
-            <div
-              style={{
-                width: 36,
-                height: 36,
-                borderRadius: "50%",
-                background: settings?.profileAvatar
-                  ? `url(${settings.profileAvatar}) center/cover`
-                  : "linear-gradient(135deg, #0e5cff, #0839a3)",
-                flexShrink: 0,
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                fontSize: 13,
-                fontWeight: 600,
-                color: "#fff",
-                position: "relative",
-              }}
-            >
-              {!settings?.profileAvatar && (user?.name || "U").charAt(0).toUpperCase()}
-              <div
-                style={{
-                  position: "absolute",
-                  bottom: 0,
-                  right: 0,
-                  width: 10,
-                  height: 10,
-                  background: "#22c55e",
-                  borderRadius: "50%",
-                  border: `2px solid ${c.bg}`,
-                }}
-              />
-            </div>
-            {!effectiveCollapsed && (
-              <>
-                <div style={{ flex: 1, overflow: "hidden" }}>
-                  <div
-                    style={{
-                      fontSize: 13,
-                      fontWeight: 500,
-                      color: c.text,
-                      whiteSpace: "nowrap",
-                      overflow: "hidden",
-                      textOverflow: "ellipsis",
-                    }}
-                  >
-                    {user?.name || "User"}
-                  </div>
-                  <div
-                    style={{
-                      fontSize: 11,
-                      color: c.textMuted,
-                      whiteSpace: "nowrap",
-                      overflow: "hidden",
-                      textOverflow: "ellipsis",
-                    }}
-                  >
-                    {user?.email}
-                  </div>
-                </div>
-                <span style={{ color: c.textMuted, flexShrink: 0 }}>
-                  <ChevronsUpDown size={16} />
-                </span>
-              </>
-            )}
-          </div>
-        </div>
       </div>
 
       {/* Collapsed submenu popup (portal so it won't be clipped) */}

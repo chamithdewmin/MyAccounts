@@ -1,7 +1,26 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useLayoutEffect, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import { useNavigate } from 'react-router-dom';
-import { Search, Calendar, Bell, ChevronLeft, ChevronRight, FileText, Users, Receipt, CreditCard, X, Clock, ArrowRight, Menu } from 'lucide-react';
+import {
+  Search,
+  Calendar,
+  Bell,
+  ChevronLeft,
+  ChevronRight,
+  FileText,
+  Users,
+  Receipt,
+  CreditCard,
+  X,
+  Clock,
+  ArrowRight,
+  Menu,
+  ChevronsUpDown,
+  User,
+  LogOut,
+} from 'lucide-react';
 import { useFinance } from '@/contexts/FinanceContext';
+import { useAuth } from '@/contexts/AuthContext';
 import { useSidebarState } from '@/components/SidebarNew';
 
 const getColors = () => {
@@ -531,15 +550,41 @@ const SearchResults = ({ query, colors, onClose, onSelect }) => {
 };
 
 const Topbar = () => {
-  const { isMobile, openMobileDrawer } = useSidebarState();
+  const { user, logout } = useAuth();
+  const { settings } = useFinance();
+  const navigate = useNavigate();
+  const { isMobile, openMobileDrawer, closeMobileDrawer } = useSidebarState();
   const [searchQuery, setSearchQuery] = useState('');
   const [colors, setColors] = useState(getColors);
   const [calendarOpen, setCalendarOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
+  const [userMenuOpen, setUserMenuOpen] = useState(false);
+  const [userMenuPos, setUserMenuPos] = useState({ top: 0, left: 0, width: 224 });
+  const [userChipHover, setUserChipHover] = useState(false);
   const calendarRef = useRef(null);
   const searchRef = useRef(null);
   const inputRef = useRef(null);
+  const userTriggerRef = useRef(null);
+  const userDropdownRef = useRef(null);
   const c = colors;
+
+  const MENU_W = 224;
+
+  const handleLogout = () => {
+    setUserMenuOpen(false);
+    logout();
+    navigate('/login');
+  };
+
+  useLayoutEffect(() => {
+    if (!userMenuOpen || !userTriggerRef.current) return;
+    const r = userTriggerRef.current.getBoundingClientRect();
+    const left = Math.min(
+      Math.max(12, r.right - MENU_W),
+      (typeof window !== 'undefined' ? window.innerWidth : 0) - MENU_W - 12
+    );
+    setUserMenuPos({ top: r.bottom + 8, left, width: MENU_W });
+  }, [userMenuOpen]);
 
   useEffect(() => {
     const updateColors = () => setColors(getColors());
@@ -559,6 +604,7 @@ const Topbar = () => {
         setSearchOpen(false);
         setSearchQuery('');
         inputRef.current?.blur();
+        setUserMenuOpen(false);
       }
     };
     window.addEventListener('keydown', handleKeyDown);
@@ -567,16 +613,22 @@ const Topbar = () => {
 
   useEffect(() => {
     const handleClickOutside = (event) => {
-      if (calendarRef.current && !calendarRef.current.contains(event.target)) {
+      const target = event.target;
+      if (calendarRef.current && !calendarRef.current.contains(target)) {
         setCalendarOpen(false);
       }
-      if (searchRef.current && !searchRef.current.contains(event.target)) {
+      if (searchRef.current && !searchRef.current.contains(target)) {
         setSearchOpen(false);
+      }
+      if (userMenuOpen) {
+        const inTrigger = userTriggerRef.current?.contains(target);
+        const inMenu = userDropdownRef.current?.contains(target);
+        if (!inTrigger && !inMenu) setUserMenuOpen(false);
       }
     };
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, []);
+  }, [userMenuOpen]);
 
   const formatDate = () => {
     const now = new Date();
@@ -741,8 +793,8 @@ const Topbar = () => {
           )}
         </div>
 
-        {/* Right side - Date, Icons */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+        {/* Right side — date, calendar, notifications, account (must not shrink behind search) */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexShrink: 0 }}>
           {/* Date */}
           <div 
             style={{ 
@@ -787,6 +839,7 @@ const Topbar = () => {
 
           {/* Notification Icon */}
           <button
+            type="button"
             style={{
               background: c.cardBg,
               border: `1px solid ${c.border}`,
@@ -802,6 +855,198 @@ const Topbar = () => {
           >
             <Bell size={18} />
           </button>
+
+          {/* Account */}
+          <div ref={userTriggerRef} style={{ position: 'relative', flexShrink: 0 }}>
+            <button
+              type="button"
+              aria-expanded={userMenuOpen}
+              aria-haspopup="menu"
+              aria-label="Account menu"
+              onClick={() => setUserMenuOpen((o) => !o)}
+              onMouseEnter={() => setUserChipHover(true)}
+              onMouseLeave={() => setUserChipHover(false)}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: 10,
+                padding: '6px 10px 6px 6px',
+                borderRadius: 12,
+                cursor: 'pointer',
+                background: userMenuOpen || userChipHover ? c.hoverBg : c.cardBg,
+                border: `1px solid ${c.border}`,
+                transition: 'background 0.15s',
+                maxWidth: isMobile ? 200 : 280,
+              }}
+            >
+              <div
+                style={{
+                  width: 34,
+                  height: 34,
+                  borderRadius: '50%',
+                  background: settings?.profileAvatar
+                    ? `url(${settings.profileAvatar}) center/cover`
+                    : 'linear-gradient(135deg, #0e5cff, #0839a3)',
+                  flexShrink: 0,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  fontSize: 13,
+                  fontWeight: 600,
+                  color: '#fff',
+                  position: 'relative',
+                }}
+              >
+                {!settings?.profileAvatar && (user?.name || 'U').charAt(0).toUpperCase()}
+                <div
+                  style={{
+                    position: 'absolute',
+                    bottom: 0,
+                    right: 0,
+                    width: 10,
+                    height: 10,
+                    background: '#22c55e',
+                    borderRadius: '50%',
+                    border: `2px solid ${c.cardBg}`,
+                  }}
+                />
+              </div>
+              <div
+                className="min-w-0 text-left hidden min-[480px]:block"
+                style={{ flex: 1, overflow: 'hidden' }}
+              >
+                <div
+                  style={{
+                    fontSize: 13,
+                    fontWeight: 600,
+                    color: c.text,
+                    whiteSpace: 'nowrap',
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis',
+                  }}
+                >
+                  {user?.name || 'User'}
+                </div>
+                <div
+                  style={{
+                    fontSize: 11,
+                    color: c.textMuted,
+                    whiteSpace: 'nowrap',
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis',
+                  }}
+                >
+                  {user?.email}
+                </div>
+              </div>
+              <ChevronsUpDown size={16} style={{ color: c.textMuted, flexShrink: 0 }} />
+            </button>
+
+            {userMenuOpen &&
+              typeof document !== 'undefined' &&
+              createPortal(
+                <>
+                  <div
+                    role="presentation"
+                    aria-hidden
+                    onClick={() => setUserMenuOpen(false)}
+                    style={{ position: 'fixed', inset: 0, zIndex: 109 }}
+                  />
+                  <div
+                    ref={userDropdownRef}
+                    role="menu"
+                    style={{
+                      position: 'fixed',
+                      top: userMenuPos.top,
+                      left: userMenuPos.left,
+                      width: userMenuPos.width,
+                      background: c.cardBg,
+                      border: `1px solid ${c.border}`,
+                      borderRadius: 12,
+                      padding: 4,
+                      zIndex: 110,
+                      boxShadow: '0 12px 40px rgba(0,0,0,0.22)',
+                    }}
+                  >
+                    <div style={{ padding: '10px 12px 8px' }}>
+                      <div style={{ fontSize: 13, fontWeight: 600, color: c.text }}>My Account</div>
+                      <div
+                        style={{
+                          fontSize: 12,
+                          color: c.textMuted,
+                          marginTop: 2,
+                          wordBreak: 'break-all',
+                        }}
+                      >
+                        {user?.email}
+                      </div>
+                    </div>
+                    <div style={{ height: 1, background: c.border, margin: '4px 0' }} />
+                    <button
+                      type="button"
+                      role="menuitem"
+                      onClick={() => {
+                        setUserMenuOpen(false);
+                        closeMobileDrawer();
+                        navigate('/profile');
+                      }}
+                      style={{
+                        display: 'flex',
+                        width: '100%',
+                        alignItems: 'center',
+                        gap: 10,
+                        padding: '10px 12px',
+                        borderRadius: 8,
+                        border: 'none',
+                        cursor: 'pointer',
+                        background: 'transparent',
+                        color: c.text,
+                        fontSize: 14,
+                        textAlign: 'left',
+                      }}
+                      onMouseEnter={(e) => {
+                        e.currentTarget.style.background = c.hoverBg;
+                      }}
+                      onMouseLeave={(e) => {
+                        e.currentTarget.style.background = 'transparent';
+                      }}
+                    >
+                      <User size={16} style={{ flexShrink: 0 }} />
+                      Profile
+                    </button>
+                    <button
+                      type="button"
+                      role="menuitem"
+                      onClick={handleLogout}
+                      style={{
+                        display: 'flex',
+                        width: '100%',
+                        alignItems: 'center',
+                        gap: 10,
+                        padding: '10px 12px',
+                        borderRadius: 8,
+                        border: 'none',
+                        cursor: 'pointer',
+                        background: 'transparent',
+                        color: c.text,
+                        fontSize: 14,
+                        textAlign: 'left',
+                      }}
+                      onMouseEnter={(e) => {
+                        e.currentTarget.style.background = c.hoverBg;
+                      }}
+                      onMouseLeave={(e) => {
+                        e.currentTarget.style.background = 'transparent';
+                      }}
+                    >
+                      <LogOut size={16} style={{ flexShrink: 0 }} />
+                      Log out
+                    </button>
+                  </div>
+                </>,
+                document.body
+              )}
+          </div>
         </div>
       </div>
     </header>

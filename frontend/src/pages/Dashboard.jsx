@@ -1,5 +1,4 @@
 import { useState, useMemo, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
 import {
   BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer,
   Cell, PieChart, Pie
@@ -11,7 +10,6 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/components/ui/use-toast";
 import { useIsMobileLayout } from "@/hooks/useIsMobileLayout";
-import { api } from "@/lib/api";
 
 // ─── THEME-AWARE COLORS ───────────────────────────────────────────────────────
 const getThemeColors = () => {
@@ -292,20 +290,11 @@ function isDateInRange(dateStr, start, end) {
   return d >= s && d <= e;
 }
 
-function formatStorageBytes(n) {
-  const v = Number(n) || 0;
-  if (v < 1024) return `${v} B`;
-  if (v < 1024 * 1024) return `${(v / 1024).toFixed(1)} KB`;
-  if (v < 1024 * 1024 * 1024) return `${(v / (1024 * 1024)).toFixed(1)} MB`;
-  return `${(v / (1024 * 1024 * 1024)).toFixed(2)} GB`;
-}
-
 // ─── MAIN DASHBOARD ───────────────────────────────────────────────────────────
 export default function FinanceDashboard() {
   const { incomes, expenses, totals, settings, addTransfer, loadData } = useFinance();
   const { user } = useAuth();
   const { toast } = useToast();
-  const navigate = useNavigate();
   const [dateRange, setDateRange] = useState("month");
   const [activeBar, setActiveBar] = useState(null);
   const [currentCard, setCurrentCard] = useState(0);
@@ -317,26 +306,10 @@ export default function FinanceDashboard() {
   const [transferAmount, setTransferAmount] = useState("");
   const [themeKey, setThemeKey] = useState(0);
   const isMobileLayout = useIsMobileLayout();
-  const [storageOverview, setStorageOverview] = useState(null);
 
   useEffect(() => {
     document.body.classList.add("dashboard-page");
     return () => document.body.classList.remove("dashboard-page");
-  }, []);
-
-  useEffect(() => {
-    let cancelled = false;
-    api.storage
-      .overview()
-      .then((d) => {
-        if (!cancelled) setStorageOverview(d);
-      })
-      .catch(() => {
-        if (!cancelled) setStorageOverview(null);
-      });
-    return () => {
-      cancelled = true;
-    };
   }, []);
 
   useEffect(() => {
@@ -767,27 +740,6 @@ export default function FinanceDashboard() {
           badge={statPercentages.pending !== "0.00" ? `${statPercentages.pending}%` : null}
           badgeColor="red"
         />
-        {storageOverview && storageOverview.quotaBytes > 0 ? (
-          <StatCard
-            icon="💾"
-            iconBg="rgba(56,189,248,0.2)"
-            label="Storage overview"
-            value={formatStorageBytes(storageOverview.totalBytes)}
-            sub={`of ${formatStorageBytes(storageOverview.quotaBytes)} quota · files, invoices, clients & logs`}
-            badge={`${(Math.min(100, Math.round((storageOverview.totalBytes / storageOverview.quotaBytes) * 1000) / 10))}%`}
-            badgeColor={storageOverview.totalBytes / storageOverview.quotaBytes >= 0.9 ? "red" : "green"}
-            onClick={() => navigate("/reports/storage-overview")}
-          />
-        ) : storageOverview ? (
-          <StatCard
-            icon="💾"
-            iconBg="rgba(56,189,248,0.2)"
-            label="Storage overview"
-            value={formatStorageBytes(storageOverview.totalBytes)}
-            sub="Files, invoices, clients & logs — open full report"
-            onClick={() => navigate("/reports/storage-overview")}
-          />
-        ) : null}
       </div>
 
       {/* MAIN GRID */}

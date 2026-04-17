@@ -4,8 +4,8 @@
 
 @layer base {
   :root {
-    /* Light theme: clean white/light gray design (aligned with Topbar / sidebar) */
-    --background: 210 20% 98%; /* ~#f8fafc */
+    /* Light theme: clean white/light gray design */
+    --background: 220 33% 98%; /* #f9fafc - slightly off-white */
     --foreground: 222 47% 11%; /* dark text */
 
     --card: 0 0% 100%; /* #ffffff - pure white for cards */
@@ -50,8 +50,8 @@
   }
 
   .dark {
-    /* Dark theme: page canvas matches top bar / sidebar (slate-900) */
-    --background: 222 47% 11%; /* #0f172a */
+    /* Dark theme with custom background colors */
+    --background: 0 0% 0%; /* #000000 for page background */
     --foreground: 210 40% 96%;
 
     --card: 0 0% 4%; /* #0a0a0a for sidebar and cards */
@@ -82,13 +82,13 @@
     --sidebar-active-bg: 221 55% 22%;
     --sidebar-active-accent: 219 98% 52%; /* #0e61fd */
 
-    /* Table color scheme (aligned with slate page background) */
-    --table-header-bg: #0f172a;
-    --table-row-odd: #0f172a;
-    --table-row-even: #1e293b;
-    --table-row-hover: #334155;
-    --table-divider: #1e293b;
-    --table-border: #1e293b;
+    /* Table color scheme */
+    --table-header-bg: #000000;
+    --table-row-odd: #0a0a0a;
+    --table-row-even: #0a0a0a;
+    --table-row-hover: #101010;
+    --table-divider: #171717;
+    --table-border: #171717;
     --text-primary: #fff;
     --text-body: #d1d9e6;
     --text-label: #8b9ab0;

@@ -32,7 +32,7 @@ import {
 const getColors = () => {
   const isDark = document.documentElement.classList.contains('dark');
   return {
-    bg: isDark ? "#0f172a" : "#f8fafc",
+    bg: isDark ? "#0a0a0a" : "#ffffff",
     border: isDark ? "#171717" : "#e2e8f0",
     text: isDark ? "#fff" : "#0a1420",
     textMuted: isDark ? "#8b9ab0" : "#0a1420",

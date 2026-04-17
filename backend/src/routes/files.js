@@ -12,14 +12,21 @@ const UPLOADS_DIR_ENV = process.env.UPLOADS_DIR != null ? String(process.env.UPL
 const UPLOADS_ROOT = UPLOADS_DIR_ENV
   ? path.resolve(UPLOADS_DIR_ENV)
   : path.join(__dirname, '..', '..', 'uploads');
+const REQUIRE_PERSISTENT_UPLOADS =
+  process.env.REQUIRE_PERSISTENT_UPLOADS != null
+    ? !['0', 'false', 'no'].includes(String(process.env.REQUIRE_PERSISTENT_UPLOADS).toLowerCase().trim())
+    : true;
 const MAX_BYTES = 52 * 1024 * 1024;
 
 if (process.env.NODE_ENV !== 'test') {
   console.log('[files] UPLOADS_ROOT =', UPLOADS_ROOT);
   if (process.env.NODE_ENV === 'production' && !UPLOADS_DIR_ENV) {
-    console.warn(
-      '[files] UPLOADS_DIR is not set. New uploads go under the app tree and are usually wiped on container redeploy. Set UPLOADS_DIR to a host-mounted or named volume path (see .env.example, docker-compose.uploads.example.yml).',
-    );
+    const msg =
+      '[files] UPLOADS_DIR is not set. New uploads go under the app tree and are usually wiped on container redeploy. Set UPLOADS_DIR to a host-mounted or named volume path (see .env.example, docker-compose.uploads.example.yml).';
+    if (REQUIRE_PERSISTENT_UPLOADS) {
+      throw new Error(`${msg} Refusing startup in production to prevent data loss.`);
+    }
+    console.warn(`${msg} Continuing because REQUIRE_PERSISTENT_UPLOADS is disabled.`);
   }
 }
 
@@ -103,6 +110,22 @@ const absolutePath = (relative) => {
   return path.join(UPLOADS_ROOT, ...parts);
 };
 
+/**
+ * Build extra candidate relative paths for legacy DB rows.
+ * Example legacy values: "uploads/12/file.png", "/uploads/12/file.png".
+ */
+const legacyRelativeCandidates = (storedRel) => {
+  const rel = String(storedRel || '').replace(/\\/g, '/').replace(/^\/+/, '');
+  if (!rel) return [];
+  const parts = rel.split('/').filter((p) => p && p !== '..' && p !== '.');
+  if (parts.length < 2) return [];
+  const first = String(parts[0]).toLowerCase();
+  if (first === 'uploads') {
+    return [parts.slice(1).join('/')];
+  }
+  return [];
+};
+
 /** Canonical relative path under UPLOADS_ROOT (POSIX slashes). Root = flat `uid/name`; folder = `uid/folders/{id}/name`. */
 const storageRelPath = (uid, folderId, filename) => {
   const u = String(uid);
@@ -132,8 +155,16 @@ const findExistingFileAbs = async (uid, filename, storedRel, folderIdFromRow) =>
   const fn = String(filename || path.basename(String(storedRel || '').replace(/\\/g, '/')) || '');
   if (!fn) return null;
   const attempts = [];
+  const storedRaw = String(storedRel || '').trim();
+  // Legacy compatibility: older rows may have absolute file paths.
+  if (storedRaw && path.isAbsolute(storedRaw)) attempts.push(storedRaw);
   const a0 = absolutePath(storedRel);
   if (a0) attempts.push(a0);
+  const legacyRels = legacyRelativeCandidates(storedRel);
+  for (let i = 0; i < legacyRels.length; i += 1) {
+    const ai = absolutePath(legacyRels[i]);
+    if (ai) attempts.push(ai);
+  }
   attempts.push(path.join(UPLOADS_ROOT, u, fn));
   const fid = folderIdFromRow != null && folderIdFromRow !== '' ? Number(folderIdFromRow) : null;
   if (Number.isInteger(fid) && fid > 0) {

@@ -24,20 +24,37 @@ const toProject = (row, extra = {}) => ({
   ...extra,
 });
 
-const toTaskRow = (row) => ({
-  id: row.id,
-  projectId: row.project_id,
-  title: row.title,
-  description: row.description || '',
-  status: row.status,
-  assignedTo: row.assigned_to,
-  assigneeName: row.assignee_name || null,
-  hourlyRate: Number(row.hourly_rate) || 0,
-  dueDate: row.due_date ? String(row.due_date).slice(0, 10) : null,
-  position: row.position ?? 0,
-  createdAt: row.created_at,
-  updatedAt: row.updated_at,
-});
+const ymdFromDb = (v) => {
+  if (v == null || v === '') return '';
+  if (typeof v === 'string') {
+    const m = /^(\d{4}-\d{2}-\d{2})/.exec(v.trim());
+    if (m) return m[1];
+  }
+  if (v instanceof Date && !Number.isNaN(v.getTime())) {
+    const y = v.getFullYear();
+    const mo = String(v.getMonth() + 1).padStart(2, '0');
+    const d = String(v.getDate()).padStart(2, '0');
+    return `${y}-${mo}-${d}`;
+  }
+  return String(v).slice(0, 10);
+};
+
+const toTaskRow = (row) => {
+  const dueYmd = row.due_date != null && row.due_date !== '' ? ymdFromDb(row.due_date) : '';
+  return {
+    id: row.id,
+    projectId: row.project_id,
+    title: row.title,
+    description: row.description || '',
+    status: row.status,
+    assignedTo: row.assigned_to,
+    assigneeName: row.assignee_name || null,
+    dueDate: dueYmd || null,
+    position: row.position ?? 0,
+    createdAt: row.created_at,
+    updatedAt: row.updated_at,
+  };
+};
 
 /** Hours from closed logs + open segment to now */
 async function taskHours(client, taskId) {
@@ -55,42 +72,12 @@ async function taskHours(client, taskId) {
   return seconds / 3600;
 }
 
-async function taskCost(client, taskId, hourlyRate) {
-  const h = await taskHours(client, taskId);
-  return h * (Number(hourlyRate) || 0);
-}
-
 async function assertProject(client, projectId, userId) {
   const { rows } = await client.query('SELECT * FROM projects WHERE id = $1 AND user_id = $2', [projectId, userId]);
   return rows[0] || null;
 }
 
-const ymdFromDb = (v) => {
-  if (v == null || v === '') return '';
-  if (typeof v === 'string') {
-    const m = /^(\d{4}-\d{2}-\d{2})/.exec(v.trim());
-    if (m) return m[1];
-  }
-  if (v instanceof Date && !Number.isNaN(v.getTime())) {
-    const y = v.getFullYear();
-    const mo = String(v.getMonth() + 1).padStart(2, '0');
-    const d = String(v.getDate()).padStart(2, '0');
-    return `${y}-${mo}-${d}`;
-  }
-  return String(v).slice(0, 10);
-};
-
-const toProjectExpense = (r) => ({
-  id: r.id,
-  projectId: r.project_id,
-  amount: Number(r.amount) || 0,
-  expenseDate: ymdFromDb(r.expense_date),
-  category: r.category || 'Other',
-  notes: r.notes || '',
-  createdAt: r.created_at,
-});
-
-/** GET / — list projects with task counts + total cost */
+/** GET / — list projects with task counts */
 router.get('/', async (req, res) => {
   const uid = req.user.dataUserId;
   try {
@@ -116,49 +103,13 @@ router.get('/', async (req, res) => {
       taskCounts.map((r) => [r.project_id, { taskTotal: r.task_total, taskDone: r.task_done }]),
     );
 
-    const { rows: allTasks } = await pool.query(
-      `SELECT t.id, t.project_id, t.hourly_rate
-       FROM tasks t
-       INNER JOIN projects p ON p.id = t.project_id AND p.user_id = $1`,
-      [uid],
-    );
-
-    const costByProject = new Map();
-    const dbClient = await pool.connect();
-    try {
-      for (const t of allTasks) {
-        const c = await taskCost(dbClient, t.id, t.hourly_rate);
-        costByProject.set(t.project_id, (costByProject.get(t.project_id) || 0) + c);
-      }
-    } finally {
-      dbClient.release();
-    }
-
-    const { rows: expenseSums } = await pool.query(
-      `SELECT project_id, COALESCE(SUM(amount), 0)::numeric AS sum_exp
-       FROM project_expenses
-       WHERE user_id = $1
-       GROUP BY project_id`,
-      [uid],
-    );
-    const expenseMap = new Map(expenseSums.map((r) => [r.project_id, Number(r.sum_exp) || 0]));
-
     const out = projects.map((p) => {
       const counts = countMap.get(p.id) || { taskTotal: 0, taskDone: 0 };
-      const taskCostTotal = Math.round((costByProject.get(p.id) || 0) * 100) / 100;
-      const expenseTotal = Math.round((expenseMap.get(p.id) || 0) * 100) / 100;
-      const totalCost = Math.round((taskCostTotal + expenseTotal) * 100) / 100;
-      const price = Number(p.price) || 0;
-      const netProfit = Math.round((price - totalCost) * 100) / 100;
       const progress = counts.taskTotal > 0 ? Math.round((counts.taskDone / counts.taskTotal) * 100) : 0;
       return toProject(p, {
         taskTotal: counts.taskTotal,
         taskDone: counts.taskDone,
         progress,
-        taskCostTotal,
-        expenseTotal,
-        totalCost,
-        netProfit,
       });
     });
 
@@ -199,115 +150,10 @@ router.post('/', async (req, res) => {
         taskTotal: 0,
         taskDone: 0,
         progress: 0,
-        taskCostTotal: 0,
-        expenseTotal: 0,
-        totalCost: 0,
-        netProfit: pr,
       }),
     );
   } catch (err) {
     console.error('[projects create]', err);
-    res.status(500).json({ error: 'Server error' });
-  }
-});
-
-router.get('/:projectId/expenses', async (req, res) => {
-  const uid = req.user.dataUserId;
-  const { projectId } = req.params;
-  try {
-    const p = await assertProject(pool, projectId, uid);
-    if (!p) return res.status(404).json({ error: 'Not found' });
-    const { rows } = await pool.query(
-      `SELECT * FROM project_expenses WHERE project_id = $1 AND user_id = $2 ORDER BY expense_date DESC, created_at DESC`,
-      [projectId, uid],
-    );
-    res.json(rows.map(toProjectExpense));
-  } catch (err) {
-    console.error('[project expenses list]', err);
-    res.status(500).json({ error: 'Server error' });
-  }
-});
-
-router.post('/:projectId/expenses', async (req, res) => {
-  const uid = req.user.dataUserId;
-  const { projectId } = req.params;
-  try {
-    const p = await assertProject(pool, projectId, uid);
-    if (!p) return res.status(404).json({ error: 'Not found' });
-    const { amount, expenseDate, category, notes } = req.body;
-    const amt = Number(amount);
-    if (Number.isNaN(amt) || amt < 0) return res.status(400).json({ error: 'Invalid amount' });
-    const ed = String(expenseDate || '').trim().slice(0, 10);
-    if (!/^\d{4}-\d{2}-\d{2}$/.test(ed)) return res.status(400).json({ error: 'Valid expense date required (YYYY-MM-DD)' });
-    const cat = String(category || 'Other').trim() || 'Other';
-    const note = String(notes || '').trim();
-
-    const id = newId('PEX');
-    const { rows } = await pool.query(
-      `INSERT INTO project_expenses (id, project_id, user_id, amount, expense_date, category, notes)
-       VALUES ($1, $2, $3, $4, $5, $6, $7)
-       RETURNING *`,
-      [id, projectId, uid, amt, ed, cat, note],
-    );
-    res.status(201).json(toProjectExpense(rows[0]));
-  } catch (err) {
-    console.error('[project expenses create]', err);
-    res.status(500).json({ error: 'Server error' });
-  }
-});
-
-router.patch('/:projectId/expenses/:expenseId', async (req, res) => {
-  const uid = req.user.dataUserId;
-  const { projectId, expenseId } = req.params;
-  try {
-    const p = await assertProject(pool, projectId, uid);
-    if (!p) return res.status(404).json({ error: 'Not found' });
-    const { rows: curRows } = await pool.query(
-      `SELECT * FROM project_expenses WHERE id = $1 AND project_id = $2 AND user_id = $3`,
-      [expenseId, projectId, uid],
-    );
-    if (!curRows[0]) return res.status(404).json({ error: 'Not found' });
-    const cur = curRows[0];
-
-    const { amount, expenseDate, category, notes } = req.body;
-    let amt = Number(cur.amount);
-    if (amount !== undefined) {
-      amt = Number(amount);
-      if (Number.isNaN(amt) || amt < 0) return res.status(400).json({ error: 'Invalid amount' });
-    }
-    let ed = ymdFromDb(cur.expense_date);
-    if (expenseDate !== undefined) {
-      const s = String(expenseDate || '').trim().slice(0, 10);
-      if (!/^\d{4}-\d{2}-\d{2}$/.test(s)) return res.status(400).json({ error: 'Invalid date' });
-      ed = s;
-    }
-    const cat = category !== undefined ? String(category || 'Other').trim() || 'Other' : cur.category;
-    const note = notes !== undefined ? String(notes || '').trim() : cur.notes;
-
-    await pool.query(
-      `UPDATE project_expenses SET amount = $1, expense_date = $2, category = $3, notes = $4 WHERE id = $5 AND project_id = $6 AND user_id = $7`,
-      [amt, ed, cat, note, expenseId, projectId, uid],
-    );
-    const { rows } = await pool.query(`SELECT * FROM project_expenses WHERE id = $1`, [expenseId]);
-    res.json(toProjectExpense(rows[0]));
-  } catch (err) {
-    console.error('[project expenses patch]', err);
-    res.status(500).json({ error: 'Server error' });
-  }
-});
-
-router.delete('/:projectId/expenses/:expenseId', async (req, res) => {
-  const uid = req.user.dataUserId;
-  const { projectId, expenseId } = req.params;
-  try {
-    const { rowCount } = await pool.query(
-      `DELETE FROM project_expenses WHERE id = $1 AND project_id = $2 AND user_id = $3`,
-      [expenseId, projectId, uid],
-    );
-    if (!rowCount) return res.status(404).json({ error: 'Not found' });
-    res.json({ success: true });
-  } catch (err) {
-    console.error('[project expenses delete]', err);
     res.status(500).json({ error: 'Server error' });
   }
 });
@@ -340,7 +186,6 @@ router.get('/:projectId', async (req, res) => {
     try {
       for (const t of tasks) {
         const hours = await taskHours(client, t.id);
-        const cost = hours * (Number(t.hourly_rate) || 0);
         const { rows: open } = await client.query(
           `SELECT id FROM time_logs WHERE task_id = $1 AND end_time IS NULL ORDER BY start_time DESC LIMIT 1`,
           [t.id],
@@ -348,7 +193,6 @@ router.get('/:projectId', async (req, res) => {
         enriched.push({
           ...toTaskRow(t),
           hoursWorked: Math.round(hours * 100) / 100,
-          cost: Math.round(cost * 100) / 100,
           hasOpenTimer: !!open[0],
           openLogId: open[0]?.id || null,
         });
@@ -357,22 +201,9 @@ router.get('/:projectId', async (req, res) => {
       client.release();
     }
 
-    const taskCostTotal = Math.round(enriched.reduce((s, t) => s + t.cost, 0) * 100) / 100;
-
-    const { rows: expRows } = await pool.query(
-      `SELECT * FROM project_expenses WHERE project_id = $1 AND user_id = $2 ORDER BY expense_date DESC, created_at DESC`,
-      [projectId, uid],
-    );
-    const projectExpenses = expRows.map(toProjectExpense);
-    const expenseTotal = Math.round(expRows.reduce((s, r) => s + (Number(r.amount) || 0), 0) * 100) / 100;
-
-    const totalCost = Math.round((taskCostTotal + expenseTotal) * 100) / 100;
-    const price = Number(p.price) || 0;
-    const netProfit = Math.round((price - totalCost) * 100) / 100;
     const taskTotal = tasks.length;
     const taskDone = tasks.filter((t) => t.status === 'done').length;
     const progress = taskTotal > 0 ? Math.round((taskDone / taskTotal) * 100) : 0;
-    const marginWarning = price > 0 && totalCost >= price * 0.8;
 
     let assignees = [];
     if (isAdminRequest(req)) {
@@ -386,16 +217,10 @@ router.get('/:projectId', async (req, res) => {
     res.json({
       ...toProject(p),
       tasks: enriched,
-      taskCostTotal,
-      expenseTotal,
-      totalCost,
-      netProfit,
       progress,
-      marginWarning,
       taskTotal,
       taskDone,
       assignees,
-      projectExpenses,
     });
   } catch (err) {
     console.error('[projects get]', err);
@@ -482,7 +307,6 @@ router.get('/:projectId/tasks', async (req, res) => {
     try {
       for (const t of tasks) {
         const hours = await taskHours(client, t.id);
-        const cost = hours * (Number(t.hourly_rate) || 0);
         const { rows: open } = await client.query(
           `SELECT id FROM time_logs WHERE task_id = $1 AND end_time IS NULL ORDER BY start_time DESC LIMIT 1`,
           [t.id],
@@ -490,7 +314,6 @@ router.get('/:projectId/tasks', async (req, res) => {
         enriched.push({
           ...toTaskRow(t),
           hoursWorked: Math.round(hours * 100) / 100,
-          cost: Math.round(cost * 100) / 100,
           hasOpenTimer: !!open[0],
           openLogId: open[0]?.id || null,
         });
@@ -511,25 +334,25 @@ router.post('/:projectId/tasks', async (req, res) => {
     const p = await assertProject(pool, req.params.projectId, uid);
     if (!p) return res.status(404).json({ error: 'Not found' });
 
-    const { title, description, status, assignedTo, hourlyRate, dueDate } = req.body;
+    const { title, description, status, assignedTo, dueDate } = req.body;
     const t = String(title || '').trim();
     if (!t) return res.status(400).json({ error: 'Title is required' });
     const st = String(status || 'todo').toLowerCase();
     if (!TASK_STATUSES.includes(st)) return res.status(400).json({ error: 'Invalid task status' });
-    const rate = Number(hourlyRate);
-    if (Number.isNaN(rate) || rate < 0) return res.status(400).json({ error: 'Invalid hourly rate' });
 
     let assign = assignedTo != null && assignedTo !== '' ? Number(assignedTo) : null;
     if (assign != null && !Number.isInteger(assign)) return res.status(400).json({ error: 'Invalid assignee' });
     if (assign != null) {
-      if (!isAdminRequest(req) && assign !== req.user.id) {
+      const actorId = Number(req.user.id);
+      if (!isAdminRequest(req) && assign !== actorId) {
         return res.status(403).json({ error: 'Staff can only assign tasks to themselves' });
       }
       const { rowCount } = await pool.query('SELECT 1 FROM users WHERE id = $1', [assign]);
       if (!rowCount) return res.status(400).json({ error: 'User not found' });
     }
 
-    const due = dueDate ? String(dueDate).trim().slice(0, 10) : null;
+    let due = dueDate ? String(dueDate).trim().slice(0, 10) : null;
+    if (due && !/^\d{4}-\d{2}-\d{2}$/.test(due)) return res.status(400).json({ error: 'Invalid due date (use YYYY-MM-DD)' });
     const { rows: maxPos } = await pool.query(
       `SELECT COALESCE(MAX(position), -1) + 1 AS next_pos FROM tasks WHERE project_id = $1 AND status = $2`,
       [req.params.projectId, st],
@@ -538,17 +361,16 @@ router.post('/:projectId/tasks', async (req, res) => {
 
     const id = newId('TSK');
     const { rows } = await pool.query(
-      `INSERT INTO tasks (id, project_id, user_id, title, description, status, assigned_to, hourly_rate, due_date, position)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+      `INSERT INTO tasks (id, project_id, user_id, title, description, status, assigned_to, due_date, position)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
        RETURNING *`,
-      [id, req.params.projectId, uid, t, String(description || '').trim(), st, assign, rate, due || null, position],
+      [id, req.params.projectId, uid, t, String(description || '').trim(), st, assign, due || null, position],
     );
     const row = rows[0];
     const { rows: u } = await pool.query('SELECT name FROM users WHERE id = $1', [row.assigned_to]);
     res.status(201).json({
       ...toTaskRow({ ...row, assignee_name: u[0]?.name || null }),
       hoursWorked: 0,
-      cost: 0,
       hasOpenTimer: false,
       openLogId: null,
     });
@@ -558,5 +380,5 @@ router.post('/:projectId/tasks', async (req, res) => {
   }
 });
 
-export { taskHours, taskCost, assertProject, TASK_STATUSES, toTaskRow };
+export { taskHours, assertProject, TASK_STATUSES, toTaskRow };
 export default router;

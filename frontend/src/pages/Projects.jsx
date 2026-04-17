@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Helmet } from 'react-helmet';
 import { Link } from 'react-router-dom';
-import { Briefcase, Plus, LayoutGrid, FileText, TrendingUp, TrendingDown, AlertTriangle, Trash2 } from 'lucide-react';
+import { Briefcase, Plus, LayoutGrid, FileText, Trash2 } from 'lucide-react';
 import { useFinance } from '@/contexts/FinanceContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -136,7 +136,7 @@ const Projects = () => {
               Projects
             </h1>
             <p className="text-muted-foreground mt-1 text-sm sm:text-base">
-              Track tasks on a board, time, costs, and net profit per project.
+              Track tasks on a board and time per project.
             </p>
           </div>
           <Button onClick={openNew} className="gap-2 shrink-0">
@@ -154,27 +154,18 @@ const Projects = () => {
         ) : (
           <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
             {list.map((p) => {
-              const profit = Number(p.netProfit) || 0;
-              const warn = Number(p.price) > 0 && Number(p.totalCost) >= Number(p.price) * 0.8;
-              const pendingStyle = p.status === 'on_hold' || warn;
+              const pendingStyle = p.status === 'on_hold';
               return (
                 <div
                   key={p.id}
                   className={cn(
                     'rounded-2xl border bg-card p-5 flex flex-col gap-3 shadow-sm',
-                    pendingStyle && !warn && 'border-yellow-500/50',
-                    warn && profit >= 0 && 'border-yellow-500/60',
-                    profit < 0 && 'border-red-500/40',
-                    !pendingStyle && profit >= 0 && 'border-border',
+                    pendingStyle && 'border-yellow-500/50',
+                    !pendingStyle && 'border-border',
                   )}
                 >
                   <div className="flex items-start justify-between gap-2">
                     <h2 className="text-lg font-semibold text-foreground leading-tight">{p.name}</h2>
-                    {warn && (
-                      <span title="Cost reached 80%+ of project price" className="text-yellow-500 shrink-0">
-                        <AlertTriangle className="w-5 h-5" />
-                      </span>
-                    )}
                   </div>
                   <p className="text-sm text-muted-foreground">
                     Client: <span className="text-foreground font-medium">{p.clientName || '—'}</span>
@@ -196,23 +187,6 @@ const Projects = () => {
                     <span className="text-muted-foreground">Progress: </span>
                     <span className="font-semibold text-foreground">{p.progress ?? 0}%</span>
                     <span className="text-muted-foreground"> ({p.taskDone ?? 0}/{p.taskTotal ?? 0} tasks)</span>
-                  </div>
-                  {(Number(p.expenseTotal) || 0) > 0 ? (
-                    <p className="text-xs text-orange-400/90">
-                      Project expenses: {currency} {(Number(p.expenseTotal) || 0).toLocaleString()} (included in total cost)
-                    </p>
-                  ) : null}
-                  <div className="flex items-center gap-2 text-sm flex-wrap">
-                    <span className="text-muted-foreground">Net profit:</span>
-                    <span
-                      className={cn(
-                        'font-bold flex items-center gap-1',
-                        profit >= 0 ? 'text-green-500' : 'text-red-500',
-                      )}
-                    >
-                      {currency} {profit.toLocaleString()}
-                      {profit >= 0 ? <TrendingUp className="w-4 h-4" /> : <TrendingDown className="w-4 h-4" />}
-                    </span>
                   </div>
                   <div className="flex flex-wrap gap-2 pt-2 mt-auto border-t border-border">
                     <Button asChild size="sm" className="gap-1">

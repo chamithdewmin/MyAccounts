@@ -265,7 +265,6 @@ async function initDb() {
         description TEXT DEFAULT '',
         status VARCHAR(20) NOT NULL DEFAULT 'todo',
         assigned_to INT REFERENCES users(id) ON DELETE SET NULL,
-        hourly_rate DECIMAL(12,2) NOT NULL DEFAULT 0,
         due_date DATE,
         position INT NOT NULL DEFAULT 0,
         created_at TIMESTAMPTZ DEFAULT NOW(),
@@ -295,21 +294,8 @@ async function initDb() {
     await pool.query(`CREATE INDEX IF NOT EXISTS idx_tasks_project_user ON tasks (project_id, user_id)`);
     await pool.query(`CREATE INDEX IF NOT EXISTS idx_time_logs_task ON time_logs (task_id)`);
     await pool.query(`CREATE INDEX IF NOT EXISTS idx_task_comments_task ON task_comments (task_id)`);
-    await pool.query(`
-      CREATE TABLE IF NOT EXISTS project_expenses (
-        id VARCHAR(80) PRIMARY KEY,
-        project_id VARCHAR(80) NOT NULL REFERENCES projects(id) ON DELETE CASCADE,
-        user_id INT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-        amount DECIMAL(15,2) NOT NULL DEFAULT 0,
-        expense_date DATE NOT NULL,
-        category VARCHAR(255) NOT NULL DEFAULT 'Other',
-        notes TEXT DEFAULT '',
-        created_at TIMESTAMPTZ DEFAULT NOW()
-      )
-    `);
-    await pool.query(
-      `CREATE INDEX IF NOT EXISTS idx_project_expenses_project ON project_expenses (project_id, user_id)`,
-    );
+    await pool.query(`DROP TABLE IF EXISTS project_expenses CASCADE`);
+    await pool.query(`ALTER TABLE tasks DROP COLUMN IF EXISTS hourly_rate`);
     console.log('Projects / tasks tables ready.');
   } catch (e) {
     console.warn('projects tables:', e.message);

@@ -20,7 +20,6 @@ async function assertTask(client, taskId, userId) {
 
 async function enrichTask(client, row) {
   const hours = await taskHours(client, row.id);
-  const cost = hours * (Number(row.hourly_rate) || 0);
   const { rows: open } = await client.query(
     `SELECT id FROM time_logs WHERE task_id = $1 AND end_time IS NULL ORDER BY start_time DESC LIMIT 1`,
     [row.id],
@@ -29,7 +28,6 @@ async function enrichTask(client, row) {
   return {
     ...toTaskRow({ ...row, assignee_name: u[0]?.name || null }),
     hoursWorked: Math.round(hours * 100) / 100,
-    cost: Math.round(cost * 100) / 100,
     hasOpenTimer: !!open[0],
     openLogId: open[0]?.id || null,
   };
@@ -92,7 +90,7 @@ router.patch('/:taskId', async (req, res) => {
     const cur = await assertTask(pool, taskId, uid);
     if (!cur) return res.status(404).json({ error: 'Not found' });
 
-    const { title, description, status, assignedTo, hourlyRate, dueDate } = req.body;
+    const { title, description, status, assignedTo, dueDate } = req.body;
     let t = cur.title;
     if (title !== undefined) {
       t = String(title).trim();
@@ -113,27 +111,26 @@ router.patch('/:taskId', async (req, res) => {
         assign = Number(assignedTo);
         if (!Number.isInteger(assign)) return res.status(400).json({ error: 'Invalid assignee' });
         const admin = isAdminRequest(req);
-        if (!admin && assign !== req.user.id) {
+        const actorId = Number(req.user.id);
+        if (!admin && assign !== actorId) {
           return res.status(403).json({ error: 'Staff can only assign to themselves' });
         }
         const { rowCount } = await pool.query('SELECT 1 FROM users WHERE id = $1', [assign]);
         if (!rowCount) return res.status(400).json({ error: 'User not found' });
       }
     }
-    let rate = Number(cur.hourly_rate);
-    if (hourlyRate !== undefined) {
-      rate = Number(hourlyRate);
-      if (Number.isNaN(rate) || rate < 0) return res.status(400).json({ error: 'Invalid hourly rate' });
-    }
     let due = cur.due_date;
     if (dueDate !== undefined) {
       due = dueDate ? String(dueDate).trim().slice(0, 10) : null;
+      if (due && !/^\d{4}-\d{2}-\d{2}$/.test(due)) {
+        return res.status(400).json({ error: 'Invalid due date (use YYYY-MM-DD)' });
+      }
     }
 
     await pool.query(
-      `UPDATE tasks SET title = $1, description = $2, status = $3, assigned_to = $4, hourly_rate = $5, due_date = $6, updated_at = NOW()
-       WHERE id = $7 AND user_id = $8`,
-      [t, desc, st, assign, rate, due, taskId, uid],
+      `UPDATE tasks SET title = $1, description = $2, status = $3, assigned_to = $4, due_date = $5, updated_at = NOW()
+       WHERE id = $6 AND user_id = $7`,
+      [t, desc, st, assign, due, taskId, uid],
     );
 
     const { rows } = await pool.query(

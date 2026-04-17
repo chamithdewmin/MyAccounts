@@ -150,7 +150,6 @@ const FileManager = () => {
   const [bulkDeleteConfirmInput, setBulkDeleteConfirmInput] = useState('');
   const [bulkDeleteSubmitting, setBulkDeleteSubmitting] = useState(false);
 
-  const [sizeBand, setSizeBand] = useState('all');
   const [sizeSort, setSizeSort] = useState('none');
   const [uploadFlash, setUploadFlash] = useState(null);
   const pendingUploadAddedRef = useRef(null);
@@ -202,7 +201,7 @@ const FileManager = () => {
 
   useEffect(() => {
     setCheckedIds(new Set());
-  }, [selectedFolderId, scope, debouncedSearch, typeFilter, sizeBand, sizeSort]);
+  }, [selectedFolderId, scope, debouncedSearch, typeFilter, sizeSort]);
 
   const storageTotals = useMemo(() => {
     let images = 0;
@@ -236,13 +235,11 @@ const FileManager = () => {
   }, [files]);
 
   const displayedFiles = useMemo(() => {
-    let list = files.slice();
-    if (sizeBand === 'large') list = list.filter((f) => (Number(f.fileSize) || 0) > 1024 * 1024);
-    if (sizeBand === 'small') list = list.filter((f) => (Number(f.fileSize) || 0) < 100 * 1024);
+    const list = files.slice();
     if (sizeSort === 'desc') list.sort((a, b) => (Number(b.fileSize) || 0) - (Number(a.fileSize) || 0));
     else if (sizeSort === 'asc') list.sort((a, b) => (Number(a.fileSize) || 0) - (Number(b.fileSize) || 0));
     return list;
-  }, [files, sizeBand, sizeSort]);
+  }, [files, sizeSort]);
 
   const tableListTotals = useMemo(() => {
     let t = 0;
@@ -736,40 +733,6 @@ const FileManager = () => {
                 Grid
               </Button>
             </div>
-            <div className="flex items-center gap-0.5 rounded-lg border border-border bg-background/40 p-0.5">
-              <span className="text-[10px] text-muted-foreground px-1.5 uppercase tracking-wide hidden sm:inline shrink-0">
-                Size
-              </span>
-              <Button
-                type="button"
-                variant={sizeBand === 'all' ? 'secondary' : 'ghost'}
-                size="sm"
-                className="h-8 px-2 text-xs rounded-md"
-                onClick={() => setSizeBand('all')}
-              >
-                All
-              </Button>
-              <Button
-                type="button"
-                variant={sizeBand === 'large' ? 'secondary' : 'ghost'}
-                size="sm"
-                className="h-8 px-2 text-xs rounded-md"
-                onClick={() => setSizeBand('large')}
-                title="Files larger than 1 MB"
-              >
-                &gt;1 MB
-              </Button>
-              <Button
-                type="button"
-                variant={sizeBand === 'small' ? 'secondary' : 'ghost'}
-                size="sm"
-                className="h-8 px-2 text-xs rounded-md"
-                onClick={() => setSizeBand('small')}
-                title="Files smaller than 100 KB"
-              >
-                &lt;100 KB
-              </Button>
-            </div>
             <Button variant="outline" size="sm" onClick={loadFiles} disabled={loading}>
               {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Refresh'}
             </Button>
@@ -984,12 +947,6 @@ const FileManager = () => {
                             No files yet. Upload a document to get started.
                           </td>
                         </tr>
-                      ) : displayedFiles.length === 0 ? (
-                        <tr>
-                          <td colSpan={7} className="px-4 py-12 text-center text-muted-foreground">
-                            No files match the current size filters. Try switching size filters back to All.
-                          </td>
-                        </tr>
                       ) : (
                         displayedFiles.map((f, i) => (
                           <motion.tr
@@ -1133,8 +1090,6 @@ const FileManager = () => {
                 <div className="p-4 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
                   {files.length === 0 ? (
                     <div className="col-span-full text-center text-muted-foreground py-12">No files yet.</div>
-                  ) : displayedFiles.length === 0 ? (
-                    <div className="col-span-full text-center text-muted-foreground py-12">No files match the current size filters.</div>
                   ) : (
                     displayedFiles.map((f, i) => (
                       <motion.div

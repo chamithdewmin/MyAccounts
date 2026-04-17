@@ -247,8 +247,8 @@ const LoginRiskScoreLine = ({ score }) => {
   const s = Number(score) || 0;
   return (
     <div className="flex min-w-0 items-baseline gap-0.5 tabular-nums leading-none">
-      <span className="text-lg font-bold tracking-tight text-foreground">{s}</span>
-      <span className="text-[10px] font-medium tracking-wide text-muted-foreground">/ 100</span>
+      <span className="text-base font-bold tracking-tight text-foreground">{s}</span>
+      <span className="text-[9px] font-medium tracking-wide text-muted-foreground">/ 100</span>
     </div>
   );
 };
@@ -265,7 +265,7 @@ const LoginRiskCard = ({ score, tier }) => {
       aria-label={aria}
       title={loginRiskTooltip(s, tier)}
       className={cn(
-        'min-w-[7rem] max-w-[9.5rem] rounded-xl border px-3 py-2.5 shadow-sm transition-colors',
+        'min-w-[5.75rem] max-w-[8.25rem] rounded-lg border px-2 py-1.5 shadow-sm transition-colors',
         'bg-card/80 backdrop-blur-sm',
         tier === 'safe' && 'border-emerald-500/25',
         tier === 'suspicious' && 'border-amber-500/30',
@@ -274,28 +274,28 @@ const LoginRiskCard = ({ score, tier }) => {
     >
       {tier === 'safe' ? (
         <>
-          <div className="flex items-baseline gap-2">
-            <span className="text-[1.125rem] leading-none select-none" aria-hidden>
+          <div className="flex items-baseline gap-1.5">
+            <span className="text-[0.95rem] leading-none select-none" aria-hidden>
               {emoji}
             </span>
             <LoginRiskScoreLine score={s} />
           </div>
-          <p className={cn('mt-1.5 text-[11px] font-semibold leading-snug', loginRiskLabelClass(tier))}>
+          <p className={cn('mt-1 text-[10px] font-semibold leading-snug', loginRiskLabelClass(tier))}>
             {loginRiskShortLabel(tier)}
           </p>
         </>
       ) : (
         <>
-          <div className="flex items-center gap-1.5">
-            <span className="text-[1.125rem] leading-none select-none" aria-hidden>
+          <div className="flex items-center gap-1">
+            <span className="text-[0.95rem] leading-none select-none" aria-hidden>
               {emoji}
             </span>
-            <span className={cn('text-xs font-bold uppercase tracking-wide', loginRiskLabelClass(tier))}>Risk</span>
+            <span className={cn('text-[10px] font-bold uppercase tracking-wide', loginRiskLabelClass(tier))}>Risk</span>
           </div>
-          <div className="mt-1">
+          <div className="mt-0.5">
             <LoginRiskScoreLine score={s} />
           </div>
-          <p className={cn('mt-1.5 text-[11px] font-semibold leading-snug', loginRiskLabelClass(tier))}>
+          <p className={cn('mt-1 text-[10px] font-semibold leading-snug', loginRiskLabelClass(tier))}>
             {loginRiskShortLabel(tier)}
           </p>
         </>

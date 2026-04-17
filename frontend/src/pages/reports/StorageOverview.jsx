@@ -12,6 +12,7 @@ import {
   Loader2,
   RefreshCw,
   AlertTriangle,
+  Database,
 } from 'lucide-react';
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip as RechartsTooltip } from 'recharts';
 import { Button } from '@/components/ui/button';
@@ -37,6 +38,26 @@ const DONUT = {
   clients: '#a78bfa',
   logs: '#64748b',
 };
+
+/** Dashboard-style row: icon tile + label + large value (like income / expense stat cards). */
+const StorageStatRow = ({ icon: Icon, iconClassName, iconBgClass, label, value, sub, right }) => (
+  <div className="flex items-center gap-4 min-w-0">
+    <div
+      className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-xl ${iconBgClass}`}
+      aria-hidden
+    >
+      <Icon className={`h-5 w-5 ${iconClassName}`} />
+    </div>
+    <div className="min-w-0 flex-1">
+      <div className="flex items-center gap-2 flex-wrap">
+        <p className="text-xs font-medium text-muted-foreground m-0">{label}</p>
+        {right}
+      </div>
+      <p className="text-xl font-extrabold tracking-tight text-foreground tabular-nums mt-1 m-0 sm:text-[22px]">{value}</p>
+      {sub ? <p className="text-[11px] text-muted-foreground mt-0.5 m-0 leading-snug">{sub}</p> : null}
+    </div>
+  </div>
+);
 
 const StorageOverview = () => {
   const { toast } = useToast();
@@ -91,7 +112,9 @@ const StorageOverview = () => {
         to: '/file-manager',
         cta: 'Open File Manager',
         icon: Folder,
-        color: 'text-sky-400',
+        iconBg: 'bg-sky-500/15',
+        iconClass: 'text-sky-400',
+        hint: 'Uploaded documents and attachments.',
       },
       {
         key: 'invoices',
@@ -102,8 +125,9 @@ const StorageOverview = () => {
         to: '/invoices',
         cta: 'View Invoices',
         icon: FileText,
-        color: 'text-rose-400',
-        hint: 'DB payload size (line items, notes). PDFs are usually generated on demand.',
+        iconBg: 'bg-rose-500/15',
+        iconClass: 'text-rose-400',
+        hint: 'DB payload (line items, notes). PDFs are usually generated on demand.',
       },
       {
         key: 'clients',
@@ -114,8 +138,9 @@ const StorageOverview = () => {
         to: '/clients',
         cta: 'View Clients',
         icon: Users,
-        color: 'text-violet-400',
-        hint: 'Approximate size of stored client records.',
+        iconBg: 'bg-violet-500/15',
+        iconClass: 'text-violet-400',
+        hint: 'Stored client records.',
       },
       {
         key: 'logs',
@@ -126,16 +151,25 @@ const StorageOverview = () => {
         to: admin ? '/login-activity' : '/dashboard',
         cta: admin ? 'Open Login Activity' : 'Dashboard',
         icon: Activity,
-        color: 'text-slate-400',
+        iconBg: 'bg-slate-500/15',
+        iconClass: 'text-slate-400',
         hint:
           data.logsScope === 'system'
-            ? 'All login/session rows on this server (admin view).'
-            : 'Login activity rows for your user only.',
+            ? 'All login/session rows on this server (admin).'
+            : 'Login activity for your account.',
       },
     ];
   }, [data, admin]);
 
   const warnQuota = pctUsed >= 90 && (data?.totalBytes || 0) > 0;
+
+  const dbFootprint = data ? data.invoicesBytes + data.clientsBytes + data.logsBytes : 0;
+  const dbLabelSub = data
+    ? `${data.invoicesCount} invoices · ${data.clientsCount} clients · ${data.logsRowCount} log rows`
+    : '';
+
+  const listStagger = 0.22;
+  const listDuration = 0.55;
 
   return (
     <>
@@ -185,7 +219,7 @@ const StorageOverview = () => {
                       className={`h-full rounded-full ${warnQuota ? 'bg-gradient-to-r from-amber-500 to-orange-400' : 'bg-gradient-to-r from-sky-500 to-cyan-400'}`}
                       initial={{ width: 0 }}
                       animate={{ width: `${pctUsed}%` }}
-                      transition={{ duration: 0.6, ease: 'easeOut' }}
+                      transition={{ duration: 0.85, ease: 'easeOut' }}
                     />
                   </div>
                   {warnQuota ? (
@@ -239,33 +273,99 @@ const StorageOverview = () => {
               </div>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3">
+            {/* Finance-style dual card: two pillars like income / expenses */}
+            <motion.div
+              initial={{ opacity: 0, y: 14 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: listDuration, ease: [0.22, 1, 0.36, 1] }}
+              className="rounded-2xl border border-border bg-card shadow-sm overflow-hidden"
+            >
+              <div className="grid grid-cols-1 sm:grid-cols-2 divide-y sm:divide-y-0 sm:divide-x divide-border">
+                <div className="p-5 sm:p-6">
+                  <StorageStatRow
+                    icon={Folder}
+                    iconBgClass="bg-sky-500/15"
+                    iconClassName="text-sky-400"
+                    label="File uploads"
+                    value={formatBytes(data.filesBytes)}
+                    sub={`${data.filesCount} file${data.filesCount === 1 ? '' : 's'} on disk`}
+                  />
+                  <div className="mt-4 pt-4 border-t border-border/80">
+                    <Link
+                      to="/file-manager"
+                      className="inline-flex items-center gap-1 text-sm font-semibold text-sky-400 hover:underline"
+                    >
+                      Open File Manager
+                      <ChevronRight className="h-4 w-4" />
+                    </Link>
+                  </div>
+                </div>
+                <div className="p-5 sm:p-6 bg-secondary/20">
+                  <StorageStatRow
+                    icon={Database}
+                    iconBgClass="bg-violet-500/15"
+                    iconClassName="text-violet-400"
+                    label="Records & logs"
+                    value={formatBytes(dbFootprint)}
+                    sub={dbLabelSub}
+                  />
+                  <div className="mt-4 pt-4 border-t border-border/80 flex flex-wrap gap-x-4 gap-y-1 text-xs font-medium">
+                    <Link to="/invoices" className="text-rose-400/90 hover:underline">
+                      Invoices
+                    </Link>
+                    <span className="text-muted-foreground">·</span>
+                    <Link to="/clients" className="text-violet-400/90 hover:underline">
+                      Clients
+                    </Link>
+                    <span className="text-muted-foreground">·</span>
+                    <Link to={admin ? '/login-activity' : '/dashboard'} className="text-slate-400 hover:underline">
+                      {admin ? 'Logs' : 'Home'}
+                    </Link>
+                  </div>
+                </div>
+              </div>
+            </motion.div>
+
+            {/* Category cards — same visual language as dashboard stat rows, slower stagger */}
+            <div className="flex flex-col gap-3">
               {cards.map((card, i) => {
                 const Icon = card.icon;
                 return (
                   <motion.div
                     key={card.key}
-                    initial={{ opacity: 0, y: 8 }}
+                    initial={{ opacity: 0, y: 16 }}
                     animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: i * 0.04 }}
+                    transition={{
+                      delay: 0.35 + i * listStagger,
+                      duration: listDuration,
+                      ease: [0.22, 1, 0.36, 1],
+                    }}
                   >
                     <Link
                       to={card.to}
-                      className="group block h-full rounded-2xl border border-border bg-card/90 p-4 shadow-sm transition-colors hover:bg-secondary/30 hover:border-sky-500/30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+                      className="group flex items-center justify-between gap-4 rounded-2xl border border-border bg-card/90 px-5 py-4 shadow-sm transition-colors hover:bg-secondary/35 hover:border-sky-500/25 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background sm:px-6 sm:py-5"
                     >
-                      <div className="flex items-start justify-between gap-2">
-                        <div className="flex items-center gap-2 min-w-0">
-                          <Icon className={`w-5 h-5 shrink-0 ${card.color}`} />
-                          <span className="font-semibold text-foreground truncate">{card.title}</span>
-                        </div>
-                        <ChevronRight className="w-4 h-4 text-muted-foreground shrink-0 transition-transform group-hover:translate-x-0.5" />
+                      <div className="min-w-0 flex-1">
+                        <StorageStatRow
+                          icon={Icon}
+                          iconBgClass={card.iconBg}
+                          iconClassName={card.iconClass}
+                          label={card.title}
+                          value={formatBytes(card.bytes)}
+                          sub={`${card.count} ${card.countLabel}`}
+                        />
+                        {card.hint ? (
+                          <p className="text-[10px] text-muted-foreground/90 mt-2 leading-snug line-clamp-2 pl-[3.25rem] sm:pl-16">
+                            {card.hint}
+                          </p>
+                        ) : null}
                       </div>
-                      <p className="text-2xl font-bold text-foreground tabular-nums mt-3">{formatBytes(card.bytes)}</p>
-                      <p className="text-xs text-muted-foreground mt-1">
-                        {card.count} {card.countLabel}
-                      </p>
-                      {card.hint ? <p className="text-[11px] text-muted-foreground/90 mt-2 leading-snug">{card.hint}</p> : null}
-                      <p className="text-sm font-medium text-sky-400 mt-3 group-hover:underline">{card.cta}</p>
+                      <div className="flex shrink-0 flex-col items-end gap-1 self-start pt-0.5">
+                        <ChevronRight className="h-5 w-5 text-muted-foreground transition-transform group-hover:translate-x-0.5" />
+                        <span className="text-xs font-semibold text-sky-400 group-hover:underline max-w-[7rem] text-right sm:max-w-none">
+                          {card.cta}
+                        </span>
+                      </div>
                     </Link>
                   </motion.div>
                 );

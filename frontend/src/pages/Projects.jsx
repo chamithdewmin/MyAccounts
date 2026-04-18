@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Helmet } from 'react-helmet';
 import { Link } from 'react-router-dom';
-import { Briefcase, Plus, LayoutGrid, FileText, Trash2 } from 'lucide-react';
+import { Briefcase, Plus, LayoutGrid, FileText, Trash2, Calendar, DollarSign, TrendingUp, Receipt } from 'lucide-react';
 import { useFinance } from '@/contexts/FinanceContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -24,6 +24,13 @@ const statusLabel = (s) => {
   return 'In progress';
 };
 
+const formatDate = (iso) => {
+  if (!iso) return '—';
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return '—';
+  return d.toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' });
+};
+
 const Projects = () => {
   const { settings } = useFinance();
   const { toast } = useToast();
@@ -43,6 +50,20 @@ const Projects = () => {
   const [deleteTarget, setDeleteTarget] = useState(null);
   const [deleteConfirmInput, setDeleteConfirmInput] = useState('');
   const [deleteSubmitting, setDeleteSubmitting] = useState(false);
+  const [selectedProjectId, setSelectedProjectId] = useState(null);
+
+  useEffect(() => {
+    if (list.length === 0) {
+      setSelectedProjectId(null);
+      return;
+    }
+    setSelectedProjectId((prev) => {
+      if (prev && list.some((p) => p.id === prev)) return prev;
+      return null;
+    });
+  }, [list]);
+
+  const selectedProject = selectedProjectId ? list.find((p) => p.id === selectedProjectId) : null;
 
   const load = () => {
     setLoading(true);
@@ -113,6 +134,7 @@ const Projects = () => {
     try {
       await api.projects.delete(deleteTarget.id);
       setList((prev) => prev.filter((x) => x.id !== deleteTarget.id));
+      if (selectedProjectId === deleteTarget.id) setSelectedProjectId(null);
       toast({ title: 'Project deleted' });
       closeDeleteDialog();
     } catch (err) {
@@ -152,62 +174,226 @@ const Projects = () => {
             No projects yet. Create one to start your Kanban board.
           </div>
         ) : (
-          <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
-            {list.map((p) => {
-              const pendingStyle = p.status === 'on_hold';
-              return (
-                <div
-                  key={p.id}
-                  className={cn(
-                    'rounded-2xl border bg-card p-5 flex flex-col gap-3 shadow-sm',
-                    pendingStyle && 'border-yellow-500/50',
-                    !pendingStyle && 'border-border',
-                  )}
-                >
-                  <div className="flex items-start justify-between gap-2">
-                    <h2 className="text-lg font-semibold text-foreground leading-tight">{p.name}</h2>
+          <div className="flex flex-col lg:flex-row lg:items-start gap-6">
+            <div className="min-w-0 flex-1 grid gap-4 sm:grid-cols-2">
+              {list.map((p) => {
+                const pendingStyle = p.status === 'on_hold';
+                const isSelected = selectedProjectId === p.id;
+                return (
+                  <div
+                    key={p.id}
+                    role="button"
+                    tabIndex={0}
+                    onClick={() => setSelectedProjectId(p.id)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault();
+                        setSelectedProjectId(p.id);
+                      }
+                    }}
+                    className={cn(
+                      'rounded-2xl border bg-card p-5 flex flex-col gap-3 shadow-sm text-left outline-none transition-[box-shadow,ring,border-color]',
+                      'cursor-pointer focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background',
+                      isSelected && 'ring-2 ring-primary/70 shadow-md',
+                      pendingStyle ? 'border-yellow-500/50' : 'border-border',
+                    )}
+                  >
+                    <div className="flex items-start justify-between gap-2">
+                      <h2 className="text-lg font-semibold text-foreground leading-tight">{p.name}</h2>
+                    </div>
+                    <p className="text-sm text-muted-foreground">
+                      Client: <span className="text-foreground font-medium">{p.clientName || '—'}</span>
+                    </p>
+                    <p className="text-sm">
+                      Status:{' '}
+                      <span
+                        className={cn(
+                          'font-medium',
+                          p.status === 'completed' && 'text-green-500',
+                          p.status === 'on_hold' && 'text-yellow-500',
+                          p.status === 'in_progress' && 'text-primary',
+                        )}
+                      >
+                        {statusLabel(p.status)}
+                      </span>
+                    </p>
+                    <div className="text-sm">
+                      <span className="text-muted-foreground">Progress: </span>
+                      <span className="font-semibold text-foreground">{p.progress ?? 0}%</span>
+                      <span className="text-muted-foreground"> ({p.taskDone ?? 0}/{p.taskTotal ?? 0} tasks)</span>
+                    </div>
+                    <div className="text-sm flex flex-wrap justify-between gap-2">
+                      <span className="text-muted-foreground">Expenses</span>
+                      <span className="font-medium tabular-nums text-orange-400">
+                        {currency} {(Number(p.expenseTotal) || 0).toLocaleString()}
+                      </span>
+                    </div>
+                    <div className="text-sm flex flex-wrap justify-between gap-2">
+                      <span className="text-muted-foreground">Profit</span>
+                      <span
+                        className={cn(
+                          'font-semibold tabular-nums',
+                          (Number(p.profit) || 0) >= 0 ? 'text-green-500' : 'text-red-500',
+                        )}
+                      >
+                        {currency} {(Number(p.profit) || 0).toLocaleString()}
+                      </span>
+                    </div>
+                    <div className="flex flex-wrap gap-2 pt-2 mt-auto border-t border-border" onClick={(e) => e.stopPropagation()}>
+                      <Button asChild size="sm" className="gap-1">
+                        <Link to={`/projects/${encodeURIComponent(p.id)}`}>
+                          <LayoutGrid className="w-3.5 h-3.5" />
+                          View board
+                        </Link>
+                      </Button>
+                      <Button asChild size="sm" variant="outline" className="gap-1">
+                        <Link to="/file-manager">
+                          <FileText className="w-3.5 h-3.5" />
+                          Files
+                        </Link>
+                      </Button>
+                      <Button asChild size="sm" variant="outline" className="gap-1">
+                        <Link to="/invoices">
+                          <FileText className="w-3.5 h-3.5" />
+                          Invoice
+                        </Link>
+                      </Button>
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant="outline"
+                        className="gap-1 text-destructive border-destructive/40 hover:bg-destructive/10 hover:text-destructive"
+                        onClick={() => openDeleteDialog(p)}
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                        Delete
+                      </Button>
+                    </div>
                   </div>
-                  <p className="text-sm text-muted-foreground">
-                    Client: <span className="text-foreground font-medium">{p.clientName || '—'}</span>
-                  </p>
-                  <p className="text-sm">
-                    Status:{' '}
-                    <span
-                      className={cn(
-                        'font-medium',
-                        p.status === 'completed' && 'text-green-500',
-                        p.status === 'on_hold' && 'text-yellow-500',
-                        p.status === 'in_progress' && 'text-primary',
-                      )}
-                    >
-                      {statusLabel(p.status)}
-                    </span>
-                  </p>
-                  <div className="text-sm">
-                    <span className="text-muted-foreground">Progress: </span>
-                    <span className="font-semibold text-foreground">{p.progress ?? 0}%</span>
-                    <span className="text-muted-foreground"> ({p.taskDone ?? 0}/{p.taskTotal ?? 0} tasks)</span>
+                );
+              })}
+            </div>
+
+            <aside className="w-full lg:w-[min(100%,400px)] shrink-0 lg:sticky lg:top-20 space-y-3">
+              {selectedProject ? (
+                <div className="rounded-2xl border border-border bg-card p-5 sm:p-6 shadow-sm space-y-5">
+                  <div className="flex items-center gap-2 border-b border-border pb-4">
+                    <Briefcase className="w-5 h-5 text-primary shrink-0" />
+                    <h2 className="text-lg font-semibold text-foreground">Project summary</h2>
                   </div>
-                  <div className="text-sm flex flex-wrap justify-between gap-2">
-                    <span className="text-muted-foreground">Expenses</span>
-                    <span className="font-medium tabular-nums text-orange-400">
-                      {currency} {(Number(p.expenseTotal) || 0).toLocaleString()}
-                    </span>
+                  <div>
+                    <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Project name</p>
+                    <p className="text-xl font-bold text-foreground mt-1 leading-tight">{selectedProject.name}</p>
                   </div>
-                  <div className="text-sm flex flex-wrap justify-between gap-2">
-                    <span className="text-muted-foreground">Profit</span>
-                    <span
-                      className={cn(
-                        'font-semibold tabular-nums',
-                        (Number(p.profit) || 0) >= 0 ? 'text-green-500' : 'text-red-500',
-                      )}
-                    >
-                      {currency} {(Number(p.profit) || 0).toLocaleString()}
-                    </span>
-                  </div>
-                  <div className="flex flex-wrap gap-2 pt-2 mt-auto border-t border-border">
+                  <dl className="space-y-4 text-sm">
+                    <div className="flex gap-3">
+                      <dt className="w-28 shrink-0 text-muted-foreground">Client</dt>
+                      <dd className="font-medium text-foreground min-w-0">{selectedProject.clientName || '—'}</dd>
+                    </div>
+                    <div className="flex gap-3 items-center">
+                      <dt className="w-28 shrink-0 text-muted-foreground">Status</dt>
+                      <dd>
+                        <span
+                          className={cn(
+                            'inline-flex font-semibold',
+                            selectedProject.status === 'completed' && 'text-green-500',
+                            selectedProject.status === 'on_hold' && 'text-yellow-500',
+                            selectedProject.status === 'in_progress' && 'text-primary',
+                          )}
+                        >
+                          {statusLabel(selectedProject.status)}
+                        </span>
+                      </dd>
+                    </div>
+                    <div className="flex gap-3">
+                      <dt className="w-28 shrink-0 text-muted-foreground">Progress</dt>
+                      <dd className="font-semibold text-foreground tabular-nums">
+                        {selectedProject.progress ?? 0}%{' '}
+                        <span className="font-normal text-muted-foreground">
+                          ({selectedProject.taskDone ?? 0} of {selectedProject.taskTotal ?? 0} tasks done)
+                        </span>
+                      </dd>
+                    </div>
+                    <div className="flex gap-3 items-start">
+                      <dt className="w-28 shrink-0 text-muted-foreground pt-0.5">
+                        <span className="inline-flex items-center gap-1">
+                          <DollarSign className="w-3.5 h-3.5 opacity-70" />
+                          Price
+                        </span>
+                      </dt>
+                      <dd className="font-semibold tabular-nums text-foreground">
+                        {currency} {(Number(selectedProject.price) || 0).toLocaleString()}
+                      </dd>
+                    </div>
+                    <div className="flex gap-3 items-start">
+                      <dt className="w-28 shrink-0 text-muted-foreground pt-0.5">
+                        <span className="inline-flex items-center gap-1">
+                          <Receipt className="w-3.5 h-3.5 opacity-70" />
+                          Expenses
+                        </span>
+                      </dt>
+                      <dd className="font-semibold tabular-nums text-orange-400">
+                        {currency} {(Number(selectedProject.expenseTotal) || 0).toLocaleString()}
+                      </dd>
+                    </div>
+                    <div className="flex gap-3 items-start">
+                      <dt className="w-28 shrink-0 text-muted-foreground pt-0.5">
+                        <span className="inline-flex items-center gap-1">
+                          <TrendingUp className="w-3.5 h-3.5 opacity-70" />
+                          Profit
+                        </span>
+                      </dt>
+                      <dd
+                        className={cn(
+                          'font-bold tabular-nums',
+                          (Number(selectedProject.profit) || 0) >= 0 ? 'text-green-500' : 'text-red-500',
+                        )}
+                      >
+                        {currency} {(Number(selectedProject.profit) || 0).toLocaleString()}
+                        {Number(selectedProject.price) > 0 ? (
+                          <span className="block text-xs font-normal text-muted-foreground mt-1">
+                            Margin:{' '}
+                            {(
+                              ((Number(selectedProject.profit) || 0) / Number(selectedProject.price)) *
+                              100
+                            ).toFixed(1)}
+                            % of project price
+                          </span>
+                        ) : null}
+                      </dd>
+                    </div>
+                    <div className="flex gap-3">
+                      <dt className="w-28 shrink-0 text-muted-foreground">
+                        <span className="inline-flex items-center gap-1">
+                          <Calendar className="w-3.5 h-3.5 opacity-70" />
+                          Created
+                        </span>
+                      </dt>
+                      <dd className="text-foreground">{formatDate(selectedProject.createdAt)}</dd>
+                    </div>
+                    <div className="flex gap-3">
+                      <dt className="w-28 shrink-0 text-muted-foreground">
+                        <span className="inline-flex items-center gap-1">
+                          <Calendar className="w-3.5 h-3.5 opacity-70" />
+                          Updated
+                        </span>
+                      </dt>
+                      <dd className="text-foreground">{formatDate(selectedProject.updatedAt)}</dd>
+                    </div>
+                    {selectedProject.clientId ? (
+                      <div className="flex gap-3">
+                        <dt className="w-28 shrink-0 text-muted-foreground">Client ID</dt>
+                        <dd className="font-mono text-xs text-muted-foreground break-all">{selectedProject.clientId}</dd>
+                      </div>
+                    ) : null}
+                    <div className="flex gap-3">
+                      <dt className="w-28 shrink-0 text-muted-foreground">Project ID</dt>
+                      <dd className="font-mono text-xs text-muted-foreground break-all">{selectedProject.id}</dd>
+                    </div>
+                  </dl>
+                  <div className="pt-2 border-t border-border flex flex-wrap gap-2" onClick={(e) => e.stopPropagation()}>
                     <Button asChild size="sm" className="gap-1">
-                      <Link to={`/projects/${encodeURIComponent(p.id)}`}>
+                      <Link to={`/projects/${encodeURIComponent(selectedProject.id)}`}>
                         <LayoutGrid className="w-3.5 h-3.5" />
                         View board
                       </Link>
@@ -224,20 +410,14 @@ const Projects = () => {
                         Invoice
                       </Link>
                     </Button>
-                    <Button
-                      type="button"
-                      size="sm"
-                      variant="outline"
-                      className="gap-1 text-destructive border-destructive/40 hover:bg-destructive/10 hover:text-destructive"
-                      onClick={() => openDeleteDialog(p)}
-                    >
-                      <Trash2 className="w-3.5 h-3.5" />
-                      Delete
-                    </Button>
                   </div>
                 </div>
-              );
-            })}
+              ) : (
+                <div className="rounded-2xl border border-dashed border-border bg-card/50 px-5 py-10 text-center text-sm text-muted-foreground">
+                  Select a project card to see the full summary here.
+                </div>
+              )}
+            </aside>
           </div>
         )}
 

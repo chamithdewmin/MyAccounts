@@ -12,9 +12,9 @@ const getColors = () => {
   return {
     bg: isDark ? "#000000" : "#f8fafc",
     bg2: isDark ? "#000000" : "#f8fafc",
-    card: isDark ? "#111111" : "#ffffff",
-    border: isDark ? "#171717" : "#e2e8f0",
-    border2: isDark ? "#171717" : "#e2e8f0",
+    card: isDark ? "#0a0a0a" : "#ffffff",
+    border: "#262626",
+    border2: "#262626",
     text: isDark ? "#fff" : "#0f172a",
     text2: isDark ? "#d1d9e6" : "#334155",
     muted: isDark ? "#8b9ab0" : "#64748b",
@@ -235,34 +235,34 @@ export default function CashFlowReport(){
   const openReportPreview = () => {
     const cur = settings?.currency || "LKR";
     const monthName = getMonthName(selectedMonth);
-    let body = `<h2 style="margin:0 0 16px; font-size:18px; border-bottom:2px solid #111; padding-bottom:8px;">Cash Flow Report</h2>`;
+    let body = `<h2 style="margin:0 0 16px; font-size:18px; border-bottom:2px solid #262626; padding-bottom:8px;">Cash Flow Report</h2>`;
     body += `<p style="color:#666; font-size:12px; margin:0 0 20px;">${monthName} ${selectedYear}</p>`;
-    body += `<table style="width:100%; border-collapse:collapse; margin-bottom:24px;"><tr style="background:#f5f5f5;"><th style="text-align:left; padding:10px 12px; border:1px solid #ddd;">Metric</th><th style="text-align:right; padding:10px 12px; border:1px solid #ddd;">Value</th></tr>`;
-    body += `<tr><td style="padding:10px 12px; border:1px solid #ddd;">Total Money In</td><td style="text-align:right; padding:10px 12px; border:1px solid #ddd;">${cur} ${totalIn.toLocaleString()}</td></tr>`;
-    body += `<tr><td style="padding:10px 12px; border:1px solid #ddd;">Total Money Out</td><td style="text-align:right; padding:10px 12px; border:1px solid #ddd;">${cur} ${totalOut.toLocaleString()}</td></tr>`;
-    body += `<tr><td style="padding:10px 12px; border:1px solid #ddd;">Net Cash Flow</td><td style="text-align:right; padding:10px 12px; border:1px solid #ddd;">${cur} ${net.toLocaleString()}</td></tr>`;
-    body += `<tr><td style="padding:10px 12px; border:1px solid #ddd;">Current Balance</td><td style="text-align:right; padding:10px 12px; border:1px solid #ddd;">${cur} ${(totals.cashInHand || 0).toLocaleString()}</td></tr></table>`;
+    body += `<table style="width:100%; border-collapse:collapse; margin-bottom:24px;"><tr style="background:#f5f5f5;"><th style="text-align:left; padding:10px 12px; border:1px solid #262626;">Metric</th><th style="text-align:right; padding:10px 12px; border:1px solid #262626;">Value</th></tr>`;
+    body += `<tr><td style="padding:10px 12px; border:1px solid #262626;">Total Money In</td><td style="text-align:right; padding:10px 12px; border:1px solid #262626;">${cur} ${totalIn.toLocaleString()}</td></tr>`;
+    body += `<tr><td style="padding:10px 12px; border:1px solid #262626;">Total Money Out</td><td style="text-align:right; padding:10px 12px; border:1px solid #262626;">${cur} ${totalOut.toLocaleString()}</td></tr>`;
+    body += `<tr><td style="padding:10px 12px; border:1px solid #262626;">Net Cash Flow</td><td style="text-align:right; padding:10px 12px; border:1px solid #262626;">${cur} ${net.toLocaleString()}</td></tr>`;
+    body += `<tr><td style="padding:10px 12px; border:1px solid #262626;">Current Balance</td><td style="text-align:right; padding:10px 12px; border:1px solid #262626;">${cur} ${(totals.cashInHand || 0).toLocaleString()}</td></tr></table>`;
     
     // Income details
     if (filteredIncomes.length > 0) {
-      body += `<h3 style="margin:20px 0 12px; font-size:14px;">Money In - ${monthName} ${selectedYear}</h3><table style="width:100%; border-collapse:collapse;"><tr style="background:#f5f5f5;"><th style="border:1px solid #ddd; padding:8px;">Date</th><th style="border:1px solid #ddd; padding:8px;">Source</th><th style="border:1px solid #ddd; padding:8px;">Category</th><th style="border:1px solid #ddd; padding:8px; text-align:right;">Amount</th></tr>`;
+      body += `<h3 style="margin:20px 0 12px; font-size:14px;">Money In - ${monthName} ${selectedYear}</h3><table style="width:100%; border-collapse:collapse;"><tr style="background:#f5f5f5;"><th style="border:1px solid #262626; padding:8px;">Date</th><th style="border:1px solid #262626; padding:8px;">Source</th><th style="border:1px solid #262626; padding:8px;">Category</th><th style="border:1px solid #262626; padding:8px; text-align:right;">Amount</th></tr>`;
       filteredIncomes.forEach((inc) => {
-        body += `<tr><td style="border:1px solid #ddd; padding:8px;">${new Date(inc.date).toLocaleDateString()}</td><td style="border:1px solid #ddd; padding:8px;">${inc.clientName || '-'}</td><td style="border:1px solid #ddd; padding:8px;">${inc.serviceType || '-'}</td><td style="border:1px solid #ddd; padding:8px; text-align:right;">${cur} ${(inc.amount || 0).toLocaleString()}</td></tr>`;
+        body += `<tr><td style="border:1px solid #262626; padding:8px;">${new Date(inc.date).toLocaleDateString()}</td><td style="border:1px solid #262626; padding:8px;">${inc.clientName || '-'}</td><td style="border:1px solid #262626; padding:8px;">${inc.serviceType || '-'}</td><td style="border:1px solid #262626; padding:8px; text-align:right;">${cur} ${(inc.amount || 0).toLocaleString()}</td></tr>`;
       });
       body += `</table>`;
     }
     
     // Expense details
     if (filteredExpenses.length > 0) {
-      body += `<h3 style="margin:20px 0 12px; font-size:14px;">Money Out - ${monthName} ${selectedYear}</h3><table style="width:100%; border-collapse:collapse;"><tr style="background:#f5f5f5;"><th style="border:1px solid #ddd; padding:8px;">Date</th><th style="border:1px solid #ddd; padding:8px;">Category</th><th style="border:1px solid #ddd; padding:8px;">Description</th><th style="border:1px solid #ddd; padding:8px; text-align:right;">Amount</th></tr>`;
+      body += `<h3 style="margin:20px 0 12px; font-size:14px;">Money Out - ${monthName} ${selectedYear}</h3><table style="width:100%; border-collapse:collapse;"><tr style="background:#f5f5f5;"><th style="border:1px solid #262626; padding:8px;">Date</th><th style="border:1px solid #262626; padding:8px;">Category</th><th style="border:1px solid #262626; padding:8px;">Description</th><th style="border:1px solid #262626; padding:8px; text-align:right;">Amount</th></tr>`;
       filteredExpenses.forEach((exp) => {
-        body += `<tr><td style="border:1px solid #ddd; padding:8px;">${new Date(exp.date).toLocaleDateString()}</td><td style="border:1px solid #ddd; padding:8px;">${exp.category || '-'}</td><td style="border:1px solid #ddd; padding:8px;">${exp.description || '-'}</td><td style="border:1px solid #ddd; padding:8px; text-align:right;">${cur} ${(exp.amount || 0).toLocaleString()}</td></tr>`;
+        body += `<tr><td style="border:1px solid #262626; padding:8px;">${new Date(exp.date).toLocaleDateString()}</td><td style="border:1px solid #262626; padding:8px;">${exp.category || '-'}</td><td style="border:1px solid #262626; padding:8px;">${exp.description || '-'}</td><td style="border:1px solid #262626; padding:8px; text-align:right;">${cur} ${(exp.amount || 0).toLocaleString()}</td></tr>`;
       });
       body += `</table>`;
     }
-    body += `<h3 style="margin:0 0 12px; font-size:14px;">Recent Transactions</h3><table style="width:100%; border-collapse:collapse;"><tr style="background:#f5f5f5;"><th style="text-align:left; padding:8px 12px; border:1px solid #ddd;">Date</th><th style="text-align:left; padding:8px 12px; border:1px solid #ddd;">Source</th><th style="text-align:right; padding:8px 12px; border:1px solid #ddd;">Amount</th><th style="text-align:left; padding:8px 12px; border:1px solid #ddd;">Status</th></tr>`;
+    body += `<h3 style="margin:0 0 12px; font-size:14px;">Recent Transactions</h3><table style="width:100%; border-collapse:collapse;"><tr style="background:#f5f5f5;"><th style="text-align:left; padding:8px 12px; border:1px solid #262626;">Date</th><th style="text-align:left; padding:8px 12px; border:1px solid #262626;">Source</th><th style="text-align:right; padding:8px 12px; border:1px solid #262626;">Amount</th><th style="text-align:left; padding:8px 12px; border:1px solid #262626;">Status</th></tr>`;
     filtered.slice(0, 20).forEach((t) => {
-      body += `<tr><td style="padding:8px 12px; border:1px solid #ddd;">${t.date}</td><td style="padding:8px 12px; border:1px solid #ddd;">${t.source}</td><td style="text-align:right; padding:8px 12px; border:1px solid #ddd;">${cur} ${Math.abs(t.amount).toLocaleString()}</td><td style="padding:8px 12px; border:1px solid #ddd;">${t.status}</td></tr>`;
+      body += `<tr><td style="padding:8px 12px; border:1px solid #262626;">${t.date}</td><td style="padding:8px 12px; border:1px solid #262626;">${t.source}</td><td style="text-align:right; padding:8px 12px; border:1px solid #262626;">${cur} ${Math.abs(t.amount).toLocaleString()}</td><td style="padding:8px 12px; border:1px solid #262626;">${t.status}</td></tr>`;
     });
     body += `</table>`;
     const fullHtml = getPrintHtml(body, { logo: settings?.logo, businessName: settings?.businessName });

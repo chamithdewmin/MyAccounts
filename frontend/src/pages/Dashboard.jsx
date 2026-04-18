@@ -16,8 +16,8 @@ const getThemeColors = () => {
   const isDark = document.documentElement.classList.contains('dark');
   return {
     bg: isDark ? "#000000" : "#ffffff",
-    card: isDark ? "#111111" : "#ffffff",
-    border: isDark ? "#171717" : "#e2e8f0",
+    card: isDark ? "#0a0a0a" : "#ffffff",
+    border: "#262626",
     text: isDark ? "#fff" : "#0f172a",
     text2: isDark ? "#d1d9e6" : "#334155",
     muted: isDark ? "#8b9ab0" : "#64748b",

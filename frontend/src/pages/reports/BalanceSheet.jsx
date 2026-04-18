@@ -12,9 +12,9 @@ const getColors = () => {
   return {
     bg: isDark ? "#000000" : "#f8fafc",
     bg2: isDark ? "#000000" : "#f8fafc",
-    card: isDark ? "#111111" : "#ffffff",
-    border: isDark ? "#171717" : "#e2e8f0",
-    border2: isDark ? "#171717" : "#e2e8f0",
+    card: isDark ? "#0a0a0a" : "#ffffff",
+    border: "#262626",
+    border2: "#262626",
     text: isDark ? "#fff" : "#0f172a",
     text2: isDark ? "#d1d9e6" : "#334155",
     muted: isDark ? "#8b9ab0" : "#64748b",
@@ -194,19 +194,19 @@ export default function BalanceSheet(){
   const openReportPreview = () => {
     const cur = settings?.currency || "LKR";
     const monthName = getMonthName(selectedMonth);
-    let body = `<h2 style="margin:0 0 16px; font-size:18px; border-bottom:2px solid #111; padding-bottom:8px;">Balance Sheet Report</h2>`;
+    let body = `<h2 style="margin:0 0 16px; font-size:18px; border-bottom:2px solid #262626; padding-bottom:8px;">Balance Sheet Report</h2>`;
     body += `<p style="color:#666; font-size:12px; margin:0 0 20px;">As of ${monthName} ${selectedYear}</p>`;
-    body += `<table style="width:100%; border-collapse:collapse; margin-bottom:24px;"><tr style="background:#f5f5f5;"><th style="text-align:left; padding:10px 12px; border:1px solid #ddd;">Metric</th><th style="text-align:right; padding:10px 12px; border:1px solid #ddd;">Value</th></tr>`;
-    body += `<tr><td style="padding:10px 12px; border:1px solid #ddd;">Total Assets</td><td style="text-align:right; padding:10px 12px; border:1px solid #ddd;">${cur} ${totalAssets.toLocaleString()}</td></tr>`;
-    body += `<tr><td style="padding:10px 12px; border:1px solid #ddd;">Total Liabilities</td><td style="text-align:right; padding:10px 12px; border:1px solid #ddd;">${cur} ${totalLiab.toLocaleString()}</td></tr>`;
-    body += `<tr><td style="padding:10px 12px; border:1px solid #ddd;">Owner's Equity</td><td style="text-align:right; padding:10px 12px; border:1px solid #ddd;">${cur} ${equity.toLocaleString()}</td></tr>`;
-    body += `<tr><td style="padding:10px 12px; border:1px solid #ddd;">Debt Ratio</td><td style="text-align:right; padding:10px 12px; border:1px solid #ddd;">${debtRatio}%</td></tr>`;
-    body += `<tr><td style="padding:10px 12px; border:1px solid #ddd;">Current Ratio</td><td style="text-align:right; padding:10px 12px; border:1px solid #ddd;">${currentRatio}</td></tr></table>`;
-    body += `<h3 style="margin:0 0 12px; font-size:14px;">Assets</h3><table style="width:100%; border-collapse:collapse; margin-bottom:20px;"><tr style="background:#f5f5f5;"><th style="text-align:left; padding:8px 12px; border:1px solid #ddd;">Item</th><th style="text-align:right; padding:8px 12px; border:1px solid #ddd;">Amount</th></tr>`;
-    assetItems.forEach((a) => { body += `<tr><td style="padding:8px 12px; border:1px solid #ddd;">${a.name}</td><td style="text-align:right; padding:8px 12px; border:1px solid #ddd;">${cur} ${a.value.toLocaleString()}</td></tr>`; });
+    body += `<table style="width:100%; border-collapse:collapse; margin-bottom:24px;"><tr style="background:#f5f5f5;"><th style="text-align:left; padding:10px 12px; border:1px solid #262626;">Metric</th><th style="text-align:right; padding:10px 12px; border:1px solid #262626;">Value</th></tr>`;
+    body += `<tr><td style="padding:10px 12px; border:1px solid #262626;">Total Assets</td><td style="text-align:right; padding:10px 12px; border:1px solid #262626;">${cur} ${totalAssets.toLocaleString()}</td></tr>`;
+    body += `<tr><td style="padding:10px 12px; border:1px solid #262626;">Total Liabilities</td><td style="text-align:right; padding:10px 12px; border:1px solid #262626;">${cur} ${totalLiab.toLocaleString()}</td></tr>`;
+    body += `<tr><td style="padding:10px 12px; border:1px solid #262626;">Owner's Equity</td><td style="text-align:right; padding:10px 12px; border:1px solid #262626;">${cur} ${equity.toLocaleString()}</td></tr>`;
+    body += `<tr><td style="padding:10px 12px; border:1px solid #262626;">Debt Ratio</td><td style="text-align:right; padding:10px 12px; border:1px solid #262626;">${debtRatio}%</td></tr>`;
+    body += `<tr><td style="padding:10px 12px; border:1px solid #262626;">Current Ratio</td><td style="text-align:right; padding:10px 12px; border:1px solid #262626;">${currentRatio}</td></tr></table>`;
+    body += `<h3 style="margin:0 0 12px; font-size:14px;">Assets</h3><table style="width:100%; border-collapse:collapse; margin-bottom:20px;"><tr style="background:#f5f5f5;"><th style="text-align:left; padding:8px 12px; border:1px solid #262626;">Item</th><th style="text-align:right; padding:8px 12px; border:1px solid #262626;">Amount</th></tr>`;
+    assetItems.forEach((a) => { body += `<tr><td style="padding:8px 12px; border:1px solid #262626;">${a.name}</td><td style="text-align:right; padding:8px 12px; border:1px solid #262626;">${cur} ${a.value.toLocaleString()}</td></tr>`; });
     body += `</table>`;
-    body += `<h3 style="margin:0 0 12px; font-size:14px;">Liabilities</h3><table style="width:100%; border-collapse:collapse;"><tr style="background:#f5f5f5;"><th style="text-align:left; padding:8px 12px; border:1px solid #ddd;">Item</th><th style="text-align:right; padding:8px 12px; border:1px solid #ddd;">Amount</th></tr>`;
-    liabItems.forEach((l) => { body += `<tr><td style="padding:8px 12px; border:1px solid #ddd;">${l.name}</td><td style="text-align:right; padding:8px 12px; border:1px solid #ddd;">${cur} ${l.value.toLocaleString()}</td></tr>`; });
+    body += `<h3 style="margin:0 0 12px; font-size:14px;">Liabilities</h3><table style="width:100%; border-collapse:collapse;"><tr style="background:#f5f5f5;"><th style="text-align:left; padding:8px 12px; border:1px solid #262626;">Item</th><th style="text-align:right; padding:8px 12px; border:1px solid #262626;">Amount</th></tr>`;
+    liabItems.forEach((l) => { body += `<tr><td style="padding:8px 12px; border:1px solid #262626;">${l.name}</td><td style="text-align:right; padding:8px 12px; border:1px solid #262626;">${cur} ${l.value.toLocaleString()}</td></tr>`; });
     body += `</table>`;
     const fullHtml = getPrintHtml(body, { logo: settings?.logo, businessName: settings?.businessName });
     const filename = `balance-sheet-report-${monthName}-${selectedYear}.pdf`;
@@ -284,7 +284,7 @@ export default function BalanceSheet(){
                 <Area type="monotone" dataKey="equity" name="Equity" stroke={C.blue} strokeWidth={2.5} fill="url(#gEq)"/>
               </AreaChart>
             </ResponsiveContainer>
-            <div style={{marginTop:14,padding:"12px 16px",background:"rgba(59,130,246,0.08)",borderRadius:12,border:`1px solid rgba(59,130,246,0.2)`,display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+            <div style={{marginTop:14,padding:"12px 16px",background:"rgba(59,130,246,0.08)",borderRadius:12,border:`1px solid #262626`,display:"flex",justifyContent:"space-between",alignItems:"center"}}>
               <div><p style={{color:C.muted,fontSize:11,margin:0}}>Current Equity</p><p style={{color:C.blue,fontSize:18,fontWeight:800,margin:"4px 0 0"}}>LKR {equity.toLocaleString()}</p></div>
               <div style={{display:"flex",alignItems:"center",gap:5,color:C.green}}><I.TrendingUp/><span style={{fontSize:13,fontWeight:700}}>Growing</span></div>
             </div>

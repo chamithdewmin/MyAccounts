@@ -26,8 +26,8 @@
     --destructive: 0 72% 51%;
     --destructive-foreground: 0 0% 100%;
 
-    /* Light theme borders */
-    --border: 214 20% 88%; /* light gray border */
+    /* App-wide neutral border */
+    --border: 0 0% 15%; /* #262626 */
     --input: 214 20% 92%;
     --ring: 219 98% 52%; /* #0e61fd */
 
@@ -40,8 +40,8 @@
     --table-row-odd: #ffffff;
     --table-row-even: #f8fafc;
     --table-row-hover: #f1f5f9;
-    --table-divider: #e2e8f0;
-    --table-border: #e2e8f0;
+    --table-divider: #262626;
+    --table-border: #262626;
     --text-primary: #0f172a;
     --text-body: #334155;
     --text-label: #64748b;
@@ -54,7 +54,7 @@
     --background: 0 0% 0%; /* #000000 for page background */
     --foreground: 210 40% 96%;
 
-    --card: 0 0% 6.7%; /* #111111 — cards and popup surfaces */
+    --card: 0 0% 4%; /* #0a0a0a for sidebar and cards */
     --card-foreground: 210 40% 96%;
 
     --primary: 219 98% 52%; /* #0e61fd blue */
@@ -72,7 +72,7 @@
     --destructive: 0 72% 51%;
     --destructive-foreground: 0 0% 100%;
 
-    --border: 0 0% 9%; /* #171717 */
+    --border: 0 0% 15%; /* #262626 */
     --input: 217 33% 17%; /* #1e293b - dark blue-gray for inputs */
     
     --secondary: 217 33% 17%; /* #1e293b - dark blue-gray */
@@ -84,11 +84,11 @@
 
     /* Table color scheme */
     --table-header-bg: #000000;
-    --table-row-odd: #111111;
-    --table-row-even: #111111;
+    --table-row-odd: #0a0a0a;
+    --table-row-even: #0a0a0a;
     --table-row-hover: #101010;
-    --table-divider: #171717;
-    --table-border: #171717;
+    --table-divider: #262626;
+    --table-border: #262626;
     --text-primary: #fff;
     --text-body: #d1d9e6;
     --text-label: #8b9ab0;

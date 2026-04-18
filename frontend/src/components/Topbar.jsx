@@ -20,11 +20,11 @@ import { useSidebarState } from '@/components/SidebarNew';
 const getColors = () => {
   const isDark = document.documentElement.classList.contains('dark');
   return {
-    border: isDark ? "#171717" : "#e2e8f0",
+    border: "#262626",
     text: isDark ? "#fff" : "#0f172a",
     textMuted: isDark ? "#8b9ab0" : "#64748b",
     inputBg: isDark ? "#1e293b" : "#f1f5f9",
-    cardBg: isDark ? "#111111" : "#ffffff",
+    cardBg: isDark ? "#0a0a0a" : "#ffffff",
     pageBg: isDark ? "#000000" : "#f8fafc",
     hoverBg: isDark ? "rgba(255,255,255,0.06)" : "rgba(0,0,0,0.04)",
     todayBg: isDark ? "#0e5cff" : "#0e5cff",
@@ -675,7 +675,7 @@ const Topbar = () => {
               paddingTop: 10,
               paddingBottom: 10,
               background: c.inputBg,
-              border: `1px solid ${searchOpen ? c.blue : c.border}`,
+              border: `1px solid ${c.border}`,
               borderRadius: 50,
               fontSize: 14,
               color: c.text,

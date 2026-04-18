@@ -5,8 +5,8 @@ const getColors = () => {
   const isDark = document.documentElement.classList.contains('dark');
   return {
     bg: isDark ? "#000000" : "#f8fafc",
-    card: isDark ? "#111111" : "#ffffff",
-    border: isDark ? "#171717" : "#e2e8f0",
+    card: isDark ? "#0a0a0a" : "#ffffff",
+    border: "#262626",
     text: isDark ? "#fff" : "#0f172a",
     muted: isDark ? "#8b9ab0" : "#64748b",
     blue: "#0e5cff",
@@ -160,7 +160,7 @@ export default function MonthYearFilter({
         <div
           style={{
             background: `${C.blue}15`,
-            border: `1px solid ${C.blue}30`,
+            border: "1px solid #262626",
             borderRadius: 8,
             padding: "8px 14px",
             display: "flex",

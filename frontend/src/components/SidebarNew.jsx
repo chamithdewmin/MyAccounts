@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback, useRef, createContext, useContext } f
 import { createPortal } from "react-dom";
 import { NavLink, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
+import { useFinance } from "@/contexts/FinanceContext";
 import sidebarIcon from "@/assets/logozopos.png";
 import {
   Receipt,
@@ -319,6 +320,8 @@ function initialsFromUser(name, email) {
 }
 
 function SidebarProfileFooter({ user, logout, navigate, colors, expanded }) {
+  const { settings } = useFinance();
+  const profileAvatar = settings?.profileAvatar || null;
   const c = colors || getColors();
   const isDark =
     typeof c.isDark === "boolean" ? c.isDark : document.documentElement.classList.contains("dark");
@@ -406,27 +409,50 @@ function SidebarProfileFooter({ user, logout, navigate, colors, expanded }) {
       }}
     >
       <span style={{ position: "relative", width: 36, height: 36, flexShrink: 0 }}>
-        <span
-          style={{
-            position: "absolute",
-            inset: 0,
-            borderRadius: "50%",
-            background: avatarBg,
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            color: "#fff",
-            fontSize: avatarFontSize,
-            fontWeight: 600,
-            lineHeight: 1,
-            textAlign: "center",
-            padding: 2,
-            overflow: "hidden",
-            wordBreak: "break-all",
-          }}
-        >
-          {avatarLabel}
-        </span>
+        {profileAvatar ? (
+          <span
+            style={{
+              position: "absolute",
+              inset: 0,
+              borderRadius: "50%",
+              background: avatarBg,
+              overflow: "hidden",
+            }}
+          >
+            <img
+              src={profileAvatar}
+              alt=""
+              style={{
+                width: "100%",
+                height: "100%",
+                objectFit: "cover",
+                display: "block",
+              }}
+            />
+          </span>
+        ) : (
+          <span
+            style={{
+              position: "absolute",
+              inset: 0,
+              borderRadius: "50%",
+              background: avatarBg,
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              color: "#fff",
+              fontSize: avatarFontSize,
+              fontWeight: 600,
+              lineHeight: 1,
+              textAlign: "center",
+              padding: 2,
+              overflow: "hidden",
+              wordBreak: "break-all",
+            }}
+          >
+            {avatarLabel}
+          </span>
+        )}
         <span
           style={{
             position: "absolute",

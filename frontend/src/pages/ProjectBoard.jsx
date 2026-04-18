@@ -435,7 +435,7 @@ const ProjectBoard = () => {
                         <th className="px-3 py-2 font-medium">Category</th>
                         <th className="px-3 py-2 font-medium text-right">Amount</th>
                         <th className="px-3 py-2 font-medium">Notes</th>
-                        <th className="px-3 py-2 w-20" />
+                        <th className="px-3 py-2 w-[5.5rem] min-w-[5.5rem]" />
                       </tr>
                     </thead>
                     <tbody>
@@ -447,36 +447,38 @@ const ProjectBoard = () => {
                             {currency} {Number(ex.amount).toLocaleString()}
                           </td>
                           <td className="px-3 py-2 text-muted-foreground max-w-[200px] truncate">{ex.notes || '—'}</td>
-                          <td className="px-3 py-2 text-right">
-                            <Button
-                              type="button"
-                              variant="ghost"
-                              size="icon"
-                              className="h-8 w-8"
-                              title="Edit"
-                              onClick={() => {
-                                setExpenseEditingId(ex.id);
-                                setExpenseForm({
-                                  amount: String(ex.amount ?? ''),
-                                  expenseDate: ex.expenseDate || todayYmd(),
-                                  category: ex.category || 'Other',
-                                  notes: ex.notes || '',
-                                });
-                                setExpenseOpen(true);
-                              }}
-                            >
-                              <Pencil className="w-3.5 h-3.5" />
-                            </Button>
-                            <Button
-                              type="button"
-                              variant="ghost"
-                              size="icon"
-                              className="h-8 w-8 text-destructive"
-                              title="Delete"
-                              onClick={() => openDeleteExpenseConfirm(ex)}
-                            >
-                              <Trash2 className="w-3.5 h-3.5" />
-                            </Button>
+                          <td className="px-3 py-2">
+                            <div className="flex flex-row flex-nowrap items-center justify-end gap-0.5">
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                size="icon"
+                                className="h-8 w-8 shrink-0 text-foreground hover:text-foreground"
+                                title="Edit"
+                                onClick={() => {
+                                  setExpenseEditingId(ex.id);
+                                  setExpenseForm({
+                                    amount: String(ex.amount ?? ''),
+                                    expenseDate: ex.expenseDate || todayYmd(),
+                                    category: ex.category || 'Other',
+                                    notes: ex.notes || '',
+                                  });
+                                  setExpenseOpen(true);
+                                }}
+                              >
+                                <Pencil className="w-3.5 h-3.5" />
+                              </Button>
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                size="icon"
+                                className="h-8 w-8 shrink-0 text-destructive"
+                                title="Delete"
+                                onClick={() => openDeleteExpenseConfirm(ex)}
+                              >
+                                <Trash2 className="w-3.5 h-3.5" />
+                              </Button>
+                            </div>
                           </td>
                         </tr>
                       ))}

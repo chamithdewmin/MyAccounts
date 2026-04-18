@@ -6,7 +6,7 @@ const getColors = () => {
   return {
     bg: isDark ? "#000000" : "#f8fafc",
     card: isDark ? "#0a0a0a" : "#ffffff",
-    border: "#262626",
+    border: "#1e1e1e",
     text: isDark ? "#fff" : "#0f172a",
     muted: isDark ? "#8b9ab0" : "#64748b",
     blue: "#0e5cff",
@@ -160,7 +160,7 @@ export default function MonthYearFilter({
         <div
           style={{
             background: `${C.blue}15`,
-            border: "1px solid #262626",
+            border: `1px solid ${C.blue}30`,
             borderRadius: 8,
             padding: "8px 14px",
             display: "flex",

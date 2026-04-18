@@ -16,8 +16,8 @@ const getColors = () => {
     bg: isDark ? "#000000" : "#ffffff",
     bg2: isDark ? "#000000" : "#f8fafc",
     card: isDark ? "#0a0a0a" : "#ffffff",
-    border: "#262626",
-    border2: "#262626",
+    border: "#1e1e1e",
+    border2: "#1e1e1e",
     text: isDark ? "#fff" : "#0f172a",
     text2: isDark ? "#d1d9e6" : "#334155",
     muted: isDark ? "#8b9ab0" : "#64748b",
@@ -361,29 +361,29 @@ export default function OverviewReports() {
     const maxIncomeMonth = plMonthly.reduce((a, b) => a.income > b.income ? a : b, plMonthly[0] || {});
     const largestInflow = incomes.length > 0 ? Math.max(...incomes.map(i => i.amount || 0)) : 0;
     return [
-      { Icon: I.TrendingUp, color: C.green, bg: "rgba(34,197,94,0.08)", border: "#262626", tag: "P&L", title: "Revenue Overview", desc: `Total revenue of LKR ${totalIncome.toLocaleString()} across ${plMonthly.length} months. ${maxIncomeMonth.month} had the highest income.` },
-      { Icon: I.AlertTriangle, color: C.yellow, bg: "rgba(234,179,8,0.08)", border: "#262626", tag: "P&L", title: "Profit Analysis", desc: worstMonth.profit < 0 ? `${worstMonth.month} had a loss of LKR ${Math.abs(worstMonth.profit).toLocaleString()}. Monitor expenses closely.` : `Lowest profit month was ${worstMonth.month} with LKR ${worstMonth.profit.toLocaleString()}.` },
-      { Icon: I.Wallet, color: C.blue, bg: "rgba(59,130,246,0.08)", border: "#262626", tag: "Cash Flow", title: "Cash Position", desc: `Current cash balance is LKR ${cashBalance.toLocaleString()}. ${largestInflow > 0 ? `Largest single inflow was LKR ${largestInflow.toLocaleString()}.` : 'Monitor cash flow regularly.'}` },
-      { Icon: I.AlertCircle, color: C.red, bg: "rgba(239,68,68,0.08)", border: "#262626", tag: "Cash Flow", title: "Payment Status", desc: invoices.filter(i => i.status !== 'paid').length > 0 ? `${invoices.filter(i => i.status !== 'paid').length} unpaid invoices totaling LKR ${invoices.filter(i => i.status !== 'paid').reduce((s, i) => s + (i.total || 0), 0).toLocaleString()}.` : 'All invoices are paid.' },
-      { Icon: I.ShieldCheck, color: C.purple, bg: "rgba(167,139,250,0.08)", border: "#262626", tag: "Balance Sheet", title: "Financial Stability", desc: `Debt ratio is ${debtRatio}%. Equity stands at LKR ${equity.toLocaleString()}. ${parseFloat(debtRatio) < 40 ? 'Healthy financial position.' : 'Consider reducing debt.'}` },
-      { Icon: I.Clock, color: C.orange, bg: "rgba(249,115,22,0.08)", border: "#262626", tag: "Tax Reports", title: "Tax Status", desc: settings.taxEnabled ? `Estimated tax liability: LKR ${totalTax.toLocaleString()}. ${pendingTax > 0 ? `LKR ${pendingTax.toLocaleString()} pending.` : 'All tax obligations met.'}` : 'Tax calculations disabled in settings.' },
+      { Icon: I.TrendingUp, color: C.green, bg: "rgba(34,197,94,0.08)", border: "rgba(34,197,94,0.2)", tag: "P&L", title: "Revenue Overview", desc: `Total revenue of LKR ${totalIncome.toLocaleString()} across ${plMonthly.length} months. ${maxIncomeMonth.month} had the highest income.` },
+      { Icon: I.AlertTriangle, color: C.yellow, bg: "rgba(234,179,8,0.08)", border: "rgba(234,179,8,0.2)", tag: "P&L", title: "Profit Analysis", desc: worstMonth.profit < 0 ? `${worstMonth.month} had a loss of LKR ${Math.abs(worstMonth.profit).toLocaleString()}. Monitor expenses closely.` : `Lowest profit month was ${worstMonth.month} with LKR ${worstMonth.profit.toLocaleString()}.` },
+      { Icon: I.Wallet, color: C.blue, bg: "rgba(59,130,246,0.08)", border: "rgba(59,130,246,0.2)", tag: "Cash Flow", title: "Cash Position", desc: `Current cash balance is LKR ${cashBalance.toLocaleString()}. ${largestInflow > 0 ? `Largest single inflow was LKR ${largestInflow.toLocaleString()}.` : 'Monitor cash flow regularly.'}` },
+      { Icon: I.AlertCircle, color: C.red, bg: "rgba(239,68,68,0.08)", border: "rgba(239,68,68,0.2)", tag: "Cash Flow", title: "Payment Status", desc: invoices.filter(i => i.status !== 'paid').length > 0 ? `${invoices.filter(i => i.status !== 'paid').length} unpaid invoices totaling LKR ${invoices.filter(i => i.status !== 'paid').reduce((s, i) => s + (i.total || 0), 0).toLocaleString()}.` : 'All invoices are paid.' },
+      { Icon: I.ShieldCheck, color: C.purple, bg: "rgba(167,139,250,0.08)", border: "rgba(167,139,250,0.2)", tag: "Balance Sheet", title: "Financial Stability", desc: `Debt ratio is ${debtRatio}%. Equity stands at LKR ${equity.toLocaleString()}. ${parseFloat(debtRatio) < 40 ? 'Healthy financial position.' : 'Consider reducing debt.'}` },
+      { Icon: I.Clock, color: C.orange, bg: "rgba(249,115,22,0.08)", border: "rgba(249,115,22,0.2)", tag: "Tax Reports", title: "Tax Status", desc: settings.taxEnabled ? `Estimated tax liability: LKR ${totalTax.toLocaleString()}. ${pendingTax > 0 ? `LKR ${pendingTax.toLocaleString()} pending.` : 'All tax obligations met.'}` : 'Tax calculations disabled in settings.' },
     ];
   }, [plMonthly, totalIncome, worstMonth, cashBalance, incomes, invoices, debtRatio, equity, settings, totalTax, pendingTax]);
 
   const openReportPreview = () => {
     const cur = settings?.currency || "LKR";
-    let body = `<h2 style="margin:0 0 16px; font-size:18px; border-bottom:2px solid #262626; padding-bottom:8px;">Business Overview Report</h2>`;
+    let body = `<h2 style="margin:0 0 16px; font-size:18px; border-bottom:2px solid #1e1e1e; padding-bottom:8px;">Business Overview Report</h2>`;
     body += `<p style="color:#666; font-size:12px; margin:0 0 20px;">${new Date().toLocaleDateString("en-US", { dateStyle: "long" })} · Fiscal Year ${new Date().getFullYear()}</p>`;
-    body += `<table style="width:100%; border-collapse:collapse; margin-bottom:24px;"><tr style="background:#f5f5f5;"><th style="text-align:left; padding:10px 12px; border:1px solid #262626;">Metric</th><th style="text-align:right; padding:10px 12px; border:1px solid #262626;">Value</th></tr>`;
-    body += `<tr><td style="padding:10px 12px; border:1px solid #262626;">Total Revenue (7M)</td><td style="text-align:right; padding:10px 12px; border:1px solid #262626;">${cur} ${totalIncome.toLocaleString()}</td></tr>`;
-    body += `<tr><td style="padding:10px 12px; border:1px solid #262626;">Total Expenses (7M)</td><td style="text-align:right; padding:10px 12px; border:1px solid #262626;">${cur} ${totalExpenses.toLocaleString()}</td></tr>`;
-    body += `<tr><td style="padding:10px 12px; border:1px solid #262626;">Net Profit</td><td style="text-align:right; padding:10px 12px; border:1px solid #262626;">${cur} ${netProfit.toLocaleString()} (${profitMargin}% margin)</td></tr>`;
-    body += `<tr><td style="padding:10px 12px; border:1px solid #262626;">Current Cash</td><td style="text-align:right; padding:10px 12px; border:1px solid #262626;">${cur} ${cashBalance.toLocaleString()}</td></tr>`;
-    body += `<tr><td style="padding:10px 12px; border:1px solid #262626;">Owner's Equity</td><td style="text-align:right; padding:10px 12px; border:1px solid #262626;">${cur} ${equity.toLocaleString()} (Debt: ${debtRatio}%)</td></tr>`;
+    body += `<table style="width:100%; border-collapse:collapse; margin-bottom:24px;"><tr style="background:#f5f5f5;"><th style="text-align:left; padding:10px 12px; border:1px solid #1e1e1e;">Metric</th><th style="text-align:right; padding:10px 12px; border:1px solid #1e1e1e;">Value</th></tr>`;
+    body += `<tr><td style="padding:10px 12px; border:1px solid #1e1e1e;">Total Revenue (7M)</td><td style="text-align:right; padding:10px 12px; border:1px solid #1e1e1e;">${cur} ${totalIncome.toLocaleString()}</td></tr>`;
+    body += `<tr><td style="padding:10px 12px; border:1px solid #1e1e1e;">Total Expenses (7M)</td><td style="text-align:right; padding:10px 12px; border:1px solid #1e1e1e;">${cur} ${totalExpenses.toLocaleString()}</td></tr>`;
+    body += `<tr><td style="padding:10px 12px; border:1px solid #1e1e1e;">Net Profit</td><td style="text-align:right; padding:10px 12px; border:1px solid #1e1e1e;">${cur} ${netProfit.toLocaleString()} (${profitMargin}% margin)</td></tr>`;
+    body += `<tr><td style="padding:10px 12px; border:1px solid #1e1e1e;">Current Cash</td><td style="text-align:right; padding:10px 12px; border:1px solid #1e1e1e;">${cur} ${cashBalance.toLocaleString()}</td></tr>`;
+    body += `<tr><td style="padding:10px 12px; border:1px solid #1e1e1e;">Owner's Equity</td><td style="text-align:right; padding:10px 12px; border:1px solid #1e1e1e;">${cur} ${equity.toLocaleString()} (Debt: ${debtRatio}%)</td></tr>`;
     body += `</table>`;
-    body += `<h3 style="margin:0 0 12px; font-size:14px;">Monthly Summary</h3><table style="width:100%; border-collapse:collapse;"><tr style="background:#f5f5f5;"><th style="text-align:left; padding:8px 12px; border:1px solid #262626;">Month</th><th style="text-align:right; padding:8px 12px; border:1px solid #262626;">Income</th><th style="text-align:right; padding:8px 12px; border:1px solid #262626;">Expenses</th><th style="text-align:right; padding:8px 12px; border:1px solid #262626;">Profit</th></tr>`;
+    body += `<h3 style="margin:0 0 12px; font-size:14px;">Monthly Summary</h3><table style="width:100%; border-collapse:collapse;"><tr style="background:#f5f5f5;"><th style="text-align:left; padding:8px 12px; border:1px solid #1e1e1e;">Month</th><th style="text-align:right; padding:8px 12px; border:1px solid #1e1e1e;">Income</th><th style="text-align:right; padding:8px 12px; border:1px solid #1e1e1e;">Expenses</th><th style="text-align:right; padding:8px 12px; border:1px solid #1e1e1e;">Profit</th></tr>`;
     plMonthly.forEach((m) => {
-      body += `<tr><td style="padding:8px 12px; border:1px solid #262626;">${m.month}</td><td style="text-align:right; padding:8px 12px; border:1px solid #262626;">${cur} ${m.income.toLocaleString()}</td><td style="text-align:right; padding:8px 12px; border:1px solid #262626;">${cur} ${m.expenses.toLocaleString()}</td><td style="text-align:right; padding:8px 12px; border:1px solid #262626;">${cur} ${m.profit.toLocaleString()}</td></tr>`;
+      body += `<tr><td style="padding:8px 12px; border:1px solid #1e1e1e;">${m.month}</td><td style="text-align:right; padding:8px 12px; border:1px solid #1e1e1e;">${cur} ${m.income.toLocaleString()}</td><td style="text-align:right; padding:8px 12px; border:1px solid #1e1e1e;">${cur} ${m.expenses.toLocaleString()}</td><td style="text-align:right; padding:8px 12px; border:1px solid #1e1e1e;">${cur} ${m.profit.toLocaleString()}</td></tr>`;
     });
     body += `</table>`;
     const fullHtml = getPrintHtml(body, { logo: settings?.logo, businessName: settings?.businessName });
@@ -425,7 +425,7 @@ export default function OverviewReports() {
                   alignItems: "center",
                   gap: 8,
                   background: "#0a0a0a",
-                  border: "1px solid #262626",
+                  border: "1px solid #1e1e1e",
                   borderRadius: 8,
                   padding: "9px 16px",
                   color: "#fff",
@@ -445,7 +445,7 @@ export default function OverviewReports() {
                   alignItems: "center",
                   gap: 8,
                   background: "#0a0a0a",
-                  border: "1px solid #262626",
+                  border: "1px solid #1e1e1e",
                   borderRadius: 8,
                   padding: "9px 16px",
                   color: "#fff",
@@ -465,7 +465,7 @@ export default function OverviewReports() {
                   alignItems: "center",
                   gap: 8,
                   background: "#0a0a0a",
-                  border: "1px solid #262626",
+                  border: "1px solid #1e1e1e",
                   borderRadius: 8,
                   padding: "9px 16px",
                   color: "#fff",
@@ -616,7 +616,7 @@ export default function OverviewReports() {
 
             {/* BEST / WORST MONTH */}
             <div style={{ display:"grid", gridTemplateColumns: isMobileLayout ? "1fr" : "1fr 1fr", gap:12 }}>
-              <div style={{ background:"rgba(34,197,94,0.06)", border:"1px solid #262626", borderRadius:14, padding:16 }}>
+              <div style={{ background:"rgba(34,197,94,0.06)", border:"1px solid rgba(34,197,94,0.2)", borderRadius:14, padding:16 }}>
                 <div style={{ display:"flex", alignItems:"center", gap:8, marginBottom:8 }}>
                   <div style={{ width:28, height:28, borderRadius:8, background:"rgba(34,197,94,0.15)", display:"flex", alignItems:"center", justifyContent:"center" }}><I.TrendingUp /></div>
                   <p style={{ color:C.muted, fontSize:10, fontWeight:700, textTransform:"uppercase", letterSpacing:"0.08em", margin:0 }}>Best Month</p>
@@ -624,7 +624,7 @@ export default function OverviewReports() {
                 <p style={{ color:C.green, fontSize:18, fontWeight:900, margin:"0 0 2px" }}>{bestMonth.month}</p>
                 <p style={{ color:C.text2,  fontSize:12, margin:0 }}>LKR {bestMonth.profit.toLocaleString()} profit</p>
               </div>
-              <div style={{ background:"rgba(239,68,68,0.06)", border:"1px solid #262626", borderRadius:14, padding:16 }}>
+              <div style={{ background:"rgba(239,68,68,0.06)", border:"1px solid rgba(239,68,68,0.2)", borderRadius:14, padding:16 }}>
                 <div style={{ display:"flex", alignItems:"center", gap:8, marginBottom:8 }}>
                   <div style={{ width:28, height:28, borderRadius:8, background:"rgba(239,68,68,0.15)", display:"flex", alignItems:"center", justifyContent:"center" }}><I.TrendingDown /></div>
                   <p style={{ color:C.muted, fontSize:10, fontWeight:700, textTransform:"uppercase", letterSpacing:"0.08em", margin:0 }}>Weakest Month</p>
@@ -674,7 +674,7 @@ export default function OverviewReports() {
         </div>
 
         {/* BALANCE SHEET EQUATION BANNER */}
-        <div style={{ background:"rgba(34,197,94,0.05)", border:"1px solid #262626", borderRadius:16, padding:"18px 24px", display:"flex", flexDirection: isMobileLayout ? "column" : "row", alignItems: isMobileLayout ? "stretch" : "center", justifyContent:"space-between", gap: isMobileLayout ? 16 : 0 }}>
+        <div style={{ background:"rgba(34,197,94,0.05)", border:"1px solid rgba(34,197,94,0.15)", borderRadius:16, padding:"18px 24px", display:"flex", flexDirection: isMobileLayout ? "column" : "row", alignItems: isMobileLayout ? "stretch" : "center", justifyContent:"space-between", gap: isMobileLayout ? 16 : 0 }}>
           <div style={{ display:"flex", alignItems:"center", gap:14 }}>
             <div style={{ width:44, height:44, borderRadius:12, background:"rgba(34,197,94,0.15)", display:"flex", alignItems:"center", justifyContent:"center" }}><I.CheckCircle /></div>
             <div>

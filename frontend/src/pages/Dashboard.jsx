@@ -17,7 +17,7 @@ const getThemeColors = () => {
   return {
     bg: isDark ? "#000000" : "#ffffff",
     card: isDark ? "#0a0a0a" : "#ffffff",
-    border: "#262626",
+    border: "#1e1e1e",
     text: isDark ? "#fff" : "#0f172a",
     text2: isDark ? "#d1d9e6" : "#334155",
     muted: isDark ? "#8b9ab0" : "#64748b",

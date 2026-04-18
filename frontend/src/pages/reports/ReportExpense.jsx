@@ -57,16 +57,16 @@ const ReportExpense = () => {
     
     // Detail table
     if (filteredExpenses.length > 0) {
-      table += '<h3>Expense Details</h3><table style="width:100%; border-collapse: collapse;"><tr style="background:#f5f5f5;"><th style="border:1px solid #262626; padding:8px;">Date</th><th style="border:1px solid #262626; padding:8px;">Category</th><th style="border:1px solid #262626; padding:8px;">Description</th><th style="border:1px solid #262626; padding:8px; text-align:right;">Amount</th></tr>';
+      table += '<h3>Expense Details</h3><table style="width:100%; border-collapse: collapse;"><tr style="background:#f5f5f5;"><th style="border:1px solid #1e1e1e; padding:8px;">Date</th><th style="border:1px solid #1e1e1e; padding:8px;">Category</th><th style="border:1px solid #1e1e1e; padding:8px;">Description</th><th style="border:1px solid #1e1e1e; padding:8px; text-align:right;">Amount</th></tr>';
       filteredExpenses.forEach((exp) => {
-        table += `<tr><td style="border:1px solid #262626; padding:8px;">${new Date(exp.date).toLocaleDateString()}</td><td style="border:1px solid #262626; padding:8px;">${exp.category || '-'}</td><td style="border:1px solid #262626; padding:8px;">${exp.description || '-'}</td><td style="border:1px solid #262626; padding:8px; text-align:right;">${settings.currency} ${(exp.amount || 0).toLocaleString()}</td></tr>`;
+        table += `<tr><td style="border:1px solid #1e1e1e; padding:8px;">${new Date(exp.date).toLocaleDateString()}</td><td style="border:1px solid #1e1e1e; padding:8px;">${exp.category || '-'}</td><td style="border:1px solid #1e1e1e; padding:8px;">${exp.description || '-'}</td><td style="border:1px solid #1e1e1e; padding:8px; text-align:right;">${settings.currency} ${(exp.amount || 0).toLocaleString()}</td></tr>`;
       });
       table += '</table>';
     }
     
-    table += '<h3>Expense Breakdown by Category</h3><table style="width:100%; border-collapse: collapse;"><tr><th style="border:1px solid #262626; padding:8px;">Category</th><th style="border:1px solid #262626; padding:8px;">Amount</th></tr>';
+    table += '<h3>Expense Breakdown by Category</h3><table style="width:100%; border-collapse: collapse;"><tr><th style="border:1px solid #1e1e1e; padding:8px;">Category</th><th style="border:1px solid #1e1e1e; padding:8px;">Amount</th></tr>';
     Object.entries(byCat).forEach(([k, v]) => {
-      table += `<tr><td style="border:1px solid #262626; padding:8px;">${k}</td><td style="border:1px solid #262626; padding:8px;">${settings.currency} ${v.toLocaleString()}</td></tr>`;
+      table += `<tr><td style="border:1px solid #1e1e1e; padding:8px;">${k}</td><td style="border:1px solid #1e1e1e; padding:8px;">${settings.currency} ${v.toLocaleString()}</td></tr>`;
     });
     table += '</table>';
 
@@ -88,7 +88,7 @@ const ReportExpense = () => {
         </div>
         
         {/* Filter */}
-        <div style={{ background: "#0a0a0a", borderRadius: 12, border: "1px solid #262626", padding: "16px 20px" }}>
+        <div style={{ background: "#0a0a0a", borderRadius: 12, border: "1px solid #1e1e1e", padding: "16px 20px" }}>
           <MonthYearFilter
             selectedMonth={selectedMonth}
             selectedYear={selectedYear}
@@ -100,7 +100,7 @@ const ReportExpense = () => {
         </div>
         
         {/* Summary */}
-        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between" style={{ background: "#0a0a0a", borderRadius: 12, border: "1px solid #262626", padding: "20px" }}>
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between" style={{ background: "#0a0a0a", borderRadius: 12, border: "1px solid #1e1e1e", padding: "20px" }}>
           <div>
             <p style={{ color: "#8b9ab0", fontSize: 12, fontWeight: 600, textTransform: "uppercase", margin: 0 }}>Total Expenses</p>
             <p style={{ color: "#ef4444", fontSize: 28, fontWeight: 900, margin: "8px 0 0", fontFamily: "monospace" }}>{settings.currency} {totalExpenses.toLocaleString()}</p>

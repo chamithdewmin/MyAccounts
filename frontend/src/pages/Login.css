@@ -171,7 +171,7 @@
 /* RIGHT PANEL */
 .login-page .panel {
   background: #111111;
-  border-left: 1px solid #2a2a2a;
+  border-left: 1px solid #1e1e1e;
   display: flex;
   flex-direction: column;
   justify-content: center;
@@ -229,7 +229,7 @@
   width: 100%;
   padding: 13px 16px;
   background: #1a1a1a;
-  border: 1px solid #2a2a2a;
+  border: 1px solid #1e1e1e;
   border-radius: 6px;
   color: #f0f0f0;
   font-family: -apple-system, 'SF Pro Text', BlinkMacSystemFont, sans-serif;

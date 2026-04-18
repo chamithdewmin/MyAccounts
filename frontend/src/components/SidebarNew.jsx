@@ -38,14 +38,14 @@ const getColors = () => {
   return {
     isDark,
     bg: isDark ? "#0a0a0a" : "#ffffff",
-    border: "#262626",
+    border: "#1e1e1e",
     text: isDark ? "#fff" : "#0a1420",
     textMuted: isDark ? "#8b9ab0" : "#0a1420",
     textLabel: isDark ? "#6b7280" : "#0a1420",
     hoverBg: isDark ? "rgba(255,255,255,0.06)" : "rgba(0,0,0,0.04)",
     activeBg: isDark ? "rgba(14,97,253,0.15)" : "#0e61fd",
     activeAccent: isDark ? "#0e61fd" : "#ffffff",
-    divider: "#262626",
+    divider: "#1e1e1e",
     scrollbarThumb: isDark ? "#333333" : "#c1c1c1",
     scrollbarTrack: isDark ? "#1a1a1a" : "#f1f1f1",
   };
@@ -376,7 +376,7 @@ function SidebarProfileFooter({ user, logout, navigate, colors, expanded }) {
   const avatarFontSize = shortSingle ? (displayName.length > 8 ? 9 : 10.5) : 12;
 
   const pillBg = isDark ? "#111111" : "#f4f4f5";
-  const pillBorder = "#262626";
+  const pillBorder = "#1e1e1e";
   const avatarBg = isDark ? "#000000" : "#18181b";
   const secondary = isDark ? "#999999" : "#71717a";
   const statusGreen = "#4ade80";
@@ -574,7 +574,7 @@ function SidebarProfileFooter({ user, logout, navigate, colors, expanded }) {
                   width: menuLayout.width,
                   bottom: menuLayout.bottom,
                   background: isDark ? "#0a0a0a" : "#ffffff",
-                  border: "1px solid #262626",
+                  border: "1px solid #1e1e1e",
                   borderRadius: 12,
                   padding: "4px 4px 6px",
                   zIndex: 1001,
@@ -613,7 +613,7 @@ function SidebarProfileFooter({ user, logout, navigate, colors, expanded }) {
                   style={{
                     height: 1,
                     margin: "0 10px 4px",
-                    background: "#262626",
+                    background: "#1e1e1e",
                   }}
                 />
                 <div style={{ display: "flex", flexDirection: "column", gap: 2, padding: "2px 0" }}>

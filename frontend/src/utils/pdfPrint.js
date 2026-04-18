@@ -50,12 +50,12 @@ export async function downloadDocumentPdfFromElement(element, filename, options 
 export function getPrintHtml(innerContent, options = {}) {
   const { logo, businessName } = options;
   const logoHtml = logo
-    ? `<div style="margin-bottom:16px; padding-bottom:12px; border-bottom:2px solid #262626;">
+    ? `<div style="margin-bottom:16px; padding-bottom:12px; border-bottom:2px solid #1e1e1e;">
     <img src="${logo}" alt="Logo" style="height:48px; width:auto; max-width:200px; object-fit:contain;" onerror="this.style.display='none'" />
   </div>`
     : '';
   const titleHtml = businessName ? `<h1 style="font-size:18px; font-weight:700; margin:0 0 16px; color:#111;">${escapeHtml(businessName)}</h1>` : '';
-  const footer = '<p style="font-size:10px; color:#666; margin-top:16px; padding-top:12px; border-top:1px solid #262626;">Generated from LogozoPOS</p>';
+  const footer = '<p style="font-size:10px; color:#666; margin-top:16px; padding-top:12px; border-top:1px solid #1e1e1e;">Generated from LogozoPOS</p>';
   return `<div style="padding:24px; font-family:'Inter',-apple-system,sans-serif; color:#111; background:#fff; font-size:14px; line-height:1.5; max-width:100%; min-height:200px;">${logoHtml}${titleHtml}${innerContent}${footer}</div>`;
 }
 

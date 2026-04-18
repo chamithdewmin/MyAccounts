@@ -532,7 +532,7 @@ export default function LoginActivity() {
       const head =
         '<thead><tr>' +
         ['User', 'Email', 'Session ID', 'Login', 'Logout', 'IP', 'Device', 'Risk (0–100)', 'Status']
-          .map((h) => `<th style="border:1px solid #262626;padding:4px 6px;font-size:10px;background:#f5f5f5;">${escapePdfHtml(h)}</th>`)
+          .map((h) => `<th style="border:1px solid #1e1e1e;padding:4px 6px;font-size:10px;background:#f5f5f5;">${escapePdfHtml(h)}</th>`)
           .join('') +
         '</tr></thead>';
       const bodyRows = slice
@@ -555,7 +555,7 @@ export default function LoginActivity() {
           return `<tr>${cells
             .map(
               (c) =>
-                `<td style="border:1px solid #262626;padding:4px 6px;font-size:9px;vertical-align:top;">${escapePdfHtml(c)}</td>`,
+                `<td style="border:1px solid #1e1e1e;padding:4px 6px;font-size:9px;vertical-align:top;">${escapePdfHtml(c)}</td>`,
             )
             .join('')}</tr>`;
         })

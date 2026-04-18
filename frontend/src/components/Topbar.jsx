@@ -20,7 +20,7 @@ import { useSidebarState } from '@/components/SidebarNew';
 const getColors = () => {
   const isDark = document.documentElement.classList.contains('dark');
   return {
-    border: "#262626",
+    border: "#1e1e1e",
     text: isDark ? "#fff" : "#0f172a",
     textMuted: isDark ? "#8b9ab0" : "#64748b",
     inputBg: isDark ? "#1e293b" : "#f1f5f9",
@@ -675,7 +675,7 @@ const Topbar = () => {
               paddingTop: 10,
               paddingBottom: 10,
               background: c.inputBg,
-              border: `1px solid ${c.border}`,
+              border: `1px solid ${searchOpen ? c.blue : c.border}`,
               borderRadius: 50,
               fontSize: 14,
               color: c.text,

@@ -26,9 +26,9 @@
     --destructive: 0 72% 51%;
     --destructive-foreground: 0 0% 100%;
 
-    /* App-wide neutral border */
-    --border: 0 0% 15%; /* #262626 */
-    --input: 214 20% 92%;
+    /* App-wide border (matches #1e1e1e) */
+    --border: 0 0% 11.76%;
+    --input: 0 0% 11.76%;
     --ring: 219 98% 52%; /* #0e61fd */
 
     /* Sidebar active state for light theme */
@@ -40,8 +40,8 @@
     --table-row-odd: #ffffff;
     --table-row-even: #f8fafc;
     --table-row-hover: #f1f5f9;
-    --table-divider: #262626;
-    --table-border: #262626;
+    --table-divider: #1e1e1e;
+    --table-border: #1e1e1e;
     --text-primary: #0f172a;
     --text-body: #334155;
     --text-label: #64748b;
@@ -72,8 +72,8 @@
     --destructive: 0 72% 51%;
     --destructive-foreground: 0 0% 100%;
 
-    --border: 0 0% 15%; /* #262626 */
-    --input: 217 33% 17%; /* #1e293b - dark blue-gray for inputs */
+    --border: 0 0% 11.76%;
+    --input: 0 0% 11.76%;
     
     --secondary: 217 33% 17%; /* #1e293b - dark blue-gray */
     --secondary-foreground: 210 30% 80%;
@@ -87,8 +87,8 @@
     --table-row-odd: #0a0a0a;
     --table-row-even: #0a0a0a;
     --table-row-hover: #101010;
-    --table-divider: #262626;
-    --table-border: #262626;
+    --table-divider: #1e1e1e;
+    --table-border: #1e1e1e;
     --text-primary: #fff;
     --text-body: #d1d9e6;
     --text-label: #8b9ab0;
@@ -248,7 +248,7 @@ tbody td {
   background: #ffffff !important;
   background-color: #ffffff !important;
   color: #000000 !important;
-  border-color: #ddd !important;
+  border-color: #1e1e1e !important;
 }
 .report-preview-content thead th {
   background: #f5f5f5 !important;

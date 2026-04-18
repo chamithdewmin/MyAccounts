@@ -112,11 +112,11 @@ export default function EstimateTemplate({ estimate, autoAction = null, onAutoAc
           <table style={{ width: '100%', borderCollapse: 'collapse', marginTop: 8 }}>
             <thead>
               <tr>
-                <th style={{ textAlign: 'left', padding: 10, color: '#fff', background: themeColor, border: '1px solid #262626' }}>#</th>
-                <th style={{ textAlign: 'left', padding: 10, color: '#fff', background: themeColor, border: '1px solid #262626' }}>Description</th>
-                <th style={{ textAlign: 'right', padding: 10, color: '#fff', background: themeColor, border: '1px solid #262626' }}>Qty</th>
-                <th style={{ textAlign: 'right', padding: 10, color: '#fff', background: themeColor, border: '1px solid #262626' }}>Rate</th>
-                <th style={{ textAlign: 'right', padding: 10, color: '#fff', background: themeColor, border: '1px solid #262626' }}>Amount</th>
+                <th style={{ textAlign: 'left', padding: 10, color: '#fff', background: themeColor, border: '1px solid #1e1e1e' }}>#</th>
+                <th style={{ textAlign: 'left', padding: 10, color: '#fff', background: themeColor, border: '1px solid #1e1e1e' }}>Description</th>
+                <th style={{ textAlign: 'right', padding: 10, color: '#fff', background: themeColor, border: '1px solid #1e1e1e' }}>Qty</th>
+                <th style={{ textAlign: 'right', padding: 10, color: '#fff', background: themeColor, border: '1px solid #1e1e1e' }}>Rate</th>
+                <th style={{ textAlign: 'right', padding: 10, color: '#fff', background: themeColor, border: '1px solid #1e1e1e' }}>Amount</th>
               </tr>
             </thead>
             <tbody>
@@ -126,11 +126,11 @@ export default function EstimateTemplate({ estimate, autoAction = null, onAutoAc
                 const amount = Number(item.total || (qty * price));
                 return (
                   <tr key={`item-${idx}`}>
-                    <td style={{ padding: 10, border: '1px solid #262626', background: '#fff', color: '#0a0a0a' }}>{idx + 1}</td>
-                    <td style={{ padding: 10, border: '1px solid #262626', background: '#fff', color: '#0a0a0a' }}>{item.description || item.name || 'Item'}</td>
-                    <td style={{ padding: 10, border: '1px solid #262626', background: '#fff', color: '#0a0a0a', textAlign: 'right' }}>{qty}</td>
-                    <td style={{ padding: 10, border: '1px solid #262626', background: '#fff', color: '#0a0a0a', textAlign: 'right' }}>{price.toLocaleString()}</td>
-                    <td style={{ padding: 10, border: '1px solid #262626', background: '#fff', color: '#0a0a0a', textAlign: 'right' }}>{amount.toLocaleString()}</td>
+                    <td style={{ padding: 10, border: '1px solid #1e1e1e', background: '#fff', color: '#0a0a0a' }}>{idx + 1}</td>
+                    <td style={{ padding: 10, border: '1px solid #1e1e1e', background: '#fff', color: '#0a0a0a' }}>{item.description || item.name || 'Item'}</td>
+                    <td style={{ padding: 10, border: '1px solid #1e1e1e', background: '#fff', color: '#0a0a0a', textAlign: 'right' }}>{qty}</td>
+                    <td style={{ padding: 10, border: '1px solid #1e1e1e', background: '#fff', color: '#0a0a0a', textAlign: 'right' }}>{price.toLocaleString()}</td>
+                    <td style={{ padding: 10, border: '1px solid #1e1e1e', background: '#fff', color: '#0a0a0a', textAlign: 'right' }}>{amount.toLocaleString()}</td>
                   </tr>
                 );
               })}

@@ -160,7 +160,7 @@ const invoiceStyles = {
   logoPlaceholder: {
     width: '180px',
     height: '70px',
-    border: '2px dashed #ccc',
+    border: '2px dashed #1e1e1e',
     borderRadius: '6px',
     display: 'flex',
     alignItems: 'center',
@@ -212,7 +212,7 @@ const invoiceStyles = {
     border: 'none',
     borderLeft: 'none',
     borderRight: 'none',
-    borderBottom: '1px solid #e5e7eb',
+    borderBottom: '1px solid #1e1e1e',
     background: '#fff',
     color: '#0a0a0a',
   },
@@ -221,7 +221,7 @@ const invoiceStyles = {
   itemDesc: { color: '#333', fontSize: '12px', marginTop: '3px', lineHeight: 1.5 },
   totalsSection: { display: 'flex', justifyContent: 'flex-end', marginTop: '10px' },
   totalsTable: { width: '300px', fontSize: '13px' },
-  row: (extra = {}) => ({ display: 'flex', justifyContent: 'space-between', padding: '5px 0', borderBottom: '1px solid #f0f0f0', ...extra }),
+  row: (extra = {}) => ({ display: 'flex', justifyContent: 'space-between', padding: '5px 0', borderBottom: '1px solid #1e1e1e', ...extra }),
   notes: { marginTop: '40px', fontSize: '13px' },
   notesTitle: { fontWeight: 'bold', marginBottom: '6px', fontSize: '14px' },
   bankDetails: { marginTop: '24px', fontSize: '13px' },
@@ -229,7 +229,7 @@ const invoiceStyles = {
   bankDetailsLine: { marginTop: '2px' },
   footer: { display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginTop: '48px' },
   sigBlock: { textAlign: 'center', fontSize: '12px', color: '#555' },
-  sigLine: { borderTop: '1px solid #aaa', width: '140px', margin: '32px auto 4px' },
+  sigLine: { borderTop: '1px solid #1e1e1e', width: '140px', margin: '32px auto 4px' },
 };
 
 export default function InvoiceTemplate({

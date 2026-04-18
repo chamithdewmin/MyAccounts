@@ -73,10 +73,10 @@ export default function EstimateTemplate({ estimate, autoAction = null, onAutoAc
       `}</style>
       <div style={{ background: '#d1d5db', minHeight: '100vh', padding: '24px 12px' }}>
         <div className="est-no-print" style={{ maxWidth: 680, margin: '0 auto 16px', display: 'flex', justifyContent: 'flex-end', gap: 8 }}>
-          <button onClick={downloadPdf} style={{ border: 'none', background: '#0a0a0a', color: '#fff', borderRadius: 8, padding: '10px 14px', display: 'flex', gap: 6, alignItems: 'center', cursor: 'pointer' }}>
+          <button onClick={downloadPdf} style={{ border: 'none', background: '#111111', color: '#fff', borderRadius: 8, padding: '10px 14px', display: 'flex', gap: 6, alignItems: 'center', cursor: 'pointer' }}>
             <DownloadIcon /> {downloading ? 'Generating...' : 'Download PDF (A4)'}
           </button>
-          <button onClick={printDoc} style={{ border: 'none', background: '#0a0a0a', color: '#fff', borderRadius: 8, padding: '10px 14px', display: 'flex', gap: 6, alignItems: 'center', cursor: 'pointer' }}>
+          <button onClick={printDoc} style={{ border: 'none', background: '#111111', color: '#fff', borderRadius: 8, padding: '10px 14px', display: 'flex', gap: 6, alignItems: 'center', cursor: 'pointer' }}>
             <PrintIcon /> Print
           </button>
         </div>
@@ -126,11 +126,11 @@ export default function EstimateTemplate({ estimate, autoAction = null, onAutoAc
                 const amount = Number(item.total || (qty * price));
                 return (
                   <tr key={`item-${idx}`}>
-                    <td style={{ padding: 10, border: '1px solid #111', background: '#fff', color: '#0a0a0a' }}>{idx + 1}</td>
-                    <td style={{ padding: 10, border: '1px solid #111', background: '#fff', color: '#0a0a0a' }}>{item.description || item.name || 'Item'}</td>
-                    <td style={{ padding: 10, border: '1px solid #111', background: '#fff', color: '#0a0a0a', textAlign: 'right' }}>{qty}</td>
-                    <td style={{ padding: 10, border: '1px solid #111', background: '#fff', color: '#0a0a0a', textAlign: 'right' }}>{price.toLocaleString()}</td>
-                    <td style={{ padding: 10, border: '1px solid #111', background: '#fff', color: '#0a0a0a', textAlign: 'right' }}>{amount.toLocaleString()}</td>
+                    <td style={{ padding: 10, border: '1px solid #111', background: '#fff', color: '#111111' }}>{idx + 1}</td>
+                    <td style={{ padding: 10, border: '1px solid #111', background: '#fff', color: '#111111' }}>{item.description || item.name || 'Item'}</td>
+                    <td style={{ padding: 10, border: '1px solid #111', background: '#fff', color: '#111111', textAlign: 'right' }}>{qty}</td>
+                    <td style={{ padding: 10, border: '1px solid #111', background: '#fff', color: '#111111', textAlign: 'right' }}>{price.toLocaleString()}</td>
+                    <td style={{ padding: 10, border: '1px solid #111', background: '#fff', color: '#111111', textAlign: 'right' }}>{amount.toLocaleString()}</td>
                   </tr>
                 );
               })}

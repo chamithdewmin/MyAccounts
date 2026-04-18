@@ -130,7 +130,7 @@ const ReportIncome = () => {
         </div>
         
         {/* Filter */}
-        <div style={{ background: "#0a0a0a", borderRadius: 12, border: "1px solid #171717", padding: "16px 20px" }}>
+        <div style={{ background: "#111111", borderRadius: 12, border: "1px solid #171717", padding: "16px 20px" }}>
           <MonthYearFilter
             selectedMonth={selectedMonth}
             selectedYear={selectedYear}
@@ -142,7 +142,7 @@ const ReportIncome = () => {
         </div>
         
         {/* Summary */}
-        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between" style={{ background: "#0a0a0a", borderRadius: 12, border: "1px solid #171717", padding: "20px" }}>
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between" style={{ background: "#111111", borderRadius: 12, border: "1px solid #171717", padding: "20px" }}>
           <div>
             <p style={{ color: "#8b9ab0", fontSize: 12, fontWeight: 600, textTransform: "uppercase", margin: 0 }}>Total Income</p>
             <p style={{ color: "#22c55e", fontSize: 28, fontWeight: 900, margin: "8px 0 0", fontFamily: "monospace" }}>{settings.currency} {totalIncome.toLocaleString()}</p>

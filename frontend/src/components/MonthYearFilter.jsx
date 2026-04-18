@@ -5,7 +5,7 @@ const getColors = () => {
   const isDark = document.documentElement.classList.contains('dark');
   return {
     bg: isDark ? "#000000" : "#f8fafc",
-    card: isDark ? "#0a0a0a" : "#ffffff",
+    card: isDark ? "#111111" : "#ffffff",
     border: isDark ? "#171717" : "#e2e8f0",
     text: isDark ? "#fff" : "#0f172a",
     muted: isDark ? "#8b9ab0" : "#64748b",

@@ -219,7 +219,7 @@ const Reports = () => {
                 <YAxis stroke="#bfc9d1" />
                 <Tooltip
                   contentStyle={{
-                    backgroundColor: '#111316',
+                    backgroundColor: '#111111',
                     border: '1px solid #171717',
                     borderRadius: '0.5rem',
                   }}
@@ -258,7 +258,7 @@ const Reports = () => {
                   </Pie>
                   <Tooltip
                     contentStyle={{
-                      backgroundColor: '#111316',
+                      backgroundColor: '#111111',
                       border: '1px solid #171717',
                       borderRadius: '0.5rem',
                     }}

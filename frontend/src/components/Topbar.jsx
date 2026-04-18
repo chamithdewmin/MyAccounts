@@ -24,7 +24,7 @@ const getColors = () => {
     text: isDark ? "#fff" : "#0f172a",
     textMuted: isDark ? "#8b9ab0" : "#64748b",
     inputBg: isDark ? "#1e293b" : "#f1f5f9",
-    cardBg: isDark ? "#0a0a0a" : "#ffffff",
+    cardBg: isDark ? "#111111" : "#ffffff",
     pageBg: isDark ? "#000000" : "#f8fafc",
     hoverBg: isDark ? "rgba(255,255,255,0.06)" : "rgba(0,0,0,0.04)",
     todayBg: isDark ? "#0e5cff" : "#0e5cff",

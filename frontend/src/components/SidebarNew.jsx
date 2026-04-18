@@ -37,7 +37,7 @@ const getColors = () => {
   const isDark = document.documentElement.classList.contains('dark');
   return {
     isDark,
-    bg: isDark ? "#0a0a0a" : "#ffffff",
+    bg: isDark ? "#111111" : "#ffffff",
     border: isDark ? "#171717" : "#e2e8f0",
     text: isDark ? "#fff" : "#0a1420",
     textMuted: isDark ? "#8b9ab0" : "#0a1420",
@@ -131,6 +131,44 @@ function MenuPopupItem({ icon, label, onClick, colors }) {
       <span style={{ display: "flex", alignItems: "center" }}>{icon}</span>
       {label}
     </div>
+  );
+}
+
+const ACCOUNT_MENU_MIN_W = 248;
+
+/** Rows for the sidebar account popup (solid label + icon color like the reference UI). */
+function AccountMenuRow({ icon, label, onClick, isDark }) {
+  const [hovered, setHovered] = useState(false);
+  const fg = isDark ? "#ffffff" : "#0f172a";
+  const hoverBg = isDark ? "rgba(255,255,255,0.08)" : "rgba(0,0,0,0.06)";
+  return (
+    <button
+      type="button"
+      role="menuitem"
+      onClick={onClick}
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
+      style={{
+        display: "flex",
+        width: "100%",
+        alignItems: "center",
+        gap: 12,
+        padding: "10px 14px",
+        border: "none",
+        borderRadius: 8,
+        cursor: "pointer",
+        background: hovered ? hoverBg : "transparent",
+        color: fg,
+        fontSize: 14,
+        fontWeight: 500,
+        textAlign: "left",
+        fontFamily: "inherit",
+        transition: "background 0.15s",
+      }}
+    >
+      <span style={{ display: "flex", alignItems: "center", color: fg, flexShrink: 0 }}>{icon}</span>
+      {label}
+    </button>
   );
 }
 
@@ -347,14 +385,16 @@ function SidebarProfileFooter({ user, logout, navigate, colors, expanded }) {
     const el = pillRef.current;
     if (!el || typeof window === "undefined") return;
     const rect = el.getBoundingClientRect();
-    const width = Math.max(rect.width, expanded ? rect.width : 216);
-    const left = expanded ? rect.left : Math.min(rect.left, window.innerWidth - width - 12);
+    const width = Math.max(ACCOUNT_MENU_MIN_W, rect.width);
+    let left = rect.left;
+    if (left + width > window.innerWidth - 12) left = window.innerWidth - width - 12;
+    if (left < 12) left = 12;
     setMenuLayout({
       left,
       width,
       bottom: window.innerHeight - rect.top + 8,
     });
-  }, [expanded]);
+  }, []);
 
   useEffect(() => {
     if (!menuOpen) return;
@@ -362,7 +402,7 @@ function SidebarProfileFooter({ user, logout, navigate, colors, expanded }) {
     const onResize = () => updateMenuLayout();
     window.addEventListener("resize", onResize);
     return () => window.removeEventListener("resize", onResize);
-  }, [menuOpen, updateMenuLayout, expanded]);
+  }, [menuOpen, updateMenuLayout]);
 
   useEffect(() => {
     if (!menuOpen) return;
@@ -527,46 +567,76 @@ function SidebarProfileFooter({ user, logout, navigate, colors, expanded }) {
               <div
                 ref={menuRef}
                 role="menu"
+                aria-label="Account menu"
                 style={{
                   position: "fixed",
                   left: menuLayout.left,
                   width: menuLayout.width,
                   bottom: menuLayout.bottom,
-                  background: c.bg,
-                  border: `1px solid ${c.border}`,
+                  background: isDark ? c.bg : "#ffffff",
+                  border: `1px solid ${isDark ? "#262626" : c.border}`,
                   borderRadius: 12,
-                  padding: 6,
+                  padding: "4px 4px 6px",
                   zIndex: 1001,
-                  boxShadow: "0 16px 48px rgba(0,0,0,0.35)",
+                  boxShadow: isDark
+                    ? "0 16px 48px rgba(0,0,0,0.55), 0 0 0 1px rgba(255,255,255,0.04)"
+                    : "0 16px 48px rgba(15,23,42,0.12)",
                 }}
               >
-                {!expanded && (
-                  <div style={{ padding: "8px 10px 10px", borderBottom: `1px solid ${c.divider}` }}>
-                    <div style={{ fontSize: 13, fontWeight: 700, color: c.text }}>{displayName}</div>
-                    {email ? (
-                      <div style={{ fontSize: 11.5, color: c.textMuted, marginTop: 2 }}>{email}</div>
-                    ) : null}
+                <div style={{ padding: "14px 14px 12px" }}>
+                  <div
+                    style={{
+                      fontSize: 14,
+                      fontWeight: 700,
+                      color: isDark ? "#ffffff" : "#0f172a",
+                      letterSpacing: "-0.01em",
+                    }}
+                  >
+                    My Account
                   </div>
-                )}
-                <MenuPopupItem
-                  icon={<User size={16} />}
-                  label="Profile"
-                  onClick={() => {
-                    setMenuOpen(false);
-                    navigate("/profile");
+                  {email ? (
+                    <div
+                      style={{
+                        fontSize: 12,
+                        fontWeight: 400,
+                        color: isDark ? "#94a3b8" : "#64748b",
+                        marginTop: 6,
+                        lineHeight: 1.35,
+                        wordBreak: "break-all",
+                      }}
+                    >
+                      {email}
+                    </div>
+                  ) : null}
+                </div>
+                <div
+                  style={{
+                    height: 1,
+                    margin: "0 10px 4px",
+                    background: isDark ? "#262626" : c.divider,
                   }}
-                  colors={c}
                 />
-                <MenuPopupItem
-                  icon={<LogOut size={16} />}
-                  label="Log out"
-                  onClick={async () => {
-                    setMenuOpen(false);
-                    await logout();
-                    navigate("/login");
-                  }}
-                  colors={c}
-                />
+                <div style={{ display: "flex", flexDirection: "column", gap: 2, padding: "2px 0" }}>
+                  <AccountMenuRow
+                    isDark={isDark}
+                    icon={<User size={18} strokeWidth={2} />}
+                    label="Profile"
+                    onClick={() => {
+                      setMenuOpen(false);
+                      navigate("/profile");
+                    }}
+                  />
+                  <AccountMenuRow
+                    isDark={isDark}
+                    icon={<LogOut size={18} strokeWidth={2} />}
+                    label="Log out"
+                    onClick={async () => {
+                      setMenuOpen(false);
+                      await logout();
+                      navigate("/login");
+                    }}
+                  />
+                </div>
               </div>
             </>,
             document.body

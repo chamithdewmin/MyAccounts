@@ -10,6 +10,9 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Label } from '@/components/ui/label';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 
+const SERVICE_TYPE_PRESETS = ['Graphic Job', 'Web Development'];
+const SERVICE_TYPE_CUSTOM = '__custom__';
+
 const POS = () => {
   const { incomes, clients, addIncome, updateIncome, deleteIncome, settings, loadData } = useFinance();
   const { toast } = useToast();
@@ -18,6 +21,7 @@ const POS = () => {
     clientId: '',
     clientName: '',
     serviceType: '',
+    serviceTypeSelect: SERVICE_TYPE_PRESETS[0],
     paymentMethod: 'cash',
     amount: '',
     date: '',
@@ -83,10 +87,27 @@ const POS = () => {
     const selectedClient =
       clients.find((c) => c.id === form.clientId) || null;
 
+    const serviceTypeResolved =
+      form.serviceTypeSelect === SERVICE_TYPE_CUSTOM
+        ? form.serviceType.trim()
+        : form.serviceTypeSelect;
+
+    if (!serviceTypeResolved) {
+      toast({
+        title: 'Service type required',
+        description:
+          form.serviceTypeSelect === SERVICE_TYPE_CUSTOM
+            ? 'Enter a custom service type or choose a preset.'
+            : 'Choose a service type.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
     const payload = {
       clientId: selectedClient?.id || null,
       clientName: selectedClient?.name || form.clientName,
-      serviceType: form.serviceType,
+      serviceType: serviceTypeResolved,
       paymentMethod: form.paymentMethod,
       amount: Number(form.amount),
       date: form.date || new Date().toISOString(),
@@ -106,6 +127,7 @@ const POS = () => {
       clientId: '',
       clientName: '',
       serviceType: '',
+      serviceTypeSelect: SERVICE_TYPE_PRESETS[0],
       paymentMethod: 'cash',
       amount: '',
       date: '',
@@ -116,10 +138,13 @@ const POS = () => {
 
   const openEdit = (income) => {
     setEditingIncome(income);
+    const st = String(income.serviceType || '').trim();
+    const isPreset = SERVICE_TYPE_PRESETS.includes(st);
     setForm({
       clientId: income.clientId || '',
       clientName: income.clientName || '',
-      serviceType: income.serviceType || '',
+      serviceType: isPreset ? '' : st,
+      serviceTypeSelect: isPreset ? st : SERVICE_TYPE_CUSTOM,
       paymentMethod: income.paymentMethod || 'cash',
       amount: String(income.amount || ''),
       date: income.date ? income.date.slice(0, 10) : '',
@@ -487,11 +512,34 @@ const POS = () => {
               </div>
               <div className="space-y-2">
                 <Label className="text-sm font-medium">Service Type</Label>
-                <Input
-                  placeholder="e.g. Web development, Design, Software"
-                  value={form.serviceType}
-                  onChange={(e) => handleChange('serviceType', e.target.value)}
-                />
+                <select
+                  className="w-full px-3 py-2 bg-input border border-border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+                  value={form.serviceTypeSelect}
+                  onChange={(e) => {
+                    const v = e.target.value;
+                    setForm((prev) => ({
+                      ...prev,
+                      serviceTypeSelect: v,
+                      serviceType: v === SERVICE_TYPE_CUSTOM ? prev.serviceType : '',
+                    }));
+                  }}
+                >
+                  {SERVICE_TYPE_PRESETS.map((label) => (
+                    <option key={label} value={label}>
+                      {label}
+                    </option>
+                  ))}
+                  <option value={SERVICE_TYPE_CUSTOM}>Custom…</option>
+                </select>
+                {form.serviceTypeSelect === SERVICE_TYPE_CUSTOM ? (
+                  <Input
+                    className="mt-2"
+                    placeholder="Enter custom service type"
+                    value={form.serviceType}
+                    onChange={(e) => handleChange('serviceType', e.target.value)}
+                    autoComplete="off"
+                  />
+                ) : null}
               </div>
               <div className="space-y-2">
                 <Label className="text-sm font-medium">Amount ({settings.currency})</Label>

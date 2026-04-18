@@ -754,7 +754,7 @@ export default function SidebarNew() {
   const openMiniSubmenu = (e, title, items) => {
     if (typeof window === "undefined") return;
     const rect = e.currentTarget.getBoundingClientRect();
-    const width = 260;
+    const width = 276;
     const rowH = 40;
     const headerH = 52;
     const padding = 8;
@@ -766,7 +766,7 @@ export default function SidebarNew() {
   };
 
   // Sidebar widths (mobile drawer always uses expanded width)
-  const EXPANDED_WIDTH = 260;
+  const EXPANDED_WIDTH = 276;
   const COLLAPSED_WIDTH = 68;
   const currentWidth = isMobile ? EXPANDED_WIDTH : collapsed ? COLLAPSED_WIDTH : EXPANDED_WIDTH;
 
@@ -790,8 +790,8 @@ export default function SidebarNew() {
   };
 
   const mobileSidebarStyle = {
-    width: "min(280px, 86vw)",
-    minWidth: "min(280px, 86vw)",
+    width: "min(296px, 88vw)",
+    minWidth: "min(296px, 88vw)",
     minHeight: 0,
     height: "100%",
     maxHeight: "100dvh",

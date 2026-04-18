@@ -13,12 +13,21 @@ const requireAdmin = (req, res, next) => {
   next();
 };
 
-const TABLES = [
+// Parent → child order for inserts. Backup reads use the same list; restore deletes in reverse
+// then inserts in this order so foreign keys stay valid.
+// Excludes ephemeral OTP tables and backup_history (large nested blobs).
+const BACKUP_TABLES = [
   'users',
   'clients',
+  'settings',
+  'bank_details',
+  'folders',
+  'projects',
+  'project_expenses',
+  'estimates',
+  'invoices',
   'incomes',
   'expenses',
-  'invoices',
   'assets',
   'loans',
   'cars',
@@ -26,8 +35,13 @@ const TABLES = [
   'orders',
   'transfers',
   'reminders',
-  'settings',
-  'bank_details',
+  'calendar_events',
+  'scheduled_sms',
+  'tasks',
+  'time_logs',
+  'task_comments',
+  'files',
+  'login_activity',
 ];
 
 router.get('/info', requireAdmin, async (req, res) => {
@@ -44,7 +58,7 @@ router.get('/info', requireAdmin, async (req, res) => {
     const lastBackup = lastBackupResult.rows[0] || null;
 
     const tablesInfo = [];
-    for (const table of TABLES) {
+    for (const table of BACKUP_TABLES) {
       try {
         const countResult = await pool.query(`SELECT COUNT(*) as count FROM ${table}`);
         tablesInfo.push({
@@ -101,7 +115,7 @@ router.post('/create', requireAdmin, async (req, res) => {
 
     let totalRows = 0;
 
-    for (const table of TABLES) {
+    for (const table of BACKUP_TABLES) {
       try {
         const result = await pool.query(`SELECT * FROM ${table}`);
         backupData.tables[table] = result.rows;
@@ -189,18 +203,34 @@ router.post('/restore', requireAdmin, async (req, res) => {
       skipped: [],
       errors: [],
     };
-    // Atomic restore: if any table fails, rollback everything to avoid partial data loss.
+
+    for (const key of Object.keys(backupData.tables)) {
+      if (!BACKUP_TABLES.includes(key)) {
+        results.skipped.push({ table: key, reason: 'Not a valid table' });
+      }
+    }
+
+    // Atomic restore: clear all backed-up tables (children first), then repopulate in FK-safe order.
     await client.query('BEGIN');
 
-    for (const [tableName, rows] of Object.entries(backupData.tables)) {
-      if (!TABLES.includes(tableName)) {
-        results.skipped.push({ table: tableName, reason: 'Not a valid table' });
-        continue;
-      }
-
+    const deleteOrder = [...BACKUP_TABLES].reverse();
+    for (const tableName of deleteOrder) {
       try {
         await client.query(`DELETE FROM ${tableName}`);
+      } catch (e) {
+        if (e.code === '42P01') {
+          results.skipped.push({ table: tableName, reason: 'Table does not exist' });
+        } else {
+          results.errors.push({ table: tableName, error: e.message });
+          throw new Error(`Restore failed clearing "${tableName}": ${e.message}`);
+        }
+      }
+    }
 
+    for (const tableName of BACKUP_TABLES) {
+      const rows = backupData.tables[tableName] ?? [];
+
+      try {
         let insertedCount = 0;
         for (const row of rows) {
           if (Object.keys(row).length === 0) continue;

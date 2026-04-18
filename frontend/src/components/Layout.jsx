@@ -7,7 +7,7 @@ const MainContent = () => {
   const { collapsed, isMobile } = useSidebarState();
 
   // Desktop: sidebar width + margins (10px left + ~10px gap). Mobile: full width — drawer overlays.
-  const sidebarMargin = isMobile ? 0 : collapsed ? 88 : 280;
+  const sidebarMargin = isMobile ? 0 : collapsed ? 88 : 296;
 
   return (
     <div

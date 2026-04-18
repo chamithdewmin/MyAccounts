@@ -26,9 +26,9 @@
     --destructive: 0 72% 51%;
     --destructive-foreground: 0 0% 100%;
 
-    /* App-wide border (matches #1e1e1e) */
-    --border: 0 0% 11.76%;
-    --input: 0 0% 11.76%;
+    /* Light theme borders (matches #e1e1e1) */
+    --border: 0 0% 88.2%;
+    --input: 0 0% 88.2%;
     --ring: 219 98% 52%; /* #0e61fd */
 
     /* Sidebar active state for light theme */
@@ -40,8 +40,8 @@
     --table-row-odd: #ffffff;
     --table-row-even: #f8fafc;
     --table-row-hover: #f1f5f9;
-    --table-divider: #1e1e1e;
-    --table-border: #1e1e1e;
+    --table-divider: #e1e1e1;
+    --table-border: #e1e1e1;
     --text-primary: #0f172a;
     --text-body: #334155;
     --text-label: #64748b;
@@ -72,6 +72,7 @@
     --destructive: 0 72% 51%;
     --destructive-foreground: 0 0% 100%;
 
+    /* Dark theme borders (matches #1e1e1e) */
     --border: 0 0% 11.76%;
     --input: 0 0% 11.76%;
     
@@ -248,7 +249,7 @@ tbody td {
   background: #ffffff !important;
   background-color: #ffffff !important;
   color: #000000 !important;
-  border-color: #1e1e1e !important;
+  border-color: #e1e1e1 !important;
 }
 .report-preview-content thead th {
   background: #f5f5f5 !important;

@@ -114,24 +114,24 @@ const Reports = () => {
   const openReportPreview = () => {
     const cur = settings?.currency || 'LKR';
     const periodLabel = dateRange === 'month' ? 'This month' : dateRange === 'quarter' ? 'This quarter' : 'This year';
-    let body = `<h2 style="margin:0 0 16px; font-size:18px; border-bottom:2px solid #1e1e1e; padding-bottom:8px;">Reports &amp; Analytics</h2>`;
+    let body = `<h2 style="margin:0 0 16px; font-size:18px; border-bottom:2px solid #e1e1e1; padding-bottom:8px;">Reports &amp; Analytics</h2>`;
     body += `<p style="color:#666; font-size:12px; margin:0 0 20px;">${new Date().toLocaleDateString('en-US', { dateStyle: 'long' })} · ${periodLabel}</p>`;
     body += `<h3 style="margin:0 0 12px; font-size:14px;">Summary</h3>`;
-    body += `<table style="width:100%; border-collapse:collapse; margin-bottom:24px;"><tr style="background:#f5f5f5;"><th style="text-align:left; padding:10px 12px; border:1px solid #1e1e1e;">Metric</th><th style="text-align:right; padding:10px 12px; border:1px solid #1e1e1e;">Value</th></tr>`;
-    body += `<tr><td style="padding:10px 12px; border:1px solid #1e1e1e;">Period Profit (${periodLabel})</td><td style="text-align:right; padding:10px 12px; border:1px solid #1e1e1e;">${cur} ${periodProfit.toLocaleString()}</td></tr>`;
-    body += `<tr><td style="padding:10px 12px; border:1px solid #1e1e1e;">Yearly Profit</td><td style="text-align:right; padding:10px 12px; border:1px solid #1e1e1e;">${cur} ${(totals.yearlyProfit ?? 0).toLocaleString()}</td></tr>`;
-    body += `<tr><td style="padding:10px 12px; border:1px solid #1e1e1e;">Estimated Tax (Year)</td><td style="text-align:right; padding:10px 12px; border:1px solid #1e1e1e;">${cur} ${(totals.estimatedTaxYearly ?? 0).toLocaleString()}</td></tr>`;
+    body += `<table style="width:100%; border-collapse:collapse; margin-bottom:24px;"><tr style="background:#f5f5f5;"><th style="text-align:left; padding:10px 12px; border:1px solid #e1e1e1;">Metric</th><th style="text-align:right; padding:10px 12px; border:1px solid #e1e1e1;">Value</th></tr>`;
+    body += `<tr><td style="padding:10px 12px; border:1px solid #e1e1e1;">Period Profit (${periodLabel})</td><td style="text-align:right; padding:10px 12px; border:1px solid #e1e1e1;">${cur} ${periodProfit.toLocaleString()}</td></tr>`;
+    body += `<tr><td style="padding:10px 12px; border:1px solid #e1e1e1;">Yearly Profit</td><td style="text-align:right; padding:10px 12px; border:1px solid #e1e1e1;">${cur} ${(totals.yearlyProfit ?? 0).toLocaleString()}</td></tr>`;
+    body += `<tr><td style="padding:10px 12px; border:1px solid #e1e1e1;">Estimated Tax (Year)</td><td style="text-align:right; padding:10px 12px; border:1px solid #e1e1e1;">${cur} ${(totals.estimatedTaxYearly ?? 0).toLocaleString()}</td></tr>`;
     body += `</table>`;
     body += `<h3 style="margin:0 0 12px; font-size:14px;">Cash Flow (Income vs Expenses)</h3>`;
-    body += `<table style="width:100%; border-collapse:collapse; margin-bottom:24px;"><tr style="background:#f5f5f5;"><th style="text-align:left; padding:8px 12px; border:1px solid #1e1e1e;">Period</th><th style="text-align:right; padding:8px 12px; border:1px solid #1e1e1e;">Income</th><th style="text-align:right; padding:8px 12px; border:1px solid #1e1e1e;">Expenses</th><th style="text-align:right; padding:8px 12px; border:1px solid #1e1e1e;">Profit</th></tr>`;
+    body += `<table style="width:100%; border-collapse:collapse; margin-bottom:24px;"><tr style="background:#f5f5f5;"><th style="text-align:left; padding:8px 12px; border:1px solid #e1e1e1;">Period</th><th style="text-align:right; padding:8px 12px; border:1px solid #e1e1e1;">Income</th><th style="text-align:right; padding:8px 12px; border:1px solid #e1e1e1;">Expenses</th><th style="text-align:right; padding:8px 12px; border:1px solid #e1e1e1;">Profit</th></tr>`;
     profitTrend.forEach((row) => {
-      body += `<tr><td style="padding:8px 12px; border:1px solid #1e1e1e;">${row.date}</td><td style="text-align:right; padding:8px 12px; border:1px solid #1e1e1e;">${cur} ${(row.income || 0).toLocaleString()}</td><td style="text-align:right; padding:8px 12px; border:1px solid #1e1e1e;">${cur} ${(row.expenses || 0).toLocaleString()}</td><td style="text-align:right; padding:8px 12px; border:1px solid #1e1e1e;">${cur} ${(row.profit || 0).toLocaleString()}</td></tr>`;
+      body += `<tr><td style="padding:8px 12px; border:1px solid #e1e1e1;">${row.date}</td><td style="text-align:right; padding:8px 12px; border:1px solid #e1e1e1;">${cur} ${(row.income || 0).toLocaleString()}</td><td style="text-align:right; padding:8px 12px; border:1px solid #e1e1e1;">${cur} ${(row.expenses || 0).toLocaleString()}</td><td style="text-align:right; padding:8px 12px; border:1px solid #e1e1e1;">${cur} ${(row.profit || 0).toLocaleString()}</td></tr>`;
     });
     body += `</table>`;
     body += `<h3 style="margin:0 0 12px; font-size:14px;">Expense Breakdown by Category</h3>`;
-    body += `<table style="width:100%; border-collapse:collapse;"><tr style="background:#f5f5f5;"><th style="text-align:left; padding:8px 12px; border:1px solid #1e1e1e;">Category</th><th style="text-align:right; padding:8px 12px; border:1px solid #1e1e1e;">Amount</th></tr>`;
+    body += `<table style="width:100%; border-collapse:collapse;"><tr style="background:#f5f5f5;"><th style="text-align:left; padding:8px 12px; border:1px solid #e1e1e1;">Category</th><th style="text-align:right; padding:8px 12px; border:1px solid #e1e1e1;">Amount</th></tr>`;
     expenseByCategory.forEach((row) => {
-      body += `<tr><td style="padding:8px 12px; border:1px solid #1e1e1e;">${row.category}</td><td style="text-align:right; padding:8px 12px; border:1px solid #1e1e1e;">${cur} ${(row.amount || 0).toLocaleString()}</td></tr>`;
+      body += `<tr><td style="padding:8px 12px; border:1px solid #e1e1e1;">${row.category}</td><td style="text-align:right; padding:8px 12px; border:1px solid #e1e1e1;">${cur} ${(row.amount || 0).toLocaleString()}</td></tr>`;
     });
     body += `</table>`;
     const fullHtml = getPrintHtml(body, { logo: settings?.logo, businessName: settings?.businessName });

@@ -6,7 +6,7 @@ const getColors = () => {
   return {
     bg: isDark ? "#000000" : "#f8fafc",
     card: isDark ? "#0a0a0a" : "#ffffff",
-    border: "#1e1e1e",
+    border: isDark ? "#1e1e1e" : "#e1e1e1",
     text: isDark ? "#fff" : "#0f172a",
     muted: isDark ? "#8b9ab0" : "#64748b",
     blue: "#0e5cff",

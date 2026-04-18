@@ -16,8 +16,8 @@ const getColors = () => {
     bg: isDark ? "#000000" : "#ffffff",
     bg2: isDark ? "#000000" : "#f8fafc",
     card: isDark ? "#0a0a0a" : "#ffffff",
-    border: "#1e1e1e",
-    border2: "#1e1e1e",
+    border: isDark ? "#1e1e1e" : "#e1e1e1",
+    border2: isDark ? "#1e1e1e" : "#e1e1e1",
     text: isDark ? "#fff" : "#0f172a",
     text2: isDark ? "#d1d9e6" : "#334155",
     muted: isDark ? "#8b9ab0" : "#64748b",
@@ -372,18 +372,18 @@ export default function OverviewReports() {
 
   const openReportPreview = () => {
     const cur = settings?.currency || "LKR";
-    let body = `<h2 style="margin:0 0 16px; font-size:18px; border-bottom:2px solid #1e1e1e; padding-bottom:8px;">Business Overview Report</h2>`;
+    let body = `<h2 style="margin:0 0 16px; font-size:18px; border-bottom:2px solid #e1e1e1; padding-bottom:8px;">Business Overview Report</h2>`;
     body += `<p style="color:#666; font-size:12px; margin:0 0 20px;">${new Date().toLocaleDateString("en-US", { dateStyle: "long" })} · Fiscal Year ${new Date().getFullYear()}</p>`;
-    body += `<table style="width:100%; border-collapse:collapse; margin-bottom:24px;"><tr style="background:#f5f5f5;"><th style="text-align:left; padding:10px 12px; border:1px solid #1e1e1e;">Metric</th><th style="text-align:right; padding:10px 12px; border:1px solid #1e1e1e;">Value</th></tr>`;
-    body += `<tr><td style="padding:10px 12px; border:1px solid #1e1e1e;">Total Revenue (7M)</td><td style="text-align:right; padding:10px 12px; border:1px solid #1e1e1e;">${cur} ${totalIncome.toLocaleString()}</td></tr>`;
-    body += `<tr><td style="padding:10px 12px; border:1px solid #1e1e1e;">Total Expenses (7M)</td><td style="text-align:right; padding:10px 12px; border:1px solid #1e1e1e;">${cur} ${totalExpenses.toLocaleString()}</td></tr>`;
-    body += `<tr><td style="padding:10px 12px; border:1px solid #1e1e1e;">Net Profit</td><td style="text-align:right; padding:10px 12px; border:1px solid #1e1e1e;">${cur} ${netProfit.toLocaleString()} (${profitMargin}% margin)</td></tr>`;
-    body += `<tr><td style="padding:10px 12px; border:1px solid #1e1e1e;">Current Cash</td><td style="text-align:right; padding:10px 12px; border:1px solid #1e1e1e;">${cur} ${cashBalance.toLocaleString()}</td></tr>`;
-    body += `<tr><td style="padding:10px 12px; border:1px solid #1e1e1e;">Owner's Equity</td><td style="text-align:right; padding:10px 12px; border:1px solid #1e1e1e;">${cur} ${equity.toLocaleString()} (Debt: ${debtRatio}%)</td></tr>`;
+    body += `<table style="width:100%; border-collapse:collapse; margin-bottom:24px;"><tr style="background:#f5f5f5;"><th style="text-align:left; padding:10px 12px; border:1px solid #e1e1e1;">Metric</th><th style="text-align:right; padding:10px 12px; border:1px solid #e1e1e1;">Value</th></tr>`;
+    body += `<tr><td style="padding:10px 12px; border:1px solid #e1e1e1;">Total Revenue (7M)</td><td style="text-align:right; padding:10px 12px; border:1px solid #e1e1e1;">${cur} ${totalIncome.toLocaleString()}</td></tr>`;
+    body += `<tr><td style="padding:10px 12px; border:1px solid #e1e1e1;">Total Expenses (7M)</td><td style="text-align:right; padding:10px 12px; border:1px solid #e1e1e1;">${cur} ${totalExpenses.toLocaleString()}</td></tr>`;
+    body += `<tr><td style="padding:10px 12px; border:1px solid #e1e1e1;">Net Profit</td><td style="text-align:right; padding:10px 12px; border:1px solid #e1e1e1;">${cur} ${netProfit.toLocaleString()} (${profitMargin}% margin)</td></tr>`;
+    body += `<tr><td style="padding:10px 12px; border:1px solid #e1e1e1;">Current Cash</td><td style="text-align:right; padding:10px 12px; border:1px solid #e1e1e1;">${cur} ${cashBalance.toLocaleString()}</td></tr>`;
+    body += `<tr><td style="padding:10px 12px; border:1px solid #e1e1e1;">Owner's Equity</td><td style="text-align:right; padding:10px 12px; border:1px solid #e1e1e1;">${cur} ${equity.toLocaleString()} (Debt: ${debtRatio}%)</td></tr>`;
     body += `</table>`;
-    body += `<h3 style="margin:0 0 12px; font-size:14px;">Monthly Summary</h3><table style="width:100%; border-collapse:collapse;"><tr style="background:#f5f5f5;"><th style="text-align:left; padding:8px 12px; border:1px solid #1e1e1e;">Month</th><th style="text-align:right; padding:8px 12px; border:1px solid #1e1e1e;">Income</th><th style="text-align:right; padding:8px 12px; border:1px solid #1e1e1e;">Expenses</th><th style="text-align:right; padding:8px 12px; border:1px solid #1e1e1e;">Profit</th></tr>`;
+    body += `<h3 style="margin:0 0 12px; font-size:14px;">Monthly Summary</h3><table style="width:100%; border-collapse:collapse;"><tr style="background:#f5f5f5;"><th style="text-align:left; padding:8px 12px; border:1px solid #e1e1e1;">Month</th><th style="text-align:right; padding:8px 12px; border:1px solid #e1e1e1;">Income</th><th style="text-align:right; padding:8px 12px; border:1px solid #e1e1e1;">Expenses</th><th style="text-align:right; padding:8px 12px; border:1px solid #e1e1e1;">Profit</th></tr>`;
     plMonthly.forEach((m) => {
-      body += `<tr><td style="padding:8px 12px; border:1px solid #1e1e1e;">${m.month}</td><td style="text-align:right; padding:8px 12px; border:1px solid #1e1e1e;">${cur} ${m.income.toLocaleString()}</td><td style="text-align:right; padding:8px 12px; border:1px solid #1e1e1e;">${cur} ${m.expenses.toLocaleString()}</td><td style="text-align:right; padding:8px 12px; border:1px solid #1e1e1e;">${cur} ${m.profit.toLocaleString()}</td></tr>`;
+      body += `<tr><td style="padding:8px 12px; border:1px solid #e1e1e1;">${m.month}</td><td style="text-align:right; padding:8px 12px; border:1px solid #e1e1e1;">${cur} ${m.income.toLocaleString()}</td><td style="text-align:right; padding:8px 12px; border:1px solid #e1e1e1;">${cur} ${m.expenses.toLocaleString()}</td><td style="text-align:right; padding:8px 12px; border:1px solid #e1e1e1;">${cur} ${m.profit.toLocaleString()}</td></tr>`;
     });
     body += `</table>`;
     const fullHtml = getPrintHtml(body, { logo: settings?.logo, businessName: settings?.businessName });

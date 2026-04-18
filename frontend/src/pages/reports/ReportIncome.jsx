@@ -95,20 +95,20 @@ const ReportIncome = () => {
     
     // Detail table
     if (filteredIncomes.length > 0) {
-      table += '<h3>Income Details</h3><table style="width:100%; border-collapse: collapse;"><tr style="background:#f5f5f5;"><th style="border:1px solid #1e1e1e; padding:8px;">Date</th><th style="border:1px solid #1e1e1e; padding:8px;">Client</th><th style="border:1px solid #1e1e1e; padding:8px;">Service</th><th style="border:1px solid #1e1e1e; padding:8px; text-align:right;">Amount</th></tr>';
+      table += '<h3>Income Details</h3><table style="width:100%; border-collapse: collapse;"><tr style="background:#f5f5f5;"><th style="border:1px solid #e1e1e1; padding:8px;">Date</th><th style="border:1px solid #e1e1e1; padding:8px;">Client</th><th style="border:1px solid #e1e1e1; padding:8px;">Service</th><th style="border:1px solid #e1e1e1; padding:8px; text-align:right;">Amount</th></tr>';
       filteredIncomes.forEach((inc) => {
-        table += `<tr><td style="border:1px solid #1e1e1e; padding:8px;">${new Date(inc.date).toLocaleDateString()}</td><td style="border:1px solid #1e1e1e; padding:8px;">${inc.clientName || '-'}</td><td style="border:1px solid #1e1e1e; padding:8px;">${inc.serviceType || '-'}</td><td style="border:1px solid #1e1e1e; padding:8px; text-align:right;">${settings.currency} ${(inc.amount || 0).toLocaleString()}</td></tr>`;
+        table += `<tr><td style="border:1px solid #e1e1e1; padding:8px;">${new Date(inc.date).toLocaleDateString()}</td><td style="border:1px solid #e1e1e1; padding:8px;">${inc.clientName || '-'}</td><td style="border:1px solid #e1e1e1; padding:8px;">${inc.serviceType || '-'}</td><td style="border:1px solid #e1e1e1; padding:8px; text-align:right;">${settings.currency} ${(inc.amount || 0).toLocaleString()}</td></tr>`;
       });
       table += '</table>';
     }
     
-    table += '<h3>By Client</h3><table style="width:100%; border-collapse: collapse;"><tr><th style="border:1px solid #1e1e1e; padding:8px;">Client</th><th style="border:1px solid #1e1e1e; padding:8px;">Amount</th></tr>';
+    table += '<h3>By Client</h3><table style="width:100%; border-collapse: collapse;"><tr><th style="border:1px solid #e1e1e1; padding:8px;">Client</th><th style="border:1px solid #e1e1e1; padding:8px;">Amount</th></tr>';
     Object.entries(byClientData).forEach(([k, v]) => {
-      table += `<tr><td style="border:1px solid #1e1e1e; padding:8px;">${k}</td><td style="border:1px solid #1e1e1e; padding:8px;">${settings.currency} ${v.toLocaleString()}</td></tr>`;
+      table += `<tr><td style="border:1px solid #e1e1e1; padding:8px;">${k}</td><td style="border:1px solid #e1e1e1; padding:8px;">${settings.currency} ${v.toLocaleString()}</td></tr>`;
     });
-    table += '</table><h3>By Service</h3><table style="width:100%; border-collapse: collapse;"><tr><th style="border:1px solid #1e1e1e; padding:8px;">Service</th><th style="border:1px solid #1e1e1e; padding:8px;">Amount</th></tr>';
+    table += '</table><h3>By Service</h3><table style="width:100%; border-collapse: collapse;"><tr><th style="border:1px solid #e1e1e1; padding:8px;">Service</th><th style="border:1px solid #e1e1e1; padding:8px;">Amount</th></tr>';
     Object.entries(byServiceData).forEach(([k, v]) => {
-      table += `<tr><td style="border:1px solid #1e1e1e; padding:8px;">${k}</td><td style="border:1px solid #1e1e1e; padding:8px;">${settings.currency} ${v.toLocaleString()}</td></tr>`;
+      table += `<tr><td style="border:1px solid #e1e1e1; padding:8px;">${k}</td><td style="border:1px solid #e1e1e1; padding:8px;">${settings.currency} ${v.toLocaleString()}</td></tr>`;
     });
     table += '</table>';
 

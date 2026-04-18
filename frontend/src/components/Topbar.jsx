@@ -20,7 +20,7 @@ import { useSidebarState } from '@/components/SidebarNew';
 const getColors = () => {
   const isDark = document.documentElement.classList.contains('dark');
   return {
-    border: "#1e1e1e",
+    border: isDark ? "#1e1e1e" : "#e1e1e1",
     text: isDark ? "#fff" : "#0f172a",
     textMuted: isDark ? "#8b9ab0" : "#64748b",
     inputBg: isDark ? "#1e293b" : "#f1f5f9",

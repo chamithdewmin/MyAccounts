@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, createContext, useContext } from "react";
+import { useState, useEffect, useCallback, useRef, createContext, useContext } from "react";
 import { createPortal } from "react-dom";
 import { NavLink, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
@@ -26,12 +26,16 @@ import {
   Activity,
   Folder,
   Briefcase,
+  ChevronsUpDown,
+  LogOut,
+  User,
 } from "lucide-react";
 
 // Theme-aware colors
 const getColors = () => {
   const isDark = document.documentElement.classList.contains('dark');
   return {
+    isDark,
     bg: isDark ? "#0a0a0a" : "#ffffff",
     border: isDark ? "#171717" : "#e2e8f0",
     text: isDark ? "#fff" : "#0a1420",
@@ -299,6 +303,253 @@ function NavItem({
   return content;
 }
 
+function initialsFromUser(name, email) {
+  const n = String(name || "").trim();
+  if (n) {
+    const parts = n.split(/\s+/).filter(Boolean);
+    if (parts.length >= 2) {
+      return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+    }
+    if (parts[0]?.length >= 2) return parts[0].slice(0, 2).toUpperCase();
+    return (parts[0][0] || "?").toUpperCase();
+  }
+  const local = String(email || "").split("@")[0] || "";
+  if (local.length >= 2) return local.slice(0, 2).toUpperCase();
+  return "?";
+}
+
+function SidebarProfileFooter({ user, logout, navigate, colors, expanded }) {
+  const c = colors || getColors();
+  const isDark =
+    typeof c.isDark === "boolean" ? c.isDark : document.documentElement.classList.contains("dark");
+  const [menuOpen, setMenuOpen] = useState(false);
+  const [menuLayout, setMenuLayout] = useState(null);
+  const pillRef = useRef(null);
+  const menuRef = useRef(null);
+
+  const displayName = String(user?.name || "").trim() || "User";
+  const email = String(user?.email || "").trim();
+  const initials = initialsFromUser(user?.name, user?.email);
+  const shortSingle = displayName.length > 0 && displayName.length <= 11 && !displayName.includes(" ");
+  const avatarLabel = shortSingle ? displayName : initials;
+  const avatarFontSize = shortSingle ? (displayName.length > 8 ? 9 : 10.5) : 12;
+
+  const pillBg = isDark ? "#111111" : "#f4f4f5";
+  const pillBorder = isDark ? "#262626" : "#e4e4e7";
+  const avatarBg = isDark ? "#000000" : "#18181b";
+  const secondary = isDark ? "#999999" : "#71717a";
+  const statusGreen = "#4ade80";
+
+  const updateMenuLayout = useCallback(() => {
+    const el = pillRef.current;
+    if (!el || typeof window === "undefined") return;
+    const rect = el.getBoundingClientRect();
+    const width = Math.max(rect.width, expanded ? rect.width : 216);
+    const left = expanded ? rect.left : Math.min(rect.left, window.innerWidth - width - 12);
+    setMenuLayout({
+      left,
+      width,
+      bottom: window.innerHeight - rect.top + 8,
+    });
+  }, [expanded]);
+
+  useEffect(() => {
+    if (!menuOpen) return;
+    updateMenuLayout();
+    const onResize = () => updateMenuLayout();
+    window.addEventListener("resize", onResize);
+    return () => window.removeEventListener("resize", onResize);
+  }, [menuOpen, updateMenuLayout, expanded]);
+
+  useEffect(() => {
+    if (!menuOpen) return;
+    const close = (e) => {
+      const t = e.target;
+      if (pillRef.current?.contains(t) || menuRef.current?.contains(t)) return;
+      setMenuOpen(false);
+    };
+    const onKey = (e) => {
+      if (e.key === "Escape") setMenuOpen(false);
+    };
+    document.addEventListener("mousedown", close);
+    document.addEventListener("keydown", onKey);
+    return () => {
+      document.removeEventListener("mousedown", close);
+      document.removeEventListener("keydown", onKey);
+    };
+  }, [menuOpen]);
+
+  const toggleMenu = () => {
+    setMenuOpen((o) => !o);
+  };
+
+  const pillButton = (
+    <button
+      type="button"
+      ref={pillRef}
+      onClick={toggleMenu}
+      aria-expanded={menuOpen}
+      aria-haspopup="menu"
+      style={{
+        display: "flex",
+        alignItems: "center",
+        gap: expanded ? 10 : 0,
+        width: "100%",
+        justifyContent: expanded ? "flex-start" : "center",
+        padding: expanded ? "10px 12px" : "10px 8px",
+        borderRadius: 14,
+        border: `1px solid ${pillBorder}`,
+        background: pillBg,
+        cursor: "pointer",
+        transition: "background 0.15s, border-color 0.15s",
+        fontFamily: "inherit",
+      }}
+    >
+      <span style={{ position: "relative", width: 36, height: 36, flexShrink: 0 }}>
+        <span
+          style={{
+            position: "absolute",
+            inset: 0,
+            borderRadius: "50%",
+            background: avatarBg,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            color: "#fff",
+            fontSize: avatarFontSize,
+            fontWeight: 600,
+            lineHeight: 1,
+            textAlign: "center",
+            padding: 2,
+            overflow: "hidden",
+            wordBreak: "break-all",
+          }}
+        >
+          {avatarLabel}
+        </span>
+        <span
+          style={{
+            position: "absolute",
+            right: 0,
+            bottom: 0,
+            width: 11,
+            height: 11,
+            borderRadius: "50%",
+            background: statusGreen,
+            border: `2px solid ${pillBg}`,
+            boxSizing: "border-box",
+          }}
+          title="Online"
+        />
+      </span>
+      {expanded && (
+        <>
+          <span style={{ flex: 1, minWidth: 0, textAlign: "left" }}>
+            <span
+              style={{
+                display: "block",
+                fontSize: 14,
+                fontWeight: 700,
+                color: isDark ? "#ffffff" : "#18181b",
+                whiteSpace: "nowrap",
+                overflow: "hidden",
+                textOverflow: "ellipsis",
+              }}
+            >
+              {displayName}
+            </span>
+            {email ? (
+              <span
+                style={{
+                  display: "block",
+                  fontSize: 12,
+                  fontWeight: 400,
+                  color: secondary,
+                  marginTop: 2,
+                  whiteSpace: "nowrap",
+                  overflow: "hidden",
+                  textOverflow: "ellipsis",
+                }}
+              >
+                {email}
+              </span>
+            ) : null}
+          </span>
+          <ChevronsUpDown size={16} color={secondary} style={{ flexShrink: 0 }} aria-hidden />
+        </>
+      )}
+    </button>
+  );
+
+  return (
+    <div
+      style={{
+        padding: expanded ? "10px 10px 12px" : "10px 8px 12px",
+        borderTop: `1px solid ${c.divider}`,
+        flexShrink: 0,
+      }}
+    >
+      {pillButton}
+      {menuOpen && menuLayout && typeof document !== "undefined"
+        ? createPortal(
+            <>
+              <div
+                role="presentation"
+                style={{ position: "fixed", inset: 0, zIndex: 1000 }}
+                onClick={() => setMenuOpen(false)}
+              />
+              <div
+                ref={menuRef}
+                role="menu"
+                style={{
+                  position: "fixed",
+                  left: menuLayout.left,
+                  width: menuLayout.width,
+                  bottom: menuLayout.bottom,
+                  background: c.bg,
+                  border: `1px solid ${c.border}`,
+                  borderRadius: 12,
+                  padding: 6,
+                  zIndex: 1001,
+                  boxShadow: "0 16px 48px rgba(0,0,0,0.35)",
+                }}
+              >
+                {!expanded && (
+                  <div style={{ padding: "8px 10px 10px", borderBottom: `1px solid ${c.divider}` }}>
+                    <div style={{ fontSize: 13, fontWeight: 700, color: c.text }}>{displayName}</div>
+                    {email ? (
+                      <div style={{ fontSize: 11.5, color: c.textMuted, marginTop: 2 }}>{email}</div>
+                    ) : null}
+                  </div>
+                )}
+                <MenuPopupItem
+                  icon={<User size={16} />}
+                  label="Profile"
+                  onClick={() => {
+                    setMenuOpen(false);
+                    navigate("/profile");
+                  }}
+                  colors={c}
+                />
+                <MenuPopupItem
+                  icon={<LogOut size={16} />}
+                  label="Log out"
+                  onClick={async () => {
+                    setMenuOpen(false);
+                    await logout();
+                    navigate("/login");
+                  }}
+                  colors={c}
+                />
+              </div>
+            </>,
+            document.body
+          )
+        : null}
+    </div>
+  );
+}
+
 // Provider component to wrap the app
 export function SidebarProvider({ children }) {
   const [collapsed, setCollapsed] = useState(() => {
@@ -357,7 +608,7 @@ export function SidebarProvider({ children }) {
 }
 
 export default function SidebarNew() {
-  const { user } = useAuth();
+  const { user, logout } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   const { collapsed, setCollapsed, colors, isMobile, mobileDrawerOpen, closeMobileDrawer } =
@@ -754,6 +1005,14 @@ export default function SidebarNew() {
             );
           })}
         </nav>
+
+        <SidebarProfileFooter
+          user={user}
+          logout={logout}
+          navigate={navigate}
+          colors={c}
+          expanded={!effectiveCollapsed}
+        />
       </div>
 
       {/* Collapsed submenu popup (portal so it won't be clipped) */}

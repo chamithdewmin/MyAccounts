@@ -267,6 +267,27 @@ router.post('/folders', async (req, res) => {
   }
 });
 
+router.patch('/folders/:id(\\d+)', async (req, res) => {
+  try {
+    const uid = req.user.dataUserId;
+    const id = Number(req.params.id);
+    if (!Number.isInteger(id) || id <= 0) return res.status(400).json({ error: 'Invalid folder id' });
+    const rawName = String(req.body?.name || '').trim();
+    if (!rawName) return res.status(400).json({ error: 'Folder name required' });
+    const name = rawName.slice(0, 255);
+    const { rows } = await pool.query(
+      'UPDATE folders SET name = $1 WHERE id = $2 AND user_id = $3 RETURNING id, name, created_at',
+      [name, id, uid],
+    );
+    if (!rows[0]) return res.status(404).json({ error: 'Folder not found' });
+    res.json(toFolder(rows[0]));
+  } catch (err) {
+    if (err.code === '23505') return res.status(400).json({ error: 'Folder already exists' });
+    console.error('[folders PATCH]', err);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
 router.delete('/folders/:id(\\d+)', async (req, res) => {
   try {
     const uid = req.user.dataUserId;

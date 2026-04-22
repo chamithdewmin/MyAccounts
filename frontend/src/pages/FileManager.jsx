@@ -137,6 +137,10 @@ const FileManager = () => {
   const [folderDeleteTarget, setFolderDeleteTarget] = useState(null);
   const [folderDeleteInput, setFolderDeleteInput] = useState('');
   const [folderDeleteSubmitting, setFolderDeleteSubmitting] = useState(false);
+  const [folderRenameOpen, setFolderRenameOpen] = useState(false);
+  const [folderRenameTarget, setFolderRenameTarget] = useState(null);
+  const [folderRenameValue, setFolderRenameValue] = useState('');
+  const [folderRenameSubmitting, setFolderRenameSubmitting] = useState(false);
 
   const [renameOpen, setRenameOpen] = useState(false);
   const [renameValue, setRenameValue] = useState('');
@@ -357,6 +361,44 @@ const FileManager = () => {
   const closeFolderDeleteDialog = () => {
     setFolderDeleteTarget(null);
     setFolderDeleteInput('');
+  };
+
+  const openFolderRenameDialog = (folder) => {
+    setFolderRenameTarget(folder);
+    setFolderRenameValue(folder?.name || '');
+    setFolderRenameOpen(true);
+  };
+
+  const saveFolderRename = async () => {
+    const folder = folderRenameTarget;
+    const name = folderRenameValue.trim();
+    if (!folder || !name) return;
+    setFolderRenameSubmitting(true);
+    try {
+      const updated = await api.files.renameFolder(folder.id, name);
+      setFolders((prev) =>
+        prev
+          .map((f) => (f.id === folder.id ? updated : f))
+          .sort((a, b) => String(a.name).localeCompare(String(b.name))),
+      );
+      setFolderRenameOpen(false);
+      setFolderRenameTarget(null);
+      setFolderRenameValue('');
+      toast({ title: 'Folder renamed', description: `${folder.name} → ${updated.name}` });
+      await loadFiles();
+      setSelected((s) =>
+        s && String(s.folderId) === String(updated.id)
+          ? {
+              ...s,
+              folderName: updated.name,
+            }
+          : s,
+      );
+    } catch (e) {
+      toast({ title: 'Could not rename folder', description: e.message, variant: 'destructive' });
+    } finally {
+      setFolderRenameSubmitting(false);
+    }
   };
 
   const deleteFolder = async () => {
@@ -869,8 +911,17 @@ const FileManager = () => {
                     </button>
                     <button
                       type="button"
+                      onClick={() => openFolderRenameDialog(f)}
+                      disabled={folderDeleteSubmitting || folderRenameSubmitting}
+                      className="p-2 rounded-md hover:bg-secondary disabled:opacity-50"
+                      title="Rename folder"
+                    >
+                      <Pencil className="w-3.5 h-3.5" />
+                    </button>
+                    <button
+                      type="button"
                       onClick={() => openFolderDeleteDialog(f)}
-                      disabled={folderDeleteSubmitting}
+                      disabled={folderDeleteSubmitting || folderRenameSubmitting}
                       className="p-2 rounded-md hover:bg-destructive/15 hover:text-destructive disabled:opacity-50"
                       title="Delete folder"
                     >
@@ -1452,6 +1503,54 @@ const FileManager = () => {
               disabled={bulkDeleteSubmitting || bulkDeleteConfirmInput.trim() !== 'DELETE'}
             >
               {bulkDeleteSubmitting ? 'Deleting…' : `Delete ${checkedCount} file${checkedCount === 1 ? '' : 's'}`}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog
+        open={folderRenameOpen}
+        onOpenChange={(open) => {
+          if (!open && !folderRenameSubmitting) {
+            setFolderRenameOpen(false);
+            setFolderRenameTarget(null);
+            setFolderRenameValue('');
+          } else if (open) {
+            setFolderRenameOpen(true);
+          }
+        }}
+      >
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Rename folder</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-2">
+            <Label htmlFor="rename-folder-name">Folder name</Label>
+            <Input
+              id="rename-folder-name"
+              value={folderRenameValue}
+              onChange={(e) => setFolderRenameValue(e.target.value)}
+              placeholder="Folder name"
+              disabled={folderRenameSubmitting}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') saveFolderRename();
+              }}
+            />
+          </div>
+          <DialogFooter className="gap-2">
+            <Button
+              variant="outline"
+              onClick={() => {
+                setFolderRenameOpen(false);
+                setFolderRenameTarget(null);
+                setFolderRenameValue('');
+              }}
+              disabled={folderRenameSubmitting}
+            >
+              Cancel
+            </Button>
+            <Button onClick={saveFolderRename} disabled={folderRenameSubmitting || !folderRenameValue.trim()}>
+              {folderRenameSubmitting ? 'Saving…' : 'Save'}
             </Button>
           </DialogFooter>
         </DialogContent>

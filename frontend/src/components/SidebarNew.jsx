@@ -73,7 +73,6 @@ const reportSubItems = [
   { to: "/reports/storage-overview", label: "Storage Overview" },
   { to: "/reports/profit-loss", label: "Profit & Loss" },
   { to: "/reports/cash-flow", label: "Cash Flow" },
-  { to: "/reports/tax", label: "Tax Reports" },
   { to: "/reports/balance-sheet", label: "Balance Sheet" },
 ];
 

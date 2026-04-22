@@ -366,7 +366,7 @@ export default function OverviewReports() {
       { Icon: I.Wallet, color: C.blue, bg: "rgba(59,130,246,0.08)", border: "rgba(59,130,246,0.2)", tag: "Cash Flow", title: "Cash Position", desc: `Current cash balance is LKR ${cashBalance.toLocaleString()}. ${largestInflow > 0 ? `Largest single inflow was LKR ${largestInflow.toLocaleString()}.` : 'Monitor cash flow regularly.'}` },
       { Icon: I.AlertCircle, color: C.red, bg: "rgba(239,68,68,0.08)", border: "rgba(239,68,68,0.2)", tag: "Cash Flow", title: "Payment Status", desc: invoices.filter(i => i.status !== 'paid').length > 0 ? `${invoices.filter(i => i.status !== 'paid').length} unpaid invoices totaling LKR ${invoices.filter(i => i.status !== 'paid').reduce((s, i) => s + (i.total || 0), 0).toLocaleString()}.` : 'All invoices are paid.' },
       { Icon: I.ShieldCheck, color: C.purple, bg: "rgba(167,139,250,0.08)", border: "rgba(167,139,250,0.2)", tag: "Balance Sheet", title: "Financial Stability", desc: `Debt ratio is ${debtRatio}%. Equity stands at LKR ${equity.toLocaleString()}. ${parseFloat(debtRatio) < 40 ? 'Healthy financial position.' : 'Consider reducing debt.'}` },
-      { Icon: I.Clock, color: C.orange, bg: "rgba(249,115,22,0.08)", border: "rgba(249,115,22,0.2)", tag: "Tax Reports", title: "Tax Status", desc: settings.taxEnabled ? `Estimated tax liability: LKR ${totalTax.toLocaleString()}. ${pendingTax > 0 ? `LKR ${pendingTax.toLocaleString()} pending.` : 'All tax obligations met.'}` : 'Tax calculations disabled in settings.' },
+      { Icon: I.Clock, color: C.orange, bg: "rgba(249,115,22,0.08)", border: "rgba(249,115,22,0.2)", tag: "Tax", title: "Tax Status", desc: settings.taxEnabled ? `Estimated tax liability: LKR ${totalTax.toLocaleString()}. ${pendingTax > 0 ? `LKR ${pendingTax.toLocaleString()} pending.` : 'All tax obligations met.'}` : 'Tax calculations disabled in settings.' },
     ];
   }, [plMonthly, totalIncome, worstMonth, cashBalance, incomes, invoices, debtRatio, equity, settings, totalTax, pendingTax]);
 
@@ -413,7 +413,7 @@ export default function OverviewReports() {
               {new Date().toLocaleDateString('en-US', { month: 'short', year: 'numeric' })} · Fiscal Year {new Date().getFullYear()}
             </p>
             <h1 style={{ color:C.text, fontSize: isMobileLayout ? 22 : 28, fontWeight:900, margin:0, letterSpacing:"-0.03em" }}>Business Overview</h1>
-            <p style={{ color:C.muted, fontSize:14, margin:"6px 0 0" }}>Unified snapshot across P&L, Cash Flow, Balance Sheet &amp; Tax reports.</p>
+            <p style={{ color:C.muted, fontSize:14, margin:"6px 0 0" }}>Unified snapshot across P&amp;L, Cash Flow, Balance Sheet, and estimated tax.</p>
           </div>
           <div style={{ display:"flex", gap:10, alignItems:"center", justifyContent:"flex-end", flexWrap:"wrap" }}>
             {/* Action buttons */}
@@ -635,7 +635,7 @@ export default function OverviewReports() {
             </div>
 
             {/* TAX SUMMARY */}
-            <Card title="Tax Summary" sub="From Tax Reports">
+            <Card title="Tax Summary" sub="Estimated from P&amp;L">
               {[
                 { label:"Total Tax Owed",    value:`LKR ${totalTax.toLocaleString()}`,   color:C.red,    Icon:I.Receipt      },
                 { label:"Tax Paid (Q1–Q3)",  value:`LKR ${paidTax.toLocaleString()}`,    color:C.green,  Icon:I.CheckCircle  },
@@ -652,7 +652,7 @@ export default function OverviewReports() {
             <div style={{ width:36, height:36, borderRadius:10, background:"rgba(59,130,246,0.15)", display:"flex", alignItems:"center", justifyContent:"center" }}><I.Info /></div>
             <div>
               <h2 style={{ color:C.text, fontSize:18, fontWeight:900, margin:0, letterSpacing:"-0.02em" }}>Key Business Insights</h2>
-              <p style={{ color:C.muted, fontSize:13, margin:0 }}>Auto-generated from all 4 reports — click to highlight</p>
+              <p style={{ color:C.muted, fontSize:13, margin:0 }}>Auto-generated from your data — click to highlight</p>
             </div>
           </div>
           <div style={{ display:"grid", gridTemplateColumns: isMobileLayout ? "1fr" : "repeat(3,1fr)", gap:14 }}>

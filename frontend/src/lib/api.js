@@ -191,6 +191,7 @@ export const api = {
     },
     listFolders: () => request('/files/folders'),
     createFolder: (name) => request('/files/folders', { method: 'POST', body: JSON.stringify({ name }) }),
+    renameFolder: (id, name) => request(`/files/folders/${id}`, { method: 'PATCH', body: JSON.stringify({ name }) }),
     deleteFolder: (id) => request(`/files/folders/${id}`, { method: 'DELETE' }),
     update: (id, data) => request(`/files/${id}`, { method: 'PATCH', body: JSON.stringify(data) }),
     delete: (id) => request(`/files/${id}`, { method: 'DELETE' }),

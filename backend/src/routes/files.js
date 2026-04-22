@@ -3,6 +3,7 @@ import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import multer from 'multer';
+import bcrypt from 'bcryptjs';
 import pool from '../config/db.js';
 import { authMiddleware } from '../middleware/auth.js';
 
@@ -100,6 +101,7 @@ const toRow = (r) => ({
 const toFolder = (r) => ({
   id: Number(r.id),
   name: r.name,
+  hasPassword: r.is_locked === true || r.is_locked === 't',
   createdAt: r.created_at,
 });
 
@@ -241,7 +243,10 @@ const validateFolderId = async (client, { folderId, userId }) => {
 router.get('/folders', async (req, res) => {
   try {
     const uid = req.user.dataUserId;
-    const { rows } = await pool.query('SELECT id, name, created_at FROM folders WHERE user_id = $1 ORDER BY name ASC', [uid]);
+    const { rows } = await pool.query(
+      'SELECT id, name, is_locked, created_at FROM folders WHERE user_id = $1 ORDER BY name ASC',
+      [uid],
+    );
     res.json(rows.map(toFolder));
   } catch (err) {
     console.error('[folders GET]', err);
@@ -276,7 +281,7 @@ router.patch('/folders/:id(\\d+)', async (req, res) => {
     if (!rawName) return res.status(400).json({ error: 'Folder name required' });
     const name = rawName.slice(0, 255);
     const { rows } = await pool.query(
-      'UPDATE folders SET name = $1 WHERE id = $2 AND user_id = $3 RETURNING id, name, created_at',
+      'UPDATE folders SET name = $1 WHERE id = $2 AND user_id = $3 RETURNING id, name, is_locked, created_at',
       [name, id, uid],
     );
     if (!rows[0]) return res.status(404).json({ error: 'Folder not found' });
@@ -284,6 +289,73 @@ router.patch('/folders/:id(\\d+)', async (req, res) => {
   } catch (err) {
     if (err.code === '23505') return res.status(400).json({ error: 'Folder already exists' });
     console.error('[folders PATCH]', err);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+router.patch('/folders/:id(\\d+)/password', async (req, res) => {
+  try {
+    const uid = req.user.dataUserId;
+    const id = Number(req.params.id);
+    if (!Number.isInteger(id) || id <= 0) return res.status(400).json({ error: 'Invalid folder id' });
+    const enabled = req.body?.enabled === true;
+    if (!enabled) {
+      const { rows } = await pool.query(
+        `UPDATE folders
+         SET is_locked = false, use_login_password = true, access_password_hash = NULL
+         WHERE id = $1 AND user_id = $2
+         RETURNING id, name, is_locked, created_at`,
+        [id, uid],
+      );
+      if (!rows[0]) return res.status(404).json({ error: 'Folder not found' });
+      return res.json(toFolder(rows[0]));
+    }
+    const useLoginPassword = req.body?.useLoginPassword !== false;
+    let passwordHash = null;
+    if (!useLoginPassword) {
+      const password = String(req.body?.password || '').trim();
+      if (password.length < 4) return res.status(400).json({ error: 'Folder password must be at least 4 characters' });
+      passwordHash = await bcrypt.hash(password, 10);
+    }
+    const { rows } = await pool.query(
+      `UPDATE folders
+       SET is_locked = true, use_login_password = $1, access_password_hash = $2
+       WHERE id = $3 AND user_id = $4
+       RETURNING id, name, is_locked, created_at`,
+      [useLoginPassword, passwordHash, id, uid],
+    );
+    if (!rows[0]) return res.status(404).json({ error: 'Folder not found' });
+    res.json(toFolder(rows[0]));
+  } catch (err) {
+    console.error('[folders password PATCH]', err);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+router.post('/folders/:id(\\d+)/unlock', async (req, res) => {
+  try {
+    const uid = req.user.dataUserId;
+    const id = Number(req.params.id);
+    if (!Number.isInteger(id) || id <= 0) return res.status(400).json({ error: 'Invalid folder id' });
+    const password = String(req.body?.password || '');
+    if (!password) return res.status(400).json({ error: 'Password required' });
+    const { rows } = await pool.query(
+      `SELECT f.id, f.name, f.is_locked, f.use_login_password, f.access_password_hash, u.password_hash AS user_password_hash
+       FROM folders f
+       JOIN users u ON u.id = f.user_id
+       WHERE f.id = $1 AND f.user_id = $2`,
+      [id, uid],
+    );
+    const folder = rows[0];
+    if (!folder) return res.status(404).json({ error: 'Folder not found' });
+    if (!(folder.is_locked === true || folder.is_locked === 't')) return res.json({ success: true, unlocked: true });
+    const ok = folder.use_login_password
+      ? await bcrypt.compare(password, String(folder.user_password_hash || ''))
+      : await bcrypt.compare(password, String(folder.access_password_hash || ''));
+    if (!ok) return res.status(401).json({ error: 'Incorrect password' });
+    res.json({ success: true, unlocked: true });
+  } catch (err) {
+    console.error('[folders unlock POST]', err);
     res.status(500).json({ error: 'Server error' });
   }
 });
@@ -379,6 +451,9 @@ router.get('/', async (req, res) => {
       p += 1;
     }
 
+    if (folderIdRaw == null || String(folderIdRaw).trim() === '') {
+      conds.push('(f.folder_id IS NULL OR COALESCE(fo.is_locked, false) = false)');
+    }
     const where = conds.join(' AND ');
     const sql = `
       SELECT

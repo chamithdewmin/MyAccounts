@@ -321,10 +321,16 @@ async function initDb() {
         id SERIAL PRIMARY KEY,
         user_id INT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
         name VARCHAR(255) NOT NULL,
+        is_locked BOOLEAN NOT NULL DEFAULT false,
+        use_login_password BOOLEAN NOT NULL DEFAULT true,
+        access_password_hash TEXT,
         created_at TIMESTAMPTZ DEFAULT NOW(),
         UNIQUE (user_id, name)
       )
     `);
+    await pool.query('ALTER TABLE folders ADD COLUMN IF NOT EXISTS is_locked BOOLEAN NOT NULL DEFAULT false');
+    await pool.query('ALTER TABLE folders ADD COLUMN IF NOT EXISTS use_login_password BOOLEAN NOT NULL DEFAULT true');
+    await pool.query('ALTER TABLE folders ADD COLUMN IF NOT EXISTS access_password_hash TEXT');
     await pool.query(`
       CREATE TABLE IF NOT EXISTS files (
         id SERIAL PRIMARY KEY,

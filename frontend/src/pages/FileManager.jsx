@@ -141,6 +141,16 @@ const FileManager = () => {
   const [folderRenameTarget, setFolderRenameTarget] = useState(null);
   const [folderRenameValue, setFolderRenameValue] = useState('');
   const [folderRenameSubmitting, setFolderRenameSubmitting] = useState(false);
+  const [folderPasswordOpen, setFolderPasswordOpen] = useState(false);
+  const [folderPasswordTarget, setFolderPasswordTarget] = useState(null);
+  const [folderPasswordUseLogin, setFolderPasswordUseLogin] = useState(true);
+  const [folderPasswordValue, setFolderPasswordValue] = useState('');
+  const [folderPasswordSubmitting, setFolderPasswordSubmitting] = useState(false);
+  const [folderUnlockOpen, setFolderUnlockOpen] = useState(false);
+  const [folderUnlockTarget, setFolderUnlockTarget] = useState(null);
+  const [folderUnlockValue, setFolderUnlockValue] = useState('');
+  const [folderUnlockSubmitting, setFolderUnlockSubmitting] = useState(false);
+  const [unlockedFolderIds, setUnlockedFolderIds] = useState(() => new Set());
 
   const [renameOpen, setRenameOpen] = useState(false);
   const [renameValue, setRenameValue] = useState('');
@@ -363,6 +373,16 @@ const FileManager = () => {
     setFolderDeleteInput('');
   };
 
+  const handleFolderClick = (folder) => {
+    if (!folder?.hasPassword || unlockedFolderIds.has(folder.id)) {
+      setSelectedFolderId(String(folder.id));
+      return;
+    }
+    setFolderUnlockTarget(folder);
+    setFolderUnlockValue('');
+    setFolderUnlockOpen(true);
+  };
+
   const openFolderRenameDialog = (folder) => {
     setFolderRenameTarget(folder);
     setFolderRenameValue(folder?.name || '');
@@ -398,6 +418,91 @@ const FileManager = () => {
       toast({ title: 'Could not rename folder', description: e.message, variant: 'destructive' });
     } finally {
       setFolderRenameSubmitting(false);
+    }
+  };
+
+  const openFolderPasswordDialog = (folder) => {
+    setFolderPasswordTarget(folder);
+    setFolderPasswordUseLogin(true);
+    setFolderPasswordValue('');
+    setFolderPasswordOpen(true);
+  };
+
+  const saveFolderPassword = async () => {
+    const folder = folderPasswordTarget;
+    if (!folder) return;
+    if (!folderPasswordUseLogin && folderPasswordValue.trim().length < 4) {
+      toast({ title: 'Password too short', description: 'Use at least 4 characters.', variant: 'destructive' });
+      return;
+    }
+    setFolderPasswordSubmitting(true);
+    try {
+      const payload = folderPasswordUseLogin
+        ? { enabled: true, useLoginPassword: true }
+        : { enabled: true, useLoginPassword: false, password: folderPasswordValue.trim() };
+      const updated = await api.files.setFolderPassword(folder.id, payload);
+      setFolders((prev) =>
+        prev
+          .map((f) => (f.id === folder.id ? updated : f))
+          .sort((a, b) => String(a.name).localeCompare(String(b.name))),
+      );
+      setUnlockedFolderIds((prev) => {
+        const next = new Set(prev);
+        next.add(folder.id);
+        return next;
+      });
+      setFolderPasswordOpen(false);
+      setFolderPasswordTarget(null);
+      setFolderPasswordValue('');
+      toast({ title: 'Folder password set', description: `Protection enabled for ${updated.name}` });
+      await loadFiles();
+    } catch (e) {
+      toast({ title: 'Could not set password', description: e.message, variant: 'destructive' });
+    } finally {
+      setFolderPasswordSubmitting(false);
+    }
+  };
+
+  const clearFolderPassword = async (folder) => {
+    try {
+      const updated = await api.files.setFolderPassword(folder.id, { enabled: false });
+      setFolders((prev) =>
+        prev
+          .map((f) => (f.id === folder.id ? updated : f))
+          .sort((a, b) => String(a.name).localeCompare(String(b.name))),
+      );
+      setUnlockedFolderIds((prev) => {
+        const next = new Set(prev);
+        next.delete(folder.id);
+        return next;
+      });
+      toast({ title: 'Folder password removed', description: updated.name });
+      await loadFiles();
+    } catch (e) {
+      toast({ title: 'Could not remove password', description: e.message, variant: 'destructive' });
+    }
+  };
+
+  const unlockFolderAndOpen = async () => {
+    const folder = folderUnlockTarget;
+    const password = folderUnlockValue;
+    if (!folder || !password) return;
+    setFolderUnlockSubmitting(true);
+    try {
+      await api.files.unlockFolder(folder.id, password);
+      setUnlockedFolderIds((prev) => {
+        const next = new Set(prev);
+        next.add(folder.id);
+        return next;
+      });
+      setSelectedFolderId(String(folder.id));
+      setFolderUnlockOpen(false);
+      setFolderUnlockTarget(null);
+      setFolderUnlockValue('');
+    } catch (e) {
+      toast({ title: 'Incorrect password', description: e.message, variant: 'destructive' });
+    } finally {
+      setFolderUnlockSubmitting(false);
     }
   };
 
@@ -901,32 +1006,46 @@ const FileManager = () => {
                         : 'hover:bg-secondary text-muted-foreground'
                     }`}
                   >
-                    <button
-                      type="button"
-                      onClick={() => setSelectedFolderId(String(f.id))}
-                      className="flex-1 min-w-0 text-left px-3 py-2 flex items-center gap-2"
-                    >
+                    <button type="button" onClick={() => handleFolderClick(f)} className="flex-1 min-w-0 text-left px-3 py-2 flex items-center gap-2">
                       <Folder className="w-4 h-4 shrink-0" />
                       <span className="truncate">{f.name}</span>
+                      {f.hasPassword ? (
+                        <span className="text-[10px] px-1.5 py-0.5 rounded border border-border/80 text-muted-foreground">Locked</span>
+                      ) : null}
                     </button>
-                    <button
-                      type="button"
-                      onClick={() => openFolderRenameDialog(f)}
-                      disabled={folderDeleteSubmitting || folderRenameSubmitting}
-                      className="p-2 rounded-md hover:bg-secondary disabled:opacity-50"
-                      title="Rename folder"
-                    >
-                      <Pencil className="w-3.5 h-3.5" />
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => openFolderDeleteDialog(f)}
-                      disabled={folderDeleteSubmitting || folderRenameSubmitting}
-                      className="p-2 rounded-md hover:bg-destructive/15 hover:text-destructive disabled:opacity-50"
-                      title="Delete folder"
-                    >
-                      <Trash className="w-3.5 h-3.5" />
-                    </button>
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-8 w-8 mr-1"
+                          disabled={folderDeleteSubmitting || folderRenameSubmitting || folderPasswordSubmitting}
+                          aria-label="Folder actions"
+                        >
+                          <MoreVertical className="w-4 h-4" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end" className="w-44">
+                        <DropdownMenuItem onClick={() => openFolderRenameDialog(f)}>
+                          <Pencil className="w-4 h-4 mr-2" />
+                          Rename
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => openFolderPasswordDialog(f)}>
+                          <Pencil className="w-4 h-4 mr-2" />
+                          {f.hasPassword ? 'Change password' : 'Set password'}
+                        </DropdownMenuItem>
+                        {f.hasPassword ? (
+                          <DropdownMenuItem onClick={() => clearFolderPassword(f)}>
+                            <Unlink className="w-4 h-4 mr-2" />
+                            Remove password
+                          </DropdownMenuItem>
+                        ) : null}
+                        <DropdownMenuItem className="text-destructive focus:text-destructive" onClick={() => openFolderDeleteDialog(f)}>
+                          <Trash className="w-4 h-4 mr-2" />
+                          Delete
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
                   </div>
                 ))}
                 {folders.length === 0 ? <p className="text-xs text-muted-foreground px-3 py-2">No folders yet</p> : null}
@@ -1551,6 +1670,91 @@ const FileManager = () => {
             </Button>
             <Button onClick={saveFolderRename} disabled={folderRenameSubmitting || !folderRenameValue.trim()}>
               {folderRenameSubmitting ? 'Saving…' : 'Save'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog
+        open={folderPasswordOpen}
+        onOpenChange={(open) => {
+          if (!open && !folderPasswordSubmitting) {
+            setFolderPasswordOpen(false);
+            setFolderPasswordTarget(null);
+            setFolderPasswordValue('');
+          } else if (open) {
+            setFolderPasswordOpen(true);
+          }
+        }}
+      >
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Set folder password</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3">
+            <Label className="text-sm text-muted-foreground">Default uses your login password</Label>
+            <div className="flex items-center gap-2">
+              <Checkbox checked={folderPasswordUseLogin} onCheckedChange={(v) => setFolderPasswordUseLogin(v === true)} />
+              <span className="text-sm">Use login password</span>
+            </div>
+            {!folderPasswordUseLogin ? (
+              <div className="space-y-2">
+                <Label htmlFor="folder-custom-password">Custom password</Label>
+                <Input
+                  id="folder-custom-password"
+                  type="password"
+                  value={folderPasswordValue}
+                  onChange={(e) => setFolderPasswordValue(e.target.value)}
+                  placeholder="At least 4 characters"
+                  disabled={folderPasswordSubmitting}
+                />
+              </div>
+            ) : null}
+          </div>
+          <DialogFooter className="gap-2">
+            <Button variant="outline" onClick={() => setFolderPasswordOpen(false)} disabled={folderPasswordSubmitting}>
+              Cancel
+            </Button>
+            <Button onClick={saveFolderPassword} disabled={folderPasswordSubmitting || (!folderPasswordUseLogin && folderPasswordValue.trim().length < 4)}>
+              {folderPasswordSubmitting ? 'Saving…' : 'Save'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog
+        open={folderUnlockOpen}
+        onOpenChange={(open) => {
+          if (!open && !folderUnlockSubmitting) {
+            setFolderUnlockOpen(false);
+            setFolderUnlockTarget(null);
+            setFolderUnlockValue('');
+          }
+        }}
+      >
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Enter folder password</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-2">
+            <p className="text-sm text-muted-foreground">Enter password to open {folderUnlockTarget?.name || 'this folder'}.</p>
+            <Input
+              type="password"
+              value={folderUnlockValue}
+              onChange={(e) => setFolderUnlockValue(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') unlockFolderAndOpen();
+              }}
+              placeholder="Password"
+              disabled={folderUnlockSubmitting}
+            />
+          </div>
+          <DialogFooter className="gap-2">
+            <Button variant="outline" onClick={() => setFolderUnlockOpen(false)} disabled={folderUnlockSubmitting}>
+              Cancel
+            </Button>
+            <Button onClick={unlockFolderAndOpen} disabled={folderUnlockSubmitting || !folderUnlockValue}>
+              {folderUnlockSubmitting ? 'Opening…' : 'Open folder'}
             </Button>
           </DialogFooter>
         </DialogContent>

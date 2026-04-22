@@ -28,6 +28,7 @@ import {
   HardDrive,
   ArrowDownWideNarrow,
   ArrowUpNarrowWide,
+  Lock,
 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -1010,7 +1011,10 @@ const FileManager = () => {
                       <Folder className="w-4 h-4 shrink-0" />
                       <span className="truncate">{f.name}</span>
                       {f.hasPassword ? (
-                        <span className="text-[10px] px-1.5 py-0.5 rounded border border-border/80 text-muted-foreground">Locked</span>
+                        <span className="text-[10px] px-1.5 py-0.5 rounded border border-border/80 text-muted-foreground inline-flex items-center gap-1">
+                          <Lock className="w-3 h-3" />
+                          Locked
+                        </span>
                       ) : null}
                     </button>
                     <DropdownMenu>

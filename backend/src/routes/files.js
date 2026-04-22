@@ -352,7 +352,7 @@ router.post('/folders/:id(\\d+)/unlock', async (req, res) => {
     const ok = folder.use_login_password
       ? await bcrypt.compare(password, String(folder.user_password_hash || ''))
       : await bcrypt.compare(password, String(folder.access_password_hash || ''));
-    if (!ok) return res.status(401).json({ error: 'Incorrect password' });
+    if (!ok) return res.status(400).json({ error: 'Incorrect password' });
     res.json({ success: true, unlocked: true });
   } catch (err) {
     console.error('[folders unlock POST]', err);

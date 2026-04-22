@@ -1011,9 +1011,8 @@ const FileManager = () => {
                       <Folder className="w-4 h-4 shrink-0" />
                       <span className="truncate">{f.name}</span>
                       {f.hasPassword ? (
-                        <span className="text-[10px] px-1.5 py-0.5 rounded border border-border/80 text-muted-foreground inline-flex items-center gap-1">
+                        <span className="text-[10px] px-1.5 py-0.5 rounded border border-border/80 text-muted-foreground inline-flex items-center">
                           <Lock className="w-3 h-3" />
-                          Locked
                         </span>
                       ) : null}
                     </button>

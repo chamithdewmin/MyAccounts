@@ -184,7 +184,7 @@ const StatCard = ({ icon, iconBg, label, value, badge, badgeColor, sub, onClick 
         alignItems: "center",
         gap: 16,
         width: "100%",
-        minWidth: 0,
+        minWidth: interactive ? 160 : 0,
         border: `1px solid ${tc.border}`,
         boxShadow: "0 1px 3px rgba(0,0,0,0.1)",
         cursor: interactive ? "pointer" : undefined,
@@ -213,20 +213,7 @@ const StatCard = ({ icon, iconBg, label, value, badge, badgeColor, sub, onClick 
             }}>{badge}</span>
           )}
         </div>
-        <p
-          style={{
-            color: tc.text,
-            fontSize: 22,
-            fontWeight: 800,
-            margin: "4px 0 0",
-            letterSpacing: "-0.03em",
-            whiteSpace: "nowrap",
-            overflow: "hidden",
-            textOverflow: "ellipsis",
-          }}
-        >
-          {value}
-        </p>
+        <p style={{ color: tc.text, fontSize: 22, fontWeight: 800, margin: "4px 0 0", letterSpacing: "-0.03em", wordBreak: "break-word" }}>{value}</p>
         {sub && (
           <p style={{ color: tc.muted, fontSize: 11, margin: "6px 0 0", fontWeight: 500, lineHeight: 1.35 }}>{sub}</p>
         )}
@@ -709,11 +696,11 @@ export default function FinanceDashboard() {
         </div>
       </div>
 
-      {/* TOP STAT CARDS — one column on mobile; 2×2 from md up */}
+      {/* TOP STAT CARDS — 1 column on mobile/tablet (≤1023px), 2×2 grid on desktop */}
       <div
         style={{
           display: "grid",
-          gridTemplateColumns: isMobileLayout ? "minmax(0, 1fr)" : "repeat(2, minmax(0, 1fr))",
+          gridTemplateColumns: isMobileLayout ? "1fr" : "repeat(2, minmax(0, 1fr))",
           gap: 16,
           marginBottom: 16,
         }}

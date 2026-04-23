@@ -263,7 +263,81 @@ export default function Estimates() {
           <Input className="pl-10" placeholder="Search estimates..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} />
         </div>
 
-        <div className="bg-card rounded-lg border border-border overflow-hidden">
+        {/* Mobile card list */}
+        <div className="flex flex-col gap-3 md:hidden">
+          {filtered.map((est) => (
+            <div key={est.id} className="bg-card border border-border rounded-xl p-4 flex flex-col gap-3">
+              {/* Top row: estimate # + status */}
+              <div className="flex items-center justify-between gap-2">
+                <span className="font-mono text-sm font-semibold text-foreground">{est.estimateNumber}</span>
+                <span className={`px-2.5 py-1 rounded-full text-xs font-semibold capitalize ${
+                  est.status === 'converted'
+                    ? 'bg-blue-500/20 text-blue-400'
+                    : est.status === 'accepted'
+                    ? 'bg-green-500/20 text-green-500'
+                    : est.status === 'rejected'
+                    ? 'bg-red-500/20 text-red-400'
+                    : 'bg-secondary text-muted-foreground'
+                }`}>
+                  {est.status || 'draft'}
+                </span>
+              </div>
+
+              {/* Client + project */}
+              <div className="flex items-start justify-between gap-2 text-sm">
+                <span className="font-medium text-foreground">{est.clientName}</span>
+                {est.projectTitle && (
+                  <span className="text-muted-foreground text-xs text-right">{est.projectTitle}</span>
+                )}
+              </div>
+
+              {/* Total + valid until */}
+              <div className="flex items-center justify-between gap-2 text-sm">
+                <span className="font-semibold text-primary">
+                  {settings.currency} {Number(est.total || 0).toLocaleString()}
+                </span>
+                <span className="text-muted-foreground text-xs">Valid until {formatDate(est.validUntil)}</span>
+              </div>
+
+              {/* Actions */}
+              <div className="flex items-center gap-1 flex-wrap border-t border-border pt-3">
+                <button className="p-2 hover:bg-secondary rounded-lg text-blue-400" onClick={() => { setSelected(est); setPreviewAction('view'); }} title="View">
+                  <Eye className="w-4 h-4" />
+                </button>
+                <button className="p-2 hover:bg-secondary rounded-lg text-muted-foreground" onClick={() => { setSelected(est); setPreviewAction('download'); }} title="Download PDF">
+                  <Download className="w-4 h-4" />
+                </button>
+                <button className="p-2 hover:bg-secondary rounded-lg text-muted-foreground" onClick={() => { setSelected(est); setPreviewAction('print'); }} title="Print">
+                  <Printer className="w-4 h-4" />
+                </button>
+                <button className="p-2 hover:bg-secondary rounded-lg text-green-500" onClick={() => openEdit(est)} title="Edit">
+                  <Pencil className="w-4 h-4" />
+                </button>
+                <button className="p-2 hover:bg-secondary rounded-lg text-red-500" onClick={() => setDeleteCandidate(est)} title="Delete">
+                  <Trash2 className="w-4 h-4" />
+                </button>
+                {est.status !== 'converted' && (
+                  <button
+                    className="ml-auto text-xs px-3 py-1.5 rounded-full bg-primary !text-white hover:bg-primary/90 font-medium"
+                    onClick={async () => {
+                      try {
+                        await convertEstimateToInvoice(est);
+                        toast({ title: 'Converted to invoice', description: 'Estimate converted and marked as converted.' });
+                      } catch (err) {
+                        toast({ title: 'Conversion failed', description: err?.message || 'Please try again.', variant: 'destructive' });
+                      }
+                    }}
+                  >
+                    Convert
+                  </button>
+                )}
+              </div>
+            </div>
+          ))}
+        </div>
+
+        {/* Desktop table */}
+        <div className="hidden md:block bg-card rounded-lg border border-border overflow-hidden">
           <div className="overflow-x-auto">
             <table className="w-full min-w-[760px]">
               <thead className="bg-secondary">

@@ -45,6 +45,7 @@ const Calendar = () => {
   ];
 
   const weekDays = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+  const weekDaysMobile = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
 
   // Format any date (Date or string from API) as local YYYY-MM-DD so calendar matches DB dates correctly
   const toLocalDateString = (val) => {
@@ -348,26 +349,28 @@ const Calendar = () => {
           {/* Calendar Grid */}
           <div className="grid grid-cols-7 gap-1">
             {/* Week day headers */}
-            {weekDays.map((day) => (
+            {weekDays.map((day, i) => (
               <div
                 key={day}
-                className="text-center text-sm font-semibold text-muted-foreground py-2"
+                className="text-center font-semibold text-muted-foreground py-2"
               >
-                {day}
+                <span className="hidden sm:inline text-sm">{day}</span>
+                <span className="inline sm:hidden text-xs">{weekDaysMobile[i]}</span>
               </div>
             ))}
 
             {/* Calendar days */}
             {calendarDays.map((date, index) => {
               if (!date) {
-                return <div key={`empty-${index}`} className="aspect-square" />;
+                return <div key={`empty-${index}`} className="aspect-square sm:aspect-auto sm:min-h-[80px]" />;
               }
 
               const totals = getDateTotals(date);
               const dayEvents = getEventsForDate(date);
               const hasTransactions = totals.incomeTotal > 0 || totals.expenseTotal > 0 || totals.invoiceTotal > 0;
               const hasEvents = dayEvents.length > 0;
-              const isSelected = selectedDate && 
+              const hasActivity = hasTransactions || hasEvents;
+              const isSelected = selectedDate &&
                 date.getDate() === selectedDate.getDate() &&
                 date.getMonth() === selectedDate.getMonth() &&
                 date.getFullYear() === selectedDate.getFullYear();
@@ -377,43 +380,63 @@ const Calendar = () => {
                   key={date.toISOString()}
                   onClick={() => setSelectedDate(date)}
                   className={cn(
-                    "aspect-square p-1 sm:p-2 rounded-lg border transition-all text-left",
+                    "aspect-square sm:aspect-auto sm:min-h-[80px] p-1 sm:p-2 rounded-lg border transition-all text-left",
                     "hover:bg-secondary/50 focus:outline-none focus:ring-2 focus:ring-primary",
                     isToday(date) && "border-primary border-2",
                     isSelected && "bg-primary/10 border-primary",
-                    !hasTransactions && !hasEvents && "border-border"
+                    !hasActivity && "border-border"
                   )}
                 >
                   <div className="flex flex-col h-full">
                     <span className={cn(
-                      "text-sm font-semibold mb-1",
+                      "text-xs sm:text-sm font-semibold mb-1",
                       isToday(date) ? "text-primary" : "text-foreground"
                     )}>
                       {date.getDate()}
                     </span>
-                    {(hasTransactions || hasEvents) && (
-                      <div className="flex flex-col gap-0.5 text-xs">
+
+                    {/* Mobile: colored dots */}
+                    {hasActivity && (
+                      <div className="flex sm:hidden flex-wrap gap-0.5 mt-auto">
+                        {totals.incomeTotal > 0 && (
+                          <span className="w-1.5 h-1.5 rounded-full bg-green-500 flex-shrink-0" />
+                        )}
+                        {totals.expenseTotal > 0 && (
+                          <span className="w-1.5 h-1.5 rounded-full bg-red-500 flex-shrink-0" />
+                        )}
+                        {totals.invoiceTotal > 0 && (
+                          <span className="w-1.5 h-1.5 rounded-full bg-yellow-500 flex-shrink-0" />
+                        )}
+                        {hasEvents && (
+                          <span className="w-1.5 h-1.5 rounded-full bg-violet-400 flex-shrink-0" />
+                        )}
+                      </div>
+                    )}
+
+                    {/* Desktop: full text with amounts */}
+                    {hasActivity && (
+                      <div className="hidden sm:flex flex-col gap-0.5 text-xs">
                         {totals.incomeTotal > 0 && (
                           <div className="text-green-500 flex items-center gap-1">
-                            <DollarSign className="w-3 h-3" />
+                            <DollarSign className="w-3 h-3 flex-shrink-0" />
                             <span className="truncate">{totals.incomeTotal.toLocaleString()}</span>
                           </div>
                         )}
                         {totals.expenseTotal > 0 && (
                           <div className="text-red-500 flex items-center gap-1">
-                            <Receipt className="w-3 h-3" />
+                            <Receipt className="w-3 h-3 flex-shrink-0" />
                             <span className="truncate">{totals.expenseTotal.toLocaleString()}</span>
                           </div>
                         )}
                         {totals.invoiceTotal > 0 && (
                           <div className="text-yellow-500 flex items-center gap-1">
-                            <FileText className="w-3 h-3" />
+                            <FileText className="w-3 h-3 flex-shrink-0" />
                             <span className="truncate">{totals.invoiceTotal.toLocaleString()}</span>
                           </div>
                         )}
                         {hasEvents && (
                           <div className="text-violet-400 flex items-center gap-1">
-                            <CalendarIcon className="w-3 h-3" />
+                            <CalendarIcon className="w-3 h-3 flex-shrink-0" />
                             <span className="truncate">{dayEvents.length} event{dayEvents.length > 1 ? 's' : ''}</span>
                           </div>
                         )}
@@ -423,6 +446,14 @@ const Calendar = () => {
                 </button>
               );
             })}
+          </div>
+
+          {/* Mobile dot legend */}
+          <div className="flex sm:hidden items-center gap-4 mt-3 pt-3 border-t border-border text-xs text-muted-foreground flex-wrap">
+            <span className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-green-500" /> Income</span>
+            <span className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-red-500" /> Expense</span>
+            <span className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-yellow-500" /> Invoice</span>
+            <span className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-violet-400" /> Event</span>
           </div>
         </div>
 

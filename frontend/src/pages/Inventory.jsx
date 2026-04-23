@@ -385,7 +385,80 @@ const Inventory = () => {
             </div>
           </div>
 
-          <div className="bg-card rounded-lg border border-border overflow-hidden">
+          {/* Mobile card list */}
+          <div className="flex flex-col gap-3 md:hidden">
+            {filteredExpenses.map((exp, index) => (
+              <motion.div
+                key={exp.id}
+                initial={{ opacity: 0, y: 8 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: index * 0.02 }}
+                className="bg-card border border-border rounded-xl p-4 flex flex-col gap-3"
+              >
+                {/* Amount + category */}
+                <div className="flex items-center justify-between gap-2">
+                  <span className="text-base font-semibold text-red-400">
+                    -{settings.currency} {exp.amount.toLocaleString()}
+                  </span>
+                  <span className="text-xs bg-secondary px-2.5 py-1 rounded-full text-muted-foreground">
+                    {exp.category}
+                  </span>
+                </div>
+
+                {/* Payment method + recurring + receipt */}
+                <div className="flex items-center gap-2 text-xs text-muted-foreground flex-wrap">
+                  <span className="capitalize">{(exp.paymentMethod || 'cash').replace(/_/g, ' ')}</span>
+                  {exp.isRecurring && (
+                    <span className="bg-blue-500/15 text-blue-400 px-2 py-0.5 rounded-full">Recurring</span>
+                  )}
+                  {exp.receipt?.dataUrl && (
+                    <a
+                      href={exp.receipt.dataUrl}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="inline-flex items-center gap-1 text-primary hover:underline"
+                    >
+                      <Upload className="w-3 h-3" />
+                      Receipt
+                    </a>
+                  )}
+                </div>
+
+                {/* Date + actions */}
+                <div className="flex items-center justify-between gap-2 border-t border-border pt-3">
+                  <span className="text-xs text-muted-foreground">
+                    {new Date(exp.date).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' })}
+                  </span>
+                  <div className="flex items-center gap-1">
+                    <button
+                      type="button"
+                      onClick={() => openEdit(exp)}
+                      className="p-2 hover:bg-secondary rounded-lg transition-colors text-green-500"
+                      title="Edit"
+                    >
+                      <Pencil className="w-4 h-4" />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleDeleteExpense(exp)}
+                      className="p-2 hover:bg-secondary rounded-lg transition-colors text-red-500"
+                      title="Delete"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  </div>
+                </div>
+              </motion.div>
+            ))}
+            {filteredExpenses.length === 0 && (
+              <div className="text-center py-8 text-muted-foreground text-sm">
+                No expenses found for the selected filters.
+              </div>
+            )}
+          </div>
+
+          {/* Desktop table */}
+          <div className="hidden md:block bg-card rounded-lg border border-border overflow-hidden">
             <div className="overflow-x-auto overscroll-x-contain touch-pan-x">
               <table className="w-full min-w-[880px] text-sm">
                 <thead className="bg-secondary">

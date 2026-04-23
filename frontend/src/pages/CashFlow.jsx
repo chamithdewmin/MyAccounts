@@ -809,9 +809,113 @@ const CashFlow = () => {
           </select>
         </div>
 
-        {/* Table */}
-        <div className="bg-card rounded-lg border border-border overflow-hidden">
-          <div className="overflow-x-auto overscroll-x-contain touch-pan-x -mx-1 px-1 sm:mx-0 sm:px-0">
+        {/* Mobile card list */}
+        <div className="flex flex-col gap-3 md:hidden">
+          {transactionsWithBalance.map((tx, index) => {
+            const isNextMonth = (() => {
+              const d = new Date(tx.date);
+              return d >= nextMonthRange.start && d <= nextMonthRange.end;
+            })();
+            return (
+              <motion.div
+                key={`${tx.sourceType}-${tx.id}`}
+                initial={{ opacity: 0, y: 8 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: index * 0.02 }}
+                className={`border border-border rounded-xl p-4 flex flex-col gap-3 ${isNextMonth ? 'bg-yellow-500/10' : 'bg-card'}`}
+              >
+                {/* Amount + status */}
+                <div className="flex items-center justify-between gap-2">
+                  <span className={`text-base font-semibold ${tx.type === 'inflow' ? 'text-green-500' : 'text-red-400'}`}>
+                    {tx.type === 'inflow' ? '+' : '-'}{settings.currency} {tx.amount.toLocaleString()}
+                  </span>
+                  <span className={`px-2.5 py-1 rounded-full text-xs font-semibold ${
+                    tx.status === 'received' || tx.status === 'paid'
+                      ? 'bg-green-500/20 text-green-500'
+                      : tx.status === 'overdue'
+                      ? 'bg-red-500/20 text-red-500'
+                      : 'bg-yellow-500/20 text-yellow-500'
+                  }`}>
+                    {tx.status.charAt(0).toUpperCase() + tx.status.slice(1)}
+                  </span>
+                </div>
+
+                {/* Source + category */}
+                <div className="flex items-start justify-between gap-2 text-sm">
+                  <div className="flex items-center gap-1.5 font-medium text-foreground">
+                    {tx.type === 'inflow' ? (
+                      <ArrowUpCircle className="w-4 h-4 text-green-500 flex-shrink-0" />
+                    ) : (
+                      <ArrowDownCircle className="w-4 h-4 text-red-500 flex-shrink-0" />
+                    )}
+                    <span>{tx.source}</span>
+                    {tx.isRecurring && <Repeat className="w-3 h-3 text-muted-foreground" title="Recurring" />}
+                  </div>
+                  <span className="text-xs bg-secondary px-2 py-0.5 rounded-full text-muted-foreground whitespace-nowrap">{tx.category}</span>
+                </div>
+
+                {/* Balance + date */}
+                <div className="flex items-center justify-between gap-2 text-xs text-muted-foreground">
+                  <span>{formatDate(tx.date)}</span>
+                  {tx.runningBalance !== null && (
+                    <span className="font-medium text-foreground">
+                      Bal: {settings.currency} {tx.runningBalance.toLocaleString()}
+                    </span>
+                  )}
+                </div>
+
+                {/* Notes + actions */}
+                {(tx.notes || !tx.isProjected) && (
+                  <div className="flex items-center justify-between gap-2 border-t border-border pt-3">
+                    <span className="text-xs text-muted-foreground truncate">{tx.notes || ''}</span>
+                    <div className="flex items-center gap-1 flex-shrink-0">
+                      {tx.isProjected ? null : tx.sourceType === 'invoice' && tx.status !== 'paid' ? (
+                        <button
+                          type="button"
+                          onClick={() => handleMarkPaid(tx)}
+                          className="p-2 hover:bg-secondary rounded-lg transition-colors text-green-500"
+                          title="Mark as Paid"
+                        >
+                          <ArrowUpCircle className="w-4 h-4" />
+                        </button>
+                      ) : tx.sourceType !== 'invoice' ? (
+                        <>
+                          <button
+                            type="button"
+                            onClick={() => openEdit(tx)}
+                            className="p-2 hover:bg-secondary rounded-lg transition-colors text-green-500"
+                            title="Edit"
+                          >
+                            <Pencil className="w-4 h-4" />
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => handleDelete(tx)}
+                            className="p-2 hover:bg-secondary rounded-lg transition-colors text-red-500"
+                            title="Delete"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        </>
+                      ) : null}
+                    </div>
+                  </div>
+                )}
+              </motion.div>
+            );
+          })}
+          {transactionsWithBalance.length === 0 && (
+            <div className="text-center py-12 text-muted-foreground text-sm">
+              {filters.type === 'upcoming'
+                ? 'No recurring income or expenses scheduled for next month.'
+                : 'No transactions found for the selected filters.'}
+            </div>
+          )}
+        </div>
+
+        {/* Desktop table */}
+        <div className="hidden md:block bg-card rounded-lg border border-border overflow-hidden">
+          <div className="overflow-x-auto overscroll-x-contain touch-pan-x">
             <table className="w-full min-w-[920px] text-sm">
               <thead className="bg-secondary">
                 <tr>

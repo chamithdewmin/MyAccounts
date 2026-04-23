@@ -378,7 +378,67 @@ const POS = () => {
             </div>
           </div>
 
-          <div className="bg-card rounded-lg border border-border overflow-hidden">
+          {/* Mobile card list */}
+          <div className="flex flex-col gap-3 md:hidden">
+            {filteredIncomes.map((income, index) => (
+              <motion.div
+                key={income.id}
+                initial={{ opacity: 0, y: 8 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: index * 0.02 }}
+                className="bg-card border border-border rounded-xl p-4 flex flex-col gap-3"
+              >
+                {/* Amount + payment method */}
+                <div className="flex items-center justify-between gap-2">
+                  <span className="text-base font-semibold text-green-500">
+                    +{settings.currency} {income.amount.toLocaleString()}
+                  </span>
+                  <span className="text-xs capitalize bg-secondary px-2.5 py-1 rounded-full text-muted-foreground">
+                    {income.paymentMethod}
+                  </span>
+                </div>
+
+                {/* Client + service */}
+                <div className="flex items-start justify-between gap-2 text-sm">
+                  <span className="font-medium text-foreground">{income.clientName || '—'}</span>
+                  <span className="text-muted-foreground text-xs text-right">{income.serviceType || '—'}</span>
+                </div>
+
+                {/* Date + actions */}
+                <div className="flex items-center justify-between gap-2 border-t border-border pt-3">
+                  <span className="text-xs text-muted-foreground">
+                    {new Date(income.date).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' })}
+                  </span>
+                  <div className="flex items-center gap-1">
+                    <button
+                      type="button"
+                      onClick={() => openEdit(income)}
+                      className="p-2 hover:bg-secondary rounded-lg transition-colors text-green-500"
+                      title="Edit"
+                    >
+                      <Pencil className="w-4 h-4" />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleDeleteIncome(income)}
+                      className="p-2 hover:bg-secondary rounded-lg transition-colors text-red-500"
+                      title="Delete"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  </div>
+                </div>
+              </motion.div>
+            ))}
+            {filteredIncomes.length === 0 && (
+              <div className="text-center py-8 text-muted-foreground text-sm">
+                No income records found for the selected filters.
+              </div>
+            )}
+          </div>
+
+          {/* Desktop table */}
+          <div className="hidden md:block bg-card rounded-lg border border-border overflow-hidden">
             <div className="overflow-x-auto overscroll-x-contain touch-pan-x">
               <table className="w-full min-w-[800px] text-sm">
                 <thead className="bg-secondary">

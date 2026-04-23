@@ -20,7 +20,7 @@ const normalizeKey = (method) => {
   return s;
 };
 
-const PaymentMethodBadge = ({ method, size = 32, className = '' }) => {
+const PaymentMethodBadge = ({ method, size = 44, className = '' }) => {
   const key = normalizeKey(method);
   const cfg = METHOD_CONFIG[key];
 

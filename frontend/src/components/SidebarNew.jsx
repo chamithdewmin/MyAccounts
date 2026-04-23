@@ -623,7 +623,7 @@ function SidebarProfileFooter({ user, logout, navigate, colors, expanded }) {
                     label="Profile"
                     onClick={() => {
                       setMenuOpen(false);
-                      navigate("/profile");
+                      navigate("/settings?tab=profile");
                     }}
                   />
                   <AccountMenuRow

@@ -4,6 +4,7 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import express from 'express';
 import cors from 'cors';
+import compression from 'compression';
 import authRoutes from './routes/auth.js';
 import clientsRoutes from './routes/clients.js';
 import incomesRoutes from './routes/incomes.js';
@@ -363,11 +364,33 @@ async function initDb() {
   } catch (e) {
     console.warn('Reminders migration:', e.message);
   }
+
+  // Performance indexes — safe to re-run (IF NOT EXISTS)
+  try {
+    await pool.query('CREATE INDEX IF NOT EXISTS idx_incomes_user_id ON incomes(user_id)');
+    await pool.query('CREATE INDEX IF NOT EXISTS idx_expenses_user_id ON expenses(user_id)');
+    await pool.query('CREATE INDEX IF NOT EXISTS idx_invoices_user_id ON invoices(user_id)');
+    await pool.query('CREATE INDEX IF NOT EXISTS idx_clients_user_id ON clients(user_id)');
+    await pool.query('CREATE INDEX IF NOT EXISTS idx_estimates_user_id ON estimates(user_id)');
+    await pool.query('CREATE INDEX IF NOT EXISTS idx_projects_user_id ON projects(user_id)');
+    await pool.query('CREATE INDEX IF NOT EXISTS idx_transfers_user_id ON transfers(user_id)');
+    await pool.query('CREATE INDEX IF NOT EXISTS idx_reminders_user_id ON reminders(user_id)');
+    await pool.query('CREATE INDEX IF NOT EXISTS idx_calendar_events_user_id ON calendar_events(user_id)');
+    await pool.query('CREATE INDEX IF NOT EXISTS idx_assets_user_id ON assets(user_id)');
+    await pool.query('CREATE INDEX IF NOT EXISTS idx_loans_user_id ON loans(user_id)');
+    await pool.query('CREATE INDEX IF NOT EXISTS idx_incomes_date ON incomes(user_id, date DESC)');
+    await pool.query('CREATE INDEX IF NOT EXISTS idx_expenses_date ON expenses(user_id, date DESC)');
+    await pool.query('CREATE INDEX IF NOT EXISTS idx_invoices_created ON invoices(user_id, created_at DESC)');
+    console.log('Performance indexes ready.');
+  } catch (e) {
+    console.warn('Index creation warning (non-fatal):', e.message);
+  }
 }
 
 const app = express();
 const PORT = process.env.PORT || 5000;
 
+app.use(compression());
 app.use(cors({
   origin: process.env.FRONTEND_URL || 'https://myaccounts.logozodev.com',
   credentials: true,

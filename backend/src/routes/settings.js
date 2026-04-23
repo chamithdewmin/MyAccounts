@@ -1,6 +1,7 @@
 import express from 'express';
 import pool from '../config/db.js';
 import { authMiddleware } from '../middleware/auth.js';
+import { invalidateSettings } from '../lib/settingsCache.js';
 
 const router = express.Router();
 router.use(authMiddleware);
@@ -311,6 +312,7 @@ router.put('/', async (req, res) => {
       return res.status(404).json({ error: 'Settings not found' });
     }
     const settings = toSettings(rows[0]);
+    invalidateSettings(uid); // bust cache so next GET re-reads from DB
     res.json(settings);
   } catch (err) {
     console.error('[settings PUT]', err.message, err.stack);

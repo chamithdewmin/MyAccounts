@@ -7,12 +7,13 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/components/ui/use-toast';
 import { useFinance } from '@/contexts/FinanceContext';
+import { SkeletonTable } from '@/components/ui/skeleton';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 
 const Inventory = () => {
-  const { expenses, settings, addExpense, updateExpense, deleteExpense, loadData } = useFinance();
+  const { expenses, settings, dataLoading, addExpense, updateExpense, deleteExpense, loadData } = useFinance();
   const { toast } = useToast();
 
   const [form, setForm] = useState({
@@ -386,8 +387,10 @@ const Inventory = () => {
             </div>
           </div>
 
+          {dataLoading && <SkeletonTable rows={5} cols={4} />}
+
           {/* Mobile card list */}
-          <div className="flex flex-col gap-3 md:hidden">
+          {!dataLoading && <div className="flex flex-col gap-3 md:hidden">
             {filteredExpenses.map((exp, index) => (
               <motion.div
                 key={exp.id}
@@ -544,7 +547,7 @@ const Inventory = () => {
                 No expenses found for the selected filters.
               </div>
             )}
-          </div>
+          </div>}
         </div>
       </div>
 

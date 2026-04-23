@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Helmet } from 'react-helmet';
 import { motion } from 'framer-motion';
+import useDebounce from '@/hooks/useDebounce';
 import {
   Search,
   UserPlus,
@@ -70,9 +71,11 @@ const Users = () => {
     loadUsers();
   }, []);
 
+  const debouncedSearch = useDebounce(searchQuery, 300);
+
   useEffect(() => {
-    if (searchQuery) {
-      const q = searchQuery.toLowerCase();
+    if (debouncedSearch) {
+      const q = debouncedSearch.toLowerCase();
       setFilteredUsers(
         users.filter((u) => {
           const blocked = u.is_blocked === true || u.is_blocked === 't';
@@ -89,7 +92,7 @@ const Users = () => {
       setFilteredUsers(users);
     }
     setCurrentPage(1);
-  }, [searchQuery, users]);
+  }, [debouncedSearch, users]);
 
   const handleChange = (field, value) => {
     setForm((prev) => ({ ...prev, [field]: value }));

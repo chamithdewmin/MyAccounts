@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useEffect, useMemo, useState } from 'react';
+import React, { createContext, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import { api } from '@/lib/api';
 
 const FinanceContext = createContext(null);
@@ -82,9 +82,11 @@ export const FinanceProvider = ({ children }) => {
   const [assets, setAssets] = useState([]);
   const [loans, setLoans] = useState([]);
   const [transfers, setTransfers] = useState([]);
+  const [dataLoading, setDataLoading] = useState(true);
 
   const loadData = async () => {
     if (!hasToken()) {
+      setDataLoading(false);
       setIncomes([]);
       setExpenses([]);
       setClients([]);
@@ -96,6 +98,7 @@ export const FinanceProvider = ({ children }) => {
       setTransfers([]);
       return;
     }
+    setDataLoading(true);
     try {
       const [incomesRes, expensesRes, clientsRes, invoicesRes, estimatesRes, settingsRes, assetsRes, loansRes, transfersRes, bankDetailsRes] = await Promise.all([
         api.incomes.list().catch(() => []),
@@ -134,19 +137,35 @@ export const FinanceProvider = ({ children }) => {
       setAssets([]);
       setLoans([]);
       setTransfers([]);
+    } finally {
+      setDataLoading(false);
     }
   };
 
-  // Load from database when logged in, refetch on focus
+  // Load from database when logged in, refetch on focus with 5-minute cooldown
+  const lastLoadTimeRef = useRef(0);
+
+  const loadDataIfStale = () => {
+    const FIVE_MINUTES = 5 * 60 * 1000;
+    if (Date.now() - lastLoadTimeRef.current > FIVE_MINUTES) {
+      lastLoadTimeRef.current = Date.now();
+      loadData();
+    }
+  };
+
   useEffect(() => {
+    lastLoadTimeRef.current = Date.now();
     loadData();
   }, []);
 
   useEffect(() => {
     const onFocus = () => {
-      if (hasToken()) loadData();
+      if (hasToken()) loadDataIfStale();
     };
-    const onLogin = () => loadData();
+    const onLogin = () => {
+      lastLoadTimeRef.current = 0; // force full refresh on login
+      loadData();
+    };
     window.addEventListener('focus', onFocus);
     window.addEventListener('auth:login', onLogin);
     return () => {
@@ -577,6 +596,7 @@ export const FinanceProvider = ({ children }) => {
     settings,
     assets,
     loans,
+    dataLoading,
     loadData,
     addClient,
     addIncome,

@@ -3,6 +3,7 @@ import { Helmet } from 'react-helmet';
 import { motion } from 'framer-motion';
 import { Search, Plus, Download, RefreshCw, Pencil, Trash2, Eye, Printer, Loader2 } from 'lucide-react';
 import PaymentMethodBadge from '@/components/PaymentMethodBadge';
+import { SkeletonTable } from '@/components/ui/skeleton';
 import { useFinance } from '@/contexts/FinanceContext';
 import { api } from '@/lib/api';
 import { Input } from '@/components/ui/input';
@@ -26,7 +27,7 @@ const Orders = () => {
   const [deleteCandidate, setDeleteCandidate] = useState(null);
   const { toast } = useToast();
 
-  const { invoices, clients, settings, updateInvoiceStatus, addInvoice, updateInvoice, deleteInvoice, loadData } = useFinance();
+  const { invoices, clients, settings, dataLoading, updateInvoiceStatus, addInvoice, updateInvoice, deleteInvoice, loadData } = useFinance();
 
   const [form, setForm] = useState({
     clientId: '',
@@ -434,8 +435,10 @@ const Orders = () => {
           </span>
         </div>
 
+        {dataLoading && <SkeletonTable rows={6} cols={5} />}
+
         {/* Mobile card list */}
-        <div className="flex flex-col gap-3 md:hidden">
+        {!dataLoading && <div className="flex flex-col gap-3 md:hidden">
           {filteredOrders.map((order, index) => (
             <motion.div
               key={order.id}
@@ -636,9 +639,9 @@ const Orders = () => {
               </tbody>
             </table>
           </div>
-        </div>
+        </div>}
 
-        {filteredOrders.length === 0 && (
+        {!dataLoading && filteredOrders.length === 0 && (
           <div className="text-center py-12">
             <p className="text-muted-foreground">No orders found</p>
           </div>

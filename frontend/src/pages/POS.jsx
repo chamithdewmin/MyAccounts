@@ -7,6 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/components/ui/use-toast';
 import { useFinance } from '@/contexts/FinanceContext';
+import { SkeletonTable } from '@/components/ui/skeleton';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
@@ -15,7 +16,7 @@ const SERVICE_TYPE_PRESETS = ['Graphic Job', 'Web Development'];
 const SERVICE_TYPE_CUSTOM = '__custom__';
 
 const POS = () => {
-  const { incomes, clients, addIncome, updateIncome, deleteIncome, settings, loadData } = useFinance();
+  const { incomes, clients, addIncome, updateIncome, deleteIncome, settings, dataLoading, loadData } = useFinance();
   const { toast } = useToast();
 
   const [form, setForm] = useState({
@@ -379,8 +380,10 @@ const POS = () => {
             </div>
           </div>
 
+          {dataLoading && <SkeletonTable rows={5} cols={4} />}
+
           {/* Mobile card list */}
-          <div className="flex flex-col gap-3 md:hidden">
+          {!dataLoading && <div className="flex flex-col gap-3 md:hidden">
             {filteredIncomes.map((income, index) => (
               <motion.div
                 key={income.id}
@@ -502,7 +505,7 @@ const POS = () => {
                 No income records found for the selected filters.
               </div>
             )}
-          </div>
+          </div>}
         </div>
       </div>
 

@@ -1,35 +1,50 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, lazy, Suspense } from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { useAuth } from './contexts/AuthContext';
+// Auth pages — loaded immediately (needed before the app shell)
 import Login from './pages/Login';
 import ForgotPassword from './pages/ForgotPassword';
-import POS from './pages/POS';
-import Inventory from './pages/Inventory';
-import Orders from './pages/Orders';
-import Estimates from './pages/Estimates';
-import Customers from './pages/Customers';
-import ReportOverview from './pages/reports/ReportOverview';
-import ReportIncome from './pages/reports/ReportIncome';
-import ReportExpense from './pages/reports/ReportExpense';
-import BalanceSheet from './pages/reports/BalanceSheet';
-import ReportProfitLoss from './pages/reports/ReportProfitLoss';
-import ReportCashFlow from './pages/reports/ReportCashFlow';
-import StorageOverview from './pages/reports/StorageOverview';
-import CashFlow from './pages/CashFlow';
-import Settings from './pages/Settings';
-import Profile from './pages/Profile';
-import Users from './pages/Users';
-import SMS from './pages/SMS';
-import Reminders from './pages/Reminders';
-import AIInsights from './pages/AIInsights';
-import Dashboard from './pages/Dashboard';
-import Calendar from './pages/Calendar';
-import BackupRestore from './pages/BackupRestore';
-import LoginActivity from './pages/LoginActivity';
-import FileManager from './pages/FileManager';
-import Projects from './pages/Projects';
-import ProjectBoard from './pages/ProjectBoard';
 import Layout from './components/Layout';
+
+// All other pages are lazy-loaded — only downloaded when the user navigates there
+const POS = lazy(() => import('./pages/POS'));
+const Inventory = lazy(() => import('./pages/Inventory'));
+const Orders = lazy(() => import('./pages/Orders'));
+const Estimates = lazy(() => import('./pages/Estimates'));
+const Customers = lazy(() => import('./pages/Customers'));
+const ReportOverview = lazy(() => import('./pages/reports/ReportOverview'));
+const ReportIncome = lazy(() => import('./pages/reports/ReportIncome'));
+const ReportExpense = lazy(() => import('./pages/reports/ReportExpense'));
+const BalanceSheet = lazy(() => import('./pages/reports/BalanceSheet'));
+const ReportProfitLoss = lazy(() => import('./pages/reports/ReportProfitLoss'));
+const ReportCashFlow = lazy(() => import('./pages/reports/ReportCashFlow'));
+const StorageOverview = lazy(() => import('./pages/reports/StorageOverview'));
+const CashFlow = lazy(() => import('./pages/CashFlow'));
+const Settings = lazy(() => import('./pages/Settings'));
+const Profile = lazy(() => import('./pages/Profile'));
+const Users = lazy(() => import('./pages/Users'));
+const SMS = lazy(() => import('./pages/SMS'));
+const Reminders = lazy(() => import('./pages/Reminders'));
+const AIInsights = lazy(() => import('./pages/AIInsights'));
+const Dashboard = lazy(() => import('./pages/Dashboard'));
+const Calendar = lazy(() => import('./pages/Calendar'));
+const BackupRestore = lazy(() => import('./pages/BackupRestore'));
+const LoginActivity = lazy(() => import('./pages/LoginActivity'));
+const FileManager = lazy(() => import('./pages/FileManager'));
+const Projects = lazy(() => import('./pages/Projects'));
+const ProjectBoard = lazy(() => import('./pages/ProjectBoard'));
+
+// Minimal page skeleton shown while a lazy page chunk loads
+const PageSkeleton = () => (
+  <div className="page-y space-y-4">
+    <div className="h-8 w-48 rounded-lg bg-secondary/60 animate-pulse" />
+    <div className="h-4 w-72 rounded bg-secondary/40 animate-pulse" />
+    <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4 mt-2">
+      {[1,2,3,4].map(i => <div key={i} className="h-24 rounded-xl bg-secondary/60 animate-pulse" />)}
+    </div>
+    <div className="h-64 rounded-xl bg-secondary/40 animate-pulse" />
+  </div>
+);
 
 const ADMIN_EMAIL = 'logozodev@gmail.com';
 const isAdminUser = (u) =>
@@ -63,6 +78,7 @@ function App() {
   }
 
   return (
+    <Suspense fallback={<PageSkeleton />}>
     <Routes>
       <Route path="/login" element={!isAuthenticated ? <Login /> : <Navigate to="/dashboard" />} />
       <Route path="/forgot-password" element={!isAuthenticated ? <ForgotPassword /> : <Navigate to="/dashboard" />} />
@@ -98,6 +114,7 @@ function App() {
         <Route path="backup-restore" element={isAdminUser(user) ? <BackupRestore /> : <Navigate to="/dashboard" replace />} />
       </Route>
     </Routes>
+    </Suspense>
   );
 }
 

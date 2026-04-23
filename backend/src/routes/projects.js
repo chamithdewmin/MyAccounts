@@ -308,25 +308,35 @@ router.get('/:projectId', async (req, res) => {
       [projectId, uid],
     );
 
-    const client = await pool.connect();
-    const enriched = [];
-    try {
-      for (const t of tasks) {
-        const hours = await taskHours(client, t.id);
-        const { rows: open } = await client.query(
-          `SELECT id FROM time_logs WHERE task_id = $1 AND end_time IS NULL ORDER BY start_time DESC LIMIT 1`,
-          [t.id],
-        );
-        enriched.push({
-          ...toTaskRow(t),
-          hoursWorked: Math.round(hours * 100) / 100,
-          hasOpenTimer: !!open[0],
-          openLogId: open[0]?.id || null,
-        });
-      }
-    } finally {
-      client.release();
+    // Single aggregation replaces O(n) per-task loop
+    const taskIds = tasks.map((t) => t.id);
+    let timeSummaryMap = {};
+    if (taskIds.length > 0) {
+      const { rows: timeSummary } = await pool.query(
+        `SELECT
+           tl.task_id,
+           COALESCE(SUM(
+             EXTRACT(EPOCH FROM (COALESCE(tl.end_time, NOW()) - tl.start_time)) / 3600
+           ), 0) AS hours_worked,
+           bool_or(tl.end_time IS NULL) AS has_open_timer,
+           MAX(CASE WHEN tl.end_time IS NULL THEN tl.id END) AS open_log_id
+         FROM time_logs tl
+         WHERE tl.task_id = ANY($1::int[])
+         GROUP BY tl.task_id`,
+        [taskIds],
+      );
+      timeSummary.forEach((r) => { timeSummaryMap[r.task_id] = r; });
     }
+
+    const enriched = tasks.map((t) => {
+      const ts = timeSummaryMap[t.id] || {};
+      return {
+        ...toTaskRow(t),
+        hoursWorked: Math.round((Number(ts.hours_worked) || 0) * 100) / 100,
+        hasOpenTimer: !!ts.has_open_timer,
+        openLogId: ts.open_log_id || null,
+      };
+    });
 
     const taskTotal = tasks.length;
     const taskDone = tasks.filter((t) => t.status === 'done').length;

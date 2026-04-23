@@ -82,7 +82,13 @@ const toInvoice = (row) => {
 router.get('/', async (req, res) => {
   try {
     const uid = req.user.dataUserId;
-    const { rows } = await pool.query('SELECT * FROM invoices WHERE user_id = $1 ORDER BY created_at DESC', [uid]);
+    const { rows } = await pool.query(
+      `SELECT id, invoice_number, client_id, client_name, client_email, client_phone,
+              items, total, discount_percentage, status, payment_method, due_date,
+              notes, bank_details, show_signature_area, created_at
+       FROM invoices WHERE user_id = $1 ORDER BY created_at DESC`,
+      [uid],
+    );
     res.json(rows.map(toInvoice));
   } catch (err) {
     console.error(err);

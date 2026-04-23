@@ -24,7 +24,13 @@ const toExpense = (row) => ({
 router.get('/', async (req, res) => {
   try {
     const uid = req.user.dataUserId;
-    const { rows } = await pool.query('SELECT * FROM expenses WHERE user_id = $1 ORDER BY created_at DESC', [uid]);
+    const { rows } = await pool.query(
+      `SELECT id, category, amount, currency, date, notes, payment_method,
+              is_recurring, recurring_frequency, recurring_end_date, recurring_notes,
+              receipt, created_at
+       FROM expenses WHERE user_id = $1 ORDER BY date DESC, created_at DESC`,
+      [uid],
+    );
     res.json(rows.map(toExpense));
   } catch (err) {
     console.error(err);

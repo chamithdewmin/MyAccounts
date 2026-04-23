@@ -3,6 +3,8 @@ import { Helmet } from 'react-helmet';
 import { motion } from 'framer-motion';
 import { Search, Plus, Download, RefreshCw, Pencil, Trash2, MoreHorizontal, ChevronLeft, ChevronRight, Loader2 } from 'lucide-react';
 import { useFinance } from '@/contexts/FinanceContext';
+import { SkeletonTable } from '@/components/ui/skeleton';
+import useDebounce from '@/hooks/useDebounce';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/components/ui/use-toast';
@@ -17,7 +19,7 @@ const Customers = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
   const { toast } = useToast();
-  const { clients, addClient, updateClient, deleteClient, loadData } = useFinance();
+  const { clients, dataLoading, addClient, updateClient, deleteClient, loadData } = useFinance();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingClient, setEditingClient] = useState(null);
   const [refreshLoading, setRefreshLoading] = useState(false);
@@ -34,21 +36,23 @@ const Customers = () => {
     setFilteredCustomers(clients);
   }, [clients]);
 
+  const debouncedSearch = useDebounce(searchQuery, 300);
+
   useEffect(() => {
-    if (searchQuery) {
-      const q = searchQuery.toLowerCase();
+    if (debouncedSearch) {
+      const q = debouncedSearch.toLowerCase();
       const filtered = customers.filter(
         (c) =>
           c.name?.toLowerCase().includes(q) ||
           c.email?.toLowerCase().includes(q) ||
-          (c.phone && c.phone.includes(searchQuery))
+          (c.phone && c.phone.includes(debouncedSearch))
       );
       setFilteredCustomers(filtered);
     } else {
       setFilteredCustomers(customers);
     }
     setCurrentPage(1);
-  }, [searchQuery, customers]);
+  }, [debouncedSearch, customers]);
 
   const handleChange = (field, value) => {
     setForm((prev) => ({ ...prev, [field]: value }));
@@ -209,8 +213,10 @@ const Customers = () => {
             </button>
           </div>
 
+          {dataLoading && <SkeletonTable rows={5} cols={3} />}
+
           {/* Mobile card list */}
-          <div className="flex flex-col divide-y divide-border md:hidden">
+          {!dataLoading && <div className="flex flex-col divide-y divide-border md:hidden">
             {pageRows.length === 0 ? (
               <p className="px-4 py-8 text-center text-muted-foreground text-sm">No clients found</p>
             ) : (
@@ -332,7 +338,7 @@ const Customers = () => {
                 )}
               </tbody>
             </table>
-          </div>
+          </div>}
 
           {/* Pagination */}
           {totalPages > 1 && (

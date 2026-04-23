@@ -18,7 +18,10 @@ const toClient = (row) => ({
 router.get('/', async (req, res) => {
   try {
     const uid = req.user.dataUserId;
-    const { rows } = await pool.query('SELECT * FROM clients WHERE user_id = $1 ORDER BY created_at DESC', [uid]);
+    const { rows } = await pool.query(
+      'SELECT id, name, email, phone, address, created_at FROM clients WHERE user_id = $1 ORDER BY name ASC',
+      [uid],
+    );
     res.json(rows.map(toClient));
   } catch (err) {
     console.error(err);

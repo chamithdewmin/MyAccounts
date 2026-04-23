@@ -25,7 +25,13 @@ const toIncome = (row) => ({
 router.get('/', async (req, res) => {
   try {
     const uid = req.user.dataUserId;
-    const { rows } = await pool.query('SELECT * FROM incomes WHERE user_id = $1 ORDER BY created_at DESC', [uid]);
+    const { rows } = await pool.query(
+      `SELECT id, client_id, client_name, service_type, payment_method,
+              amount, currency, date, notes, is_recurring, recurring_frequency,
+              recurring_end_date, recurring_notes, created_at
+       FROM incomes WHERE user_id = $1 ORDER BY date DESC, created_at DESC`,
+      [uid],
+    );
     res.json(rows.map(toIncome));
   } catch (err) {
     console.error(err);

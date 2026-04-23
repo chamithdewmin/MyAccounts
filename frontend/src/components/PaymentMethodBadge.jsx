@@ -5,10 +5,10 @@ import bankIcon from '@/assets/bank.png';
 import onlineIcon from '@/assets/online_pay.png';
 
 const METHOD_CONFIG = {
-  cash:   { label: 'Cash',   icon: cashIcon },
-  bank:   { label: 'Bank',   icon: bankIcon },
-  card:   { label: 'Card',   icon: cardIcon },
-  online: { label: 'Online', icon: onlineIcon },
+  cash:   { label: 'Cash',   icon: cashIcon,   invertOnLight: false },
+  bank:   { label: 'Bank',   icon: bankIcon,   invertOnLight: true  },
+  card:   { label: 'Card',   icon: cardIcon,   invertOnLight: false },
+  online: { label: 'Online', icon: onlineIcon, invertOnLight: true  },
 };
 
 const normalizeKey = (method) => {
@@ -20,7 +20,7 @@ const normalizeKey = (method) => {
   return s;
 };
 
-const PaymentMethodBadge = ({ method, size = 44, className = '' }) => {
+const PaymentMethodBadge = ({ method, size = 56, className = '' }) => {
   const key = normalizeKey(method);
   const cfg = METHOD_CONFIG[key];
 
@@ -42,7 +42,7 @@ const PaymentMethodBadge = ({ method, size = 44, className = '' }) => {
       decoding="sync"
       width={size}
       height={size}
-      className={`inline-block object-contain flex-shrink-0 ${className}`}
+      className={`inline-block object-contain flex-shrink-0 ${cfg.invertOnLight ? 'invert dark:invert-0' : ''} ${className}`}
       style={{ width: size, height: size }}
     />
   );

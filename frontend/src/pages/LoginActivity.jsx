@@ -775,72 +775,107 @@ export default function LoginActivity() {
 
           {/* Desktop table */}
           <div className="hidden md:block overflow-x-auto">
-            <table className="w-full">
-              <thead className="bg-secondary/60">
-                <tr>
-                  <th className="px-4 py-3 text-left text-sm font-semibold">User</th>
-                  <th className="px-4 py-3 text-left text-sm font-semibold">Session ID</th>
-                  <th className="px-4 py-3 text-left text-sm font-semibold">Login time</th>
-                  <th className="px-4 py-3 text-left text-sm font-semibold">Logout time</th>
-                  <th className="px-4 py-3 text-left text-sm font-semibold">Duration</th>
-                  <th className="px-4 py-3 text-left text-sm font-semibold">IP address</th>
-                  <th className="px-4 py-3 text-left text-sm font-semibold">User-Agent</th>
-                  <th className="px-4 py-3 text-left text-sm font-semibold">Device</th>
-                  <th className="px-4 py-3 text-left text-sm font-semibold">Risk (0–100)</th>
-                  <th className="px-4 py-3 text-left text-sm font-semibold">Status</th>
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b border-border bg-secondary/40 text-xs uppercase tracking-wide text-muted-foreground">
+                  <th className="px-5 py-3 text-left font-semibold">User</th>
+                  <th className="px-5 py-3 text-left font-semibold">Session</th>
+                  <th className="px-5 py-3 text-left font-semibold">Login / Logout</th>
+                  <th className="px-5 py-3 text-left font-semibold">Duration</th>
+                  <th className="px-5 py-3 text-left font-semibold">IP · Device</th>
+                  <th className="px-5 py-3 text-left font-semibold">Risk</th>
+                  <th className="px-5 py-3 text-left font-semibold">Status</th>
                 </tr>
               </thead>
-              <tbody>
+              <tbody className="divide-y divide-border">
                 {filteredItems.map((row) => {
                   const disp = displayActivityStatus(row);
                   const uaHint = userAgentHint(row.userAgent);
                   const score = Number(row.riskScore ?? 0);
                   const tier = loginRiskTier(score);
+                  const isActive = isOpenLoginSessionRow(row);
+                  const isFailed = disp === 'failed' || disp === 'unauthorized';
                   return (
-                    <tr key={row.id} className="border-t border-border hover:bg-secondary/20">
-                      <td className="px-4 py-3 text-sm"><ActivityUserCell row={row} userById={userById} /></td>
-                      <td className="px-4 py-3 text-sm min-w-[10rem] max-w-[14rem]">
+                    <tr key={row.id} className="hover:bg-secondary/20 transition-colors">
+                      {/* User */}
+                      <td className="px-5 py-4">
+                        <ActivityUserCell row={row} userById={userById} />
+                      </td>
+
+                      {/* Session ID */}
+                      <td className="px-5 py-4 max-w-[140px]">
                         {formatSessionIdLabel(row.sessionId) ? (
-                          <span className="font-mono text-xs text-cyan-400/95 break-all select-all" title={row.sessionId ? String(row.sessionId) : undefined}>
+                          <span className="font-mono text-xs text-cyan-400/90 break-all select-all leading-relaxed"
+                            title={row.sessionId ? String(row.sessionId) : undefined}>
                             {formatSessionIdLabel(row.sessionId)}
                           </span>
                         ) : <span className="text-muted-foreground">—</span>}
                       </td>
-                      <td className="px-4 py-3 text-sm">
-                        {row.loginAt || row.createdAt ? (
-                          <span className="inline-flex items-center gap-1 text-white">
-                            <LogIn className="w-3.5 h-3.5 text-emerald-400" />
-                            {formatDateTime(row.loginAt || row.createdAt)}
-                          </span>
-                        ) : '—'}
-                      </td>
-                      <td className="px-4 py-3 text-sm">
-                        {row.logoutAt ? (
-                          <span className="inline-flex items-center gap-1 text-white">
-                            <LogOut className="w-3.5 h-3.5 text-red-400" />
-                            {formatDateTime(row.logoutAt)}
-                          </span>
-                        ) : isOpenLoginSessionRow(row) ? (
-                          <span className="text-orange-400">Still active</span>
-                        ) : '—'}
-                      </td>
-                      <td className="px-4 py-3 text-sm">
-                        {disp === 'failed' || disp === 'unauthorized' ? '—'
-                          : isOpenLoginSessionRow(row) ? (
-                            <span className="text-blue-400" aria-live="polite">
-                              Live ({formatLiveElapsed(row.loginAt || row.createdAt, liveTick)})
+
+                      {/* Login + Logout stacked */}
+                      <td className="px-5 py-4">
+                        <div className="flex flex-col gap-1.5">
+                          {(row.loginAt || row.createdAt) ? (
+                            <span className="inline-flex items-center gap-1.5 text-foreground">
+                              <LogIn className="w-3.5 h-3.5 text-emerald-400 flex-shrink-0" />
+                              <span className="text-xs">{formatDateTime(row.loginAt || row.createdAt)}</span>
                             </span>
-                          ) : formatDuration(row.loginAt || row.createdAt, row.logoutAt, disp)}
+                          ) : null}
+                          {row.logoutAt ? (
+                            <span className="inline-flex items-center gap-1.5 text-foreground">
+                              <LogOut className="w-3.5 h-3.5 text-red-400 flex-shrink-0" />
+                              <span className="text-xs">{formatDateTime(row.logoutAt)}</span>
+                            </span>
+                          ) : isActive ? (
+                            <span className="inline-flex items-center gap-1.5">
+                              <span className="w-1.5 h-1.5 rounded-full bg-orange-400 animate-pulse" />
+                              <span className="text-xs text-orange-400 font-medium">Still active</span>
+                            </span>
+                          ) : null}
+                        </div>
                       </td>
-                      <td className="px-4 py-3 text-sm">{row.ipAddress || '—'}</td>
-                      <td className="px-4 py-3 text-sm max-w-[13rem]">
-                        <span className="text-xs text-muted-foreground line-clamp-2 break-words" title={uaHint.title}>{uaHint.line}</span>
+
+                      {/* Duration */}
+                      <td className="px-5 py-4 whitespace-nowrap">
+                        {isFailed ? (
+                          <span className="text-muted-foreground">—</span>
+                        ) : isActive ? (
+                          <span className="inline-flex items-center gap-1.5 text-blue-400 font-medium text-xs" aria-live="polite">
+                            <span className="w-1.5 h-1.5 rounded-full bg-blue-400 animate-pulse" />
+                            {formatLiveElapsed(row.loginAt || row.createdAt, liveTick)}
+                          </span>
+                        ) : (
+                          <span className="text-xs text-muted-foreground">
+                            {formatDuration(row.loginAt || row.createdAt, row.logoutAt, disp)}
+                          </span>
+                        )}
                       </td>
-                      <td className="px-4 py-3 text-sm capitalize text-muted-foreground">{deviceLabel(row)}</td>
-                      <td className="px-4 py-3 text-sm align-top"><LoginRiskCard score={score} tier={tier} /></td>
-                      <td className="px-4 py-3 text-sm">
-                        <span className={`px-2 py-1 rounded-full text-xs ${statusBadge(disp)}`}
-                          title={disp === 'failed' || disp === 'unauthorized' ? failureDetail(row.failureReason) || undefined : undefined}>
+
+                      {/* IP + Device + User-Agent stacked */}
+                      <td className="px-5 py-4 max-w-[200px]">
+                        <div className="flex flex-col gap-1">
+                          <span className="font-mono text-xs text-foreground">{row.ipAddress || '—'}</span>
+                          <span className="text-xs text-muted-foreground capitalize">{deviceLabel(row)}</span>
+                          <span className="text-[11px] text-muted-foreground/70 truncate" title={uaHint.title}>{uaHint.line}</span>
+                        </div>
+                      </td>
+
+                      {/* Risk */}
+                      <td className="px-5 py-4">
+                        <LoginRiskCard score={score} tier={tier} />
+                      </td>
+
+                      {/* Status */}
+                      <td className="px-5 py-4">
+                        <span
+                          className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold ${statusBadge(disp)}`}
+                          title={isFailed ? failureDetail(row.failureReason) || undefined : undefined}
+                        >
+                          <span className={`w-1.5 h-1.5 rounded-full ${
+                            disp === 'active' ? 'bg-green-400 animate-pulse'
+                            : disp === 'failed' || disp === 'unauthorized' ? 'bg-red-400'
+                            : 'bg-current opacity-70'
+                          }`} />
                           {disp}
                         </span>
                       </td>
@@ -848,10 +883,10 @@ export default function LoginActivity() {
                   );
                 })}
                 {!loading && items.length === 0 && (
-                  <tr><td colSpan={10} className="px-4 py-8 text-center text-sm text-muted-foreground">No login activity yet.</td></tr>
+                  <tr><td colSpan={7} className="px-5 py-12 text-center text-sm text-muted-foreground">No login activity yet.</td></tr>
                 )}
                 {!loading && items.length > 0 && filteredItems.length === 0 && (
-                  <tr><td colSpan={10} className="px-4 py-8 text-center text-sm text-muted-foreground">No rows match your search.</td></tr>
+                  <tr><td colSpan={7} className="px-5 py-12 text-center text-sm text-muted-foreground">No rows match your search.</td></tr>
                 )}
               </tbody>
             </table>

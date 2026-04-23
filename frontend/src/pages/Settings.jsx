@@ -293,7 +293,7 @@ const Settings = () => {
         <meta name="description" content="Organize and manage business settings, invoices, tax, bank, and preferences" />
       </Helmet>
 
-      <div className="page-y-sm max-w-6xl mx-auto min-w-0 px-0 sm:px-2">
+      <div className="page-y-sm max-w-6xl min-w-0 px-0 sm:px-2">
         {/* Header */}
         <div className="flex items-center gap-3 mb-6">
           <div className="w-10 h-10 rounded-xl bg-primary/15 flex items-center justify-center flex-shrink-0">

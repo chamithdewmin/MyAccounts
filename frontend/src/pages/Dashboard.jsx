@@ -821,7 +821,7 @@ export default function FinanceDashboard() {
               <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 16 }}>
                 <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
                   <div style={{ width: 28, height: 28, borderRadius: 8, background: "rgba(168,85,247,0.15)", display: "flex", alignItems: "center", justifyContent: "center" }}>
-                    <span style={{ fontSize: 14 }}>🔔</span>
+                    <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#a855f7" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg>
                   </div>
                   <h3 style={{ color: tc.text, fontSize: 14, fontWeight: 700, margin: 0 }}>Upcoming Reminders</h3>
                 </div>
@@ -829,7 +829,7 @@ export default function FinanceDashboard() {
               </div>
               {upcomingReminders.length === 0 ? (
                 <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "32px 0", gap: 8 }}>
-                  <span style={{ fontSize: 28 }}>🔕</span>
+                  <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#a855f7" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" style={{ opacity: 0.4 }}><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/><line x1="2" y1="2" x2="22" y2="22"/></svg>
                   <p style={{ color: tc.muted, fontSize: 12, margin: 0, textAlign: "center" }}>No upcoming reminders</p>
                   <Link to="/reminders" style={{ color: "#0e5cff", fontSize: 12 }}>Add a reminder</Link>
                 </div>
@@ -874,7 +874,7 @@ export default function FinanceDashboard() {
               <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 16 }}>
                 <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
                   <div style={{ width: 28, height: 28, borderRadius: 8, background: "rgba(14,92,255,0.15)", display: "flex", alignItems: "center", justifyContent: "center" }}>
-                    <span style={{ fontSize: 14 }}>📅</span>
+                    <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#0e5cff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
                   </div>
                   <h3 style={{ color: tc.text, fontSize: 14, fontWeight: 700, margin: 0 }}>Upcoming Events</h3>
                 </div>
@@ -882,7 +882,7 @@ export default function FinanceDashboard() {
               </div>
               {upcomingEvents.length === 0 ? (
                 <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "32px 0", gap: 8 }}>
-                  <span style={{ fontSize: 28 }}>🗓️</span>
+                  <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#0e5cff" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" style={{ opacity: 0.4 }}><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
                   <p style={{ color: tc.muted, fontSize: 12, margin: 0, textAlign: "center" }}>No upcoming events</p>
                   <Link to="/calendar" style={{ color: "#0e5cff", fontSize: 12 }}>Add an event</Link>
                 </div>

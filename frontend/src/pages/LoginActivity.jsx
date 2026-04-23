@@ -699,7 +699,82 @@ export default function LoginActivity() {
               </Button>
             </div>
           </div>
-          <div className="overflow-x-auto">
+          {/* Mobile cards */}
+          <div className="flex flex-col divide-y divide-border md:hidden">
+            {!loading && items.length === 0 && (
+              <p className="px-4 py-8 text-center text-sm text-muted-foreground">No login activity yet.</p>
+            )}
+            {!loading && items.length > 0 && filteredItems.length === 0 && (
+              <p className="px-4 py-8 text-center text-sm text-muted-foreground">No rows match your search.</p>
+            )}
+            {filteredItems.map((row) => {
+              const disp = displayActivityStatus(row);
+              const uaHint = userAgentHint(row.userAgent);
+              const score = Number(row.riskScore ?? 0);
+              const tier = loginRiskTier(score);
+              return (
+                <div key={row.id} className="px-4 py-4 flex flex-col gap-2.5 hover:bg-secondary/20 transition-colors">
+                  {/* Top: user + status */}
+                  <div className="flex items-start justify-between gap-2">
+                    <ActivityUserCell row={row} userById={userById} />
+                    <span className={`px-2 py-1 rounded-full text-xs flex-shrink-0 ${statusBadge(disp)}`}
+                      title={disp === 'failed' || disp === 'unauthorized' ? failureDetail(row.failureReason) || undefined : undefined}>
+                      {disp}
+                    </span>
+                  </div>
+
+                  {/* Login / logout times */}
+                  <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs">
+                    {(row.loginAt || row.createdAt) && (
+                      <span className="inline-flex items-center gap-1 text-foreground">
+                        <LogIn className="w-3 h-3 text-emerald-400" />
+                        {formatDateTime(row.loginAt || row.createdAt)}
+                      </span>
+                    )}
+                    {row.logoutAt ? (
+                      <span className="inline-flex items-center gap-1 text-foreground">
+                        <LogOut className="w-3 h-3 text-red-400" />
+                        {formatDateTime(row.logoutAt)}
+                      </span>
+                    ) : isOpenLoginSessionRow(row) ? (
+                      <span className="text-orange-400 font-medium">Still active</span>
+                    ) : null}
+                  </div>
+
+                  {/* Duration + device + IP */}
+                  <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-foreground">
+                    {disp !== 'failed' && disp !== 'unauthorized' && (
+                      <span>
+                        {isOpenLoginSessionRow(row)
+                          ? <span className="text-blue-400">Live ({formatLiveElapsed(row.loginAt || row.createdAt, liveTick)})</span>
+                          : formatDuration(row.loginAt || row.createdAt, row.logoutAt, disp)}
+                      </span>
+                    )}
+                    {row.ipAddress && <span>· {row.ipAddress}</span>}
+                    <span className="capitalize">· {deviceLabel(row)}</span>
+                  </div>
+
+                  {/* User agent + risk */}
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="text-xs text-muted-foreground line-clamp-1 flex-1" title={uaHint.title}>{uaHint.line}</span>
+                    <div className="flex-shrink-0">
+                      <LoginRiskCard score={score} tier={tier} />
+                    </div>
+                  </div>
+
+                  {/* Session ID */}
+                  {formatSessionIdLabel(row.sessionId) && (
+                    <span className="font-mono text-[10px] text-cyan-400/80 break-all select-all">
+                      {formatSessionIdLabel(row.sessionId)}
+                    </span>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+
+          {/* Desktop table */}
+          <div className="hidden md:block overflow-x-auto">
             <table className="w-full">
               <thead className="bg-secondary/60">
                 <tr>
@@ -722,96 +797,61 @@ export default function LoginActivity() {
                   const score = Number(row.riskScore ?? 0);
                   const tier = loginRiskTier(score);
                   return (
-                  <tr key={row.id} className="border-t border-border hover:bg-secondary/20">
-                    <td className="px-4 py-3 text-sm">
-                      <ActivityUserCell row={row} userById={userById} />
-                    </td>
-                    <td className="px-4 py-3 text-sm min-w-[10rem] max-w-[14rem]">
-                      {formatSessionIdLabel(row.sessionId) ? (
-                        <span
-                          className="font-mono text-xs text-cyan-400/95 break-all select-all"
-                          title={row.sessionId ? String(row.sessionId) : undefined}
-                        >
-                          {formatSessionIdLabel(row.sessionId)}
-                        </span>
-                      ) : (
-                        <span className="text-muted-foreground">—</span>
-                      )}
-                    </td>
-                    <td className="px-4 py-3 text-sm">
-                      {row.loginAt || row.createdAt ? (
-                        <span className="inline-flex items-center gap-1 text-white">
-                          <LogIn className="w-3.5 h-3.5 text-emerald-400" />
-                          {formatDateTime(row.loginAt || row.createdAt)}
-                        </span>
-                      ) : (
-                        '—'
-                      )}
-                    </td>
-                    <td className="px-4 py-3 text-sm">
-                      {row.logoutAt ? (
-                        <span className="inline-flex items-center gap-1 text-white">
-                          <LogOut className="w-3.5 h-3.5 text-red-400" />
-                          {formatDateTime(row.logoutAt)}
-                        </span>
-                      ) : isOpenLoginSessionRow(row) ? (
-                        <span className="text-orange-400">Still active</span>
-                      ) : (
-                        '—'
-                      )}
-                    </td>
-                    <td className="px-4 py-3 text-sm">
-                      {disp === 'failed' || disp === 'unauthorized'
-                        ? '—'
-                        : isOpenLoginSessionRow(row)
-                          ? (
+                    <tr key={row.id} className="border-t border-border hover:bg-secondary/20">
+                      <td className="px-4 py-3 text-sm"><ActivityUserCell row={row} userById={userById} /></td>
+                      <td className="px-4 py-3 text-sm min-w-[10rem] max-w-[14rem]">
+                        {formatSessionIdLabel(row.sessionId) ? (
+                          <span className="font-mono text-xs text-cyan-400/95 break-all select-all" title={row.sessionId ? String(row.sessionId) : undefined}>
+                            {formatSessionIdLabel(row.sessionId)}
+                          </span>
+                        ) : <span className="text-muted-foreground">—</span>}
+                      </td>
+                      <td className="px-4 py-3 text-sm">
+                        {row.loginAt || row.createdAt ? (
+                          <span className="inline-flex items-center gap-1 text-white">
+                            <LogIn className="w-3.5 h-3.5 text-emerald-400" />
+                            {formatDateTime(row.loginAt || row.createdAt)}
+                          </span>
+                        ) : '—'}
+                      </td>
+                      <td className="px-4 py-3 text-sm">
+                        {row.logoutAt ? (
+                          <span className="inline-flex items-center gap-1 text-white">
+                            <LogOut className="w-3.5 h-3.5 text-red-400" />
+                            {formatDateTime(row.logoutAt)}
+                          </span>
+                        ) : isOpenLoginSessionRow(row) ? (
+                          <span className="text-orange-400">Still active</span>
+                        ) : '—'}
+                      </td>
+                      <td className="px-4 py-3 text-sm">
+                        {disp === 'failed' || disp === 'unauthorized' ? '—'
+                          : isOpenLoginSessionRow(row) ? (
                             <span className="text-blue-400" aria-live="polite">
                               Live ({formatLiveElapsed(row.loginAt || row.createdAt, liveTick)})
                             </span>
-                            )
-                          : formatDuration(row.loginAt || row.createdAt, row.logoutAt, disp)}
-                    </td>
-                    <td className="px-4 py-3 text-sm">{row.ipAddress || '—'}</td>
-                    <td className="px-4 py-3 text-sm max-w-[13rem]">
-                      <span
-                        className="text-xs text-muted-foreground line-clamp-2 break-words"
-                        title={uaHint.title}
-                      >
-                        {uaHint.line}
-                      </span>
-                    </td>
-                    <td className="px-4 py-3 text-sm capitalize text-muted-foreground">{deviceLabel(row)}</td>
-                    <td className="px-4 py-3 text-sm align-top">
-                      <LoginRiskCard score={score} tier={tier} />
-                    </td>
-                    <td className="px-4 py-3 text-sm">
-                      <span
-                        className={`px-2 py-1 rounded-full text-xs ${statusBadge(disp)}`}
-                        title={
-                          disp === 'failed' || disp === 'unauthorized'
-                            ? failureDetail(row.failureReason) || undefined
-                            : undefined
-                        }
-                      >
-                        {disp}
-                      </span>
-                    </td>
-                  </tr>
+                          ) : formatDuration(row.loginAt || row.createdAt, row.logoutAt, disp)}
+                      </td>
+                      <td className="px-4 py-3 text-sm">{row.ipAddress || '—'}</td>
+                      <td className="px-4 py-3 text-sm max-w-[13rem]">
+                        <span className="text-xs text-muted-foreground line-clamp-2 break-words" title={uaHint.title}>{uaHint.line}</span>
+                      </td>
+                      <td className="px-4 py-3 text-sm capitalize text-muted-foreground">{deviceLabel(row)}</td>
+                      <td className="px-4 py-3 text-sm align-top"><LoginRiskCard score={score} tier={tier} /></td>
+                      <td className="px-4 py-3 text-sm">
+                        <span className={`px-2 py-1 rounded-full text-xs ${statusBadge(disp)}`}
+                          title={disp === 'failed' || disp === 'unauthorized' ? failureDetail(row.failureReason) || undefined : undefined}>
+                          {disp}
+                        </span>
+                      </td>
+                    </tr>
                   );
                 })}
                 {!loading && items.length === 0 && (
-                  <tr>
-                    <td colSpan={10} className="px-4 py-8 text-center text-sm text-muted-foreground">
-                      No login activity yet.
-                    </td>
-                  </tr>
+                  <tr><td colSpan={10} className="px-4 py-8 text-center text-sm text-muted-foreground">No login activity yet.</td></tr>
                 )}
                 {!loading && items.length > 0 && filteredItems.length === 0 && (
-                  <tr>
-                    <td colSpan={10} className="px-4 py-8 text-center text-sm text-muted-foreground">
-                      No rows match your search.
-                    </td>
-                  </tr>
+                  <tr><td colSpan={10} className="px-4 py-8 text-center text-sm text-muted-foreground">No rows match your search.</td></tr>
                 )}
               </tbody>
             </table>

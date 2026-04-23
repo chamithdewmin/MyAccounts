@@ -2,7 +2,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { Helmet } from 'react-helmet';
 import { Link, useSearchParams } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Save, Palette, Trash2, Percent, Receipt, Bell, Mail, Smartphone, Zap, DollarSign, Calendar, FileText, Download } from 'lucide-react';
+import { Save, Palette, Trash2, Percent, Receipt, Bell, Mail, Smartphone, Zap, DollarSign, Calendar, FileText, Download, User, Lock, Users, Settings2, Code2, Building2, ChevronRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
@@ -275,13 +275,13 @@ const Settings = () => {
     (local.emailNotifications === true ? 1 : 0) + (local.smsNotifications === true ? 1 : 0);
 
   const tabs = [
-    { id: 'details', label: 'My details' },
-    { id: 'profile', label: 'Profile' },
-    { id: 'password', label: 'Password' },
-    { id: 'team', label: 'Team' },
-    { id: 'notifications', label: 'Notifications', badge: notificationBadgeCount },
-    { id: 'integrations', label: 'Integrations' },
-    { id: 'api', label: 'API' },
+    { id: 'details', label: 'My details', icon: Building2, desc: 'Business, bank & balances' },
+    { id: 'profile', label: 'Profile', icon: User, desc: 'Avatar & account info' },
+    { id: 'password', label: 'Password', icon: Lock, desc: 'Change your password' },
+    { id: 'team', label: 'Team', icon: Users, desc: 'Manage team members' },
+    { id: 'notifications', label: 'Notifications', icon: Bell, desc: 'Email & SMS alerts', badge: notificationBadgeCount },
+    { id: 'integrations', label: 'Integrations', icon: Settings2, desc: 'Theme, formats & branding' },
+    { id: 'api', label: 'API & Danger', icon: Code2, desc: 'API key & data reset' },
   ];
 
   const s = local;
@@ -293,17 +293,94 @@ const Settings = () => {
         <meta name="description" content="Organize and manage business settings, invoices, tax, bank, and preferences" />
       </Helmet>
 
-      <div className="page-y-sm max-w-5xl mx-auto min-w-0 px-0 sm:px-2">
-        <div>
-          <h1 className="text-2xl sm:text-3xl font-bold">Settings</h1>
-          <p className="text-muted-foreground text-sm sm:text-base">Organize and manage your business settings.</p>
+      <div className="page-y-sm max-w-6xl mx-auto min-w-0 px-0 sm:px-2">
+        {/* Header */}
+        <div className="flex items-center gap-3 mb-6">
+          <div className="w-10 h-10 rounded-xl bg-primary/15 flex items-center justify-center flex-shrink-0">
+            <Settings2 className="w-5 h-5 text-primary" />
+          </div>
+          <div>
+            <h1 className="text-2xl font-bold leading-tight">Settings</h1>
+            <p className="text-muted-foreground text-sm">Manage your business, profile and preferences.</p>
+          </div>
         </div>
 
-        <div
-          className="mt-5 rounded-xl border border-border bg-muted/40 p-1 flex flex-wrap gap-1 overflow-x-auto"
-          role="tablist"
-          aria-label="Settings sections"
-        >
+        {/* Mobile tab bar (horizontal scroll) */}
+        <div className="lg:hidden mb-5 -mx-1">
+          <div
+            className="flex gap-1 overflow-x-auto pb-1 px-1 scrollbar-hide"
+            role="tablist"
+          >
+            {tabs.map((t) => {
+              const Icon = t.icon;
+              return (
+                <button
+                  key={t.id}
+                  type="button"
+                  role="tab"
+                  aria-selected={activeTab === t.id}
+                  onClick={() => setTab(t.id)}
+                  className={cn(
+                    'flex-shrink-0 inline-flex items-center gap-1.5 rounded-lg px-3 py-2 text-sm font-medium transition-colors',
+                    activeTab === t.id
+                      ? 'bg-primary text-white shadow-sm'
+                      : 'bg-card border border-border text-muted-foreground hover:text-foreground',
+                  )}
+                >
+                  <Icon className="w-3.5 h-3.5" />
+                  {t.label}
+                  {t.badge > 0 && (
+                    <span className="ml-0.5 min-w-[16px] h-4 rounded-full bg-white/30 text-white text-[10px] font-bold px-1 flex items-center justify-center">
+                      {t.badge}
+                    </span>
+                  )}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* Desktop layout: sidebar + content */}
+        <div className="flex gap-6 items-start">
+          {/* Sidebar nav (desktop only) */}
+          <nav className="hidden lg:flex flex-col gap-1 w-52 shrink-0 sticky top-20">
+            {tabs.map((t) => {
+              const Icon = t.icon;
+              return (
+                <button
+                  key={t.id}
+                  type="button"
+                  role="tab"
+                  aria-selected={activeTab === t.id}
+                  onClick={() => setTab(t.id)}
+                  className={cn(
+                    'flex items-center gap-3 w-full text-left px-3 py-2.5 rounded-xl transition-colors text-sm',
+                    activeTab === t.id
+                      ? 'bg-primary/15 text-primary font-semibold border border-primary/30'
+                      : 'text-muted-foreground hover:text-foreground hover:bg-secondary',
+                  )}
+                >
+                  <Icon className="w-4 h-4 shrink-0" />
+                  <div className="flex-1 min-w-0">
+                    <div className="font-medium">{t.label}</div>
+                    <div className="text-xs opacity-70 truncate">{t.desc}</div>
+                  </div>
+                  {t.badge > 0 && (
+                    <span className="min-w-[18px] h-[18px] rounded-full bg-primary text-white text-[10px] font-bold px-1 flex items-center justify-center">
+                      {t.badge}
+                    </span>
+                  )}
+                  {activeTab === t.id && <ChevronRight className="w-3.5 h-3.5 shrink-0" />}
+                </button>
+              );
+            })}
+          </nav>
+
+          {/* Content area */}
+          <div className="flex-1 min-w-0">
+
+        {/* Hidden desktop tab - just for JSX compatibility below */}
+        <div className="hidden" role="tablist" aria-label="Settings sections">
           {tabs.map((t) => (
             <button
               key={t.id}
@@ -311,12 +388,7 @@ const Settings = () => {
               role="tab"
               aria-selected={activeTab === t.id}
               onClick={() => setTab(t.id)}
-              className={cn(
-                'relative inline-flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium transition-colors shrink-0',
-                activeTab === t.id
-                  ? 'bg-background text-foreground shadow-sm border border-border/80 font-semibold'
-                  : 'text-muted-foreground hover:text-foreground hover:bg-background/50',
-              )}
+              className=""
             >
               <span>{t.label}</span>
               {t.badge != null && t.badge > 0 ? (
@@ -329,9 +401,10 @@ const Settings = () => {
         </div>
 
         <motion.div
-          initial={{ opacity: 0, y: 20 }}
+          initial={{ opacity: 0, y: 8 }}
           animate={{ opacity: 1, y: 0 }}
-          className="page-y mt-6 space-y-6"
+          key={activeTab}
+          className="space-y-5"
         >
           {activeTab === 'details' && (
             <>
@@ -835,6 +908,8 @@ const Settings = () => {
           </div>
           )}
         </motion.div>
+          </div>{/* end content area */}
+        </div>{/* end flex gap-6 */}
       </div>
 
       {/* Reset confirmation dialog */}

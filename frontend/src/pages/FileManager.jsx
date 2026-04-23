@@ -176,6 +176,7 @@ const FileManager = () => {
   const [linkKind, setLinkKind] = useState('client');
   const [linkClientId, setLinkClientId] = useState('');
   const [linkInvoiceId, setLinkInvoiceId] = useState('');
+  const [linkSearch, setLinkSearch] = useState('');
 
   const revokePreview = useCallback(() => {
     if (previewUrlRef.current) {
@@ -1902,52 +1903,113 @@ const FileManager = () => {
         </DialogContent>
       </Dialog>
 
-      <Dialog open={linkOpen} onOpenChange={setLinkOpen}>
-        <DialogContent>
+      <Dialog open={linkOpen} onOpenChange={(o) => { setLinkOpen(o); if (!o) setLinkSearch(''); }}>
+        <DialogContent className="max-w-sm">
           <DialogHeader>
             <DialogTitle>Link file</DialogTitle>
           </DialogHeader>
           <div className="space-y-3">
+            {/* Tab toggle */}
             <div className="flex gap-2">
-              <Button type="button" size="sm" variant={linkKind === 'client' ? 'secondary' : 'outline'} onClick={() => setLinkKind('client')}>
+              <Button
+                type="button" size="sm"
+                variant={linkKind === 'client' ? 'secondary' : 'outline'}
+                onClick={() => { setLinkKind('client'); setLinkSearch(''); setLinkClientId(''); }}
+                className="flex-1"
+              >
                 Client
               </Button>
-              <Button type="button" size="sm" variant={linkKind === 'invoice' ? 'secondary' : 'outline'} onClick={() => setLinkKind('invoice')}>
+              <Button
+                type="button" size="sm"
+                variant={linkKind === 'invoice' ? 'secondary' : 'outline'}
+                onClick={() => { setLinkKind('invoice'); setLinkSearch(''); setLinkInvoiceId(''); }}
+                className="flex-1"
+              >
                 Invoice
               </Button>
             </div>
-            {linkKind === 'client' ? (
-              <select
-                className="h-10 w-full rounded-lg border border-border bg-input px-3 text-sm"
-                value={linkClientId}
-                onChange={(e) => setLinkClientId(e.target.value)}
-              >
-                <option value="">Select client…</option>
-                {clients.map((c) => (
-                  <option key={c.id} value={c.id}>
-                    {c.name}
-                  </option>
-                ))}
-              </select>
-            ) : (
-              <select
-                className="h-10 w-full rounded-lg border border-border bg-input px-3 text-sm"
-                value={linkInvoiceId}
-                onChange={(e) => setLinkInvoiceId(e.target.value)}
-              >
-                <option value="">Select invoice…</option>
-                {invoices.map((inv) => (
-                  <option key={inv.id} value={inv.id}>
-                    {inv.invoiceNumber || inv.id}
-                  </option>
-                ))}
-              </select>
-            )}
+
+            {/* Search */}
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground" />
+              <input
+                type="text"
+                placeholder={linkKind === 'client' ? 'Search clients…' : 'Search invoices…'}
+                value={linkSearch}
+                onChange={(e) => setLinkSearch(e.target.value)}
+                className="w-full pl-9 pr-3 py-2 bg-input border border-border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary/40 transition-all"
+              />
+            </div>
+
+            {/* List */}
+            <div className="max-h-52 overflow-y-auto border border-border rounded-xl divide-y divide-border">
+              {linkKind === 'client' ? (
+                (() => {
+                  const q = linkSearch.trim().toLowerCase();
+                  const filtered = clients.filter(c =>
+                    !q || c.name?.toLowerCase().includes(q) || c.email?.toLowerCase().includes(q) || c.phone?.includes(q)
+                  );
+                  if (filtered.length === 0) return (
+                    <p className="px-4 py-6 text-center text-muted-foreground text-sm">No clients found</p>
+                  );
+                  return filtered.map((c) => (
+                    <label
+                      key={c.id}
+                      className={`flex items-center gap-3 px-4 py-2.5 cursor-pointer transition-colors ${linkClientId === c.id ? 'bg-primary/10' : 'hover:bg-secondary/40'}`}
+                    >
+                      <input
+                        type="radio"
+                        name="link-client"
+                        checked={linkClientId === c.id}
+                        onChange={() => setLinkClientId(c.id)}
+                        className="flex-shrink-0"
+                      />
+                      <div className="w-7 h-7 rounded-full bg-primary/20 flex items-center justify-center flex-shrink-0 text-xs font-bold text-primary">
+                        {(c.name || '?').charAt(0).toUpperCase()}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="text-sm font-medium truncate">{c.name}</div>
+                        {c.email && <div className="text-xs text-muted-foreground truncate">{c.email}</div>}
+                      </div>
+                    </label>
+                  ));
+                })()
+              ) : (
+                (() => {
+                  const q = linkSearch.trim().toLowerCase();
+                  const filtered = invoices.filter(inv =>
+                    !q || inv.invoiceNumber?.toLowerCase().includes(q) || inv.clientName?.toLowerCase().includes(q)
+                  );
+                  if (filtered.length === 0) return (
+                    <p className="px-4 py-6 text-center text-muted-foreground text-sm">No invoices found</p>
+                  );
+                  return filtered.map((inv) => (
+                    <label
+                      key={inv.id}
+                      className={`flex items-center gap-3 px-4 py-2.5 cursor-pointer transition-colors ${linkInvoiceId === inv.id ? 'bg-primary/10' : 'hover:bg-secondary/40'}`}
+                    >
+                      <input
+                        type="radio"
+                        name="link-invoice"
+                        checked={linkInvoiceId === inv.id}
+                        onChange={() => setLinkInvoiceId(inv.id)}
+                        className="flex-shrink-0"
+                      />
+                      <div className="w-7 h-7 rounded-full bg-purple-500/20 flex items-center justify-center flex-shrink-0 text-xs font-bold text-purple-400">
+                        #
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="text-sm font-medium truncate">{inv.invoiceNumber || inv.id}</div>
+                        {inv.clientName && <div className="text-xs text-muted-foreground truncate">{inv.clientName}</div>}
+                      </div>
+                    </label>
+                  ));
+                })()
+              )}
+            </div>
           </div>
           <DialogFooter className="gap-2">
-            <Button variant="outline" onClick={() => setLinkOpen(false)}>
-              Cancel
-            </Button>
+            <Button variant="outline" onClick={() => setLinkOpen(false)}>Cancel</Button>
             <Button onClick={saveLink}>Save link</Button>
           </DialogFooter>
         </DialogContent>

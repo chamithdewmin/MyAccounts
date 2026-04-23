@@ -321,8 +321,66 @@ const Users = () => {
             </button>
           </div>
 
-          {/* Table */}
-          <div className="overflow-x-auto overscroll-x-contain touch-pan-x">
+          {/* Mobile card list */}
+          <div className="flex flex-col divide-y divide-border md:hidden">
+            {loading ? (
+              <p className="px-4 py-8 text-center text-muted-foreground text-sm">Loading users…</p>
+            ) : pageRows.map((user, index) => (
+              <motion.div
+                key={user.id}
+                initial={{ opacity: 0, y: 6 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: index * 0.02 }}
+                className="flex items-center gap-3 px-4 py-3 hover:bg-secondary/30 transition-colors"
+              >
+                {/* Avatar */}
+                <div className="h-10 w-10 rounded-full bg-primary/20 flex items-center justify-center text-primary font-semibold text-sm ring-2 ring-border flex-shrink-0">
+                  {(user.name || 'U').charAt(0).toUpperCase()}
+                </div>
+                {/* Info */}
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <span className="text-sm font-medium text-foreground">{user.name}</span>
+                    <span className={`text-xs font-medium px-2 py-0.5 rounded-full border ${isAdminRole(user) ? 'bg-primary/15 text-primary border-primary/40' : 'bg-secondary text-muted-foreground border-border'}`}>
+                      {roleLabel(user)}
+                    </span>
+                    {isUserBlocked(user) ? (
+                      <span className="inline-flex items-center gap-1 bg-destructive/15 border border-destructive/40 text-destructive text-xs font-medium px-2 py-0.5 rounded-full">
+                        <span className="w-1.5 h-1.5 rounded-full bg-destructive" />Blocked
+                      </span>
+                    ) : (
+                      <span className="inline-flex items-center gap-1 bg-secondary border border-border text-green-400 text-xs font-medium px-2 py-0.5 rounded-full">
+                        <span className="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse" />Active
+                      </span>
+                    )}
+                  </div>
+                  <div className="text-xs text-muted-foreground truncate mt-0.5">{user.email}</div>
+                  <div className="text-xs text-muted-foreground mt-0.5">{formatDate(user.created_at)}</div>
+                </div>
+                {/* Actions */}
+                <div className="flex items-center gap-1 text-muted-foreground flex-shrink-0">
+                  {isUserBlocked(user) ? (
+                    <button type="button" onClick={() => requestBlockToggle(user, false)} className="p-2 hover:text-green-500 hover:bg-secondary rounded transition-colors" title="Unblock">
+                      <Unlock className="w-4 h-4" />
+                    </button>
+                  ) : (
+                    <button type="button" onClick={() => requestBlockToggle(user, true)} disabled={user.email?.toLowerCase().trim() === PROTECTED_EMAIL} className="p-2 hover:text-amber-500 hover:bg-secondary rounded transition-colors disabled:opacity-40" title="Block">
+                      <Ban className="w-4 h-4" />
+                    </button>
+                  )}
+                  <button type="button" onClick={() => openEdit(user)} className="p-2 hover:text-foreground hover:bg-secondary rounded transition-colors" title="Edit">
+                    <Pencil className="w-4 h-4" />
+                  </button>
+                  <button type="button" onClick={() => handleDelete(user)} className="p-2 hover:text-destructive hover:bg-secondary rounded transition-colors" title="Delete">
+                    <Trash2 className="w-4 h-4" />
+                  </button>
+                </div>
+              </motion.div>
+            ))}
+          </div>
+
+          {/* Desktop table */}
+          <div className="hidden md:block overflow-x-auto">
             <table className="w-full min-w-[760px] text-sm">
               <thead>
                 <tr className="border-b border-border text-muted-foreground text-xs uppercase tracking-wide">
@@ -337,9 +395,7 @@ const Users = () => {
               <tbody>
                 {loading ? (
                   <tr>
-                    <td colSpan={6} className="px-4 py-8 text-center text-muted-foreground">
-                      Loading users...
-                    </td>
+                    <td colSpan={6} className="px-4 py-8 text-center text-muted-foreground">Loading users...</td>
                   </tr>
                 ) : (
                   pageRows.map((user, index) => (
@@ -362,26 +418,18 @@ const Users = () => {
                         </div>
                       </td>
                       <td className="px-4 py-3">
-                        <span
-                          className={`inline-flex text-xs font-medium px-2.5 py-1 rounded-full border ${
-                            isAdminRole(user)
-                              ? 'bg-primary/15 text-primary border-primary/40'
-                              : 'bg-secondary text-muted-foreground border-border'
-                          }`}
-                        >
+                        <span className={`inline-flex text-xs font-medium px-2.5 py-1 rounded-full border ${isAdminRole(user) ? 'bg-primary/15 text-primary border-primary/40' : 'bg-secondary text-muted-foreground border-border'}`}>
                           {roleLabel(user)}
                         </span>
                       </td>
                       <td className="px-4 py-3">
                         {isUserBlocked(user) ? (
                           <span className="inline-flex items-center gap-1.5 bg-destructive/15 border border-destructive/40 text-destructive text-xs font-medium px-2.5 py-1 rounded-full">
-                            <span className="w-1.5 h-1.5 rounded-full bg-destructive" />
-                            Blocked
+                            <span className="w-1.5 h-1.5 rounded-full bg-destructive" />Blocked
                           </span>
                         ) : (
                           <span className="inline-flex items-center gap-1.5 bg-secondary border border-border text-green-400 text-xs font-medium px-2.5 py-1 rounded-full">
-                            <span className="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse" />
-                            Active
+                            <span className="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse" />Active
                           </span>
                         )}
                       </td>
@@ -390,43 +438,18 @@ const Users = () => {
                       <td className="px-4 py-3">
                         <div className="flex items-center gap-1 text-muted-foreground">
                           {isUserBlocked(user) ? (
-                            <button
-                              type="button"
-                              onClick={() => requestBlockToggle(user, false)}
-                              className="hover:text-green-500 transition-colors p-1 rounded hover:bg-secondary"
-                              title="Unblock"
-                            >
+                            <button type="button" onClick={() => requestBlockToggle(user, false)} className="hover:text-green-500 transition-colors p-1 rounded hover:bg-secondary" title="Unblock">
                               <Unlock className="w-4 h-4" />
                             </button>
                           ) : (
-                            <button
-                              type="button"
-                              onClick={() => requestBlockToggle(user, true)}
-                              disabled={user.email?.toLowerCase().trim() === PROTECTED_EMAIL}
-                              className="hover:text-amber-500 transition-colors p-1 rounded hover:bg-secondary disabled:opacity-40 disabled:pointer-events-none"
-                              title={
-                                user.email?.toLowerCase().trim() === PROTECTED_EMAIL
-                                  ? 'Protected account'
-                                  : 'Block'
-                              }
-                            >
+                            <button type="button" onClick={() => requestBlockToggle(user, true)} disabled={user.email?.toLowerCase().trim() === PROTECTED_EMAIL} className="hover:text-amber-500 transition-colors p-1 rounded hover:bg-secondary disabled:opacity-40 disabled:pointer-events-none" title={user.email?.toLowerCase().trim() === PROTECTED_EMAIL ? 'Protected account' : 'Block'}>
                               <Ban className="w-4 h-4" />
                             </button>
                           )}
-                          <button
-                            type="button"
-                            onClick={() => handleDelete(user)}
-                            className="hover:text-destructive transition-colors p-1 rounded hover:bg-secondary"
-                            title="Delete"
-                          >
+                          <button type="button" onClick={() => handleDelete(user)} className="hover:text-destructive transition-colors p-1 rounded hover:bg-secondary" title="Delete">
                             <Trash2 className="w-4 h-4" />
                           </button>
-                          <button
-                            type="button"
-                            onClick={() => openEdit(user)}
-                            className="hover:text-foreground transition-colors p-1 rounded hover:bg-secondary"
-                            title="Edit"
-                          >
+                          <button type="button" onClick={() => openEdit(user)} className="hover:text-foreground transition-colors p-1 rounded hover:bg-secondary" title="Edit">
                             <Pencil className="w-4 h-4" />
                           </button>
                         </div>

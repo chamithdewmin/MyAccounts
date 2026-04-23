@@ -28,6 +28,7 @@ const SMS = () => {
   const [scheduledJobs, setScheduledJobs] = useState([]);
   const [scheduleSaving, setScheduleSaving] = useState(false);
   const [clientSearch, setClientSearch] = useState('');
+  const [scheduleClientSearch, setScheduleClientSearch] = useState('');
 
   const [form, setForm] = useState({
     userId: '',
@@ -322,6 +323,12 @@ const SMS = () => {
     return clientsWithPhone.filter(c => c.name?.toLowerCase().includes(q) || getPhone(c)?.includes(q));
   }, [clientsWithPhone, clientSearch]);
 
+  const scheduleFilteredClients = useMemo(() => {
+    const q = scheduleClientSearch.trim().toLowerCase();
+    if (!q) return clientsWithPhone;
+    return clientsWithPhone.filter(c => c.name?.toLowerCase().includes(q) || getPhone(c)?.includes(q));
+  }, [clientsWithPhone, scheduleClientSearch]);
+
   const pendingJobs = scheduledJobs.filter((j) => j.status === 'pending');
   const sortedJobs = useMemo(() => [...scheduledJobs].sort((a, b) => new Date(b.sendAt) - new Date(a.sendAt)), [scheduledJobs]);
 
@@ -573,7 +580,7 @@ const SMS = () => {
         )}
       </div>
 
-      <Dialog open={scheduleDialogOpen} onOpenChange={setScheduleDialogOpen}>
+      <Dialog open={scheduleDialogOpen} onOpenChange={(o) => { setScheduleDialogOpen(o); if (!o) setScheduleClientSearch(''); }}>
         <DialogContent className="w-[95vw] max-w-lg max-h-[90vh] overflow-y-auto sm:max-w-xl" aria-describedby="schedule-dialog-desc">
           <DialogHeader>
             <DialogTitle>Schedule Messages</DialogTitle>
@@ -606,7 +613,15 @@ const SMS = () => {
             </div>
             <div className="space-y-2">
               <div className="flex flex-wrap items-center justify-between gap-2">
-                <Label className="text-base">Clients</Label>
+                <div className="flex items-center gap-2">
+                  <Label className="text-base">Clients</Label>
+                  {scheduleModalSelectedIds.size > 0 && (
+                    <span className="inline-flex items-center gap-1 bg-primary/15 text-primary text-xs font-semibold px-2 py-0.5 rounded-full">
+                      <CheckCheck className="w-3 h-3" />
+                      {scheduleModalSelectedIds.size} selected
+                    </span>
+                  )}
+                </div>
                 <Button
                   type="button"
                   variant="outline"
@@ -619,39 +634,51 @@ const SMS = () => {
                     : 'Select all'}
                 </Button>
               </div>
-              <div className="max-h-48 overflow-y-auto border border-border rounded-lg">
-                <table className="w-full text-sm">
-                  <thead className="bg-secondary sticky top-0">
-                    <tr>
-                      <th className="px-3 py-2 w-10" />
-                      <th className="px-3 py-2 text-left font-medium">Name</th>
-                      <th className="px-3 py-2 text-left font-medium">Phone</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {clientsWithPhone.map((c) => (
-                      <tr key={c.id} className="border-t border-border hover:bg-secondary/30">
-                        <td className="px-3 py-2">
-                          <input
-                            type="checkbox"
-                            className="rounded"
-                            checked={scheduleModalSelectedIds.has(c.id)}
-                            onChange={() => toggleScheduleModalSelect(c.id)}
-                          />
-                        </td>
-                        <td className="px-3 py-2">{c.name}</td>
-                        <td className="px-3 py-2 text-muted-foreground">{c.phone}</td>
-                      </tr>
-                    ))}
-                    {clientsWithPhone.length === 0 && (
-                      <tr>
-                        <td colSpan={3} className="px-3 py-6 text-center text-muted-foreground">
-                          No clients with phone numbers. Add phones in Clients first.
-                        </td>
-                      </tr>
-                    )}
-                  </tbody>
-                </table>
+
+              {/* Search */}
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground" />
+                <input
+                  type="text"
+                  placeholder="Search by name or phone…"
+                  value={scheduleClientSearch}
+                  onChange={(e) => setScheduleClientSearch(e.target.value)}
+                  className="w-full pl-9 pr-3 py-2 bg-input border border-border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary/40 transition-all"
+                />
+              </div>
+
+              {/* Client list */}
+              <div className="max-h-48 overflow-y-auto border border-border rounded-xl divide-y divide-border">
+                {clientsWithPhone.length === 0 ? (
+                  <p className="px-4 py-6 text-center text-muted-foreground text-sm">
+                    No clients with phone numbers. Add phones in Clients first.
+                  </p>
+                ) : scheduleFilteredClients.length === 0 ? (
+                  <p className="px-4 py-6 text-center text-muted-foreground text-sm">No matches for "{scheduleClientSearch}"</p>
+                ) : (
+                  scheduleFilteredClients.map((c) => {
+                    const isSelected = scheduleModalSelectedIds.has(c.id);
+                    return (
+                      <label
+                        key={c.id}
+                        className={`flex items-center gap-3 px-4 py-2.5 cursor-pointer transition-colors ${isSelected ? 'bg-primary/8' : 'hover:bg-secondary/40'}`}
+                      >
+                        <input
+                          type="checkbox"
+                          className="rounded flex-shrink-0"
+                          checked={isSelected}
+                          onChange={() => toggleScheduleModalSelect(c.id)}
+                        />
+                        <div className="w-7 h-7 rounded-full bg-primary/20 flex items-center justify-center flex-shrink-0 text-xs font-bold text-primary">
+                          {(c.name || '?').charAt(0).toUpperCase()}
+                        </div>
+                        <span className="text-sm font-medium flex-1 truncate">{c.name}</span>
+                        <span className="text-xs text-muted-foreground flex-shrink-0">{getPhone(c)}</span>
+                        {isSelected && <CheckCheck className="w-3.5 h-3.5 text-primary flex-shrink-0" />}
+                      </label>
+                    );
+                  })
+                )}
               </div>
             </div>
             <div className="flex flex-col-reverse sm:flex-row justify-end gap-2 pt-2">

@@ -1,7 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { Helmet } from 'react-helmet';
 import { motion } from 'framer-motion';
-import { MessageSquare, Send, Settings2, CalendarClock, Trash2, Loader2 } from 'lucide-react';
+import { MessageSquare, Send, Settings2, CalendarClock, Trash2, Loader2, Search, Users, CheckCheck, Clock, X } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
@@ -27,6 +27,7 @@ const SMS = () => {
   const [scheduleModalSelectedIds, setScheduleModalSelectedIds] = useState(() => new Set());
   const [scheduledJobs, setScheduledJobs] = useState([]);
   const [scheduleSaving, setScheduleSaving] = useState(false);
+  const [clientSearch, setClientSearch] = useState('');
 
   const [form, setForm] = useState({
     userId: '',
@@ -315,8 +316,14 @@ const SMS = () => {
   };
 
   const clientsWithPhone = clients.filter((c) => getPhone(c));
+  const filteredClients = useMemo(() => {
+    const q = clientSearch.trim().toLowerCase();
+    if (!q) return clientsWithPhone;
+    return clientsWithPhone.filter(c => c.name?.toLowerCase().includes(q) || getPhone(c)?.includes(q));
+  }, [clientsWithPhone, clientSearch]);
 
   const pendingJobs = scheduledJobs.filter((j) => j.status === 'pending');
+  const sortedJobs = useMemo(() => [...scheduledJobs].sort((a, b) => new Date(b.sendAt) - new Date(a.sendAt)), [scheduledJobs]);
 
   if (loading) {
     return (
@@ -334,209 +341,231 @@ const SMS = () => {
       </Helmet>
 
       <div className="page-y">
-        <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-          <div>
-            <h1 className="text-3xl font-bold">Messages</h1>
-            <p className="text-muted-foreground">
-              Send SMS instantly or use Schedule Messages — the server sends at the chosen time, even when you are not
-              logged in. Set up your SMS gateway first.
-            </p>
+        {/* Header */}
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-primary/15 flex items-center justify-center flex-shrink-0">
+              <MessageSquare className="w-5 h-5 text-primary" />
+            </div>
+            <div>
+              <h1 className="text-2xl font-bold leading-tight">Messages</h1>
+              <p className="text-muted-foreground text-sm">Send bulk SMS to your customers instantly or schedule for later.</p>
+            </div>
           </div>
           <div className="flex flex-wrap items-center gap-2 shrink-0">
             {smsConfig && (
-              <Button type="button" onClick={openScheduleDialog}>
-                <CalendarClock className="w-4 h-4 mr-2" />
-                Schedule Messages
+              <Button type="button" variant="outline" onClick={openScheduleDialog} className="gap-2">
+                <CalendarClock className="w-4 h-4" />
+                Schedule
               </Button>
             )}
-            <Button variant="outline" type="button" onClick={() => setSetupOpen(true)}>
-              <Settings2 className="w-4 h-4 mr-2" />
-              {smsConfig ? 'Edit Gateway' : 'Setup Gateway'}
+            <Button variant={smsConfig ? 'outline' : 'default'} type="button" onClick={() => setSetupOpen(true)} className="gap-2">
+              <Settings2 className="w-4 h-4" />
+              {smsConfig ? 'Gateway' : 'Setup Gateway'}
             </Button>
           </div>
         </div>
 
+        {/* Gateway not configured */}
         {!smsConfig ? (
           <motion.div
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
-            className="bg-card border border-border rounded-lg p-8 text-center"
+            className="bg-card border border-border rounded-2xl p-12 text-center"
           >
-            <MessageSquare className="w-16 h-16 mx-auto text-muted-foreground mb-4" />
-            <h2 className="text-xl font-semibold mb-2">Setup your SMS gateway</h2>
-            <p className="text-muted-foreground mb-6 max-w-md mx-auto">
-              Enter your SMSlenz.lk (or compatible) gateway details to send SMS to customers.
+            <div className="w-16 h-16 rounded-2xl bg-primary/10 flex items-center justify-center mx-auto mb-4">
+              <MessageSquare className="w-8 h-8 text-primary" />
+            </div>
+            <h2 className="text-xl font-semibold mb-2">Connect your SMS gateway</h2>
+            <p className="text-muted-foreground mb-6 max-w-sm mx-auto text-sm">
+              Enter your SMSlenz.lk (or compatible) credentials to start sending SMS to your customers.
             </p>
-            <Button onClick={() => setSetupOpen(true)}>
-              <Settings2 className="w-4 h-4 mr-2" />
-              Setup SMS Gateway
+            <Button onClick={() => setSetupOpen(true)} className="gap-2">
+              <Settings2 className="w-4 h-4" />
+              Setup Gateway
             </Button>
           </motion.div>
         ) : (
           <>
-            <div className="bg-card border border-border rounded-lg p-6">
-              <h2 className="text-lg font-semibold mb-4">Select customers</h2>
-              <p className="text-sm text-muted-foreground mb-4">
-                {clientsWithPhone.length} customer(s) with phone numbers. Select recipients for instant send.
-              </p>
-              <div className="max-h-64 overflow-y-auto border border-border rounded-lg">
-                {/* Select-all header */}
-                <div className="bg-secondary sticky top-0 flex items-center gap-3 px-4 py-2 border-b border-border">
-                  <input
-                    type="checkbox"
-                    checked={selectedIds.size === clientsWithPhone.length && clientsWithPhone.length > 0}
-                    onChange={selectAll}
-                    className="rounded flex-shrink-0"
-                  />
-                  <span className="text-sm font-medium">Select all</span>
+            {/* COMPOSE PANEL */}
+            <div className="grid gap-5 lg:grid-cols-[1fr_340px]">
+
+              {/* Left — message compose */}
+              <div className="bg-card border border-border rounded-2xl overflow-hidden flex flex-col">
+                <div className="px-5 py-4 border-b border-border flex items-center gap-2">
+                  <Send className="w-4 h-4 text-primary" />
+                  <h2 className="font-semibold">Compose Message</h2>
+                  {selectedIds.size > 0 && (
+                    <span className="ml-auto inline-flex items-center gap-1 bg-primary/15 text-primary text-xs font-semibold px-2.5 py-1 rounded-full">
+                      <Users className="w-3 h-3" />
+                      {selectedIds.size} selected
+                    </span>
+                  )}
                 </div>
-                {clientsWithPhone.length === 0 ? (
-                  <p className="px-4 py-8 text-center text-muted-foreground text-sm">
-                    No customers with phone numbers. Add phone numbers to your clients first.
-                  </p>
-                ) : (
-                  <div className="divide-y divide-border">
-                    {clientsWithPhone.map((c) => (
-                      <label
-                        key={c.id}
-                        className="flex items-center gap-3 px-4 py-3 hover:bg-secondary/30 cursor-pointer"
-                      >
-                        <input
-                          type="checkbox"
-                          checked={selectedIds.has(c.id)}
-                          onChange={() => toggleSelect(c.id)}
-                          className="rounded flex-shrink-0"
-                        />
-                        <span className="text-sm font-medium flex-1">{c.name}</span>
-                        <span className="text-sm text-muted-foreground">{c.phone}</span>
-                      </label>
-                    ))}
+                <div className="p-5 flex flex-col gap-4 flex-1">
+                  <div className="flex flex-col gap-1.5">
+                    <label className="text-sm font-medium">Message</label>
+                    <div className="relative">
+                      <textarea
+                        value={message}
+                        onChange={(e) => setMessage(e.target.value)}
+                        placeholder="Type your message here…"
+                        className="w-full min-h-[140px] px-4 py-3 bg-input border border-border rounded-xl resize-none text-sm focus:outline-none focus:ring-2 focus:ring-primary/40 transition-all"
+                        maxLength={621}
+                      />
+                      <span className={`absolute bottom-3 right-3 text-xs font-medium tabular-nums ${message.length > 580 ? 'text-red-400' : 'text-muted-foreground'}`}>
+                        {message.length}/621
+                      </span>
+                    </div>
+                    {/* Character bar */}
+                    <div className="h-1 rounded-full bg-secondary overflow-hidden">
+                      <div
+                        className={`h-full rounded-full transition-all ${message.length > 580 ? 'bg-red-400' : 'bg-primary'}`}
+                        style={{ width: `${(message.length / 621) * 100}%` }}
+                      />
+                    </div>
                   </div>
-                )}
+
+                  <div className="mt-auto flex flex-col sm:flex-row gap-3 pt-2">
+                    {selectedIds.size > 0 && (
+                      <Button type="button" variant="ghost" size="sm" onClick={() => setSelectedIds(new Set())} className="gap-1 text-muted-foreground">
+                        <X className="w-4 h-4" /> Clear selection
+                      </Button>
+                    )}
+                    <Button
+                      type="button"
+                      onClick={handleSendBulk}
+                      disabled={selectedIds.size === 0 || !message.trim() || sending}
+                      className="gap-2 sm:ml-auto"
+                    >
+                      {sending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
+                      {sending ? 'Sending…' : selectedIds.size === 0 ? 'Select recipients first' : `Send to ${selectedIds.size} recipient${selectedIds.size > 1 ? 's' : ''}`}
+                    </Button>
+                  </div>
+                </div>
               </div>
 
-              <div className="mt-4 space-y-2">
-                <label className="text-sm font-medium">Message (max 621 chars)</label>
-                <textarea
-                  value={message}
-                  onChange={(e) => setMessage(e.target.value)}
-                  placeholder="Type your message..."
-                  className="w-full min-h-[100px] px-3 py-2 bg-card border border-border rounded-lg resize-none"
-                  maxLength={621}
-                />
-                <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3">
-                  <span className="text-xs text-muted-foreground">{message.length}/621</span>
-                  <Button
-                    type="button"
-                    onClick={handleSendBulk}
-                    disabled={selectedIds.size === 0 || !message.trim() || sending}
-                  >
-                    <Send className="w-4 h-4 mr-2" />
-                    {sending ? 'Sending...' : `Send now to ${selectedIds.size} recipient(s)`}
-                  </Button>
+              {/* Right — recipients */}
+              <div className="bg-card border border-border rounded-2xl overflow-hidden flex flex-col">
+                <div className="px-4 py-4 border-b border-border">
+                  <div className="flex items-center justify-between mb-3">
+                    <h2 className="font-semibold flex items-center gap-2">
+                      <Users className="w-4 h-4 text-primary" />
+                      Recipients
+                    </h2>
+                    <label className="flex items-center gap-2 cursor-pointer text-xs text-muted-foreground hover:text-foreground transition-colors">
+                      <input
+                        type="checkbox"
+                        checked={selectedIds.size === clientsWithPhone.length && clientsWithPhone.length > 0}
+                        onChange={selectAll}
+                        className="rounded"
+                      />
+                      Select all
+                    </label>
+                  </div>
+                  <div className="relative">
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground" />
+                    <input
+                      type="text"
+                      placeholder="Search customers…"
+                      value={clientSearch}
+                      onChange={(e) => setClientSearch(e.target.value)}
+                      className="w-full pl-9 pr-3 py-2 bg-input border border-border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary/40 transition-all"
+                    />
+                  </div>
+                </div>
+
+                <div className="overflow-y-auto flex-1 max-h-[320px] divide-y divide-border">
+                  {clientsWithPhone.length === 0 ? (
+                    <div className="px-4 py-10 text-center">
+                      <Users className="w-8 h-8 text-muted-foreground/40 mx-auto mb-2" />
+                      <p className="text-sm text-muted-foreground">No customers with phone numbers.</p>
+                    </div>
+                  ) : filteredClients.length === 0 ? (
+                    <p className="px-4 py-8 text-center text-muted-foreground text-sm">No matches for "{clientSearch}"</p>
+                  ) : (
+                    filteredClients.map((c) => {
+                      const isSelected = selectedIds.has(c.id);
+                      return (
+                        <label
+                          key={c.id}
+                          className={`flex items-center gap-3 px-4 py-2.5 cursor-pointer transition-colors ${isSelected ? 'bg-primary/8' : 'hover:bg-secondary/40'}`}
+                        >
+                          <input
+                            type="checkbox"
+                            checked={isSelected}
+                            onChange={() => toggleSelect(c.id)}
+                            className="rounded flex-shrink-0"
+                          />
+                          <div className="w-7 h-7 rounded-full bg-primary/20 flex items-center justify-center flex-shrink-0 text-xs font-bold text-primary">
+                            {(c.name || '?').charAt(0).toUpperCase()}
+                          </div>
+                          <span className="text-sm font-medium flex-1 truncate">{c.name}</span>
+                          <span className="text-xs text-muted-foreground flex-shrink-0">{getPhone(c)}</span>
+                          {isSelected && <CheckCheck className="w-3.5 h-3.5 text-primary flex-shrink-0" />}
+                        </label>
+                      );
+                    })
+                  )}
+                </div>
+
+                <div className="px-4 py-3 border-t border-border">
+                  <p className="text-xs text-muted-foreground">
+                    {clientsWithPhone.length} customer{clientsWithPhone.length !== 1 ? 's' : ''} with phone numbers
+                  </p>
                 </div>
               </div>
             </div>
 
+            {/* HISTORY */}
             {scheduledJobs.length > 0 && (
-              <div className="bg-card border border-border rounded-lg p-6">
-                <h2 className="text-lg font-semibold mb-4">Scheduled &amp; recent</h2>
-                {/* Mobile cards */}
-                <div className="flex flex-col gap-3 md:hidden">
-                  {[...scheduledJobs]
-                    .sort((a, b) => new Date(b.sendAt) - new Date(a.sendAt))
-                    .map((job) => (
-                      <div key={job.id} className="border border-border rounded-xl p-4 flex flex-col gap-2">
-                        <div className="flex items-center justify-between gap-2">
-                          <span className="text-xs font-medium text-foreground">
-                            {new Date(job.sendAt).toLocaleString(undefined, { dateStyle: 'medium', timeStyle: 'short' })}
-                          </span>
-                          <span className={`text-xs px-2 py-1 rounded-full capitalize font-medium ${
-                            job.status === 'sent' ? 'bg-green-500/20 text-green-500'
-                            : job.status === 'failed' ? 'bg-red-500/20 text-red-500'
-                            : 'bg-amber-500/20 text-amber-600'
-                          }`}>
-                            {job.status}
-                          </span>
+              <div className="bg-card border border-border rounded-2xl overflow-hidden">
+                <div className="px-5 py-4 border-b border-border flex items-center justify-between">
+                  <h2 className="font-semibold flex items-center gap-2">
+                    <Clock className="w-4 h-4 text-primary" />
+                    Scheduled &amp; Recent
+                  </h2>
+                  {pendingJobs.length > 0 && (
+                    <span className="text-xs bg-amber-500/15 text-amber-500 font-semibold px-2.5 py-1 rounded-full">
+                      {pendingJobs.length} pending
+                    </span>
+                  )}
+                </div>
+                <div className="divide-y divide-border">
+                  {sortedJobs.map((job) => (
+                    <div key={job.id} className="flex items-start gap-4 px-5 py-4 hover:bg-secondary/20 transition-colors">
+                      {/* Status dot */}
+                      <div className={`w-2 h-2 rounded-full mt-1.5 flex-shrink-0 ${
+                        job.status === 'sent' ? 'bg-green-500' : job.status === 'failed' ? 'bg-red-500' : 'bg-amber-400'
+                      }`} />
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm text-foreground line-clamp-1">{job.message}</p>
+                        <div className="flex flex-wrap items-center gap-x-3 gap-y-0.5 mt-1 text-xs text-muted-foreground">
+                          <span>{new Date(job.sendAt).toLocaleString(undefined, { dateStyle: 'medium', timeStyle: 'short' })}</span>
+                          <span>·</span>
+                          <span className="flex items-center gap-1"><Users className="w-3 h-3" />{job.clientIds?.length ?? 0}</span>
+                          {job.error && <span className="text-red-400 truncate max-w-[200px]">{job.error}</span>}
                         </div>
-                        <p className="text-sm text-muted-foreground line-clamp-2">{job.message}</p>
-                        <div className="flex items-center justify-between gap-2">
-                          <span className="text-xs text-muted-foreground">{job.clientIds?.length ?? 0} recipient(s)</span>
-                          {job.status === 'pending' && (
-                            <Button
-                              type="button"
-                              variant="ghost"
-                              size="sm"
-                              className="text-destructive hover:text-destructive h-7 px-2"
-                              onClick={() => cancelScheduled(job.id)}
-                            >
-                              <Trash2 className="w-4 h-4 mr-1" /> Cancel
-                            </Button>
-                          )}
-                        </div>
-                        {job.error && (
-                          <p className="text-xs text-destructive">{job.error}</p>
+                      </div>
+                      <div className="flex items-center gap-2 flex-shrink-0">
+                        <span className={`text-xs font-semibold px-2 py-0.5 rounded-full capitalize ${
+                          job.status === 'sent' ? 'bg-green-500/15 text-green-500'
+                          : job.status === 'failed' ? 'bg-red-500/15 text-red-500'
+                          : 'bg-amber-500/15 text-amber-500'
+                        }`}>{job.status}</span>
+                        {job.status === 'pending' && (
+                          <Button type="button" variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground hover:text-destructive" onClick={() => cancelScheduled(job.id)} aria-label="Cancel">
+                            <X className="w-3.5 h-3.5" />
+                          </Button>
                         )}
                       </div>
-                    ))}
-                </div>
-
-                {/* Desktop table */}
-                <div className="hidden md:block overflow-x-auto border border-border rounded-lg">
-                  <table className="w-full text-sm">
-                    <thead className="bg-secondary">
-                      <tr>
-                        <th className="px-3 py-2 text-left font-medium">When (local)</th>
-                        <th className="px-3 py-2 text-left font-medium">Recipients</th>
-                        <th className="px-3 py-2 text-left font-medium">Preview</th>
-                        <th className="px-3 py-2 text-left font-medium">Status</th>
-                        <th className="px-3 py-2 text-right font-medium"> </th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {[...scheduledJobs]
-                        .sort((a, b) => new Date(b.sendAt) - new Date(a.sendAt))
-                        .map((job) => (
-                          <tr key={job.id} className="border-t border-border">
-                            <td className="px-3 py-2 whitespace-nowrap">
-                              {new Date(job.sendAt).toLocaleString(undefined, {
-                                dateStyle: 'medium',
-                                timeStyle: 'short',
-                              })}
-                            </td>
-                            <td className="px-3 py-2">{job.clientIds?.length ?? 0}</td>
-                            <td className="px-3 py-2 max-w-[200px] truncate text-muted-foreground">{job.message}</td>
-                            <td className="px-3 py-2 capitalize">
-                              {job.status}
-                              {job.error && (
-                                <span className="block text-xs text-destructive truncate max-w-[140px]" title={job.error}>
-                                  {job.error}
-                                </span>
-                              )}
-                            </td>
-                            <td className="px-3 py-2 text-right">
-                              {job.status === 'pending' && (
-                                <Button
-                                  type="button"
-                                  variant="ghost"
-                                  size="sm"
-                                  className="text-destructive hover:text-destructive"
-                                  onClick={() => cancelScheduled(job.id)}
-                                  aria-label="Cancel scheduled message"
-                                >
-                                  <Trash2 className="w-4 h-4" />
-                                </Button>
-                              )}
-                            </td>
-                          </tr>
-                        ))}
-                    </tbody>
-                  </table>
+                    </div>
+                  ))}
                 </div>
                 {pendingJobs.length > 0 && (
-                  <p className="text-xs text-muted-foreground mt-3">
-                    {pendingJobs.length} pending — the server sends automatically at each scheduled time.
-                  </p>
+                  <div className="px-5 py-3 border-t border-border bg-amber-500/5">
+                    <p className="text-xs text-muted-foreground">{pendingJobs.length} pending — server sends automatically at the scheduled time.</p>
+                  </div>
                 )}
               </div>
             )}

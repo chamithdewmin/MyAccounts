@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { useIsMobileLayout } from '@/hooks/useIsMobileLayout';
 import { Helmet } from 'react-helmet';
 import { Link } from 'react-router-dom';
 import { Briefcase, Plus, LayoutGrid, FileText, Trash2, Calendar, DollarSign, TrendingUp, Receipt, ChevronRight, X } from 'lucide-react';
@@ -52,6 +53,7 @@ const Projects = () => {
   const [deleteSubmitting, setDeleteSubmitting] = useState(false);
   const [selectedProjectId, setSelectedProjectId] = useState(null);
   const [mobileDetailOpen, setMobileDetailOpen] = useState(false);
+  const isMobile = useIsMobileLayout();
 
   useEffect(() => {
     if (list.length === 0) {
@@ -190,13 +192,13 @@ const Projects = () => {
                     tabIndex={0}
                     onClick={() => {
                       setSelectedProjectId(p.id);
-                      setMobileDetailOpen(true);
+                      if (isMobile) setMobileDetailOpen(true);
                     }}
                     onKeyDown={(e) => {
                       if (e.key === 'Enter' || e.key === ' ') {
                         e.preventDefault();
                         setSelectedProjectId(p.id);
-                        setMobileDetailOpen(true);
+                        if (isMobile) setMobileDetailOpen(true);
                       }
                     }}
                     className={cn(

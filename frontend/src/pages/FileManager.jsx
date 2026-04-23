@@ -166,6 +166,8 @@ const FileManager = () => {
   const [bulkDeleteSubmitting, setBulkDeleteSubmitting] = useState(false);
 
   const [sizeSort, setSizeSort] = useState('none');
+  const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
+  const [mobilePreviewOpen, setMobilePreviewOpen] = useState(false);
   const [uploadFlash, setUploadFlash] = useState(null);
   const pendingUploadAddedRef = useRef(null);
 
@@ -818,8 +820,9 @@ const FileManager = () => {
           </Button>
         </div>
 
-        <div className="rounded-2xl border border-border bg-card/80 p-3 sm:p-4 flex flex-col gap-3 lg:flex-row lg:flex-wrap lg:items-center shadow-sm">
-          <div className="relative flex-1 min-w-[200px] max-w-xl">
+        <div className="rounded-2xl border border-border bg-card/80 p-3 sm:p-4 flex flex-col gap-3 shadow-sm">
+          {/* Search row */}
+          <div className="relative w-full">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
             <Input
               placeholder="Search file name, type, or tags…"
@@ -828,60 +831,59 @@ const FileManager = () => {
               className="pl-10 bg-input border-border"
             />
           </div>
+          {/* Action row */}
           <div className="flex flex-wrap items-center gap-2">
             <Button onClick={openUpload} className="gap-2">
               <Upload className="w-4 h-4" />
-              Upload
+              <span>Upload</span>
             </Button>
-            {checkedCount > 0 ? (
+            {/* Mobile-only Folders toggle */}
+            <Button
+              type="button"
+              variant={mobileSidebarOpen ? 'secondary' : 'outline'}
+              className="gap-2 lg:hidden"
+              onClick={() => setMobileSidebarOpen((v) => !v)}
+            >
+              <Folder className="w-4 h-4" />
+              Folders
+            </Button>
+            <Button type="button" variant="outline" className="gap-2" onClick={() => setNewFolderOpen(true)}>
+              <FolderPlus className="w-4 h-4" />
+              <span className="hidden sm:inline">New folder</span>
+              <span className="sm:hidden">Folder</span>
+            </Button>
+            {checkedCount > 0 && (
               <>
                 <Button type="button" variant="outline" size="sm" onClick={() => setCheckedIds(new Set())}>
-                  Clear selection ({checkedCount})
+                  <X className="w-4 h-4 mr-1" />{checkedCount}
                 </Button>
                 <Button type="button" variant="destructive" size="sm" className="gap-2" onClick={openBulkDeleteDialog}>
                   <Trash2 className="w-4 h-4" />
-                  Delete selected ({checkedCount})
+                  <span className="hidden sm:inline">Delete {checkedCount}</span>
+                  <span className="sm:hidden">{checkedCount}</span>
                 </Button>
               </>
-            ) : null}
-            <Button type="button" variant="outline" className="gap-2" onClick={() => setNewFolderOpen(true)}>
-              <FolderPlus className="w-4 h-4" />
-              New folder
-            </Button>
+            )}
             <select
               value={typeFilter}
               onChange={(e) => setTypeFilter(e.target.value)}
-              className="h-10 rounded-lg border border-border bg-input px-3 text-sm text-foreground min-w-[140px]"
+              className="h-10 rounded-lg border border-border bg-input px-3 text-sm text-foreground flex-1 sm:flex-none sm:min-w-[130px]"
             >
               {TYPE_OPTIONS.map((o) => (
-                <option key={o.value} value={o.value}>
-                  {o.label}
-                </option>
+                <option key={o.value} value={o.value}>{o.label}</option>
               ))}
             </select>
             <div className="flex rounded-lg border border-border overflow-hidden">
-              <Button
-                type="button"
-                variant={viewMode === 'table' ? 'secondary' : 'ghost'}
-                size="sm"
-                className="rounded-none gap-1"
-                onClick={() => setViewMode('table')}
-              >
+              <Button type="button" variant={viewMode === 'table' ? 'secondary' : 'ghost'} size="sm" className="rounded-none gap-1" onClick={() => setViewMode('table')}>
                 <List className="w-4 h-4" />
-                Table
+                <span className="hidden sm:inline">List</span>
               </Button>
-              <Button
-                type="button"
-                variant={viewMode === 'grid' ? 'secondary' : 'ghost'}
-                size="sm"
-                className="rounded-none gap-1"
-                onClick={() => setViewMode('grid')}
-              >
+              <Button type="button" variant={viewMode === 'grid' ? 'secondary' : 'ghost'} size="sm" className="rounded-none gap-1" onClick={() => setViewMode('grid')}>
                 <LayoutGrid className="w-4 h-4" />
-                Grid
+                <span className="hidden sm:inline">Grid</span>
               </Button>
             </div>
-            <Button variant="outline" size="sm" onClick={loadFiles} disabled={loading}>
+            <Button variant="outline" size="sm" onClick={loadFiles} disabled={loading} className="hidden sm:flex">
               {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Refresh'}
             </Button>
           </div>
@@ -950,7 +952,8 @@ const FileManager = () => {
         ) : null}
 
         <div className="flex flex-col lg:flex-row gap-4 min-h-[480px] flex-1 min-w-0">
-          <aside className="lg:w-52 shrink-0 rounded-2xl border border-border bg-card p-2 h-fit">
+          {/* Sidebar — always visible on desktop, toggleable on mobile */}
+          <aside className={`lg:w-52 shrink-0 rounded-2xl border border-border bg-card p-2 h-fit ${mobileSidebarOpen ? 'block' : 'hidden lg:block'}`}>
             <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide px-2 py-1.5">Browse</p>
             <nav className="flex flex-row flex-wrap gap-1 lg:flex-col">
               {scopeNav.map((item) => {
@@ -1076,7 +1079,57 @@ const FileManager = () => {
                   Loading…
                 </div>
               ) : viewMode === 'table' ? (
-                <div className="overflow-x-auto">
+                <>
+                {/* Mobile file card list */}
+                <div className="flex flex-col divide-y divide-border md:hidden">
+                  {files.length === 0 ? (
+                    <p className="px-4 py-12 text-center text-muted-foreground text-sm">No files yet. Upload a document to get started.</p>
+                  ) : (
+                    displayedFiles.map((f, i) => (
+                      <motion.div
+                        key={f.id}
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        transition={{ delay: i * 0.02 }}
+                        className={`flex items-center gap-3 px-4 py-3 hover:bg-secondary/30 transition-colors cursor-pointer ${selected?.id === f.id ? 'bg-primary/10' : ''}`}
+                        onClick={() => { setSelected(f); setMobilePreviewOpen(true); }}
+                      >
+                        <div className="flex-shrink-0" onClick={(e) => { e.stopPropagation(); toggleFileChecked(f.id, !checkedIds.has(f.id)); }}>
+                          <Checkbox checked={checkedIds.has(f.id)} onCheckedChange={(c) => toggleFileChecked(f.id, c === true)} aria-label={`Select ${f.originalName}`} />
+                        </div>
+                        <div className="w-9 h-9 rounded-lg bg-secondary flex items-center justify-center flex-shrink-0">
+                          {isImageType(f.fileType) ? <ImageIcon className="w-5 h-5 text-sky-400" /> : isPdfType(f.fileType) ? <FileText className="w-5 h-5 text-red-400" /> : <File className="w-5 h-5 text-muted-foreground" />}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <div className="text-sm font-medium text-foreground truncate">{f.originalName}</div>
+                          <div className="text-xs text-muted-foreground flex items-center gap-2 mt-0.5">
+                            <span>{fileKindLabel(f.fileType)}</span>
+                            <span>·</span>
+                            <span>{formatBytes(f.fileSize)}</span>
+                            {f.folderName && <><span>·</span><span className="truncate">{f.folderName}</span></>}
+                          </div>
+                        </div>
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
+                            <Button variant="ghost" size="icon" className="h-8 w-8 flex-shrink-0" aria-label="Actions">
+                              <MoreVertical className="w-4 h-4" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end" className="w-48">
+                            <DropdownMenuItem onClick={() => { setSelected(f); setMobilePreviewOpen(true); }}><Eye className="w-4 h-4 mr-2" />View</DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => downloadFile(f)}><Download className="w-4 h-4 mr-2" />Download</DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => { setRenameTarget(f); setRenameValue(f.originalName); setRenameOpen(true); }}><Pencil className="w-4 h-4 mr-2" />Rename</DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => { setLinkTarget(f); setLinkKind('client'); setLinkClientId(f.linkedType === 'client' ? f.linkedId : ''); setLinkInvoiceId(f.linkedType === 'invoice' ? f.linkedId : ''); setLinkOpen(true); }}><Link2 className="w-4 h-4 mr-2" />Link to…</DropdownMenuItem>
+                            {f.linkedType && <DropdownMenuItem onClick={() => clearLink(f)}><Unlink className="w-4 h-4 mr-2" />Remove link</DropdownMenuItem>}
+                            <DropdownMenuItem className="text-destructive focus:text-destructive" onClick={() => openDeleteDialog(f)}><Trash2 className="w-4 h-4 mr-2" />Delete</DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </motion.div>
+                    ))
+                  )}
+                </div>
+                {/* Desktop table */}
+                <div className="hidden md:block overflow-x-auto">
                   <table className="w-full min-w-[720px] text-sm">
                     <thead>
                       <tr className="border-b border-border text-muted-foreground text-xs uppercase tracking-wide">
@@ -1261,8 +1314,9 @@ const FileManager = () => {
                     ) : null}
                   </table>
                 </div>
+                </>
               ) : (
-                <div className="p-4 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
+                <div className="p-3 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3">
                   {files.length === 0 ? (
                     <div className="col-span-full text-center text-muted-foreground py-12">No files yet.</div>
                   ) : (
@@ -1274,22 +1328,18 @@ const FileManager = () => {
                         initial={{ opacity: 0, y: 6 }}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ delay: i * 0.02 }}
-                        onClick={() => setSelected(f)}
-                        onKeyDown={(e) => {
-                          if (e.key === 'Enter' || e.key === ' ') {
-                            e.preventDefault();
-                            setSelected(f);
-                          }
-                        }}
+                        onClick={() => { setSelected(f); setMobilePreviewOpen(true); }}
+                        onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setSelected(f); setMobilePreviewOpen(true); } }}
                         draggable
                         onDragStart={() => setDragFileId(f.id)}
                         onDragEnd={() => setDragFileId(null)}
-                        className={`relative rounded-xl border p-3 text-left flex flex-col gap-2 transition-colors hover:bg-secondary/50 cursor-pointer outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background ${
-                          selected?.id === f.id ? 'border-primary ring-1 ring-primary/40 bg-primary/5' : 'border-border bg-secondary/20'
-                        } ${checkedIds.has(f.id) ? 'ring-1 ring-accent/50 bg-accent/10' : ''}`}
+                        className={`group relative rounded-xl border p-3 text-left flex flex-col gap-2 transition-all hover:border-primary/40 hover:shadow-md cursor-pointer outline-none focus-visible:ring-2 focus-visible:ring-ring ${
+                          selected?.id === f.id ? 'border-primary ring-1 ring-primary/40 bg-primary/5' : 'border-border bg-card'
+                        } ${checkedIds.has(f.id) ? 'ring-1 ring-primary/50 bg-primary/5' : ''}`}
                       >
+                        {/* Checkbox */}
                         <div
-                          className="absolute top-2 left-2 z-10"
+                          className="absolute top-2 left-2 z-10 opacity-0 group-hover:opacity-100 transition-opacity"
                           onClick={(e) => e.stopPropagation()}
                           onPointerDown={(e) => e.stopPropagation()}
                           onKeyDown={(e) => e.stopPropagation()}
@@ -1298,9 +1348,29 @@ const FileManager = () => {
                             checked={checkedIds.has(f.id)}
                             onCheckedChange={(c) => toggleFileChecked(f.id, c === true)}
                             aria-label={`Select ${f.originalName || 'file'}`}
+                            className={checkedIds.has(f.id) ? 'opacity-100' : ''}
                           />
                         </div>
-                        <div className="flex justify-center py-4 mt-5">
+                        {/* Actions menu */}
+                        <div className="absolute top-2 right-2 z-10 opacity-0 group-hover:opacity-100 transition-opacity" onClick={(e) => e.stopPropagation()}>
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <Button variant="secondary" size="icon" className="h-6 w-6" aria-label="Actions">
+                                <MoreVertical className="w-3 h-3" />
+                              </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end" className="w-44">
+                              <DropdownMenuItem onClick={() => { setSelected(f); setMobilePreviewOpen(true); }}><Eye className="w-4 h-4 mr-2" />View</DropdownMenuItem>
+                              <DropdownMenuItem onClick={() => downloadFile(f)}><Download className="w-4 h-4 mr-2" />Download</DropdownMenuItem>
+                              <DropdownMenuItem onClick={() => { setRenameTarget(f); setRenameValue(f.originalName); setRenameOpen(true); }}><Pencil className="w-4 h-4 mr-2" />Rename</DropdownMenuItem>
+                              <DropdownMenuItem onClick={() => { setLinkTarget(f); setLinkKind('client'); setLinkClientId(f.linkedType === 'client' ? f.linkedId : ''); setLinkInvoiceId(f.linkedType === 'invoice' ? f.linkedId : ''); setLinkOpen(true); }}><Link2 className="w-4 h-4 mr-2" />Link to…</DropdownMenuItem>
+                              {f.linkedType && <DropdownMenuItem onClick={() => clearLink(f)}><Unlink className="w-4 h-4 mr-2" />Remove link</DropdownMenuItem>}
+                              <DropdownMenuItem className="text-destructive focus:text-destructive" onClick={() => openDeleteDialog(f)}><Trash2 className="w-4 h-4 mr-2" />Delete</DropdownMenuItem>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                        </div>
+                        {/* File icon */}
+                        <div className="flex justify-center items-center py-5 mt-3 rounded-lg bg-secondary/40">
                           {isImageType(f.fileType) ? (
                             <ImageIcon className="w-10 h-10 text-sky-400" />
                           ) : isPdfType(f.fileType) ? (
@@ -1309,10 +1379,12 @@ const FileManager = () => {
                             <File className="w-10 h-10 text-muted-foreground" />
                           )}
                         </div>
-                        <div className="text-xs font-medium text-foreground line-clamp-2 min-h-[2.5rem]">{f.originalName}</div>
-                        <div className="text-[10px] text-muted-foreground flex justify-between gap-1">
-                          <span>{formatBytes(f.fileSize)}</span>
-                          <span className="truncate">{f.linkedLabel || '—'}</span>
+                        {/* Name */}
+                        <div className="text-xs font-medium text-foreground line-clamp-2 leading-snug min-h-[2rem]">{f.originalName}</div>
+                        {/* Meta */}
+                        <div className="text-[10px] text-muted-foreground flex items-center justify-between gap-1 mt-auto">
+                          <span className="font-medium">{formatBytes(f.fileSize)}</span>
+                          <span className="truncate text-right">{f.folderName || fileKindLabel(f.fileType)}</span>
                         </div>
                       </motion.div>
                     ))
@@ -1322,69 +1394,59 @@ const FileManager = () => {
             </div>
 
             {selected ? (
-              <aside className="w-full lg:w-[380px] shrink-0 rounded-2xl border border-border bg-card flex flex-col max-h-[70vh] lg:max-h-[calc(100vh-220px)] overflow-hidden">
-                <div className="px-4 py-3 border-b border-border flex items-center justify-between gap-2">
-                  <span className="font-semibold text-sm">Preview</span>
-                  <Button variant="ghost" size="icon" className="h-8 w-8 shrink-0" onClick={() => setSelected(null)} aria-label="Close panel">
-                    <X className="w-4 h-4" />
-                  </Button>
-                </div>
-                <div className="p-4 space-y-3 overflow-y-auto flex-1">
-                  <div>
-                    <p className="text-sm font-medium text-foreground break-words">{selected.originalName}</p>
-                    <p className="text-xs text-muted-foreground mt-1">{fileKindLabel(selected.fileType)} · {formatBytes(selected.fileSize)}</p>
+              <>
+                {/* Desktop side panel */}
+                <aside className="hidden lg:flex w-[340px] shrink-0 rounded-2xl border border-border bg-card flex-col max-h-[calc(100vh-220px)] overflow-hidden">
+                  <div className="px-4 py-3 border-b border-border flex items-center justify-between gap-2">
+                    <span className="font-semibold text-sm truncate">{selected.originalName}</span>
+                    <Button variant="ghost" size="icon" className="h-8 w-8 shrink-0" onClick={() => setSelected(null)} aria-label="Close panel">
+                      <X className="w-4 h-4" />
+                    </Button>
                   </div>
-                  <dl className="text-xs space-y-2 border-t border-border pt-3">
-                    <div className="flex justify-between gap-2">
-                      <dt className="text-muted-foreground">Uploaded by</dt>
-                      <dd className="text-foreground text-right">{selected.uploadedByName || '—'}</dd>
+                  <div className="p-4 space-y-3 overflow-y-auto flex-1">
+                    <p className="text-xs text-muted-foreground">{fileKindLabel(selected.fileType)} · {formatBytes(selected.fileSize)}</p>
+                    <dl className="text-xs space-y-2 border-t border-border pt-3">
+                      <div className="flex justify-between gap-2"><dt className="text-muted-foreground">Uploaded by</dt><dd className="text-foreground text-right">{selected.uploadedByName || '—'}</dd></div>
+                      <div className="flex justify-between gap-2"><dt className="text-muted-foreground">Uploaded</dt><dd className="text-foreground text-right">{selected.createdAt ? new Date(selected.createdAt).toLocaleDateString() : '—'}</dd></div>
+                      <div className="flex justify-between gap-2"><dt className="text-muted-foreground">Linked</dt><dd className="text-foreground text-right break-words max-w-[180px]">{linkedCell(selected)}</dd></div>
+                      {selected.tags && <div className="flex justify-between gap-2"><dt className="text-muted-foreground">Tags</dt><dd className="text-foreground text-right">{selected.tags}</dd></div>}
+                    </dl>
+                    <div className="flex flex-wrap gap-2 pt-1">
+                      <Button size="sm" variant="outline" className="gap-1 flex-1" onClick={() => downloadFile(selected)}><Download className="w-3.5 h-3.5" />Download</Button>
+                      <Button size="sm" variant="outline" className="gap-1 flex-1" onClick={() => { if (previewBlob) window.open(previewBlob, '_blank', 'noopener,noreferrer'); else downloadFile(selected); }}><Eye className="w-3.5 h-3.5" />Open</Button>
                     </div>
-                    <div className="flex justify-between gap-2">
-                      <dt className="text-muted-foreground">Uploaded</dt>
-                      <dd className="text-foreground text-right">{selected.createdAt ? new Date(selected.createdAt).toLocaleString() : '—'}</dd>
+                    <div className="rounded-xl border border-border bg-background/50 min-h-[180px] flex items-center justify-center overflow-hidden">
+                      {previewLoading ? <Loader2 className="w-8 h-8 animate-spin text-muted-foreground" /> : isImageType(selected.fileType) && previewBlob ? <img src={previewBlob} alt="" className="max-h-56 w-full object-contain" /> : isPdfType(selected.fileType) && previewBlob ? <iframe title="PDF preview" src={previewBlob} className="w-full h-64 border-0 bg-background" /> : <p className="text-xs text-muted-foreground px-4 text-center">No in-app preview. Use Download.</p>}
                     </div>
-                    <div className="flex justify-between gap-2">
-                      <dt className="text-muted-foreground">Linked</dt>
-                      <dd className="text-foreground text-right break-words max-w-[200px]">{linkedCell(selected)}</dd>
-                    </div>
-                    {selected.tags ? (
-                      <div className="flex justify-between gap-2">
-                        <dt className="text-muted-foreground">Tags</dt>
-                        <dd className="text-foreground text-right break-words max-w-[200px]">{selected.tags}</dd>
+                  </div>
+                </aside>
+                {/* Mobile preview dialog */}
+                <Dialog open={mobilePreviewOpen} onOpenChange={(o) => { setMobilePreviewOpen(o); if (!o) setSelected(null); }}>
+                  <DialogContent className="w-[95vw] max-w-md max-h-[85vh] overflow-y-auto lg:hidden" aria-describedby={undefined}>
+                    <DialogHeader>
+                      <DialogTitle className="text-sm font-semibold break-words pr-6">{selected.originalName}</DialogTitle>
+                    </DialogHeader>
+                    <div className="space-y-3">
+                      <p className="text-xs text-muted-foreground">{fileKindLabel(selected.fileType)} · {formatBytes(selected.fileSize)}</p>
+                      <dl className="text-xs space-y-2 border-t border-border pt-3">
+                        <div className="flex justify-between gap-2"><dt className="text-muted-foreground">Uploaded by</dt><dd className="text-foreground text-right">{selected.uploadedByName || '—'}</dd></div>
+                        <div className="flex justify-between gap-2"><dt className="text-muted-foreground">Date</dt><dd className="text-foreground text-right">{selected.createdAt ? new Date(selected.createdAt).toLocaleDateString() : '—'}</dd></div>
+                        <div className="flex justify-between gap-2"><dt className="text-muted-foreground">Linked</dt><dd className="text-foreground text-right">{linkedCell(selected)}</dd></div>
+                        {selected.tags && <div className="flex justify-between gap-2"><dt className="text-muted-foreground">Tags</dt><dd className="text-foreground text-right">{selected.tags}</dd></div>}
+                        {selected.folderName && <div className="flex justify-between gap-2"><dt className="text-muted-foreground">Folder</dt><dd className="text-foreground text-right">{selected.folderName}</dd></div>}
+                      </dl>
+                      <div className="rounded-xl border border-border bg-background/50 min-h-[140px] flex items-center justify-center overflow-hidden">
+                        {previewLoading ? <Loader2 className="w-8 h-8 animate-spin text-muted-foreground" /> : isImageType(selected.fileType) && previewBlob ? <img src={previewBlob} alt="" className="max-h-48 w-full object-contain" /> : isPdfType(selected.fileType) && previewBlob ? <iframe title="PDF preview" src={previewBlob} className="w-full h-56 border-0 bg-background" /> : <p className="text-xs text-muted-foreground px-4 text-center">No in-app preview. Use Download.</p>}
                       </div>
-                    ) : null}
-                  </dl>
-                  <div className="flex flex-wrap gap-2 pt-2">
-                    <Button size="sm" variant="outline" className="gap-1" onClick={() => downloadFile(selected)}>
-                      <Download className="w-3.5 h-3.5" />
-                      Download
-                    </Button>
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      className="gap-1"
-                      onClick={() => {
-                        if (previewBlob) window.open(previewBlob, '_blank', 'noopener,noreferrer');
-                        else downloadFile(selected);
-                      }}
-                    >
-                      <Eye className="w-3.5 h-3.5" />
-                      Open
-                    </Button>
-                  </div>
-                  <div className="rounded-xl border border-border bg-background/50 min-h-[200px] flex items-center justify-center overflow-hidden">
-                    {previewLoading ? (
-                      <Loader2 className="w-8 h-8 animate-spin text-muted-foreground" />
-                    ) : isImageType(selected.fileType) && previewBlob ? (
-                      <img src={previewBlob} alt="" className="max-h-64 w-full object-contain" />
-                    ) : isPdfType(selected.fileType) && previewBlob ? (
-                      <iframe title="PDF preview" src={previewBlob} className="w-full h-72 border-0 bg-background" />
-                    ) : (
-                      <p className="text-xs text-muted-foreground px-4 text-center">No in-app preview for this type. Use Download.</p>
-                    )}
-                  </div>
-                </div>
-              </aside>
+                      <div className="flex gap-2 pt-1">
+                        <Button size="sm" variant="outline" className="gap-1 flex-1" onClick={() => downloadFile(selected)}><Download className="w-3.5 h-3.5" />Download</Button>
+                        <Button size="sm" variant="outline" className="gap-1 flex-1" onClick={() => { if (previewBlob) window.open(previewBlob, '_blank', 'noopener,noreferrer'); else downloadFile(selected); }}><Eye className="w-3.5 h-3.5" />Open</Button>
+                        <Button size="sm" variant="destructive" onClick={() => { setMobilePreviewOpen(false); openDeleteDialog(selected); }}><Trash2 className="w-3.5 h-3.5" /></Button>
+                      </div>
+                    </div>
+                  </DialogContent>
+                </Dialog>
+              </>
             ) : null}
           </div>
         </div>

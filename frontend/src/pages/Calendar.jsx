@@ -362,7 +362,7 @@ const Calendar = () => {
             {/* Calendar days */}
             {calendarDays.map((date, index) => {
               if (!date) {
-                return <div key={`empty-${index}`} className="aspect-square sm:aspect-auto sm:min-h-[80px]" />;
+                return <div key={`empty-${index}`} className="aspect-square sm:aspect-auto sm:min-h-[120px]" />;
               }
 
               const totals = getDateTotals(date);
@@ -380,7 +380,7 @@ const Calendar = () => {
                   key={date.toISOString()}
                   onClick={() => setSelectedDate(date)}
                   className={cn(
-                    "aspect-square sm:aspect-auto sm:min-h-[80px] p-1 sm:p-2 rounded-lg border transition-all text-left",
+                    "aspect-square sm:aspect-auto sm:min-h-[120px] p-1 sm:p-2 rounded-lg border transition-all text-left",
                     "hover:bg-secondary/50 focus:outline-none focus:ring-2 focus:ring-primary",
                     isToday(date) && "border-primary border-2",
                     isSelected && "bg-primary/10 border-primary",

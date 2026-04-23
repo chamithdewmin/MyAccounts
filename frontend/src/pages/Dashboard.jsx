@@ -3,6 +3,7 @@ import {
   BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer,
   Cell, PieChart, Pie
 } from "recharts";
+import { Link } from "react-router-dom";
 import { useFinance } from "@/contexts/FinanceContext";
 import { useAuth } from "@/contexts/AuthContext";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -10,6 +11,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/components/ui/use-toast";
 import { useIsMobileLayout } from "@/hooks/useIsMobileLayout";
+import { api } from "@/lib/api";
 
 // ─── THEME-AWARE COLORS ───────────────────────────────────────────────────────
 const getThemeColors = () => {
@@ -306,6 +308,28 @@ export default function FinanceDashboard() {
   const [transferAmount, setTransferAmount] = useState("");
   const [themeKey, setThemeKey] = useState(0);
   const isMobileLayout = useIsMobileLayout();
+  const [upcomingReminders, setUpcomingReminders] = useState([]);
+  const [upcomingEvents, setUpcomingEvents] = useState([]);
+
+  useEffect(() => {
+    api.reminders.list().then(res => {
+      const today = new Date(); today.setHours(0, 0, 0, 0);
+      const sorted = (Array.isArray(res) ? res : [])
+        .filter(r => r.reminderDate && new Date(r.reminderDate) >= today)
+        .sort((a, b) => new Date(a.reminderDate) - new Date(b.reminderDate))
+        .slice(0, 5);
+      setUpcomingReminders(sorted);
+    }).catch(() => {});
+
+    api.calendarEvents.list().then(res => {
+      const today = new Date(); today.setHours(0, 0, 0, 0);
+      const sorted = (Array.isArray(res) ? res : [])
+        .filter(e => e.date && new Date(e.date) >= today)
+        .sort((a, b) => new Date(a.date) - new Date(b.date))
+        .slice(0, 5);
+      setUpcomingEvents(sorted);
+    }).catch(() => {});
+  }, []);
 
   useEffect(() => {
     document.body.classList.add("dashboard-page");
@@ -789,68 +813,116 @@ export default function FinanceDashboard() {
             </ResponsiveContainer>
           </div>
 
-          {/* BOTTOM ROW */}
-          <div
-            style={{
-              display: "grid",
-              gridTemplateColumns: isMobileLayout ? "1fr" : "1fr 1fr",
-              gap: 16,
-            }}
-          >
-            {/* ACTIVITY */}
-            <div style={{ ...s.card, minHeight: 300 }}>
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
-                <h3 style={{ color: tc.text, fontSize: 14, fontWeight: 700, margin: 0 }}>Activity</h3>
-                <div style={{ display: "flex", gap: 12 }}>
-                  <div style={{ display: "flex", alignItems: "center", gap: 5 }}>
-                    <div style={{ width: 7, height: 7, borderRadius: "50%", background: "#0e5cff" }} />
-                    <span style={{ color: tc.muted, fontSize: 11 }}>Earning</span>
+          {/* UPCOMING — Reminders & Events */}
+          <div style={{ display: "grid", gridTemplateColumns: isMobileLayout ? "1fr" : "1fr 1fr", gap: 16 }}>
+
+            {/* UPCOMING REMINDERS */}
+            <div style={{ ...s.card, minHeight: 260 }}>
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 16 }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                  <div style={{ width: 28, height: 28, borderRadius: 8, background: "rgba(168,85,247,0.15)", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                    <span style={{ fontSize: 14 }}>🔔</span>
                   </div>
-                  <div style={{ display: "flex", alignItems: "center", gap: 5 }}>
-                    <div style={{ width: 7, height: 7, borderRadius: "50%", background: "#22d3ee" }} />
-                    <span style={{ color: tc.muted, fontSize: 11 }}>Spent</span>
-                  </div>
+                  <h3 style={{ color: tc.text, fontSize: 14, fontWeight: 700, margin: 0 }}>Upcoming Reminders</h3>
                 </div>
+                <Link to="/reminders" style={{ color: "#0e5cff", fontSize: 12, textDecoration: "none", fontWeight: 500 }}>View all →</Link>
               </div>
-              <ResponsiveContainer width="100%" height={220}>
-                <BarChart data={activityData} barGap={2} barCategoryGap={14}>
-                  <XAxis dataKey="day" axisLine={false} tickLine={false} tick={{ fill: tc.muted, fontSize: 11 }} />
-                  <YAxis axisLine={false} tickLine={false} tick={{ fill: tc.muted, fontSize: 11 }} tickFormatter={v => `${(v / 1000).toFixed(0)}k`} width={40} />
-                  <Tooltip content={<CustomTooltip currency={settings.currency || ''} />} cursor={{ fill: "rgba(255,255,255,0.03)" }} />
-                  <Bar dataKey="earning" radius={[4, 4, 0, 0]} fill="#0e5cff" />
-                  <Bar dataKey="spent" radius={[4, 4, 0, 0]} fill="#22d3ee" opacity={0.7} />
-                </BarChart>
-              </ResponsiveContainer>
+              {upcomingReminders.length === 0 ? (
+                <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "32px 0", gap: 8 }}>
+                  <span style={{ fontSize: 28 }}>🔕</span>
+                  <p style={{ color: tc.muted, fontSize: 12, margin: 0, textAlign: "center" }}>No upcoming reminders</p>
+                  <Link to="/reminders" style={{ color: "#0e5cff", fontSize: 12 }}>Add a reminder</Link>
+                </div>
+              ) : (
+                <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+                  {upcomingReminders.map((r, i) => {
+                    const date = new Date(r.reminderDate);
+                    const today = new Date(); today.setHours(0,0,0,0);
+                    const diffDays = Math.ceil((date - today) / (1000 * 60 * 60 * 24));
+                    const isToday = diffDays === 0;
+                    const isTomorrow = diffDays === 1;
+                    const label = isToday ? "Today" : isTomorrow ? "Tomorrow" : date.toLocaleDateString(undefined, { month: "short", day: "numeric" });
+                    return (
+                      <div key={r.id || i} style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 12px", borderRadius: 10, background: tc.bg, border: `1px solid ${tc.border}` }}>
+                        <div style={{ width: 36, height: 36, borderRadius: 8, background: isToday ? "rgba(239,68,68,0.15)" : "rgba(168,85,247,0.12)", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                          <span style={{ fontSize: 9, fontWeight: 700, color: isToday ? "#ef4444" : "#a855f7", textTransform: "uppercase", letterSpacing: "0.05em", lineHeight: 1 }}>
+                            {date.toLocaleDateString(undefined, { month: "short" })}
+                          </span>
+                          <span style={{ fontSize: 15, fontWeight: 800, color: isToday ? "#ef4444" : "#a855f7", lineHeight: 1.2 }}>
+                            {date.getDate()}
+                          </span>
+                        </div>
+                        <div style={{ flex: 1, minWidth: 0 }}>
+                          <div style={{ color: tc.text, fontSize: 13, fontWeight: 500, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{r.reason || "Reminder"}</div>
+                          <div style={{ color: tc.muted, fontSize: 11, marginTop: 1 }}>{r.smsContact || ""}</div>
+                        </div>
+                        <span style={{
+                          fontSize: 10, fontWeight: 700, padding: "2px 8px", borderRadius: 99,
+                          background: isToday ? "rgba(239,68,68,0.15)" : isTomorrow ? "rgba(234,179,8,0.15)" : "rgba(14,92,255,0.12)",
+                          color: isToday ? "#ef4444" : isTomorrow ? "#eab308" : "#0e5cff",
+                          flexShrink: 0,
+                        }}>{label}</span>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
             </div>
 
-            {/* PAYMENT */}
-            <div style={{ ...s.card, minHeight: 330 }}>
-              <h3 style={{ color: tc.text, fontSize: 14, fontWeight: 700, margin: "0 0 14px" }}>Payment</h3>
-              <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
-                {payments.length > 0 ? payments.map((p, i) => {
-                  return (
-                    <div key={i}>
-                      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 5 }}>
-                        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                          <div style={{ width: 32, height: 32, borderRadius: 8, background: tc.bg, border: `1px solid ${tc.border}`, display: "flex", alignItems: "center", justifyContent: "center" }}>
-                            {p.icon}
-                          </div>
-                          <span style={{ color: tc.text2, fontSize: 13, fontWeight: 500 }}>{p.label}</span>
-                        </div>
-                        <span style={{ color: tc.muted, fontSize: 11 }}>
-                          <span style={{ color: tc.text, fontWeight: 600 }}>{formatCurrency(p.spent)}</span>/{formatCurrency(p.total)}
-                        </span>
-                      </div>
-                      <div style={{ height: 3, background: tc.border, borderRadius: 99 }}>
-                        <div style={{ height: 3, background: p.color, borderRadius: 99, width: `${Math.min((p.spent / p.total) * 100, 100)}%` }} />
-                      </div>
-                    </div>
-                  );
-                }) : (
-                  <p style={{ color: tc.muted, fontSize: 12, textAlign: "center", margin: "20px 0" }}>No expense data available</p>
-                )}
+            {/* UPCOMING EVENTS */}
+            <div style={{ ...s.card, minHeight: 260 }}>
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 16 }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                  <div style={{ width: 28, height: 28, borderRadius: 8, background: "rgba(14,92,255,0.15)", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                    <span style={{ fontSize: 14 }}>📅</span>
+                  </div>
+                  <h3 style={{ color: tc.text, fontSize: 14, fontWeight: 700, margin: 0 }}>Upcoming Events</h3>
+                </div>
+                <Link to="/calendar" style={{ color: "#0e5cff", fontSize: 12, textDecoration: "none", fontWeight: 500 }}>View calendar →</Link>
               </div>
+              {upcomingEvents.length === 0 ? (
+                <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "32px 0", gap: 8 }}>
+                  <span style={{ fontSize: 28 }}>🗓️</span>
+                  <p style={{ color: tc.muted, fontSize: 12, margin: 0, textAlign: "center" }}>No upcoming events</p>
+                  <Link to="/calendar" style={{ color: "#0e5cff", fontSize: 12 }}>Add an event</Link>
+                </div>
+              ) : (
+                <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+                  {upcomingEvents.map((e, i) => {
+                    const date = new Date(e.date);
+                    const today = new Date(); today.setHours(0,0,0,0);
+                    const diffDays = Math.ceil((date - today) / (1000 * 60 * 60 * 24));
+                    const isToday = diffDays === 0;
+                    const isTomorrow = diffDays === 1;
+                    const label = isToday ? "Today" : isTomorrow ? "Tomorrow" : date.toLocaleDateString(undefined, { month: "short", day: "numeric" });
+                    const timeStr = e.time ? e.time : "";
+                    return (
+                      <div key={e.id || i} style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 12px", borderRadius: 10, background: tc.bg, border: `1px solid ${tc.border}` }}>
+                        <div style={{ width: 36, height: 36, borderRadius: 8, background: isToday ? "rgba(34,197,94,0.15)" : "rgba(14,92,255,0.12)", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                          <span style={{ fontSize: 9, fontWeight: 700, color: isToday ? "#22c55e" : "#0e5cff", textTransform: "uppercase", letterSpacing: "0.05em", lineHeight: 1 }}>
+                            {date.toLocaleDateString(undefined, { month: "short" })}
+                          </span>
+                          <span style={{ fontSize: 15, fontWeight: 800, color: isToday ? "#22c55e" : "#0e5cff", lineHeight: 1.2 }}>
+                            {date.getDate()}
+                          </span>
+                        </div>
+                        <div style={{ flex: 1, minWidth: 0 }}>
+                          <div style={{ color: tc.text, fontSize: 13, fontWeight: 500, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{e.eventName || e.title || "Event"}</div>
+                          <div style={{ color: tc.muted, fontSize: 11, marginTop: 1 }}>{timeStr || (e.notes ? e.notes.slice(0, 40) : "")}</div>
+                        </div>
+                        <span style={{
+                          fontSize: 10, fontWeight: 700, padding: "2px 8px", borderRadius: 99,
+                          background: isToday ? "rgba(34,197,94,0.15)" : isTomorrow ? "rgba(234,179,8,0.15)" : "rgba(14,92,255,0.12)",
+                          color: isToday ? "#22c55e" : isTomorrow ? "#eab308" : "#0e5cff",
+                          flexShrink: 0,
+                        }}>{label}</span>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
             </div>
+
           </div>
         </div>
 

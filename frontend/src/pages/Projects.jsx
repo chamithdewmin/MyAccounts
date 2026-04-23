@@ -175,6 +175,7 @@ const Projects = () => {
             No projects yet. Create one to start your Kanban board.
           </div>
         ) : (
+          <>
           <div className="flex flex-col lg:flex-row lg:items-start gap-6">
             {/* Project cards grid */}
             <div className="min-w-0 flex-1 grid gap-4 sm:grid-cols-2">
@@ -459,6 +460,7 @@ const Projects = () => {
               </DialogContent>
             </Dialog>
           )}
+          </>
         )}
 
         <Dialog

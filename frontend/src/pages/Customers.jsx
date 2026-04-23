@@ -209,8 +209,64 @@ const Customers = () => {
             </button>
           </div>
 
-          {/* Table */}
-          <div className="overflow-x-auto overscroll-x-contain touch-pan-x">
+          {/* Mobile card list */}
+          <div className="flex flex-col divide-y divide-border md:hidden">
+            {pageRows.length === 0 ? (
+              <p className="px-4 py-8 text-center text-muted-foreground text-sm">No clients found</p>
+            ) : (
+              pageRows.map((customer, index) => (
+                <motion.div
+                  key={customer.id}
+                  initial={{ opacity: 0, y: 6 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: index * 0.02 }}
+                  className="flex items-center gap-3 px-4 py-3 hover:bg-secondary/30 transition-colors"
+                >
+                  {/* Avatar */}
+                  <div className="h-10 w-10 rounded-full bg-primary/20 flex items-center justify-center text-primary font-semibold text-sm ring-2 ring-border flex-shrink-0">
+                    {(customer.name || 'C').charAt(0).toUpperCase()}
+                  </div>
+
+                  {/* Info */}
+                  <div className="flex-1 min-w-0">
+                    <div className="text-sm font-medium text-foreground truncate">{customer.name}</div>
+                    {customer.email && (
+                      <div className="text-xs text-muted-foreground truncate">{customer.email}</div>
+                    )}
+                    {customer.phone && (
+                      <div className="text-xs text-muted-foreground">{customer.phone}</div>
+                    )}
+                    {customer.address && (
+                      <div className="text-xs text-muted-foreground truncate">{customer.address}</div>
+                    )}
+                  </div>
+
+                  {/* Actions */}
+                  <div className="flex items-center gap-1 flex-shrink-0 text-muted-foreground">
+                    <button
+                      type="button"
+                      onClick={() => openEdit(customer)}
+                      className="p-2 hover:text-foreground transition-colors rounded hover:bg-secondary"
+                      title="Edit"
+                    >
+                      <Pencil className="w-4 h-4" />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleDeleteClient(customer)}
+                      className="p-2 hover:text-destructive transition-colors rounded hover:bg-secondary"
+                      title="Delete"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  </div>
+                </motion.div>
+              ))
+            )}
+          </div>
+
+          {/* Desktop table */}
+          <div className="hidden md:block overflow-x-auto">
             <table className="w-full min-w-[720px] text-sm">
               <thead>
                 <tr className="border-b border-border text-muted-foreground text-xs uppercase tracking-wide">

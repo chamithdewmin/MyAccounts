@@ -47,7 +47,8 @@ const getColors = () => {
     activeAccent: isDark ? "#0e61fd" : "#ffffff",
     divider: isDark ? "#1e1e1e" : "#e1e1e1",
     scrollbarThumb: isDark ? "#333333" : "#c1c1c1",
-    scrollbarTrack: isDark ? "#1a1a1a" : "#f1f1f1",
+    /** Track transparent so only the thumb is visible (matches main sidebar bg). */
+    scrollbarTrack: "transparent",
   };
 };
 
@@ -826,7 +827,7 @@ export default function SidebarNew() {
           width: 2px;
         }
         .sidebar-nav-scroll::-webkit-scrollbar-track {
-          background: ${c.scrollbarTrack};
+          background: transparent;
           border-radius: 999px;
         }
         .sidebar-nav-scroll::-webkit-scrollbar-thumb {

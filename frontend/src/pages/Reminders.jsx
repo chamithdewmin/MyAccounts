@@ -174,6 +174,7 @@ const Reminders = () => {
             </Button>
           </motion.div>
         ) : (
+          <>
           {/* Mobile cards */}
           <div className="flex flex-col gap-3 md:hidden">
             {reminders.map((r) => {
@@ -300,6 +301,7 @@ const Reminders = () => {
               </table>
             </div>
           </div>
+          </>
         )}
       </div>
 

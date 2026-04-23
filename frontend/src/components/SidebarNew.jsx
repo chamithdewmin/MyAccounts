@@ -893,7 +893,7 @@ export default function SidebarNew() {
               />
               <span style={{ fontSize: 16, color: c.text, whiteSpace: "nowrap" }}>
                 <span style={{ fontWeight: 800 }}>Logozo</span>
-                <span style={{ fontWeight: 500 }}>POS</span>
+                <span style={{ fontWeight: 500 }}>Dev</span>
               </span>
             </a>
           )}

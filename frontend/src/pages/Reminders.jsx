@@ -174,7 +174,69 @@ const Reminders = () => {
             </Button>
           </motion.div>
         ) : (
-          <div className="bg-card border border-border rounded-lg overflow-hidden">
+          {/* Mobile cards */}
+          <div className="flex flex-col gap-3 md:hidden">
+            {reminders.map((r) => {
+              const item = getRefItem(r.type, r.referenceId);
+              const label = r.reason
+                ? r.reason
+                : r.type === 'income'
+                  ? (item?.clientName || 'Unknown') + ' - ' + (settings.currency || '') + ' ' + (item?.amount || 0).toLocaleString()
+                  : (item?.category || 'Expense') + ' - ' + (settings.currency || '') + ' ' + (item?.amount || 0).toLocaleString();
+              return (
+                <div key={r.id} className="bg-card border border-border rounded-xl p-4 flex flex-col gap-3">
+                  {/* Name + status */}
+                  <div className="flex items-start justify-between gap-2">
+                    <span className="text-sm font-medium text-foreground leading-snug">{label}</span>
+                    <span className={`text-xs px-2 py-1 rounded-full flex-shrink-0 ${r.status === 'sent' ? 'bg-green-500/20 text-green-600' : 'bg-amber-500/20 text-amber-600'}`}>
+                      {r.status || 'pending'}
+                    </span>
+                  </div>
+
+                  {/* Date + amount + contact */}
+                  <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-muted-foreground">
+                    {(r.reminderDate || '').slice(0, 10) && (
+                      <span>📅 {(r.reminderDate || '').slice(0, 10)}</span>
+                    )}
+                    {r.amount > 0 && (
+                      <span className="font-medium text-foreground">{settings?.currency || 'LKR'} {Number(r.amount).toLocaleString()}</span>
+                    )}
+                    {r.smsContact && (
+                      <span>{r.smsContact}</span>
+                    )}
+                  </div>
+
+                  {/* Actions */}
+                  <div className="flex items-center gap-2 flex-wrap border-t border-border pt-3">
+                    <Button
+                      size="sm"
+                      onClick={() => handleSendReminderNow(r)}
+                      disabled={!smsConfigured}
+                      className="flex-1"
+                    >
+                      <MessageSquare className="w-4 h-4 mr-1" />
+                      Remind
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => openRemindSms(r)}
+                      disabled={!smsConfigured}
+                      className="flex-1"
+                    >
+                      Edit & send
+                    </Button>
+                    <Button size="sm" variant="ghost" onClick={() => handleDeleteReminder(r.id)}>
+                      <Trash2 className="w-4 h-4 text-red-500" />
+                    </Button>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+
+          {/* Desktop table */}
+          <div className="hidden md:block bg-card border border-border rounded-lg overflow-hidden">
             <div className="overflow-x-auto">
               <table className="w-full">
                 <thead className="bg-secondary">

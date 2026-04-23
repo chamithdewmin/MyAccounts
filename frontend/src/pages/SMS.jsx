@@ -379,46 +379,40 @@ const SMS = () => {
               <p className="text-sm text-muted-foreground mb-4">
                 {clientsWithPhone.length} customer(s) with phone numbers. Select recipients for instant send.
               </p>
-              <div className="max-h-64 overflow-y-auto overflow-x-auto border border-border rounded-lg">
-                <table className="w-full min-w-[280px]">
-                  <thead className="bg-secondary sticky top-0">
-                    <tr>
-                      <th className="px-4 py-2 text-left">
+              <div className="max-h-64 overflow-y-auto border border-border rounded-lg">
+                {/* Select-all header */}
+                <div className="bg-secondary sticky top-0 flex items-center gap-3 px-4 py-2 border-b border-border">
+                  <input
+                    type="checkbox"
+                    checked={selectedIds.size === clientsWithPhone.length && clientsWithPhone.length > 0}
+                    onChange={selectAll}
+                    className="rounded flex-shrink-0"
+                  />
+                  <span className="text-sm font-medium">Select all</span>
+                </div>
+                {clientsWithPhone.length === 0 ? (
+                  <p className="px-4 py-8 text-center text-muted-foreground text-sm">
+                    No customers with phone numbers. Add phone numbers to your clients first.
+                  </p>
+                ) : (
+                  <div className="divide-y divide-border">
+                    {clientsWithPhone.map((c) => (
+                      <label
+                        key={c.id}
+                        className="flex items-center gap-3 px-4 py-3 hover:bg-secondary/30 cursor-pointer"
+                      >
                         <input
                           type="checkbox"
-                          checked={selectedIds.size === clientsWithPhone.length && clientsWithPhone.length > 0}
-                          onChange={selectAll}
-                          className="rounded"
+                          checked={selectedIds.has(c.id)}
+                          onChange={() => toggleSelect(c.id)}
+                          className="rounded flex-shrink-0"
                         />
-                      </th>
-                      <th className="px-4 py-2 text-left text-sm font-medium">Name</th>
-                      <th className="px-4 py-2 text-left text-sm font-medium">Phone</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {clientsWithPhone.map((c) => (
-                      <tr key={c.id} className="border-t border-border hover:bg-secondary/30">
-                        <td className="px-4 py-2">
-                          <input
-                            type="checkbox"
-                            checked={selectedIds.has(c.id)}
-                            onChange={() => toggleSelect(c.id)}
-                            className="rounded"
-                          />
-                        </td>
-                        <td className="px-4 py-2 text-sm">{c.name}</td>
-                        <td className="px-4 py-2 text-sm text-muted-foreground">{c.phone}</td>
-                      </tr>
+                        <span className="text-sm font-medium flex-1">{c.name}</span>
+                        <span className="text-sm text-muted-foreground">{c.phone}</span>
+                      </label>
                     ))}
-                    {clientsWithPhone.length === 0 && (
-                      <tr>
-                        <td colSpan={3} className="px-4 py-8 text-center text-muted-foreground">
-                          No customers with phone numbers. Add phone numbers to your clients first.
-                        </td>
-                      </tr>
-                    )}
-                  </tbody>
-                </table>
+                  </div>
+                )}
               </div>
 
               <div className="mt-4 space-y-2">
@@ -447,7 +441,48 @@ const SMS = () => {
             {scheduledJobs.length > 0 && (
               <div className="bg-card border border-border rounded-lg p-6">
                 <h2 className="text-lg font-semibold mb-4">Scheduled &amp; recent</h2>
-                <div className="overflow-x-auto border border-border rounded-lg">
+                {/* Mobile cards */}
+                <div className="flex flex-col gap-3 md:hidden">
+                  {[...scheduledJobs]
+                    .sort((a, b) => new Date(b.sendAt) - new Date(a.sendAt))
+                    .map((job) => (
+                      <div key={job.id} className="border border-border rounded-xl p-4 flex flex-col gap-2">
+                        <div className="flex items-center justify-between gap-2">
+                          <span className="text-xs font-medium text-foreground">
+                            {new Date(job.sendAt).toLocaleString(undefined, { dateStyle: 'medium', timeStyle: 'short' })}
+                          </span>
+                          <span className={`text-xs px-2 py-1 rounded-full capitalize font-medium ${
+                            job.status === 'sent' ? 'bg-green-500/20 text-green-500'
+                            : job.status === 'failed' ? 'bg-red-500/20 text-red-500'
+                            : 'bg-amber-500/20 text-amber-600'
+                          }`}>
+                            {job.status}
+                          </span>
+                        </div>
+                        <p className="text-sm text-muted-foreground line-clamp-2">{job.message}</p>
+                        <div className="flex items-center justify-between gap-2">
+                          <span className="text-xs text-muted-foreground">{job.clientIds?.length ?? 0} recipient(s)</span>
+                          {job.status === 'pending' && (
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="sm"
+                              className="text-destructive hover:text-destructive h-7 px-2"
+                              onClick={() => cancelScheduled(job.id)}
+                            >
+                              <Trash2 className="w-4 h-4 mr-1" /> Cancel
+                            </Button>
+                          )}
+                        </div>
+                        {job.error && (
+                          <p className="text-xs text-destructive">{job.error}</p>
+                        )}
+                      </div>
+                    ))}
+                </div>
+
+                {/* Desktop table */}
+                <div className="hidden md:block overflow-x-auto border border-border rounded-lg">
                   <table className="w-full text-sm">
                     <thead className="bg-secondary">
                       <tr>

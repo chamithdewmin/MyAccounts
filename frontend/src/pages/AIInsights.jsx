@@ -1,4 +1,9 @@
-import { Send, Trash2 } from 'lucide-react';
+import React, { useState, useRef, useEffect } from 'react';
+import { Helmet } from 'react-helmet';
+import { Sparkles, Loader2, Send, Trash2 } from 'lucide-react';
+import { useFinance } from '@/contexts/FinanceContext';
+import { api } from '@/lib/api';
+import { useToast } from '@/components/ui/use-toast';
 
 const QUICK_PROMPTS = [
   'What are my top expenses this month?',

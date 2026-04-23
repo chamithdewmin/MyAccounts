@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { Suspense } from 'react';
 import { Outlet } from 'react-router-dom';
 import Sidebar, { SidebarProvider, useSidebarState } from '@/components/Sidebar';
 import Topbar from '@/components/Topbar';
@@ -31,7 +31,9 @@ const MainContent = () => {
         ].join(' ')}
         style={{ marginTop: isMobile ? 68 : 60 }}
       >
-        <Outlet />
+        <Suspense fallback={null}>
+          <Outlet />
+        </Suspense>
       </main>
     </div>
   );

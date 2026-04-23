@@ -1,4 +1,4 @@
-import React, { useEffect, lazy, Suspense } from 'react';
+import React, { useEffect, lazy } from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { useAuth } from './contexts/AuthContext';
 // Auth pages — loaded immediately (needed before the app shell)
@@ -34,18 +34,6 @@ const FileManager  = lazy(() => import('./features/files'));
 const Projects     = lazy(() => import('./features/projects'));
 const ProjectBoard = lazy(() => import('./features/projects/components/ProjectBoard'));
 
-// Minimal page skeleton shown while a lazy page chunk loads
-const PageSkeleton = () => (
-  <div className="page-y space-y-4">
-    <div className="h-8 w-48 rounded-lg bg-secondary/60 animate-pulse" />
-    <div className="h-4 w-72 rounded bg-secondary/40 animate-pulse" />
-    <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4 mt-2">
-      {[1,2,3,4].map(i => <div key={i} className="h-24 rounded-xl bg-secondary/60 animate-pulse" />)}
-    </div>
-    <div className="h-64 rounded-xl bg-secondary/40 animate-pulse" />
-  </div>
-);
-
 const ADMIN_EMAIL = 'logozodev@gmail.com';
 const isAdminUser = (u) =>
   String(u?.role || '').toLowerCase() === 'admin' ||
@@ -78,7 +66,6 @@ function App() {
   }
 
   return (
-    <Suspense fallback={<PageSkeleton />}>
     <Routes>
       <Route path="/login" element={!isAuthenticated ? <Login /> : <Navigate to="/dashboard" />} />
       <Route path="/forgot-password" element={!isAuthenticated ? <ForgotPassword /> : <Navigate to="/dashboard" />} />
@@ -114,7 +101,6 @@ function App() {
         <Route path="backup-restore" element={isAdminUser(user) ? <BackupRestore /> : <Navigate to="/dashboard" replace />} />
       </Route>
     </Routes>
-    </Suspense>
   );
 }
 

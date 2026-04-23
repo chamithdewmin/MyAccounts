@@ -2,6 +2,7 @@ import React, { useMemo, useState } from 'react';
 import { Helmet } from 'react-helmet';
 import { motion } from 'framer-motion';
 import { Download, Upload, RefreshCw, Plus, DollarSign, Repeat, PieChart, Pencil, Trash2, Loader2 } from 'lucide-react';
+import PaymentMethodBadge from '@/components/PaymentMethodBadge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/components/ui/use-toast';
@@ -407,7 +408,7 @@ const Inventory = () => {
 
                 {/* Payment method + recurring + receipt */}
                 <div className="flex items-center gap-2 text-xs text-muted-foreground flex-wrap">
-                  <span className="capitalize">{(exp.paymentMethod || 'cash').replace(/_/g, ' ')}</span>
+                  <PaymentMethodBadge method={exp.paymentMethod || 'cash'} />
                   {exp.isRecurring && (
                     <span className="bg-blue-500/15 text-blue-400 px-2 py-0.5 rounded-full">Recurring</span>
                   )}
@@ -489,8 +490,8 @@ const Inventory = () => {
                         })}
                       </td>
                       <td className="px-4 py-3 text-sm">{exp.category}</td>
-                      <td className="px-4 py-3 text-sm capitalize">
-                        {(exp.paymentMethod || 'cash').replace(/_/g, ' ')}
+                      <td className="px-4 py-3">
+                        <PaymentMethodBadge method={exp.paymentMethod || 'cash'} />
                       </td>
                       <td className="px-4 py-3 text-sm">
                         {exp.isRecurring ? 'Yes' : 'No'}

@@ -95,7 +95,7 @@ const AIInsights = () => {
         <meta name="description" content="AI-powered financial analysis, suggestions, and Q&A from your data" />
       </Helmet>
 
-      <div className="page-y-sm min-w-0 flex flex-col" style={{ height: 'calc(100vh - 5rem)' }}>
+      <div className="page-y-sm min-w-0 flex flex-col gap-0">
         {/* Header */}
         <div className="flex items-center justify-between gap-3 mb-4 flex-shrink-0">
           <div className="flex items-center gap-3">
@@ -132,7 +132,7 @@ const AIInsights = () => {
         </div>
 
         {/* Chat window */}
-        <div className="flex-1 min-h-0 bg-card border border-border rounded-2xl flex flex-col overflow-hidden shadow-sm">
+        <div className="bg-card border border-border rounded-2xl flex flex-col overflow-hidden shadow-sm" style={{ minHeight: '500px', height: 'calc(100vh - 14rem)' }}>
           {/* Messages */}
           <div ref={threadRef} className="flex-1 min-h-0 overflow-y-auto p-4 sm:p-5 space-y-4">
 

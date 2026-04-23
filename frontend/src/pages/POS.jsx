@@ -2,6 +2,7 @@ import React, { useMemo, useRef, useState } from 'react';
 import { Helmet } from 'react-helmet';
 import { motion } from 'framer-motion';
 import { Plus, Search, DollarSign, Wallet, CreditCard, Download, RefreshCw, Pencil, Trash2 } from 'lucide-react';
+import PaymentMethodBadge from '@/components/PaymentMethodBadge';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/components/ui/use-toast';
@@ -393,9 +394,7 @@ const POS = () => {
                   <span className="text-base font-semibold text-green-500">
                     +{settings.currency} {income.amount.toLocaleString()}
                   </span>
-                  <span className="text-xs capitalize bg-secondary px-2.5 py-1 rounded-full text-muted-foreground">
-                    {income.paymentMethod}
-                  </span>
+                  <PaymentMethodBadge method={income.paymentMethod} />
                 </div>
 
                 {/* Client + service */}
@@ -469,7 +468,7 @@ const POS = () => {
                       </td>
                       <td className="px-4 py-3 text-sm">{income.clientName || '—'}</td>
                       <td className="px-4 py-3 text-sm">{income.serviceType || '—'}</td>
-                      <td className="px-4 py-3 text-sm capitalize">{income.paymentMethod}</td>
+                      <td className="px-4 py-3"><PaymentMethodBadge method={income.paymentMethod} /></td>
                       <td className="px-4 py-3 text-sm font-semibold text-right">
                         {settings.currency} {income.amount.toLocaleString()}
                       </td>

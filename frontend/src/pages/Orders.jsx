@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Helmet } from 'react-helmet';
 import { motion } from 'framer-motion';
 import { Search, Plus, Download, RefreshCw, Pencil, Trash2, Eye, Printer, Loader2 } from 'lucide-react';
+import PaymentMethodBadge from '@/components/PaymentMethodBadge';
 import { useFinance } from '@/contexts/FinanceContext';
 import { api } from '@/lib/api';
 import { Input } from '@/components/ui/input';
@@ -467,7 +468,7 @@ const Orders = () => {
                   {settings.currency} {Number(order.total || 0).toLocaleString()}
                 </span>
                 <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                  <span className="capitalize">{order.paymentMethod}</span>
+                  <PaymentMethodBadge method={order.paymentMethod} />
                   {Number(order.discountPercentage || 0) > 0 && (
                     <span className="bg-secondary px-1.5 py-0.5 rounded">{order.discountPercentage}% off</span>
                   )}
@@ -567,7 +568,7 @@ const Orders = () => {
                     <td className="px-4 py-3 text-sm font-semibold text-primary">
                       {settings.currency} {Number(order.total || 0).toLocaleString()}
                     </td>
-                    <td className="px-4 py-3 text-sm capitalize">{order.paymentMethod}</td>
+                    <td className="px-4 py-3"><PaymentMethodBadge method={order.paymentMethod} /></td>
                     <td className="px-4 py-3">
                       <span className={`px-2 py-1 rounded-full text-xs font-semibold ${
                         order.status === 'paid'

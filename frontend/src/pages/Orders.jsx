@@ -437,8 +437,9 @@ const Orders = () => {
 
         {dataLoading && <SkeletonTable rows={6} cols={5} />}
 
-        {/* Mobile card list */}
-        {!dataLoading && <div className="flex flex-col gap-3 md:hidden">
+        {/* Mobile + Desktop views */}
+        {!dataLoading && <>
+        <div className="flex flex-col gap-3 md:hidden">
           {filteredOrders.map((order, index) => (
             <motion.div
               key={order.id}
@@ -639,7 +640,8 @@ const Orders = () => {
               </tbody>
             </table>
           </div>
-        </div>}
+        </div>
+        </>}
 
         {!dataLoading && filteredOrders.length === 0 && (
           <div className="text-center py-12">

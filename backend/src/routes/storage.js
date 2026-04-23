@@ -96,7 +96,7 @@ const logsBytesSqlUser = `
   WHERE la.user_id = $1
 `;
 
-router.get('/overview', async (req, res) => {
+router.get('/overview', async (req, res, next) => {
   try {
     const sessionUserId = req.user?.id;
     if (sessionUserId == null) {
@@ -142,13 +142,7 @@ router.get('/overview', async (req, res) => {
       logsRowCount,
       logsScope: admin ? 'system' : 'account',
     });
-  } catch (err) {
-    console.error('[storage/overview]', err);
-    res.status(500).json({
-      error: 'Could not load storage overview',
-      detail: process.env.NODE_ENV !== 'production' ? String(err?.message || err) : undefined,
-    });
-  }
+  } catch (err) { next(err); }
 });
 
 export default router;

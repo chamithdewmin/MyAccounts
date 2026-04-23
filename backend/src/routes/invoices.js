@@ -79,7 +79,7 @@ const toInvoice = (row) => {
   };
 };
 
-router.get('/', async (req, res) => {
+router.get('/', async (req, res, next) => {
   try {
     const uid = req.user.dataUserId;
     const { rows } = await pool.query(
@@ -90,26 +90,20 @@ router.get('/', async (req, res) => {
       [uid],
     );
     res.json(rows.map(toInvoice));
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: 'Server error' });
-  }
+  } catch (err) { next(err); }
 });
 
-router.get('/:id', async (req, res) => {
+router.get('/:id', async (req, res, next) => {
   try {
     const uid = req.user.dataUserId;
     const { id } = req.params;
     const { rows } = await pool.query('SELECT * FROM invoices WHERE (id = $1 OR invoice_number = $1) AND user_id = $2', [id, uid]);
     if (!rows[0]) return res.status(404).json({ error: 'Invoice not found' });
     res.json(toInvoice(rows[0]));
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: 'Server error' });
-  }
+  } catch (err) { next(err); }
 });
 
-router.post('/', async (req, res) => {
+router.post('/', async (req, res, next) => {
   try {
     const uid = req.user.dataUserId;
     const email = req.user.email || null;
@@ -175,14 +169,10 @@ router.post('/', async (req, res) => {
     );
     const { rows } = await pool.query('SELECT * FROM invoices WHERE id = $1', [id]);
     res.status(201).json(toInvoice(rows[0]));
-  } catch (err) {
-    console.error('[invoices POST]', err);
-    const msg = process.env.NODE_ENV === 'development' ? err.message : 'Server error';
-    res.status(500).json({ error: msg });
-  }
+  } catch (err) { next(err); }
 });
 
-router.put('/:id', async (req, res) => {
+router.put('/:id', async (req, res, next) => {
   try {
     const uid = req.user.dataUserId;
     const { id } = req.params;
@@ -261,14 +251,10 @@ router.put('/:id', async (req, res) => {
 
     if (!rows[0]) return res.status(404).json({ error: 'Not found' });
     res.json(toInvoice(rows[0]));
-  } catch (err) {
-    console.error('[invoices PUT]', err);
-    const msg = process.env.NODE_ENV === 'development' ? err.message : 'Server error';
-    res.status(500).json({ error: msg });
-  }
+  } catch (err) { next(err); }
 });
 
-router.patch('/:id/status', async (req, res) => {
+router.patch('/:id/status', async (req, res, next) => {
   try {
     const uid = req.user.dataUserId;
     const { id } = req.params;
@@ -277,22 +263,16 @@ router.patch('/:id/status', async (req, res) => {
     const { rows } = await pool.query('SELECT * FROM invoices WHERE id = $1 AND user_id = $2', [id, uid]);
     if (!rows[0]) return res.status(404).json({ error: 'Not found' });
     res.json(toInvoice(rows[0]));
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: 'Server error' });
-  }
+  } catch (err) { next(err); }
 });
 
-router.delete('/:id', async (req, res) => {
+router.delete('/:id', async (req, res, next) => {
   try {
     const uid = req.user.dataUserId;
     const { rowCount } = await pool.query('DELETE FROM invoices WHERE id = $1 AND user_id = $2', [req.params.id, uid]);
     if (rowCount === 0) return res.status(404).json({ error: 'Not found' });
     res.json({ success: true });
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: 'Server error' });
-  }
+  } catch (err) { next(err); }
 });
 
 export default router;

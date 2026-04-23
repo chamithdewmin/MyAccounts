@@ -5,7 +5,7 @@ import { authMiddleware } from '../middleware/auth.js';
 const router = express.Router();
 router.use(authMiddleware);
 
-router.get('/', async (req, res) => {
+router.get('/', async (req, res, next) => {
   try {
     const uid = req.user?.dataUserId;
     if (!uid) return res.status(401).json({ error: 'Unauthorized' });
@@ -41,13 +41,10 @@ router.get('/', async (req, res) => {
       sentAt: r.sent_at,
       createdAt: r.created_at,
     })));
-  } catch (err) {
-    console.error('[reminders GET]', err);
-    res.status(500).json({ error: 'Server error' });
-  }
+  } catch (err) { next(err); }
 });
 
-router.post('/', async (req, res) => {
+router.post('/', async (req, res, next) => {
   try {
     const uid = req.user?.dataUserId;
     if (!uid) return res.status(401).json({ error: 'Unauthorized' });
@@ -100,22 +97,16 @@ router.post('/', async (req, res) => {
       message: message || '',
       status: 'pending',
     });
-  } catch (err) {
-    console.error('[reminders POST]', err);
-    res.status(500).json({ error: err.code === '42P01' || err.code === '42703' ? 'Reminders not available yet. Please restart the server.' : 'Server error' });
-  }
+  } catch (err) { next(err); }
 });
 
-router.delete('/:id', async (req, res) => {
+router.delete('/:id', async (req, res, next) => {
   try {
     const uid = req.user.dataUserId;
     const { rowCount } = await pool.query('DELETE FROM reminders WHERE id = $1 AND user_id = $2', [req.params.id, uid]);
     if (rowCount === 0) return res.status(404).json({ error: 'Reminder not found' });
     res.json({ success: true });
-  } catch (err) {
-    console.error('[reminders DELETE]', err);
-    res.status(500).json({ error: 'Server error' });
-  }
+  } catch (err) { next(err); }
 });
 
 export default router;

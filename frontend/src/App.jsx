@@ -4,35 +4,35 @@ import { useAuth } from './contexts/AuthContext';
 // Auth pages — loaded immediately (needed before the app shell)
 import Login from './pages/Login';
 import ForgotPassword from './pages/ForgotPassword';
-import Layout from './components/Layout';
+import Layout from './shared/components/layout/Layout';
 
-// All other pages are lazy-loaded — only downloaded when the user navigates there
-const POS = lazy(() => import('./pages/POS'));
-const Inventory = lazy(() => import('./pages/Inventory'));
-const Orders = lazy(() => import('./pages/Orders'));
-const Estimates = lazy(() => import('./pages/Estimates'));
-const Customers = lazy(() => import('./pages/Customers'));
-const ReportOverview = lazy(() => import('./pages/reports/ReportOverview'));
-const ReportIncome = lazy(() => import('./pages/reports/ReportIncome'));
-const ReportExpense = lazy(() => import('./pages/reports/ReportExpense'));
-const BalanceSheet = lazy(() => import('./pages/reports/BalanceSheet'));
-const ReportProfitLoss = lazy(() => import('./pages/reports/ReportProfitLoss'));
-const ReportCashFlow = lazy(() => import('./pages/reports/ReportCashFlow'));
-const StorageOverview = lazy(() => import('./pages/reports/StorageOverview'));
-const CashFlow = lazy(() => import('./pages/CashFlow'));
-const Settings = lazy(() => import('./pages/Settings'));
-const Profile = lazy(() => import('./pages/Profile'));
-const Users = lazy(() => import('./pages/Users'));
-const SMS = lazy(() => import('./pages/SMS'));
-const Reminders = lazy(() => import('./pages/Reminders'));
-const AIInsights = lazy(() => import('./pages/AIInsights'));
-const Dashboard = lazy(() => import('./pages/Dashboard'));
-const Calendar = lazy(() => import('./pages/Calendar'));
-const BackupRestore = lazy(() => import('./pages/BackupRestore'));
-const LoginActivity = lazy(() => import('./pages/LoginActivity'));
-const FileManager = lazy(() => import('./pages/FileManager'));
-const Projects = lazy(() => import('./pages/Projects'));
-const ProjectBoard = lazy(() => import('./pages/ProjectBoard'));
+// Feature pages — lazy-loaded, each lives in features/<name>/index.jsx
+const Income      = lazy(() => import('./features/income'));
+const Expenses    = lazy(() => import('./features/expenses'));
+const Invoices    = lazy(() => import('./features/invoices'));
+const Estimates   = lazy(() => import('./features/estimates'));
+const Customers   = lazy(() => import('./features/customers'));
+const ReportOverview  = lazy(() => import('./features/reports'));
+const ReportIncome    = lazy(() => import('./features/reports/components/ReportIncome'));
+const ReportExpense   = lazy(() => import('./features/reports/components/ReportExpense'));
+const BalanceSheet    = lazy(() => import('./features/reports/components/BalanceSheet'));
+const ReportProfitLoss= lazy(() => import('./features/reports/components/ReportProfitLoss'));
+const ReportCashFlow  = lazy(() => import('./features/reports/components/ReportCashFlow'));
+const StorageOverview = lazy(() => import('./features/reports/components/StorageOverview'));
+const CashFlow     = lazy(() => import('./features/cash-flow'));
+const Settings     = lazy(() => import('./features/settings'));
+const Profile      = lazy(() => import('./pages/Profile'));
+const Users        = lazy(() => import('./features/users'));
+const SMS          = lazy(() => import('./features/sms'));
+const Reminders    = lazy(() => import('./features/reminders'));
+const AIInsights   = lazy(() => import('./features/ai-insights'));
+const Dashboard    = lazy(() => import('./features/dashboard'));
+const Calendar     = lazy(() => import('./features/calendar'));
+const BackupRestore= lazy(() => import('./features/backup'));
+const LoginActivity= lazy(() => import('./features/login-activity'));
+const FileManager  = lazy(() => import('./features/files'));
+const Projects     = lazy(() => import('./features/projects'));
+const ProjectBoard = lazy(() => import('./features/projects/components/ProjectBoard'));
 
 // Minimal page skeleton shown while a lazy page chunk loads
 const PageSkeleton = () => (
@@ -86,9 +86,9 @@ function App() {
         <Route index element={<Navigate to="/dashboard" />} />
         <Route path="dashboard" element={<Dashboard />} />
         <Route path="ai-insights" element={<AIInsights />} />
-        <Route path="income" element={<POS />} />
-        <Route path="expenses" element={<Inventory />} />
-        <Route path="invoices" element={<Orders />} />
+        <Route path="income" element={<Income />} />
+        <Route path="expenses" element={<Expenses />} />
+        <Route path="invoices" element={<Invoices />} />
         <Route path="estimates" element={<Estimates />} />
         <Route path="clients" element={<Customers />} />
         <Route path="projects" element={<Projects />} />

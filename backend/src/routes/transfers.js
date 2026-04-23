@@ -5,7 +5,7 @@ import { authMiddleware } from '../middleware/auth.js';
 const router = express.Router();
 router.use(authMiddleware);
 
-router.get('/', async (req, res) => {
+router.get('/', async (req, res, next) => {
   try {
     const uid = req.user.dataUserId;
     const { rows } = await pool.query(
@@ -21,13 +21,10 @@ router.get('/', async (req, res) => {
       notes: r.notes || '',
       createdAt: r.created_at,
     })));
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: 'Server error' });
-  }
+  } catch (err) { next(err); }
 });
 
-router.post('/', async (req, res) => {
+router.post('/', async (req, res, next) => {
   try {
     const uid = req.user.dataUserId;
     const { fromAccount, toAccount, amount, date, notes } = req.body;
@@ -55,22 +52,16 @@ router.post('/', async (req, res) => {
       date: d,
       notes: notes || '',
     });
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: 'Server error' });
-  }
+  } catch (err) { next(err); }
 });
 
-router.delete('/:id', async (req, res) => {
+router.delete('/:id', async (req, res, next) => {
   try {
     const uid = req.user.dataUserId;
     const { rowCount } = await pool.query('DELETE FROM transfers WHERE id = $1 AND user_id = $2', [req.params.id, uid]);
     if (rowCount === 0) return res.status(404).json({ error: 'Transfer not found' });
     res.json({ success: true });
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: 'Server error' });
-  }
+  } catch (err) { next(err); }
 });
 
 export default router;

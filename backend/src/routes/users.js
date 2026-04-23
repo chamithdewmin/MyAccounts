@@ -13,19 +13,16 @@ router.use((req, res, next) => {
   next();
 });
 
-router.get('/', async (req, res) => {
+router.get('/', async (req, res, next) => {
   try {
     const { rows } = await pool.query(
       'SELECT id, email, name, role, created_at, COALESCE(is_blocked, false) AS is_blocked FROM users ORDER BY created_at DESC'
     );
     res.json(rows);
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: 'Server error' });
-  }
+  } catch (err) { next(err); }
 });
 
-router.post('/', async (req, res) => {
+router.post('/', async (req, res, next) => {
   try {
     const { email, password, name, role } = req.body;
     if (!email || !password || !name) {
@@ -45,11 +42,11 @@ router.post('/', async (req, res) => {
       return res.status(400).json({ error: 'Email already exists' });
     }
     console.error(err);
-    res.status(500).json({ error: 'Server error' });
+    next(err);
   }
 });
 
-router.put('/:id', async (req, res) => {
+router.put('/:id', async (req, res, next) => {
   try {
     const { id } = req.params;
     const { name, email, password, role, is_blocked } = req.body;
@@ -92,11 +89,11 @@ router.put('/:id', async (req, res) => {
       return res.status(400).json({ error: 'Email already exists' });
     }
     console.error(err);
-    res.status(500).json({ error: 'Server error' });
+    next(err);
   }
 });
 
-router.delete('/:id', async (req, res) => {
+router.delete('/:id', async (req, res, next) => {
   try {
     const id = parseInt(req.params.id, 10);
     if (isNaN(id)) return res.status(400).json({ error: 'Invalid user ID' });
@@ -139,11 +136,7 @@ router.delete('/:id', async (req, res) => {
       client.release();
     }
     res.json({ success: true });
-  } catch (err) {
-    console.error('[users DELETE]', err.message, err.code, err.detail);
-    const msg = err.detail || err.message || 'Failed to delete user';
-    res.status(500).json({ error: msg });
-  }
+  } catch (err) { next(err); }
 });
 
 export default router;

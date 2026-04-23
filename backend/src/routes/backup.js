@@ -44,7 +44,7 @@ const BACKUP_TABLES = [
   'login_activity',
 ];
 
-router.get('/info', requireAdmin, async (req, res) => {
+router.get('/info', requireAdmin, async (req, res, next) => {
   try {
     const dbResult = await pool.query('SELECT current_database()');
     const dbName = dbResult.rows[0]?.current_database || 'unknown';
@@ -83,13 +83,10 @@ router.get('/info', requireAdmin, async (req, res) => {
       tables: tablesInfo,
       totalTables: tablesInfo.length,
     });
-  } catch (err) {
-    console.error('Backup info error:', err);
-    res.status(500).json({ error: err.message });
-  }
+  } catch (err) { next(err); }
 });
 
-router.get('/history', requireAdmin, async (req, res) => {
+router.get('/history', requireAdmin, async (req, res, next) => {
   try {
     const result = await pool.query(`
       SELECT id, filename, size_bytes, tables_count, rows_count, created_at, status
@@ -99,13 +96,10 @@ router.get('/history', requireAdmin, async (req, res) => {
     `).catch(() => ({ rows: [] }));
 
     res.json(result.rows);
-  } catch (err) {
-    console.error('Backup history error:', err);
-    res.status(500).json({ error: err.message });
-  }
+  } catch (err) { next(err); }
 });
 
-router.post('/create', requireAdmin, async (req, res) => {
+router.post('/create', requireAdmin, async (req, res, next) => {
   try {
     const backupData = {
       version: '1.0',
@@ -160,13 +154,10 @@ router.post('/create', requireAdmin, async (req, res) => {
         createdAt: insertResult.rows[0].created_at,
       },
     });
-  } catch (err) {
-    console.error('Backup create error:', err);
-    res.status(500).json({ error: err.message });
-  }
+  } catch (err) { next(err); }
 });
 
-router.get('/download/:id', requireAdmin, async (req, res) => {
+router.get('/download/:id', requireAdmin, async (req, res, next) => {
   try {
     const { id } = req.params;
     const result = await pool.query(
@@ -183,13 +174,10 @@ router.get('/download/:id', requireAdmin, async (req, res) => {
     res.setHeader('Content-Type', 'application/json');
     res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
     res.send(backup_data);
-  } catch (err) {
-    console.error('Backup download error:', err);
-    res.status(500).json({ error: err.message });
-  }
+  } catch (err) { next(err); }
 });
 
-router.post('/restore', requireAdmin, async (req, res) => {
+router.post('/restore', requireAdmin, async (req, res, next) => {
   const client = await pool.connect();
   try {
     const { backupData } = req.body;
@@ -267,21 +255,18 @@ router.post('/restore', requireAdmin, async (req, res) => {
       /* ignore */
     }
     console.error('Restore error:', err);
-    res.status(500).json({ error: err.message });
+    next(err);
   } finally {
     client.release();
   }
 });
 
-router.delete('/:id', requireAdmin, async (req, res) => {
+router.delete('/:id', requireAdmin, async (req, res, next) => {
   try {
     const { id } = req.params;
     await pool.query('DELETE FROM backup_history WHERE id = $1', [id]);
     res.json({ success: true });
-  } catch (err) {
-    console.error('Backup delete error:', err);
-    res.status(500).json({ error: err.message });
-  }
+  } catch (err) { next(err); }
 });
 
 export default router;

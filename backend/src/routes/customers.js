@@ -14,18 +14,15 @@ const toCustomer = (row) => ({
   purchaseHistory: row.purchase_history || [],
 });
 
-router.get('/', async (req, res) => {
+router.get('/', async (req, res, next) => {
   try {
     const uid = req.user.dataUserId;
     const { rows } = await pool.query('SELECT * FROM customers WHERE user_id = $1 ORDER BY id', [uid]);
     res.json(rows.map(toCustomer));
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: 'Server error' });
-  }
+  } catch (err) { next(err); }
 });
 
-router.post('/', async (req, res) => {
+router.post('/', async (req, res, next) => {
   try {
     const uid = req.user.dataUserId;
     const d = req.body;
@@ -36,13 +33,10 @@ router.post('/', async (req, res) => {
     );
     const { rows } = await pool.query('SELECT * FROM customers WHERE id = $1', [id]);
     res.status(201).json(toCustomer(rows[0]));
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: 'Server error' });
-  }
+  } catch (err) { next(err); }
 });
 
-router.put('/:id', async (req, res) => {
+router.put('/:id', async (req, res, next) => {
   try {
     const uid = req.user.dataUserId;
     const { id } = req.params;
@@ -54,22 +48,16 @@ router.put('/:id', async (req, res) => {
     const { rows } = await pool.query('SELECT * FROM customers WHERE id = $1 AND user_id = $2', [id, uid]);
     if (!rows[0]) return res.status(404).json({ error: 'Not found' });
     res.json(toCustomer(rows[0]));
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: 'Server error' });
-  }
+  } catch (err) { next(err); }
 });
 
-router.delete('/:id', async (req, res) => {
+router.delete('/:id', async (req, res, next) => {
   try {
     const uid = req.user.dataUserId;
     const { rowCount } = await pool.query('DELETE FROM customers WHERE id = $1 AND user_id = $2', [req.params.id, uid]);
     if (rowCount === 0) return res.status(404).json({ error: 'Not found' });
     res.json({ success: true });
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: 'Server error' });
-  }
+  } catch (err) { next(err); }
 });
 
 export default router;

@@ -46,7 +46,7 @@ const toEstimate = (row) => ({
   updatedAt: row.updated_at,
 });
 
-router.get('/', async (req, res) => {
+router.get('/', async (req, res, next) => {
   try {
     const uid = req.user.dataUserId;
     const { rows } = await pool.query(
@@ -54,13 +54,10 @@ router.get('/', async (req, res) => {
       [uid]
     );
     res.json(rows.map(toEstimate));
-  } catch (err) {
-    console.error('[estimates GET]', err);
-    res.status(500).json({ error: 'Server error' });
-  }
+  } catch (err) { next(err); }
 });
 
-router.get('/:id', async (req, res) => {
+router.get('/:id', async (req, res, next) => {
   try {
     const uid = req.user.dataUserId;
     const { id } = req.params;
@@ -70,13 +67,10 @@ router.get('/:id', async (req, res) => {
     );
     if (!rows[0]) return res.status(404).json({ error: 'Estimate not found' });
     res.json(toEstimate(rows[0]));
-  } catch (err) {
-    console.error('[estimates GET one]', err);
-    res.status(500).json({ error: 'Server error' });
-  }
+  } catch (err) { next(err); }
 });
 
-router.post('/', async (req, res) => {
+router.post('/', async (req, res, next) => {
   try {
     const uid = req.user.dataUserId;
     const d = req.body || {};
@@ -128,13 +122,10 @@ router.post('/', async (req, res) => {
 
     const { rows } = await pool.query('SELECT * FROM estimates WHERE id = $1 AND user_id = $2', [estimateNumber, uid]);
     res.status(201).json(toEstimate(rows[0]));
-  } catch (err) {
-    console.error('[estimates POST]', err);
-    res.status(500).json({ error: 'Server error' });
-  }
+  } catch (err) { next(err); }
 });
 
-router.put('/:id', async (req, res) => {
+router.put('/:id', async (req, res, next) => {
   try {
     const uid = req.user.dataUserId;
     const { id } = req.params;
@@ -197,13 +188,10 @@ router.put('/:id', async (req, res) => {
     );
     if (!rows[0]) return res.status(404).json({ error: 'Estimate not found' });
     res.json(toEstimate(rows[0]));
-  } catch (err) {
-    console.error('[estimates PUT]', err);
-    res.status(500).json({ error: 'Server error' });
-  }
+  } catch (err) { next(err); }
 });
 
-router.patch('/:id/status', async (req, res) => {
+router.patch('/:id/status', async (req, res, next) => {
   try {
     const uid = req.user.dataUserId;
     const { id } = req.params;
@@ -217,13 +205,10 @@ router.patch('/:id/status', async (req, res) => {
     );
     if (!rows[0]) return res.status(404).json({ error: 'Estimate not found' });
     res.json(toEstimate(rows[0]));
-  } catch (err) {
-    console.error('[estimates PATCH status]', err);
-    res.status(500).json({ error: 'Server error' });
-  }
+  } catch (err) { next(err); }
 });
 
-router.post('/:id/convert-to-invoice', async (req, res) => {
+router.post('/:id/convert-to-invoice', async (req, res, next) => {
   try {
     const uid = req.user.dataUserId;
     const { id } = req.params;
@@ -242,13 +227,10 @@ router.post('/:id/convert-to-invoice', async (req, res) => {
     );
 
     res.json({ success: true, estimateId: est.id, message: 'Estimate marked as converted. Create invoice from UI payload.' });
-  } catch (err) {
-    console.error('[estimates convert]', err);
-    res.status(500).json({ error: 'Server error' });
-  }
+  } catch (err) { next(err); }
 });
 
-router.delete('/:id', async (req, res) => {
+router.delete('/:id', async (req, res, next) => {
   try {
     const uid = req.user.dataUserId;
     const { rowCount } = await pool.query(
@@ -257,10 +239,7 @@ router.delete('/:id', async (req, res) => {
     );
     if (rowCount === 0) return res.status(404).json({ error: 'Estimate not found' });
     res.json({ success: true });
-  } catch (err) {
-    console.error('[estimates DELETE]', err);
-    res.status(500).json({ error: 'Server error' });
-  }
+  } catch (err) { next(err); }
 });
 
 export default router;

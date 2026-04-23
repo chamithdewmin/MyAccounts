@@ -186,7 +186,7 @@ const sendOtpSms = async (phone, otp, purpose = 'password change') => {
   }
 };
 
-router.post('/login', async (req, res) => {
+router.post('/login', async (req, res, next) => {
   try {
     const { email, password } = req.body;
     if (!email || !password) {
@@ -291,13 +291,10 @@ router.post('/login', async (req, res) => {
         role: effectiveAppRole(user),
       },
     });
-  } catch (err) {
-    console.error('Login error:', err);
-    res.status(500).json({ error: 'Server error' });
-  }
+  } catch (err) { next(err); }
 });
 
-router.get('/me', async (req, res) => {
+router.get('/me', async (req, res, next) => {
   const authHeader = req.headers.authorization;
   const token = authHeader?.startsWith('Bearer ') ? authHeader.slice(7) : null;
 
@@ -361,7 +358,7 @@ router.get('/me', async (req, res) => {
   }
 });
 
-router.post('/logout', authMiddleware, async (req, res) => {
+router.post('/logout', authMiddleware, async (req, res, next) => {
   try {
     const raw = req.body?.activityId ?? req.body?.loginActivityId;
     const activityId = raw != null ? String(raw).trim() : null;
@@ -391,13 +388,10 @@ router.post('/logout', authMiddleware, async (req, res) => {
       );
     }
     res.json({ success: true });
-  } catch (err) {
-    console.error('[logout]', err);
-    res.status(500).json({ error: 'Server error' });
-  }
+  } catch (err) { next(err); }
 });
 
-router.get('/login-activity/stats', authMiddleware, async (req, res) => {
+router.get('/login-activity/stats', authMiddleware, async (req, res, next) => {
   try {
     if (!isAdminRequest(req)) return res.status(403).json({ error: 'Forbidden' });
     // Active session = successful login row with no logout yet (logout_at IS NULL). Failed attempts stay out via success=false.
@@ -436,13 +430,10 @@ router.get('/login-activity/stats', authMiddleware, async (req, res) => {
       failedLogin: fb.failed_login ?? 0,
       failedBlockedIp: fb.blocked_ip ?? 0,
     });
-  } catch (err) {
-    console.error('login-activity/stats:', err);
-    res.status(500).json({ error: 'Server error' });
-  }
+  } catch (err) { next(err); }
 });
 
-router.get('/login-activity', authMiddleware, async (req, res) => {
+router.get('/login-activity', authMiddleware, async (req, res, next) => {
   try {
     if (!isAdminRequest(req)) return res.status(403).json({ error: 'Forbidden' });
     const { rows } = await pool.query(
@@ -459,13 +450,10 @@ router.get('/login-activity', authMiddleware, async (req, res) => {
        LIMIT 500`,
     );
     res.json(rows);
-  } catch (err) {
-    console.error('login-activity:', err);
-    res.status(500).json({ error: 'Server error' });
-  }
+  } catch (err) { next(err); }
 });
 
-router.get('/activity', authMiddleware, async (req, res) => {
+router.get('/activity', authMiddleware, async (req, res, next) => {
   try {
     const adminUser = isAdminRequest(req);
     const filterUserIdRaw = req.query.userId;
@@ -544,13 +532,10 @@ router.get('/activity', authMiddleware, async (req, res) => {
       })),
       users,
     });
-  } catch (err) {
-    console.error('[auth activity]', err);
-    res.status(500).json({ error: 'Server error' });
-  }
+  } catch (err) { next(err); }
 });
 
-router.post('/forgot-password', async (req, res) => {
+router.post('/forgot-password', async (req, res, next) => {
   try {
     const { phone } = req.body;
     if (!phone || !String(phone).trim()) {
@@ -565,9 +550,7 @@ router.post('/forgot-password', async (req, res) => {
       matched = await findAccountByPhone(inputNormalized);
     } catch (dbErr) {
       console.error('[forgot-password] findAccountByPhone:', dbErr.message);
-      return res.status(500).json({
-        error: 'Service unavailable. Please contact your administrator.',
-      });
+    next(err); return;
     }
     if (!matched) {
       return res.status(400).json({
@@ -597,9 +580,7 @@ router.post('/forgot-password', async (req, res) => {
       );
     } catch (dbErr) {
       console.error('[forgot-password] OTP store:', dbErr.message, dbErr.code);
-      return res.status(500).json({
-        error: 'Service unavailable. Please try again later or contact your administrator.',
-      });
+    next(err); return;
     }
     const result = await sendOtpSms(phoneToSend, otp);
     if (!result.sent) {
@@ -614,18 +595,10 @@ router.post('/forgot-password', async (req, res) => {
       return res.status(400).json({ error: result.error || 'Could not send OTP via SMS.' });
     }
     res.json({ success: true, message: 'OTP sent to your registered phone number.' });
-  } catch (err) {
-    console.error('[forgot-password]', err);
-    const isDbError = err.code === '42P01' || err.code === '42703' || err.message?.includes('relation') || err.message?.includes('column');
-    res.status(500).json({
-      error: isDbError
-        ? 'Service unavailable. Please ensure the database migration has been run.'
-        : 'Something went wrong. Please try again or contact your administrator.',
-    });
-  }
+  } catch (err) { next(err); }
 });
 
-router.post('/verify-otp', async (req, res) => {
+router.post('/verify-otp', async (req, res, next) => {
   try {
     const { phone, otp } = req.body;
     if (!phone || !otp) {
@@ -640,7 +613,7 @@ router.post('/verify-otp', async (req, res) => {
       matched = await findAccountByPhone(inputNormalized);
     } catch (dbErr) {
       console.error('[verify-otp] findAccountByPhone:', dbErr.message);
-      return res.status(500).json({ error: 'Service unavailable. Please contact your administrator.' });
+    next(err); return;
     }
     if (!matched) {
       return res.status(400).json({ error: 'Your number is not in our system.' });
@@ -668,13 +641,10 @@ router.post('/verify-otp', async (req, res) => {
     );
     await pool.query('DELETE FROM password_reset_otps WHERE email = $1', [em]);
     res.json({ success: true, resetToken });
-  } catch (err) {
-    console.error('[verify-otp]', err);
-    res.status(500).json({ error: 'Server error' });
-  }
+  } catch (err) { next(err); }
 });
 
-router.post('/send-reset-data-otp', authMiddleware, async (req, res) => {
+router.post('/send-reset-data-otp', authMiddleware, async (req, res, next) => {
   try {
     const uid = req.user.dataUserId;
     const { rows } = await pool.query('SELECT phone FROM settings WHERE user_id = $1', [uid]);
@@ -707,13 +677,10 @@ router.post('/send-reset-data-otp', authMiddleware, async (req, res) => {
       return res.status(400).json({ error: result.error || 'Could not send OTP.' });
     }
     res.json({ success: true, message: 'OTP sent to your registered phone number.' });
-  } catch (err) {
-    console.error('[send-reset-data-otp]', err);
-    res.status(500).json({ error: 'Server error' });
-  }
+  } catch (err) { next(err); }
 });
 
-router.post('/confirm-reset-data', authMiddleware, async (req, res) => {
+router.post('/confirm-reset-data', authMiddleware, async (req, res, next) => {
   try {
     const uid = req.user.dataUserId;
     const { otp } = req.body;
@@ -761,13 +728,10 @@ router.post('/confirm-reset-data', authMiddleware, async (req, res) => {
       client.release();
     }
     res.json({ success: true, message: 'All your data has been reset.' });
-  } catch (err) {
-    console.error('[confirm-reset-data]', err);
-    res.status(500).json({ error: err.message || 'Server error' });
-  }
+  } catch (err) { next(err); }
 });
 
-router.post('/reset-password', async (req, res) => {
+router.post('/reset-password', async (req, res, next) => {
   try {
     const { resetToken, newPassword } = req.body;
     if (!resetToken || !newPassword) {
@@ -796,10 +760,7 @@ router.post('/reset-password', async (req, res) => {
       return res.status(400).json({ error: 'Account not found. Please request a new OTP.' });
     }
     res.json({ success: true, message: 'Password updated successfully. You can now sign in.' });
-  } catch (err) {
-    console.error('[reset-password]', err);
-    res.status(500).json({ error: 'Server error' });
-  }
+  } catch (err) { next(err); }
 });
 
 export default router;

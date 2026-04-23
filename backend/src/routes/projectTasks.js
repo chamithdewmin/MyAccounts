@@ -34,7 +34,7 @@ async function enrichTask(client, row) {
 }
 
 /** GET /:taskId — task + comments + time logs */
-router.get('/:taskId', async (req, res) => {
+router.get('/:taskId', async (req, res, next) => {
   const uid = req.user.dataUserId;
   const { taskId } = req.params;
   const client = await pool.connect();
@@ -75,15 +75,12 @@ router.get('/:taskId', async (req, res) => {
         authorId: r.author_id,
       })),
     });
-  } catch (err) {
-    console.error('[projectTasks get]', err);
-    res.status(500).json({ error: 'Server error' });
-  } finally {
+  } catch (err) { next(err); } finally {
     client.release();
   }
 });
 
-router.patch('/:taskId', async (req, res) => {
+router.patch('/:taskId', async (req, res, next) => {
   const uid = req.user.dataUserId;
   const { taskId } = req.params;
   try {
@@ -143,25 +140,19 @@ router.patch('/:taskId', async (req, res) => {
     } finally {
       client.release();
     }
-  } catch (err) {
-    console.error('[projectTasks patch]', err);
-    res.status(500).json({ error: 'Server error' });
-  }
+  } catch (err) { next(err); }
 });
 
-router.delete('/:taskId', async (req, res) => {
+router.delete('/:taskId', async (req, res, next) => {
   const uid = req.user.dataUserId;
   try {
     const { rowCount } = await pool.query('DELETE FROM tasks WHERE id = $1 AND user_id = $2', [req.params.taskId, uid]);
     if (!rowCount) return res.status(404).json({ error: 'Not found' });
     res.json({ success: true });
-  } catch (err) {
-    console.error('[projectTasks delete]', err);
-    res.status(500).json({ error: 'Server error' });
-  }
+  } catch (err) { next(err); }
 });
 
-router.post('/:taskId/timer/start', async (req, res) => {
+router.post('/:taskId/timer/start', async (req, res, next) => {
   const uid = req.user.dataUserId;
   const { taskId } = req.params;
   const client = await pool.connect();
@@ -183,15 +174,12 @@ router.post('/:taskId/timer/start', async (req, res) => {
 
     const { rows } = await client.query(`SELECT t.*, u.name AS assignee_name FROM tasks t LEFT JOIN users u ON u.id = t.assigned_to WHERE t.id = $1`, [taskId]);
     res.status(201).json(await enrichTask(client, rows[0]));
-  } catch (err) {
-    console.error('[timer start]', err);
-    res.status(500).json({ error: 'Server error' });
-  } finally {
+  } catch (err) { next(err); } finally {
     client.release();
   }
 });
 
-router.post('/:taskId/timer/stop', async (req, res) => {
+router.post('/:taskId/timer/stop', async (req, res, next) => {
   const uid = req.user.dataUserId;
   const { taskId } = req.params;
   const client = await pool.connect();
@@ -210,15 +198,12 @@ router.post('/:taskId/timer/stop', async (req, res) => {
 
     const { rows } = await client.query(`SELECT t.*, u.name AS assignee_name FROM tasks t LEFT JOIN users u ON u.id = t.assigned_to WHERE t.id = $1`, [taskId]);
     res.json(await enrichTask(client, rows[0]));
-  } catch (err) {
-    console.error('[timer stop]', err);
-    res.status(500).json({ error: 'Server error' });
-  } finally {
+  } catch (err) { next(err); } finally {
     client.release();
   }
 });
 
-router.post('/:taskId/comments', async (req, res) => {
+router.post('/:taskId/comments', async (req, res, next) => {
   const uid = req.user.id;
   const { taskId } = req.params;
   try {
@@ -246,10 +231,7 @@ router.post('/:taskId/comments', async (req, res) => {
       authorName: r.author_name,
       authorId: r.author_id,
     });
-  } catch (err) {
-    console.error('[task comment]', err);
-    res.status(500).json({ error: 'Server error' });
-  }
+  } catch (err) { next(err); }
 });
 
 export default router;

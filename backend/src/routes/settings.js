@@ -66,7 +66,7 @@ const hasPhoneColumn = async () => {
   return rows.length > 0;
 };
 
-router.get('/', async (req, res) => {
+router.get('/', async (req, res, next) => {
   try {
     const uid = req.user.dataUserId;
     const hasPhone = await hasPhoneColumn();
@@ -108,10 +108,7 @@ router.get('/', async (req, res) => {
     
     const settings = toSettings(row);
     res.json(settings);
-  } catch (err) {
-    console.error('[settings GET]', err.message, err.stack);
-    res.status(500).json({ error: 'Server error', details: process.env.NODE_ENV === 'development' ? err.message : undefined });
-  }
+  } catch (err) { next(err); }
 });
 
 const hasProfileAvatarColumn = async () => {
@@ -128,7 +125,7 @@ const hasSettingsJsonColumn = async () => {
   return rows.length > 0;
 };
 
-router.put('/', async (req, res) => {
+router.put('/', async (req, res, next) => {
   try {
     const uid = req.user.dataUserId;
     const d = req.body;
@@ -314,10 +311,7 @@ router.put('/', async (req, res) => {
     const settings = toSettings(rows[0]);
     invalidateSettings(uid); // bust cache so next GET re-reads from DB
     res.json(settings);
-  } catch (err) {
-    console.error('[settings PUT]', err.message, err.stack);
-    res.status(500).json({ error: 'Server error', details: process.env.NODE_ENV === 'development' ? err.message : undefined });
-  }
+  } catch (err) { next(err); }
 });
 
 export default router;

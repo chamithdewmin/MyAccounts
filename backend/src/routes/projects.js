@@ -88,7 +88,7 @@ const toProjectExpense = (r) => ({
 });
 
 /** GET / — list projects with task counts + expense totals */
-router.get('/', async (req, res) => {
+router.get('/', async (req, res, next) => {
   const uid = req.user.dataUserId;
   try {
     const { rows: projects } = await pool.query(
@@ -138,13 +138,10 @@ router.get('/', async (req, res) => {
     });
 
     res.json(out);
-  } catch (err) {
-    console.error('[projects list]', err);
-    res.status(500).json({ error: 'Server error' });
-  }
+  } catch (err) { next(err); }
 });
 
-router.post('/', async (req, res) => {
+router.post('/', async (req, res, next) => {
   const uid = req.user.dataUserId;
   try {
     const { name, clientId, price, status } = req.body;
@@ -178,13 +175,10 @@ router.post('/', async (req, res) => {
         profit: pr,
       }),
     );
-  } catch (err) {
-    console.error('[projects create]', err);
-    res.status(500).json({ error: 'Server error' });
-  }
+  } catch (err) { next(err); }
 });
 
-router.get('/:projectId/expenses', async (req, res) => {
+router.get('/:projectId/expenses', async (req, res, next) => {
   const uid = req.user.dataUserId;
   const { projectId } = req.params;
   try {
@@ -195,13 +189,10 @@ router.get('/:projectId/expenses', async (req, res) => {
       [projectId, uid],
     );
     res.json(rows.map(toProjectExpense));
-  } catch (err) {
-    console.error('[project expenses list]', err);
-    res.status(500).json({ error: 'Server error' });
-  }
+  } catch (err) { next(err); }
 });
 
-router.post('/:projectId/expenses', async (req, res) => {
+router.post('/:projectId/expenses', async (req, res, next) => {
   const uid = req.user.dataUserId;
   const { projectId } = req.params;
   try {
@@ -223,13 +214,10 @@ router.post('/:projectId/expenses', async (req, res) => {
       [id, projectId, uid, amt, ed, cat, note],
     );
     res.status(201).json(toProjectExpense(rows[0]));
-  } catch (err) {
-    console.error('[project expenses create]', err);
-    res.status(500).json({ error: 'Server error' });
-  }
+  } catch (err) { next(err); }
 });
 
-router.patch('/:projectId/expenses/:expenseId', async (req, res) => {
+router.patch('/:projectId/expenses/:expenseId', async (req, res, next) => {
   const uid = req.user.dataUserId;
   const { projectId, expenseId } = req.params;
   try {
@@ -263,13 +251,10 @@ router.patch('/:projectId/expenses/:expenseId', async (req, res) => {
     );
     const { rows } = await pool.query(`SELECT * FROM project_expenses WHERE id = $1`, [expenseId]);
     res.json(toProjectExpense(rows[0]));
-  } catch (err) {
-    console.error('[project expenses patch]', err);
-    res.status(500).json({ error: 'Server error' });
-  }
+  } catch (err) { next(err); }
 });
 
-router.delete('/:projectId/expenses/:expenseId', async (req, res) => {
+router.delete('/:projectId/expenses/:expenseId', async (req, res, next) => {
   const uid = req.user.dataUserId;
   const { projectId, expenseId } = req.params;
   try {
@@ -279,13 +264,10 @@ router.delete('/:projectId/expenses/:expenseId', async (req, res) => {
     );
     if (!rowCount) return res.status(404).json({ error: 'Not found' });
     res.json({ success: true });
-  } catch (err) {
-    console.error('[project expenses delete]', err);
-    res.status(500).json({ error: 'Server error' });
-  }
+  } catch (err) { next(err); }
 });
 
-router.get('/:projectId', async (req, res) => {
+router.get('/:projectId', async (req, res, next) => {
   const uid = req.user.dataUserId;
   const { projectId } = req.params;
   try {
@@ -371,13 +353,10 @@ router.get('/:projectId', async (req, res) => {
       expenseTotal,
       profit,
     });
-  } catch (err) {
-    console.error('[projects get]', err);
-    res.status(500).json({ error: 'Server error' });
-  }
+  } catch (err) { next(err); }
 });
 
-router.patch('/:projectId', async (req, res) => {
+router.patch('/:projectId', async (req, res, next) => {
   const uid = req.user.dataUserId;
   const { projectId } = req.params;
   try {
@@ -420,25 +399,19 @@ router.patch('/:projectId', async (req, res) => {
       [projectId, uid],
     );
     res.json(toProject(rows[0]));
-  } catch (err) {
-    console.error('[projects patch]', err);
-    res.status(500).json({ error: 'Server error' });
-  }
+  } catch (err) { next(err); }
 });
 
-router.delete('/:projectId', async (req, res) => {
+router.delete('/:projectId', async (req, res, next) => {
   const uid = req.user.dataUserId;
   try {
     const { rowCount } = await pool.query('DELETE FROM projects WHERE id = $1 AND user_id = $2', [req.params.projectId, uid]);
     if (!rowCount) return res.status(404).json({ error: 'Not found' });
     res.json({ success: true });
-  } catch (err) {
-    console.error('[projects delete]', err);
-    res.status(500).json({ error: 'Server error' });
-  }
+  } catch (err) { next(err); }
 });
 
-router.get('/:projectId/tasks', async (req, res) => {
+router.get('/:projectId/tasks', async (req, res, next) => {
   const uid = req.user.dataUserId;
   try {
     const p = await assertProject(pool, req.params.projectId, uid);
@@ -471,13 +444,10 @@ router.get('/:projectId/tasks', async (req, res) => {
       client.release();
     }
     res.json(enriched);
-  } catch (err) {
-    console.error('[projects tasks list]', err);
-    res.status(500).json({ error: 'Server error' });
-  }
+  } catch (err) { next(err); }
 });
 
-router.post('/:projectId/tasks', async (req, res) => {
+router.post('/:projectId/tasks', async (req, res, next) => {
   const uid = req.user.dataUserId;
   try {
     const p = await assertProject(pool, req.params.projectId, uid);
@@ -523,10 +493,7 @@ router.post('/:projectId/tasks', async (req, res) => {
       hasOpenTimer: false,
       openLogId: null,
     });
-  } catch (err) {
-    console.error('[projects task create]', err);
-    res.status(500).json({ error: 'Server error' });
-  }
+  } catch (err) { next(err); }
 });
 
 export { taskHours, assertProject, TASK_STATUSES, toTaskRow };

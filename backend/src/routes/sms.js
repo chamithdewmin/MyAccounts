@@ -7,18 +7,15 @@ import { getSmsConfig, sendBulkSms } from '../lib/smsGateway.js';
 const router = express.Router();
 router.use(authMiddleware);
 
-router.get('/settings', async (req, res) => {
+router.get('/settings', async (req, res, next) => {
   try {
     const config = await getSmsConfig(req.user.dataUserId);
     const safe = config ? { ...config, apiKey: config.apiKey ? '••••••••' : '' } : {};
     res.json(config ? safe : {});
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: 'Server error' });
-  }
+  } catch (err) { next(err); }
 });
 
-router.put('/settings', async (req, res) => {
+router.put('/settings', async (req, res, next) => {
   try {
     const uid = req.user.dataUserId;
     const { userId, apiKey, baseUrl, senderId } = req.body;
@@ -44,13 +41,10 @@ router.put('/settings', async (req, res) => {
       );
     }
     res.json(config);
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: 'Server error' });
-  }
+  } catch (err) { next(err); }
 });
 
-router.post('/test', async (req, res) => {
+router.post('/test', async (req, res, next) => {
   try {
     const config = await getSmsConfig(req.user.dataUserId);
     if (!config) {
@@ -81,15 +75,10 @@ router.post('/test', async (req, res) => {
       });
     }
     res.json({ success: true, message: 'SMS gateway is configured correctly' });
-  } catch (err) {
-    console.error('[SMS test]', err);
-    res.status(500).json({
-      error: err.message || 'Failed to reach SMS gateway. Check API Base URL.',
-    });
-  }
+  } catch (err) { next(err); }
 });
 
-router.post('/send-bulk', async (req, res) => {
+router.post('/send-bulk', async (req, res, next) => {
   try {
     const { contacts, message } = req.body;
     if (!Array.isArray(contacts) || contacts.length === 0 || !message) {
@@ -112,7 +101,7 @@ router.post('/send-bulk', async (req, res) => {
 });
 
 /** Schedule bulk SMS for a future time (processed by server worker — sends even when browser is closed). */
-router.post('/schedule', async (req, res) => {
+router.post('/schedule', async (req, res, next) => {
   try {
     const uid = req.user.dataUserId;
     const { message, sendAt, clientIds } = req.body;
@@ -149,13 +138,10 @@ router.post('/schedule', async (req, res) => {
       clientIds,
       status: 'pending',
     });
-  } catch (err) {
-    console.error('[SMS schedule]', err);
-    res.status(500).json({ error: err.message || 'Server error' });
-  }
+  } catch (err) { next(err); }
 });
 
-router.get('/scheduled', async (req, res) => {
+router.get('/scheduled', async (req, res, next) => {
   try {
     const { rows } = await pool.query(
       `SELECT id, message, send_at, client_ids, status, error, sent_at, created_at
@@ -176,13 +162,10 @@ router.get('/scheduled', async (req, res) => {
         createdAt: r.created_at,
       }))
     );
-  } catch (err) {
-    console.error('[SMS scheduled list]', err);
-    res.status(500).json({ error: 'Server error' });
-  }
+  } catch (err) { next(err); }
 });
 
-router.delete('/scheduled/:id', async (req, res) => {
+router.delete('/scheduled/:id', async (req, res, next) => {
   try {
     const { rowCount } = await pool.query(
       `DELETE FROM scheduled_sms WHERE id = $1 AND user_id = $2 AND status = 'pending'`,
@@ -192,10 +175,7 @@ router.delete('/scheduled/:id', async (req, res) => {
       return res.status(404).json({ error: 'Not found or already processed' });
     }
     res.json({ success: true });
-  } catch (err) {
-    console.error('[SMS scheduled delete]', err);
-    res.status(500).json({ error: 'Server error' });
-  }
+  } catch (err) { next(err); }
 });
 
 export default router;

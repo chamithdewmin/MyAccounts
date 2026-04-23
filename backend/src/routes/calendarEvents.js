@@ -31,7 +31,7 @@ const toEvent = (r) => ({
   createdAt: r.created_at,
 });
 
-router.get('/', async (req, res) => {
+router.get('/', async (req, res, next) => {
   try {
     const bucketId = req.user.dataUserId;
     const selfId = req.user.id;
@@ -43,13 +43,10 @@ router.get('/', async (req, res) => {
       [bucketId, selfId],
     );
     res.json(rows.map(toEvent));
-  } catch (err) {
-    console.error('[calendar-events list]', err);
-    res.status(500).json({ error: 'Server error' });
-  }
+  } catch (err) { next(err); }
 });
 
-router.post('/', async (req, res) => {
+router.post('/', async (req, res, next) => {
   try {
     const { eventName, eventDate, eventTime, notes } = req.body;
     const name = String(eventName || '').trim();
@@ -64,13 +61,10 @@ router.post('/', async (req, res) => {
       [id, req.user.dataUserId, name, date, String(eventTime || '').trim() || null, String(notes || '').trim()],
     );
     res.status(201).json(toEvent(rows[0]));
-  } catch (err) {
-    console.error('[calendar-events create]', err);
-    res.status(500).json({ error: 'Server error' });
-  }
+  } catch (err) { next(err); }
 });
 
-router.patch('/:id', async (req, res) => {
+router.patch('/:id', async (req, res, next) => {
   try {
     const { eventName, eventDate, eventTime, notes } = req.body;
     const name = String(eventName || '').trim();
@@ -96,13 +90,10 @@ router.patch('/:id', async (req, res) => {
     );
     if (!rows.length) return res.status(404).json({ error: 'Not found' });
     res.json(toEvent(rows[0]));
-  } catch (err) {
-    console.error('[calendar-events update]', err);
-    res.status(500).json({ error: 'Server error' });
-  }
+  } catch (err) { next(err); }
 });
 
-router.delete('/:id', async (req, res) => {
+router.delete('/:id', async (req, res, next) => {
   try {
     const { rowCount } = await pool.query(
       'DELETE FROM calendar_events WHERE id = $1 AND (user_id = $2 OR user_id = $3)',
@@ -110,10 +101,7 @@ router.delete('/:id', async (req, res) => {
     );
     if (!rowCount) return res.status(404).json({ error: 'Not found' });
     res.json({ success: true });
-  } catch (err) {
-    console.error('[calendar-events delete]', err);
-    res.status(500).json({ error: 'Server error' });
-  }
+  } catch (err) { next(err); }
 });
 
 export default router;

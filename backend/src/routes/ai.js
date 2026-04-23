@@ -553,7 +553,7 @@ async function callAI(messages) {
  * POST /api/ai/suggestions
  * Returns AI-generated suggestions (next moves, insights) based on financial summary.
  */
-router.post('/suggestions', async (req, res) => {
+router.post('/suggestions', async (req, res, next) => {
   try {
     const uid = req.user.dataUserId;
     const summary = await getFinancialSummary(uid);
@@ -603,10 +603,7 @@ OUTPUT: Plain text, each suggestion on a new line or as a short bullet list. Be 
       return res.status(400).json({ error: result.error });
     }
     return res.json({ suggestions: result.text });
-  } catch (err) {
-    console.error('[AI suggestions]', err);
-    res.status(500).json({ error: err.message || 'Server error' });
-  }
+  } catch (err) { next(err); }
 });
 
 /**
@@ -614,7 +611,7 @@ OUTPUT: Plain text, each suggestion on a new line or as a short bullet list. Be 
  * Body: { question: string }
  * Answers the user's question using the financial summary as context.
  */
-router.post('/ask', async (req, res) => {
+router.post('/ask', async (req, res, next) => {
   try {
     const uid = req.user.dataUserId;
     const { question } = req.body;
@@ -669,25 +666,19 @@ Remember: Deliver complete, accurate, ready-to-use answers. Use step-by-step log
       return res.status(400).json({ error: result.error });
     }
     return res.json({ answer: result.text });
-  } catch (err) {
-    console.error('[AI ask]', err);
-    res.status(500).json({ error: err.message || 'Server error' });
-  }
+  } catch (err) { next(err); }
 });
 
 /**
  * GET /api/ai/summary
  * Returns the same financial summary used for AI (for display on the AI Insights page).
  */
-router.get('/summary', async (req, res) => {
+router.get('/summary', async (req, res, next) => {
   try {
     const uid = req.user.dataUserId;
     const summary = await getFinancialSummary(uid);
     res.json(summary);
-  } catch (err) {
-    console.error('[AI summary]', err);
-    res.status(500).json({ error: err.message || 'Server error' });
-  }
+  } catch (err) { next(err); }
 });
 
 export default router;

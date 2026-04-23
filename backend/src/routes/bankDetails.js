@@ -19,7 +19,7 @@ const parseBankDetails = (encrypted) => {
 };
 
 // GET - fetch bank details for current user
-router.get('/', async (req, res) => {
+router.get('/', async (req, res, next) => {
   try {
     const uid = req.user.dataUserId;
     const { rows } = await pool.query(
@@ -30,14 +30,11 @@ router.get('/', async (req, res) => {
       ? parseBankDetails(rows[0].data_encrypted)
       : null;
     res.json({ bankDetails });
-  } catch (err) {
-    console.error('[bankDetails GET]', err);
-    res.status(500).json({ error: 'Server error' });
-  }
+  } catch (err) { next(err); }
 });
 
 // POST - save bank details (upsert)
-router.post('/', async (req, res) => {
+router.post('/', async (req, res, next) => {
   try {
     const uid = req.user.dataUserId;
     const d = req.body;
@@ -67,11 +64,7 @@ router.post('/', async (req, res) => {
     );
 
     res.json({ bankDetails: payload, success: true });
-  } catch (err) {
-    console.error('[bankDetails POST]', err);
-    const msg = process.env.NODE_ENV === 'development' ? err.message : 'Server error';
-    res.status(500).json({ error: msg });
-  }
+  } catch (err) { next(err); }
 });
 
 export default router;

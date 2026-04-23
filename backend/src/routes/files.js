@@ -240,7 +240,7 @@ const validateFolderId = async (client, { folderId, userId }) => {
   return { folderId: parsed };
 };
 
-router.get('/folders', async (req, res) => {
+router.get('/folders', async (req, res, next) => {
   try {
     const uid = req.user.dataUserId;
     const { rows } = await pool.query(
@@ -248,13 +248,10 @@ router.get('/folders', async (req, res) => {
       [uid],
     );
     res.json(rows.map(toFolder));
-  } catch (err) {
-    console.error('[folders GET]', err);
-    res.status(500).json({ error: 'Server error' });
-  }
+  } catch (err) { next(err); }
 });
 
-router.post('/folders', async (req, res) => {
+router.post('/folders', async (req, res, next) => {
   try {
     const uid = req.user.dataUserId;
     const rawName = String(req.body?.name || '').trim();
@@ -268,11 +265,11 @@ router.post('/folders', async (req, res) => {
   } catch (err) {
     if (err.code === '23505') return res.status(400).json({ error: 'Folder already exists' });
     console.error('[folders POST]', err);
-    res.status(500).json({ error: 'Server error' });
+    next(err);
   }
 });
 
-router.patch('/folders/:id(\\d+)', async (req, res) => {
+router.patch('/folders/:id(\\d+)', async (req, res, next) => {
   try {
     const uid = req.user.dataUserId;
     const id = Number(req.params.id);
@@ -289,11 +286,11 @@ router.patch('/folders/:id(\\d+)', async (req, res) => {
   } catch (err) {
     if (err.code === '23505') return res.status(400).json({ error: 'Folder already exists' });
     console.error('[folders PATCH]', err);
-    res.status(500).json({ error: 'Server error' });
+    next(err);
   }
 });
 
-router.patch('/folders/:id(\\d+)/password', async (req, res) => {
+router.patch('/folders/:id(\\d+)/password', async (req, res, next) => {
   try {
     const uid = req.user.dataUserId;
     const id = Number(req.params.id);
@@ -326,13 +323,10 @@ router.patch('/folders/:id(\\d+)/password', async (req, res) => {
     );
     if (!rows[0]) return res.status(404).json({ error: 'Folder not found' });
     res.json(toFolder(rows[0]));
-  } catch (err) {
-    console.error('[folders password PATCH]', err);
-    res.status(500).json({ error: 'Server error' });
-  }
+  } catch (err) { next(err); }
 });
 
-router.post('/folders/:id(\\d+)/unlock', async (req, res) => {
+router.post('/folders/:id(\\d+)/unlock', async (req, res, next) => {
   try {
     const uid = req.user.dataUserId;
     const id = Number(req.params.id);
@@ -354,13 +348,10 @@ router.post('/folders/:id(\\d+)/unlock', async (req, res) => {
       : await bcrypt.compare(password, String(folder.access_password_hash || ''));
     if (!ok) return res.status(400).json({ error: 'Incorrect password' });
     res.json({ success: true, unlocked: true });
-  } catch (err) {
-    console.error('[folders unlock POST]', err);
-    res.status(500).json({ error: 'Server error' });
-  }
+  } catch (err) { next(err); }
 });
 
-router.delete('/folders/:id(\\d+)', async (req, res) => {
+router.delete('/folders/:id(\\d+)', async (req, res, next) => {
   try {
     const uid = req.user.dataUserId;
     const id = Number(req.params.id);
@@ -402,13 +393,10 @@ router.delete('/folders/:id(\\d+)', async (req, res) => {
     } finally {
       client.release();
     }
-  } catch (err) {
-    console.error('[folders DELETE]', err);
-    res.status(500).json({ error: 'Server error' });
-  }
+  } catch (err) { next(err); }
 });
 
-router.get('/', async (req, res) => {
+router.get('/', async (req, res, next) => {
   try {
     const uid = req.user.dataUserId;
     const q = req.query.q != null ? String(req.query.q).trim() : '';
@@ -478,13 +466,10 @@ router.get('/', async (req, res) => {
     // IMPORTANT: do not auto-delete records when file is temporarily unavailable on disk.
     // Data must remain until user explicitly deletes.
     res.json(rows.map(toRow));
-  } catch (err) {
-    console.error('[files GET]', err);
-    res.status(500).json({ error: 'Server error' });
-  }
+  } catch (err) { next(err); }
 });
 
-router.post('/upload', upload.single('file'), async (req, res) => {
+router.post('/upload', upload.single('file'), async (req, res, next) => {
   const file = req.file;
   if (!file) {
     return res.status(400).json({ error: 'No file uploaded' });
@@ -536,7 +521,7 @@ router.post('/upload', upload.single('file'), async (req, res) => {
         } catch {
           /* ignore */
         }
-        return res.status(500).json({ error: 'Invalid storage path' });
+    next(err); return;
       }
       try {
         await moveFileAcrossDirs(file.path, targetAbs);
@@ -547,7 +532,7 @@ router.post('/upload', upload.single('file'), async (req, res) => {
         } catch {
           /* ignore */
         }
-        return res.status(500).json({ error: 'Could not place file in folder on disk' });
+    next(err); return;
       }
       relativePath = targetRel;
     }
@@ -600,7 +585,7 @@ router.post('/upload', upload.single('file'), async (req, res) => {
     } catch {
       /* ignore */
     }
-    res.status(500).json({ error: 'Server error' });
+    next(err);
   } finally {
     client.release();
   }
@@ -613,7 +598,7 @@ router.use((err, _req, res, next) => {
   next(err);
 });
 
-router.get('/:id(\\d+)/file', async (req, res) => {
+router.get('/:id(\\d+)/file', async (req, res, next) => {
   try {
     const uid = req.user.dataUserId;
     const id = parseInt(req.params.id, 10);
@@ -637,7 +622,7 @@ router.get('/:id(\\d+)/file', async (req, res) => {
     stream.on('error', (streamErr) => {
       console.error('[files file stream]', streamErr.message, abs);
       if (!res.headersSent) {
-        res.status(500).json({ error: 'File read failed' });
+    next(err);
       } else {
         try {
           res.destroy(streamErr);
@@ -647,13 +632,10 @@ router.get('/:id(\\d+)/file', async (req, res) => {
       }
     });
     stream.pipe(res);
-  } catch (err) {
-    console.error('[files file]', err);
-    res.status(500).json({ error: 'Server error' });
-  }
+  } catch (err) { next(err); }
 });
 
-router.patch('/:id(\\d+)', async (req, res) => {
+router.patch('/:id(\\d+)', async (req, res, next) => {
   try {
     const uid = req.user.dataUserId;
     const id = parseInt(req.params.id, 10);
@@ -753,13 +735,10 @@ router.patch('/:id(\\d+)', async (req, res) => {
     } finally {
       client.release();
     }
-  } catch (err) {
-    console.error('[files PATCH]', err);
-    res.status(500).json({ error: 'Server error' });
-  }
+  } catch (err) { next(err); }
 });
 
-router.delete('/:id(\\d+)', async (req, res) => {
+router.delete('/:id(\\d+)', async (req, res, next) => {
   try {
     const uid = req.user.dataUserId;
     const id = parseInt(req.params.id, 10);
@@ -779,10 +758,7 @@ router.delete('/:id(\\d+)', async (req, res) => {
       }
     }
     res.json({ success: true });
-  } catch (err) {
-    console.error('[files DELETE]', err);
-    res.status(500).json({ error: 'Server error' });
-  }
+  } catch (err) { next(err); }
 });
 
 export default router;

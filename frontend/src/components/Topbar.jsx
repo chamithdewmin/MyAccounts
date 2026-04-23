@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   Search,
@@ -14,8 +14,17 @@ import {
   Clock,
   ArrowRight,
   Menu,
+  Briefcase,
+  FolderOpen,
+  BellRing,
+  Package,
+  Landmark,
+  Navigation,
+  ClipboardList,
 } from 'lucide-react';
 import { useSidebarState } from '@/components/SidebarNew';
+import { useFinance } from '@/contexts/FinanceContext';
+import api from '@/lib/api';
 
 const getColors = () => {
   const isDark = document.documentElement.classList.contains('dark');
@@ -163,12 +172,36 @@ const MiniCalendar = ({ colors, onClose }) => {
   );
 };
 
+const PAGE_SHORTCUTS = [
+  { name: 'Dashboard', path: '/dashboard' },
+  { name: 'Income / Payments', path: '/income' },
+  { name: 'Expenses', path: '/expenses' },
+  { name: 'Invoices', path: '/invoices' },
+  { name: 'Estimates', path: '/estimates' },
+  { name: 'Clients', path: '/clients' },
+  { name: 'Projects', path: '/projects' },
+  { name: 'File Manager', path: '/file-manager' },
+  { name: 'Cash Flow', path: '/cash-flow' },
+  { name: 'Calendar', path: '/calendar' },
+  { name: 'Reminders', path: '/reminders' },
+  { name: 'Reports', path: '/reports' },
+  { name: 'SMS', path: '/sms' },
+  { name: 'Settings', path: '/settings' },
+  { name: 'Users', path: '/users' },
+  { name: 'AI Insights', path: '/ai-insights' },
+  { name: 'Backup & Restore', path: '/backup-restore' },
+  { name: 'Login Activity', path: '/login-activity' },
+];
+
 // Search Results Dropdown Component
 const SearchResults = ({ query, colors, onClose, onSelect }) => {
   const c = colors;
   const navigate = useNavigate();
-  const { incomes, expenses, clients, invoices } = useFinance();
+  const { incomes, expenses, clients, invoices, estimates, assets, loans } = useFinance();
   const [selectedIndex, setSelectedIndex] = useState(0);
+  const [projects, setProjects] = useState([]);
+  const [reminders, setReminders] = useState([]);
+  const [files, setFiles] = useState([]);
   const [recentSearches, setRecentSearches] = useState(() => {
     try {
       return JSON.parse(localStorage.getItem('recentSearches') || '[]');
@@ -177,54 +210,135 @@ const SearchResults = ({ query, colors, onClose, onSelect }) => {
     }
   });
 
-  const searchResults = React.useMemo(() => {
-    if (!query || query.length < 2) return { clients: [], invoices: [], incomes: [], expenses: [], total: 0 };
-    
+  // Fetch projects and reminders once on mount
+  useEffect(() => {
+    api.projects.list().then(res => setProjects(Array.isArray(res) ? res : [])).catch(() => {});
+    api.reminders.list().then(res => setReminders(Array.isArray(res) ? res : [])).catch(() => {});
+  }, []);
+
+  // Fetch files from backend search API (debounced)
+  useEffect(() => {
+    if (!query || query.length < 2) {
+      setFiles([]);
+      return;
+    }
+    const timer = setTimeout(() => {
+      api.files.list({ q: query, scope: 'all' })
+        .then(res => setFiles(Array.isArray(res) ? res.slice(0, 3) : []))
+        .catch(() => setFiles([]));
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [query]);
+
+  const pageResults = React.useMemo(() => {
+    if (!query || query.length < 2) return [];
     const q = query.toLowerCase();
-    
-    const matchedClients = clients.filter(client => 
-      client.name?.toLowerCase().includes(q) ||
-      client.email?.toLowerCase().includes(q) ||
-      client.phone?.includes(q)
+    return PAGE_SHORTCUTS.filter(p => p.name.toLowerCase().includes(q)).slice(0, 3);
+  }, [query]);
+
+  const searchResults = React.useMemo(() => {
+    if (!query || query.length < 2) return {
+      clients: [], invoices: [], incomes: [], expenses: [],
+      estimates: [], projects: [], reminders: [], assets: [], loans: [],
+      total: 0,
+    };
+
+    const q = query.toLowerCase();
+
+    const matchedClients = clients.filter(c =>
+      c.name?.toLowerCase().includes(q) ||
+      c.email?.toLowerCase().includes(q) ||
+      c.phone?.includes(q)
     ).slice(0, 3);
-    
-    const matchedInvoices = invoices.filter(inv => 
+
+    const matchedInvoices = invoices.filter(inv =>
       inv.invoiceNumber?.toLowerCase().includes(q) ||
       inv.clientName?.toLowerCase().includes(q) ||
       String(inv.total).includes(q)
     ).slice(0, 3);
-    
-    const matchedIncomes = incomes.filter(inc => 
+
+    const matchedIncomes = incomes.filter(inc =>
       inc.clientName?.toLowerCase().includes(q) ||
       inc.serviceType?.toLowerCase().includes(q) ||
       inc.description?.toLowerCase().includes(q) ||
       String(inc.amount).includes(q)
     ).slice(0, 3);
-    
-    const matchedExpenses = expenses.filter(exp => 
+
+    const matchedExpenses = expenses.filter(exp =>
       exp.category?.toLowerCase().includes(q) ||
       exp.description?.toLowerCase().includes(q) ||
       exp.vendor?.toLowerCase().includes(q) ||
       String(exp.amount).includes(q)
     ).slice(0, 3);
-    
+
+    const matchedEstimates = (estimates || []).filter(est =>
+      est.estimateNumber?.toLowerCase().includes(q) ||
+      est.invoiceNumber?.toLowerCase().includes(q) ||
+      est.clientName?.toLowerCase().includes(q) ||
+      String(est.total).includes(q)
+    ).slice(0, 3);
+
+    const matchedProjects = projects.filter(p =>
+      p.name?.toLowerCase().includes(q) ||
+      p.clientName?.toLowerCase().includes(q) ||
+      p.status?.toLowerCase().includes(q) ||
+      p.description?.toLowerCase().includes(q)
+    ).slice(0, 3);
+
+    const matchedReminders = reminders.filter(r =>
+      r.title?.toLowerCase().includes(q) ||
+      r.description?.toLowerCase().includes(q) ||
+      r.notes?.toLowerCase().includes(q)
+    ).slice(0, 3);
+
+    const matchedAssets = (assets || []).filter(a =>
+      a.name?.toLowerCase().includes(q) ||
+      a.description?.toLowerCase().includes(q) ||
+      a.category?.toLowerCase().includes(q)
+    ).slice(0, 3);
+
+    const matchedLoans = (loans || []).filter(l =>
+      l.name?.toLowerCase().includes(q) ||
+      l.lender?.toLowerCase().includes(q) ||
+      l.description?.toLowerCase().includes(q)
+    ).slice(0, 3);
+
+    const total =
+      matchedClients.length + matchedInvoices.length + matchedIncomes.length +
+      matchedExpenses.length + matchedEstimates.length + matchedProjects.length +
+      matchedReminders.length + matchedAssets.length + matchedLoans.length;
+
     return {
       clients: matchedClients,
       invoices: matchedInvoices,
       incomes: matchedIncomes,
       expenses: matchedExpenses,
-      total: matchedClients.length + matchedInvoices.length + matchedIncomes.length + matchedExpenses.length
+      estimates: matchedEstimates,
+      projects: matchedProjects,
+      reminders: matchedReminders,
+      assets: matchedAssets,
+      loans: matchedLoans,
+      total,
     };
-  }, [query, clients, invoices, incomes, expenses]);
+  }, [query, clients, invoices, incomes, expenses, estimates, projects, reminders, assets, loans]);
 
   const allResults = React.useMemo(() => {
     const results = [];
+    pageResults.forEach(item => results.push({ type: 'page', item }));
     searchResults.clients.forEach(item => results.push({ type: 'client', item }));
     searchResults.invoices.forEach(item => results.push({ type: 'invoice', item }));
+    searchResults.estimates.forEach(item => results.push({ type: 'estimate', item }));
     searchResults.incomes.forEach(item => results.push({ type: 'income', item }));
     searchResults.expenses.forEach(item => results.push({ type: 'expense', item }));
+    searchResults.projects.forEach(item => results.push({ type: 'project', item }));
+    files.forEach(item => results.push({ type: 'file', item }));
+    searchResults.reminders.forEach(item => results.push({ type: 'reminder', item }));
+    searchResults.assets.forEach(item => results.push({ type: 'asset', item }));
+    searchResults.loans.forEach(item => results.push({ type: 'loan', item }));
     return results;
-  }, [searchResults]);
+  }, [searchResults, pageResults, files]);
+
+  const grandTotal = searchResults.total + pageResults.length + files.length;
 
   useEffect(() => {
     const handleKeyDown = (e) => {
@@ -253,18 +367,17 @@ const SearchResults = ({ query, colors, onClose, onSelect }) => {
     saveRecentSearch(query);
     onClose();
     switch (result.type) {
-      case 'client':
-        navigate('/clients');
-        break;
-      case 'invoice':
-        navigate('/invoices');
-        break;
-      case 'income':
-        navigate('/income');
-        break;
-      case 'expense':
-        navigate('/expenses');
-        break;
+      case 'page': navigate(result.item.path); break;
+      case 'client': navigate('/clients'); break;
+      case 'invoice': navigate('/invoices'); break;
+      case 'estimate': navigate('/estimates'); break;
+      case 'income': navigate('/income'); break;
+      case 'expense': navigate('/expenses'); break;
+      case 'project': navigate(`/projects`); break;
+      case 'file': navigate('/file-manager'); break;
+      case 'reminder': navigate('/reminders'); break;
+      case 'asset': navigate('/dashboard'); break;
+      case 'loan': navigate('/dashboard'); break;
     }
   };
 
@@ -277,13 +390,55 @@ const SearchResults = ({ query, colors, onClose, onSelect }) => {
     switch (type) {
       case 'client': return <Users size={16} style={{ color: c.blue }} />;
       case 'invoice': return <FileText size={16} style={{ color: c.purple }} />;
+      case 'estimate': return <ClipboardList size={16} style={{ color: c.yellow }} />;
       case 'income': return <CreditCard size={16} style={{ color: c.green }} />;
       case 'expense': return <Receipt size={16} style={{ color: c.red }} />;
+      case 'project': return <Briefcase size={16} style={{ color: c.blue }} />;
+      case 'file': return <FolderOpen size={16} style={{ color: c.yellow }} />;
+      case 'reminder': return <BellRing size={16} style={{ color: c.purple }} />;
+      case 'asset': return <Package size={16} style={{ color: c.green }} />;
+      case 'loan': return <Landmark size={16} style={{ color: c.red }} />;
+      case 'page': return <Navigation size={16} style={{ color: c.textMuted }} />;
       default: return <Search size={16} />;
     }
   };
 
   const formatAmount = (amount) => `LKR ${(amount || 0).toLocaleString()}`;
+
+  const ResultRow = ({ type, item, label, sublabel, rightLabel, rightColor }) => {
+    const idx = allResults.findIndex(r => r.type === type && r.item === item);
+    const isSelected = idx === selectedIndex;
+    return (
+      <div
+        onClick={() => handleResultClick({ type, item })}
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: 12,
+          padding: '10px 12px',
+          borderRadius: 8,
+          cursor: 'pointer',
+          background: isSelected ? c.hoverBg : 'transparent',
+        }}
+        onMouseEnter={(e) => e.currentTarget.style.background = c.hoverBg}
+        onMouseLeave={(e) => e.currentTarget.style.background = isSelected ? c.hoverBg : 'transparent'}
+      >
+        {getIcon(type)}
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <div style={{ color: c.text, fontSize: 13, fontWeight: 500, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{label}</div>
+          {sublabel && <div style={{ color: c.textMuted, fontSize: 11, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{sublabel}</div>}
+        </div>
+        {rightLabel && <span style={{ color: rightColor || c.textMuted, fontSize: 12, fontWeight: 600, flexShrink: 0 }}>{rightLabel}</span>}
+        {!rightLabel && <ArrowRight size={14} style={{ color: c.textMuted, flexShrink: 0 }} />}
+      </div>
+    );
+  };
+
+  const SectionHeader = ({ label }) => (
+    <div style={{ padding: '8px 12px', color: c.textMuted, fontSize: 11, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+      {label}
+    </div>
+  );
 
   let currentIndex = -1;
 
@@ -299,17 +454,17 @@ const SearchResults = ({ query, colors, onClose, onSelect }) => {
       borderRadius: 16,
       boxShadow: '0 10px 40px rgba(0,0,0,0.2)',
       zIndex: 100,
-      maxHeight: 420,
+      maxHeight: 480,
       overflowY: 'auto',
     }}>
-      {/* Show recent searches when no query */}
+      {/* Recent searches */}
       {(!query || query.length < 2) && recentSearches.length > 0 && (
         <div style={{ padding: 12 }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
             <span style={{ color: c.textMuted, fontSize: 11, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
               Recent Searches
             </span>
-            <button 
+            <button
               onClick={clearRecentSearches}
               style={{ background: 'none', border: 'none', color: c.textMuted, fontSize: 11, cursor: 'pointer' }}
             >
@@ -320,15 +475,7 @@ const SearchResults = ({ query, colors, onClose, onSelect }) => {
             <div
               key={i}
               onClick={() => onSelect(search)}
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: 10,
-                padding: '10px 12px',
-                borderRadius: 8,
-                cursor: 'pointer',
-                background: 'transparent',
-              }}
+              style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 12px', borderRadius: 8, cursor: 'pointer', background: 'transparent' }}
               onMouseEnter={(e) => e.currentTarget.style.background = c.hoverBg}
               onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
             >
@@ -339,48 +486,25 @@ const SearchResults = ({ query, colors, onClose, onSelect }) => {
         </div>
       )}
 
-      {/* Keyboard hint */}
+      {/* Empty state hint */}
       {(!query || query.length < 2) && recentSearches.length === 0 && (
         <div style={{ padding: 20, textAlign: 'center' }}>
-          <p style={{ color: c.textMuted, fontSize: 13, margin: 0 }}>
-            Type to search clients, invoices, payments, and expenses
+          <p style={{ color: c.textMuted, fontSize: 13, margin: '0 0 4px' }}>
+            Search clients, invoices, estimates, expenses, projects, files, reminders and more
           </p>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, marginTop: 12 }}>
-            <kbd style={{ 
-              background: c.hoverBg, 
-              border: `1px solid ${c.border}`, 
-              borderRadius: 4, 
-              padding: '2px 6px', 
-              fontSize: 11, 
-              color: c.textMuted 
-            }}>↑↓</kbd>
+            <kbd style={{ background: c.hoverBg, border: `1px solid ${c.border}`, borderRadius: 4, padding: '2px 6px', fontSize: 11, color: c.textMuted }}>↑↓</kbd>
             <span style={{ color: c.textMuted, fontSize: 11 }}>Navigate</span>
-            <kbd style={{ 
-              background: c.hoverBg, 
-              border: `1px solid ${c.border}`, 
-              borderRadius: 4, 
-              padding: '2px 6px', 
-              fontSize: 11, 
-              color: c.textMuted,
-              marginLeft: 8,
-            }}>Enter</kbd>
+            <kbd style={{ background: c.hoverBg, border: `1px solid ${c.border}`, borderRadius: 4, padding: '2px 6px', fontSize: 11, color: c.textMuted, marginLeft: 8 }}>Enter</kbd>
             <span style={{ color: c.textMuted, fontSize: 11 }}>Select</span>
-            <kbd style={{ 
-              background: c.hoverBg, 
-              border: `1px solid ${c.border}`, 
-              borderRadius: 4, 
-              padding: '2px 6px', 
-              fontSize: 11, 
-              color: c.textMuted,
-              marginLeft: 8,
-            }}>Esc</kbd>
+            <kbd style={{ background: c.hoverBg, border: `1px solid ${c.border}`, borderRadius: 4, padding: '2px 6px', fontSize: 11, color: c.textMuted, marginLeft: 8 }}>Esc</kbd>
             <span style={{ color: c.textMuted, fontSize: 11 }}>Close</span>
           </div>
         </div>
       )}
 
-      {/* Search Results */}
-      {query && query.length >= 2 && searchResults.total === 0 && (
+      {/* No results */}
+      {query && query.length >= 2 && grandTotal === 0 && (
         <div style={{ padding: 20, textAlign: 'center' }}>
           <p style={{ color: c.textMuted, fontSize: 13, margin: 0 }}>
             No results found for "{query}"
@@ -388,155 +512,159 @@ const SearchResults = ({ query, colors, onClose, onSelect }) => {
         </div>
       )}
 
-      {query && query.length >= 2 && searchResults.total > 0 && (
+      {/* Results */}
+      {query && query.length >= 2 && grandTotal > 0 && (
         <div style={{ padding: 8 }}>
+
+          {/* Pages */}
+          {pageResults.length > 0 && (
+            <div style={{ marginBottom: 8 }}>
+              <SectionHeader label="Pages" />
+              {pageResults.map((page, i) => (
+                <ResultRow key={i} type="page" item={page} label={page.name} sublabel="Go to page" />
+              ))}
+            </div>
+          )}
+
           {/* Clients */}
           {searchResults.clients.length > 0 && (
             <div style={{ marginBottom: 8 }}>
-              <div style={{ padding: '8px 12px', color: c.textMuted, fontSize: 11, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-                Clients
-              </div>
-              {searchResults.clients.map((client, i) => {
-                currentIndex++;
-                const isSelected = currentIndex === selectedIndex;
-                return (
-                  <div
-                    key={client._id || i}
-                    onClick={() => handleResultClick({ type: 'client', item: client })}
-                    style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: 12,
-                      padding: '10px 12px',
-                      borderRadius: 8,
-                      cursor: 'pointer',
-                      background: isSelected ? c.hoverBg : 'transparent',
-                    }}
-                    onMouseEnter={(e) => e.currentTarget.style.background = c.hoverBg}
-                    onMouseLeave={(e) => e.currentTarget.style.background = isSelected ? c.hoverBg : 'transparent'}
-                  >
-                    {getIcon('client')}
-                    <div style={{ flex: 1 }}>
-                      <div style={{ color: c.text, fontSize: 13, fontWeight: 500 }}>{client.name}</div>
-                      <div style={{ color: c.textMuted, fontSize: 11 }}>{client.email || client.phone}</div>
-                    </div>
-                    <ArrowRight size={14} style={{ color: c.textMuted }} />
-                  </div>
-                );
-              })}
+              <SectionHeader label="Clients" />
+              {searchResults.clients.map((client, i) => (
+                <ResultRow key={client.id || i} type="client" item={client}
+                  label={client.name}
+                  sublabel={client.email || client.phone}
+                />
+              ))}
             </div>
           )}
 
           {/* Invoices */}
           {searchResults.invoices.length > 0 && (
             <div style={{ marginBottom: 8 }}>
-              <div style={{ padding: '8px 12px', color: c.textMuted, fontSize: 11, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-                Invoices
-              </div>
-              {searchResults.invoices.map((inv, i) => {
-                currentIndex++;
-                const isSelected = currentIndex === selectedIndex;
-                return (
-                  <div
-                    key={inv._id || i}
-                    onClick={() => handleResultClick({ type: 'invoice', item: inv })}
-                    style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: 12,
-                      padding: '10px 12px',
-                      borderRadius: 8,
-                      cursor: 'pointer',
-                      background: isSelected ? c.hoverBg : 'transparent',
-                    }}
-                    onMouseEnter={(e) => e.currentTarget.style.background = c.hoverBg}
-                    onMouseLeave={(e) => e.currentTarget.style.background = isSelected ? c.hoverBg : 'transparent'}
-                  >
-                    {getIcon('invoice')}
-                    <div style={{ flex: 1 }}>
-                      <div style={{ color: c.text, fontSize: 13, fontWeight: 500 }}>{inv.invoiceNumber}</div>
-                      <div style={{ color: c.textMuted, fontSize: 11 }}>{inv.clientName}</div>
-                    </div>
-                    <span style={{ color: c.text, fontSize: 12, fontWeight: 600 }}>{formatAmount(inv.total)}</span>
-                  </div>
-                );
-              })}
+              <SectionHeader label="Invoices" />
+              {searchResults.invoices.map((inv, i) => (
+                <ResultRow key={inv.id || i} type="invoice" item={inv}
+                  label={inv.invoiceNumber || `Invoice`}
+                  sublabel={inv.clientName}
+                  rightLabel={formatAmount(inv.total)}
+                />
+              ))}
+            </div>
+          )}
+
+          {/* Estimates */}
+          {searchResults.estimates.length > 0 && (
+            <div style={{ marginBottom: 8 }}>
+              <SectionHeader label="Estimates" />
+              {searchResults.estimates.map((est, i) => (
+                <ResultRow key={est.id || i} type="estimate" item={est}
+                  label={est.estimateNumber || est.invoiceNumber || `Estimate`}
+                  sublabel={est.clientName}
+                  rightLabel={formatAmount(est.total)}
+                  rightColor={c.yellow}
+                />
+              ))}
             </div>
           )}
 
           {/* Payments */}
           {searchResults.incomes.length > 0 && (
             <div style={{ marginBottom: 8 }}>
-              <div style={{ padding: '8px 12px', color: c.textMuted, fontSize: 11, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-                Payments
-              </div>
-              {searchResults.incomes.map((inc, i) => {
-                currentIndex++;
-                const isSelected = currentIndex === selectedIndex;
-                return (
-                  <div
-                    key={inc._id || i}
-                    onClick={() => handleResultClick({ type: 'income', item: inc })}
-                    style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: 12,
-                      padding: '10px 12px',
-                      borderRadius: 8,
-                      cursor: 'pointer',
-                      background: isSelected ? c.hoverBg : 'transparent',
-                    }}
-                    onMouseEnter={(e) => e.currentTarget.style.background = c.hoverBg}
-                    onMouseLeave={(e) => e.currentTarget.style.background = isSelected ? c.hoverBg : 'transparent'}
-                  >
-                    {getIcon('income')}
-                    <div style={{ flex: 1 }}>
-                      <div style={{ color: c.text, fontSize: 13, fontWeight: 500 }}>{inc.clientName || inc.serviceType}</div>
-                      <div style={{ color: c.textMuted, fontSize: 11 }}>{inc.serviceType}</div>
-                    </div>
-                    <span style={{ color: c.green, fontSize: 12, fontWeight: 600 }}>+{formatAmount(inc.amount)}</span>
-                  </div>
-                );
-              })}
+              <SectionHeader label="Payments" />
+              {searchResults.incomes.map((inc, i) => (
+                <ResultRow key={inc.id || i} type="income" item={inc}
+                  label={inc.clientName || inc.serviceType}
+                  sublabel={inc.serviceType}
+                  rightLabel={`+${formatAmount(inc.amount)}`}
+                  rightColor={c.green}
+                />
+              ))}
             </div>
           )}
 
           {/* Expenses */}
           {searchResults.expenses.length > 0 && (
-            <div>
-              <div style={{ padding: '8px 12px', color: c.textMuted, fontSize: 11, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-                Expenses
-              </div>
-              {searchResults.expenses.map((exp, i) => {
-                currentIndex++;
-                const isSelected = currentIndex === selectedIndex;
-                return (
-                  <div
-                    key={exp._id || i}
-                    onClick={() => handleResultClick({ type: 'expense', item: exp })}
-                    style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: 12,
-                      padding: '10px 12px',
-                      borderRadius: 8,
-                      cursor: 'pointer',
-                      background: isSelected ? c.hoverBg : 'transparent',
-                    }}
-                    onMouseEnter={(e) => e.currentTarget.style.background = c.hoverBg}
-                    onMouseLeave={(e) => e.currentTarget.style.background = isSelected ? c.hoverBg : 'transparent'}
-                  >
-                    {getIcon('expense')}
-                    <div style={{ flex: 1 }}>
-                      <div style={{ color: c.text, fontSize: 13, fontWeight: 500 }}>{exp.category}</div>
-                      <div style={{ color: c.textMuted, fontSize: 11 }}>{exp.description || exp.vendor}</div>
-                    </div>
-                    <span style={{ color: c.red, fontSize: 12, fontWeight: 600 }}>-{formatAmount(exp.amount)}</span>
-                  </div>
-                );
-              })}
+            <div style={{ marginBottom: 8 }}>
+              <SectionHeader label="Expenses" />
+              {searchResults.expenses.map((exp, i) => (
+                <ResultRow key={exp.id || i} type="expense" item={exp}
+                  label={exp.category}
+                  sublabel={exp.description || exp.vendor}
+                  rightLabel={`-${formatAmount(exp.amount)}`}
+                  rightColor={c.red}
+                />
+              ))}
             </div>
           )}
+
+          {/* Projects */}
+          {searchResults.projects.length > 0 && (
+            <div style={{ marginBottom: 8 }}>
+              <SectionHeader label="Projects" />
+              {searchResults.projects.map((proj, i) => (
+                <ResultRow key={proj.id || i} type="project" item={proj}
+                  label={proj.name}
+                  sublabel={proj.clientName || proj.status}
+                />
+              ))}
+            </div>
+          )}
+
+          {/* Files */}
+          {files.length > 0 && (
+            <div style={{ marginBottom: 8 }}>
+              <SectionHeader label="Files" />
+              {files.map((file, i) => (
+                <ResultRow key={file.id || i} type="file" item={file}
+                  label={file.name || file.originalName}
+                  sublabel={file.fileType || file.type}
+                />
+              ))}
+            </div>
+          )}
+
+          {/* Reminders */}
+          {searchResults.reminders.length > 0 && (
+            <div style={{ marginBottom: 8 }}>
+              <SectionHeader label="Reminders" />
+              {searchResults.reminders.map((rem, i) => (
+                <ResultRow key={rem.id || i} type="reminder" item={rem}
+                  label={rem.title}
+                  sublabel={rem.description || rem.notes}
+                />
+              ))}
+            </div>
+          )}
+
+          {/* Assets */}
+          {searchResults.assets.length > 0 && (
+            <div style={{ marginBottom: 8 }}>
+              <SectionHeader label="Assets" />
+              {searchResults.assets.map((asset, i) => (
+                <ResultRow key={asset.id || i} type="asset" item={asset}
+                  label={asset.name}
+                  sublabel={asset.category || asset.description}
+                  rightLabel={asset.value ? formatAmount(asset.value) : undefined}
+                />
+              ))}
+            </div>
+          )}
+
+          {/* Loans */}
+          {searchResults.loans.length > 0 && (
+            <div style={{ marginBottom: 8 }}>
+              <SectionHeader label="Loans" />
+              {searchResults.loans.map((loan, i) => (
+                <ResultRow key={loan.id || i} type="loan" item={loan}
+                  label={loan.name}
+                  sublabel={loan.lender || loan.description}
+                  rightLabel={loan.amount ? formatAmount(loan.amount) : undefined}
+                />
+              ))}
+            </div>
+          )}
+
         </div>
       )}
     </div>
@@ -664,7 +792,7 @@ const Topbar = () => {
           <input
             ref={inputRef}
             type="text"
-            placeholder={isMobile ? 'Search…' : 'Search clients, invoices, payments...'}
+            placeholder={isMobile ? 'Search…' : 'Search everything…'}
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             onFocus={handleSearchFocus}

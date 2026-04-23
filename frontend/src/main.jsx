@@ -7,6 +7,16 @@ import { FinanceProvider } from "./contexts/FinanceContext";
 import { Toaster } from "./components/ui/toaster";
 import "./index.css";
 
+// Preload payment icons so they're instantly available
+import cardIcon from "./assets/card.png";
+import cashIcon from "./assets/cash.png";
+import bankIcon from "./assets/bank.png";
+import onlineIcon from "./assets/online_pay.png";
+[cardIcon, cashIcon, bankIcon, onlineIcon].forEach((src) => {
+  const img = new Image();
+  img.src = src;
+});
+
 ReactDOM.createRoot(document.getElementById("root")).render(
   <React.StrictMode>
     <BrowserRouter>

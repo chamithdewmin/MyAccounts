@@ -433,20 +433,119 @@ const Orders = () => {
           </span>
         </div>
 
-        <div className="bg-card rounded-lg border border-border overflow-hidden min-w-0">
-          <div className="overflow-x-auto -mx-3 sm:mx-0">
+        {/* Mobile card list */}
+        <div className="flex flex-col gap-3 md:hidden">
+          {filteredOrders.map((order, index) => (
+            <motion.div
+              key={order.id}
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: index * 0.04 }}
+              className="bg-card border border-border rounded-xl p-4 flex flex-col gap-3"
+            >
+              {/* Top row: invoice # + status */}
+              <div className="flex items-center justify-between gap-2">
+                <span className="font-mono text-sm font-semibold text-foreground">{order.invoiceNumber}</span>
+                <span className={`px-2.5 py-1 rounded-full text-xs font-semibold ${
+                  order.status === 'paid'
+                    ? 'bg-green-500/20 text-green-500'
+                    : 'bg-white text-gray-900 border border-border'
+                }`}>
+                  {order.status === 'paid' ? 'Paid' : 'Unpaid'}
+                </span>
+              </div>
+
+              {/* Client + date */}
+              <div className="flex items-center justify-between gap-2 text-sm">
+                <span className="font-medium text-foreground truncate">{order.clientName}</span>
+                <span className="text-muted-foreground text-xs whitespace-nowrap">{formatDate(order.createdAt)}</span>
+              </div>
+
+              {/* Total + meta row */}
+              <div className="flex items-center justify-between gap-2 text-sm">
+                <span className="font-semibold text-primary">
+                  {settings.currency} {Number(order.total || 0).toLocaleString()}
+                </span>
+                <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                  <span className="capitalize">{order.paymentMethod}</span>
+                  {Number(order.discountPercentage || 0) > 0 && (
+                    <span className="bg-secondary px-1.5 py-0.5 rounded">{order.discountPercentage}% off</span>
+                  )}
+                  <span>{order.items.length} item{order.items.length !== 1 ? 's' : ''}</span>
+                </div>
+              </div>
+
+              {/* Actions */}
+              <div className="flex items-center gap-1 flex-wrap border-t border-border pt-3">
+                <button
+                  type="button"
+                  onClick={() => { setSelectedOrder(order); setInvoiceAction('view'); }}
+                  className="p-2 hover:bg-secondary rounded-lg transition-colors text-blue-400 hover:text-blue-300"
+                  title="View"
+                >
+                  <Eye className="w-4 h-4" />
+                </button>
+                <button
+                  type="button"
+                  onClick={() => { setSelectedOrder(order); setInvoiceAction('download'); }}
+                  className="p-2 hover:bg-secondary rounded-lg transition-colors text-muted-foreground hover:text-foreground"
+                  title="Download PDF"
+                >
+                  <Download className="w-4 h-4" />
+                </button>
+                <button
+                  type="button"
+                  onClick={() => { setSelectedOrder(order); setInvoiceAction('print'); }}
+                  className="p-2 hover:bg-secondary rounded-lg transition-colors text-muted-foreground hover:text-foreground"
+                  title="Print"
+                >
+                  <Printer className="w-4 h-4" />
+                </button>
+                <button
+                  type="button"
+                  onClick={() => openEditInvoice(order)}
+                  className="p-2 hover:bg-secondary rounded-lg transition-colors text-green-500 hover:text-green-400"
+                  title="Edit"
+                >
+                  <Pencil className="w-4 h-4" />
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setDeleteCandidate(order)}
+                  className="p-2 hover:bg-secondary rounded-lg transition-colors text-red-500 hover:text-red-400"
+                  title="Delete"
+                >
+                  <Trash2 className="w-4 h-4" />
+                </button>
+                {order.status !== 'paid' && (
+                  <button
+                    type="button"
+                    onClick={() => updateInvoiceStatus(order.id, 'paid')}
+                    className="ml-auto text-xs px-3 py-1.5 rounded-full bg-primary !text-white hover:bg-primary/90"
+                  >
+                    Mark Paid
+                  </button>
+                )}
+              </div>
+            </motion.div>
+          ))}
+        </div>
+
+        {/* Desktop table */}
+        <div className="hidden md:block bg-card rounded-lg border border-border overflow-hidden">
+          <div className="overflow-x-auto">
             <table className="w-full min-w-[640px]">
               <thead className="bg-secondary">
                 <tr>
-                  <th className="px-3 sm:px-4 py-2 sm:py-3 text-left text-xs sm:text-sm font-semibold">Invoice #</th>
-                  <th className="px-3 sm:px-4 py-2 sm:py-3 text-left text-xs sm:text-sm font-semibold">Client</th>
-                  <th className="px-3 sm:px-4 py-2 sm:py-3 text-left text-xs sm:text-sm font-semibold">Date</th>
-                  <th className="px-3 sm:px-4 py-2 sm:py-3 text-left text-xs sm:text-sm font-semibold">Items</th>
-                  <th className="px-3 sm:px-4 py-2 sm:py-3 text-left text-xs sm:text-sm font-semibold">Discount %</th>
-                  <th className="px-3 sm:px-4 py-2 sm:py-3 text-left text-xs sm:text-sm font-semibold">Total</th>
-                  <th className="px-3 sm:px-4 py-2 sm:py-3 text-left text-xs sm:text-sm font-semibold">Payment</th>
-                  <th className="px-3 sm:px-4 py-2 sm:py-3 text-left text-xs sm:text-sm font-semibold">Status</th>
-                  <th className="px-3 sm:px-4 py-2 sm:py-3 text-center text-xs sm:text-sm font-semibold uppercase">Actions</th>
+                  <th className="px-4 py-3 text-left text-sm font-semibold">Invoice #</th>
+                  <th className="px-4 py-3 text-left text-sm font-semibold">Client</th>
+                  <th className="px-4 py-3 text-left text-sm font-semibold">Date</th>
+                  <th className="px-4 py-3 text-left text-sm font-semibold">Items</th>
+                  <th className="px-4 py-3 text-left text-sm font-semibold">Discount %</th>
+                  <th className="px-4 py-3 text-left text-sm font-semibold">Total</th>
+                  <th className="px-4 py-3 text-left text-sm font-semibold">Payment</th>
+                  <th className="px-4 py-3 text-left text-sm font-semibold">Status</th>
+                  <th className="px-4 py-3 text-center text-sm font-semibold uppercase">Actions</th>
                 </tr>
               </thead>
               <tbody>
@@ -482,10 +581,7 @@ const Orders = () => {
                       <div className="flex items-center justify-center gap-1 flex-wrap">
                         <button
                           type="button"
-                          onClick={() => {
-                            setSelectedOrder(order);
-                            setInvoiceAction('view');
-                          }}
+                          onClick={() => { setSelectedOrder(order); setInvoiceAction('view'); }}
                           className="p-2 hover:bg-secondary rounded-lg transition-colors text-blue-400 hover:text-blue-300"
                           title="View"
                         >
@@ -493,10 +589,7 @@ const Orders = () => {
                         </button>
                         <button
                           type="button"
-                          onClick={() => {
-                            setSelectedOrder(order);
-                            setInvoiceAction('download');
-                          }}
+                          onClick={() => { setSelectedOrder(order); setInvoiceAction('download'); }}
                           className="p-2 hover:bg-secondary rounded-lg transition-colors text-muted-foreground hover:text-foreground"
                           title="Download PDF"
                         >
@@ -504,10 +597,7 @@ const Orders = () => {
                         </button>
                         <button
                           type="button"
-                          onClick={() => {
-                            setSelectedOrder(order);
-                            setInvoiceAction('print');
-                          }}
+                          onClick={() => { setSelectedOrder(order); setInvoiceAction('print'); }}
                           className="p-2 hover:bg-secondary rounded-lg transition-colors text-muted-foreground hover:text-foreground"
                           title="Print"
                         >
@@ -523,9 +613,7 @@ const Orders = () => {
                         </button>
                         <button
                           type="button"
-                          onClick={() => {
-                            setDeleteCandidate(order);
-                          }}
+                          onClick={() => setDeleteCandidate(order)}
                           className="p-2 hover:bg-secondary rounded-lg transition-colors text-red-500 hover:text-red-400"
                           title="Delete"
                         >

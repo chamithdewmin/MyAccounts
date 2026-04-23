@@ -24,7 +24,7 @@ import {
 } from 'lucide-react';
 import { useSidebarState } from '@/components/SidebarNew';
 import { useFinance } from '@/contexts/FinanceContext';
-import api from '@/lib/api';
+import { api } from '@/lib/api';
 
 const getColors = () => {
   const isDark = document.documentElement.classList.contains('dark');

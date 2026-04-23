@@ -696,11 +696,11 @@ export default function FinanceDashboard() {
         </div>
       </div>
 
-      {/* TOP STAT CARDS — 1 column on mobile/tablet (≤1023px), 2×2 grid on desktop */}
+      {/* TOP STAT CARDS — 1 column on mobile/tablet (≤1023px), single row of 4 on desktop */}
       <div
         style={{
           display: "grid",
-          gridTemplateColumns: isMobileLayout ? "1fr" : "repeat(2, minmax(0, 1fr))",
+          gridTemplateColumns: isMobileLayout ? "1fr" : "repeat(4, minmax(0, 1fr))",
           gap: 16,
           marginBottom: 16,
         }}

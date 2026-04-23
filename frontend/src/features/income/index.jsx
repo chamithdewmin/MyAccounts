@@ -382,8 +382,10 @@ const POS = () => {
 
           {dataLoading && <SkeletonTable rows={5} cols={4} />}
 
-          {/* Mobile card list */}
-          {!dataLoading && <div className="flex flex-col gap-3 md:hidden">
+          {!dataLoading && (
+            <>
+              {/* Mobile card list */}
+              <div className="flex flex-col gap-3 md:hidden">
             {filteredIncomes.map((income, index) => (
               <motion.div
                 key={income.id}
@@ -437,10 +439,10 @@ const POS = () => {
                 No income records found for the selected filters.
               </div>
             )}
-          </div>
+              </div>
 
-          {/* Desktop table */}
-          <div className="hidden md:block bg-card rounded-lg border border-border overflow-hidden">
+              {/* Desktop table */}
+              <div className="hidden md:block bg-card rounded-lg border border-border overflow-hidden">
             <div className="overflow-x-auto overscroll-x-contain touch-pan-x">
               <table className="w-full min-w-[800px] text-sm">
                 <thead className="bg-secondary">
@@ -505,7 +507,9 @@ const POS = () => {
                 No income records found for the selected filters.
               </div>
             )}
-          </div>}
+              </div>
+            </>
+          )}
         </div>
       </div>
 

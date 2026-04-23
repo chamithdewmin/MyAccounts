@@ -389,8 +389,10 @@ const Inventory = () => {
 
           {dataLoading && <SkeletonTable rows={5} cols={4} />}
 
-          {/* Mobile card list */}
-          {!dataLoading && <div className="flex flex-col gap-3 md:hidden">
+          {!dataLoading && (
+            <>
+              {/* Mobile card list */}
+              <div className="flex flex-col gap-3 md:hidden">
             {filteredExpenses.map((exp, index) => (
               <motion.div
                 key={exp.id}
@@ -459,10 +461,10 @@ const Inventory = () => {
                 No expenses found for the selected filters.
               </div>
             )}
-          </div>
+              </div>
 
-          {/* Desktop table */}
-          <div className="hidden md:block bg-card rounded-lg border border-border overflow-hidden">
+              {/* Desktop table */}
+              <div className="hidden md:block bg-card rounded-lg border border-border overflow-hidden">
             <div className="overflow-x-auto overscroll-x-contain touch-pan-x">
               <table className="w-full min-w-[880px] text-sm">
                 <thead className="bg-secondary">
@@ -547,7 +549,9 @@ const Inventory = () => {
                 No expenses found for the selected filters.
               </div>
             )}
-          </div>}
+              </div>
+            </>
+          )}
         </div>
       </div>
 

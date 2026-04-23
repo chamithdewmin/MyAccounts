@@ -215,8 +215,10 @@ const Customers = () => {
 
           {dataLoading && <SkeletonTable rows={5} cols={3} />}
 
-          {/* Mobile card list */}
-          {!dataLoading && <div className="flex flex-col divide-y divide-border md:hidden">
+          {!dataLoading && (
+            <>
+              {/* Mobile card list */}
+              <div className="flex flex-col divide-y divide-border md:hidden">
             {pageRows.length === 0 ? (
               <p className="px-4 py-8 text-center text-muted-foreground text-sm">No clients found</p>
             ) : (
@@ -269,10 +271,10 @@ const Customers = () => {
                 </motion.div>
               ))
             )}
-          </div>
+              </div>
 
-          {/* Desktop table */}
-          <div className="hidden md:block overflow-x-auto">
+              {/* Desktop table */}
+              <div className="hidden md:block overflow-x-auto">
             <table className="w-full min-w-[720px] text-sm">
               <thead>
                 <tr className="border-b border-border text-muted-foreground text-xs uppercase tracking-wide">
@@ -338,7 +340,9 @@ const Customers = () => {
                 )}
               </tbody>
             </table>
-          </div>}
+              </div>
+            </>
+          )}
 
           {/* Pagination */}
           {totalPages > 1 && (

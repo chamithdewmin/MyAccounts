@@ -29,7 +29,7 @@ export default defineConfig({
           'vendor-charts': ['recharts'],
           'vendor-motion': ['framer-motion'],
           'vendor-ui':     ['lucide-react'],
-          'vendor-misc':   ['react-helmet', 'date-fns'],
+          'vendor-misc':   ['react-helmet'],
         },
       },
     },

@@ -8,7 +8,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { AlertCircle, CheckCircle, Eye, EyeOff } from 'lucide-react';
 import loginBackground from '@/assets/login-background.webp';
-import loginLogo from '@/assets/LOGOZODEV.png';
+import loginLogo from '@/assets/logozopos.png';
 import { APP_VERSION } from '@/constants';
 
 const STEPS = { PHONE: 1, OTP: 2, PASSWORD: 3 };

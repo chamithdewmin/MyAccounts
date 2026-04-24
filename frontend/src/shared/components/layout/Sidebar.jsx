@@ -3,7 +3,7 @@ import { createPortal } from "react-dom";
 import { NavLink, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { useFinance } from "@/contexts/FinanceContext";
-import sidebarIcon from "@/assets/LOGOZODEV.png";
+import sidebarIcon from "@/assets/logozopos.png";
 import {
   Receipt,
   FileText,

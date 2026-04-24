@@ -3,7 +3,7 @@ import { Helmet } from 'react-helmet';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import loginBg from '@/assets/login-background.webp';
-import sidebarLogo from '@/assets/LOGOZODEV.png';
+import sidebarLogo from '@/assets/logozopos.png';
 import './Login.css';
 
 const EyeIcon = ({ open }) =>

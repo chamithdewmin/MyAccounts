@@ -1115,41 +1115,56 @@ const Settings = () => {
             <div className="space-y-3">
               <div className="space-y-1.5">
                 <Label htmlFor="avatar-zoom">Zoom</Label>
-                <Input
-                  id="avatar-zoom"
-                  type="range"
-                  min="1"
-                  max="3"
-                  step="0.01"
-                  value={avatarZoom}
-                  onChange={(e) => setAvatarZoom(Number(e.target.value))}
-                />
+                <div className="flex items-center gap-3">
+                  <span className="w-12 shrink-0 text-xs text-muted-foreground text-left">
+                    {Math.round(avatarZoom * 100)}%
+                  </span>
+                  <Input
+                    id="avatar-zoom"
+                    type="range"
+                    min="1"
+                    max="3"
+                    step="0.01"
+                    value={avatarZoom}
+                    onChange={(e) => setAvatarZoom(Number(e.target.value))}
+                  />
+                </div>
               </div>
 
               <div className="space-y-1.5">
                 <Label htmlFor="avatar-x">Move left / right</Label>
-                <Input
-                  id="avatar-x"
-                  type="range"
-                  min="-50"
-                  max="50"
-                  step="1"
-                  value={avatarCropX}
-                  onChange={(e) => setAvatarCropX(Number(e.target.value))}
-                />
+                <div className="flex items-center gap-3">
+                  <span className="w-12 shrink-0 text-xs text-muted-foreground text-left">
+                    {avatarCropX}%
+                  </span>
+                  <Input
+                    id="avatar-x"
+                    type="range"
+                    min="-50"
+                    max="50"
+                    step="1"
+                    value={avatarCropX}
+                    onChange={(e) => setAvatarCropX(Number(e.target.value))}
+                  />
+                </div>
               </div>
 
               <div className="space-y-1.5">
                 <Label htmlFor="avatar-y">Move up / down</Label>
-                <Input
-                  id="avatar-y"
-                  type="range"
-                  min="-50"
-                  max="50"
-                  step="1"
-                  value={avatarCropY}
-                  onChange={(e) => setAvatarCropY(Number(e.target.value))}
-                />
+                <div className="flex items-center gap-3">
+                  <span className="w-12 shrink-0 text-xs text-muted-foreground text-left">
+                    {avatarCropY}%
+                  </span>
+                  <Input
+                    id="avatar-y"
+                    type="range"
+                    min="-50"
+                    max="50"
+                    step="1"
+                    value={avatarCropY}
+                    onChange={(e) => setAvatarCropY(Number(e.target.value))}
+                  />
+                </div>
               </div>
             </div>
           </div>

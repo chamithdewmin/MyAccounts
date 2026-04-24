@@ -321,7 +321,7 @@ const Orders = () => {
   return (
     <>
       <Helmet>
-        <title>Invoices - LogozoPOS</title>
+        <title>Invoices - LOGOZODEV</title>
         <meta name="description" content="Create, track, and manage invoices" />
       </Helmet>
 

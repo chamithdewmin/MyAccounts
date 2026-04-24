@@ -343,7 +343,7 @@ const SMS = () => {
   return (
     <>
       <Helmet>
-        <title>Messages - LogozoPOS</title>
+        <title>Messages - LOGOZODEV</title>
         <meta name="description" content="Send and schedule SMS to customers" />
       </Helmet>
 

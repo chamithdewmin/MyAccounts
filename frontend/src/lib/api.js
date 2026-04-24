@@ -1,5 +1,5 @@
 /**
- * LogozoPOS API client
+ * LOGOZODEV API client
  * Base URL: same domain /api when deployed, or VITE_API_URL env
  */
 const normalizeApiBase = (raw) => {
@@ -284,4 +284,4 @@ export const api = {
   },
 };
 
-export const useApi = () => !!import.meta.env.VITE_API_URL || window.location.origin.includes('myaccounts.logozodev.com');
+export const useApi = () => !!import.meta.env.VITE_API_URL || window.location.origin.includes('myaccounts.LOGOZODEV.com');

@@ -289,7 +289,7 @@ const Settings = () => {
   return (
     <>
       <Helmet>
-        <title>Settings - LogozoPOS</title>
+        <title>Settings - LOGOZODEV</title>
         <meta name="description" content="Organize and manage business settings, invoices, tax, bank, and preferences" />
       </Helmet>
 

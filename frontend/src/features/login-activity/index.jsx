@@ -21,7 +21,7 @@ import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { downloadDocumentPdfFromElement } from '@/utils/pdfPrint';
 
-const ADMIN_EMAIL = 'logozodev@gmail.com';
+const ADMIN_EMAIL = 'LOGOZODEV@gmail.com';
 
 const formatDateTime = (value) => {
   if (!value) return '—';
@@ -583,7 +583,7 @@ export default function LoginActivity() {
   return (
     <>
       <Helmet>
-        <title>Login Activity - LogozoPOS</title>
+        <title>Login Activity - LOGOZODEV</title>
         <meta name="description" content="Track login sessions, active users, and failed sign-in attempts" />
       </Helmet>
 

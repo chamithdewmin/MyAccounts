@@ -147,7 +147,7 @@ const Customers = () => {
   return (
     <>
       <Helmet>
-        <title>Clients - LogozoPOS</title>
+        <title>Clients - LOGOZODEV</title>
         <meta name="description" content="Manage your client database and payment history" />
       </Helmet>
 

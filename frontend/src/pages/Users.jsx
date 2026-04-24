@@ -27,7 +27,7 @@ import {
 import { api } from '@/lib/api';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 
-const PROTECTED_EMAIL = 'logozodev@gmail.com';
+const PROTECTED_EMAIL = 'LOGOZODEV@gmail.com';
 const PER_PAGE = 10;
 
 const Users = () => {
@@ -273,7 +273,7 @@ const Users = () => {
   return (
     <>
       <Helmet>
-        <title>Users - LogozoPOS</title>
+        <title>Users - LOGOZODEV</title>
         <meta name="description" content="Manage app users and add new users" />
       </Helmet>
 

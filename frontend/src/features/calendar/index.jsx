@@ -291,7 +291,7 @@ const Calendar = () => {
   return (
     <>
       <Helmet>
-        <title>Calendar - LogozoPOS</title>
+        <title>Calendar - LOGOZODEV</title>
         <meta name="description" content="View your financial transactions in a calendar view" />
       </Helmet>
 

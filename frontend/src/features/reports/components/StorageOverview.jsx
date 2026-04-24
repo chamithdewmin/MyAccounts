@@ -20,7 +20,7 @@ import { useToast } from '@/components/ui/use-toast';
 import { api } from '@/lib/api';
 import { useAuth } from '@/contexts/AuthContext';
 
-const ADMIN_EMAIL = 'logozodev@gmail.com';
+const ADMIN_EMAIL = 'LOGOZODEV@gmail.com';
 const isAdminUser = (u) =>
   String(u?.role || '').toLowerCase() === 'admin' || String(u?.email || '').toLowerCase().trim() === ADMIN_EMAIL;
 
@@ -174,7 +174,7 @@ const StorageOverview = () => {
   return (
     <>
       <Helmet>
-        <title>Storage Overview - LogozoPOS</title>
+        <title>Storage Overview - LOGOZODEV</title>
         <meta name="description" content="System-wide storage usage across files, invoices, clients, and logs" />
       </Helmet>
 

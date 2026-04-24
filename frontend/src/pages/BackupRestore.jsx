@@ -218,7 +218,7 @@ const BackupRestore = () => {
   return (
     <>
       <Helmet>
-        <title>Backup & Restore - LogozoPOS</title>
+        <title>Backup & Restore - LOGOZODEV</title>
         <meta name="description" content="Backup and restore your database" />
       </Helmet>
 

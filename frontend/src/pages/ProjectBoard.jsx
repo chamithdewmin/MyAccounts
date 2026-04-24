@@ -325,7 +325,7 @@ const ProjectBoard = () => {
   return (
     <>
       <Helmet>
-        <title>{project.name} · Board - LogozoPOS</title>
+        <title>{project.name} · Board - LOGOZODEV</title>
       </Helmet>
 
       <div className="page-y-sm min-w-0 space-y-6">

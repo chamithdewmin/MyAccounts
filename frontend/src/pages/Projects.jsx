@@ -150,7 +150,7 @@ const Projects = () => {
   return (
     <>
       <Helmet>
-        <title>Projects - LogozoPOS</title>
+        <title>Projects - LOGOZODEV</title>
       </Helmet>
 
       <div className="page-y-sm min-w-0">

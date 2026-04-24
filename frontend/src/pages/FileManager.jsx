@@ -804,7 +804,7 @@ const FileManager = () => {
   return (
     <>
       <Helmet>
-        <title>File Manager - LogozoPOS</title>
+        <title>File Manager - LOGOZODEV</title>
         <meta name="description" content="Upload, search, and link files to clients and invoices" />
       </Helmet>
 

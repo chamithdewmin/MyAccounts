@@ -3,7 +3,7 @@ import { Helmet } from 'react-helmet';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import loginBg from '@/assets/login-background.webp';
-import sidebarLogo from '@/assets/logozopos.png';
+import sidebarLogo from '@/assets/LOGOZODEV.png';
 import './Login.css';
 
 const EyeIcon = ({ open }) =>
@@ -49,7 +49,7 @@ export default function LoginPage() {
   return (
     <>
       <Helmet>
-        <title>Login - LogozoPOS</title>
+        <title>Login - LOGOZODEV</title>
       </Helmet>
       <div className="login-page">
         <div className="page">
@@ -87,7 +87,7 @@ export default function LoginPage() {
               <h1 className="headline a3">
                 Welcome to
                 <br />
-                <em>LogozoPOS</em>
+                <em>LOGOZODEV</em>
               </h1>
               <p className="tagline a4">
                 Invoicing, cash flow, inventory, and reporting — everything you need to run your business in one place.
@@ -160,8 +160,8 @@ export default function LoginPage() {
               </button>
               <p className="panel-bottom p6" style={{ marginTop: '18px' }}>
                 Powered by{' '}
-                <a href="https://www.logozodev.com" target="_blank" rel="noopener noreferrer">
-                  LogozoDev
+                <a href="https://www.LOGOZODEV.com" target="_blank" rel="noopener noreferrer">
+                  LOGOZODEV
                 </a>
               </p>
             </form>

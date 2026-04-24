@@ -126,7 +126,7 @@ const Reminders = () => {
   return (
     <>
       <Helmet>
-        <title>Reminders - LogozoPOS</title>
+        <title>Reminders - LOGOZODEV</title>
         <meta name="description" content="Payment and expense reminders with SMS" />
       </Helmet>
 

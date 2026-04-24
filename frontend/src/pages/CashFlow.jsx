@@ -574,7 +574,7 @@ const CashFlow = () => {
   return (
     <>
       <Helmet>
-        <title>Cash Flow - LogozoPOS</title>
+        <title>Cash Flow - LOGOZODEV</title>
         <meta name="description" content="Track money in, money out, and running cash balance" />
       </Helmet>
 

@@ -3,7 +3,7 @@ import { createPortal } from "react-dom";
 import { NavLink, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { useFinance } from "@/contexts/FinanceContext";
-import sidebarIcon from "@/assets/logozopos.png";
+import sidebarIcon from "@/assets/LOGOZODEV.png";
 import {
   Receipt,
   FileText,
@@ -67,7 +67,7 @@ const SidebarContext = createContext({
 });
 export const useSidebarState = () => useContext(SidebarContext);
 
-const ADMIN_EMAIL = "logozodev@gmail.com";
+const ADMIN_EMAIL = "LOGOZODEV@gmail.com";
 
 const reportSubItems = [
   { to: "/reports/overview", label: "Overview Reports" },

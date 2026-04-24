@@ -229,7 +229,7 @@ const Inventory = () => {
   return (
     <>
       <Helmet>
-        <title>Expenses - LogozoPOS</title>
+        <title>Expenses - LOGOZODEV</title>
         <meta name="description" content="Track and manage all business expenses" />
       </Helmet>
 

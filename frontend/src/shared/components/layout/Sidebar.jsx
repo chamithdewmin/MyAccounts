@@ -967,8 +967,8 @@ export default function Sidebar() {
                   src={sidebarIcon}
                   alt=""
                   style={{
-                    width: 33,
-                    height: 33,
+                    width: 38,
+                    height: 38,
                     objectFit: "contain",
                     position: "absolute",
                     opacity: hoverToggle ? 0 : 1,

@@ -31,6 +31,50 @@ const normalizeApiBase = (raw) => {
   return withLeadingSlash.replace(/\/+$/, '') || fallback;
 };
 
+const readFileAsDataUrl = (file) =>
+  new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(String(reader.result || ''));
+    reader.onerror = () => reject(new Error('Failed to read image file.'));
+    reader.readAsDataURL(file);
+  });
+
+const loadImage = (src) =>
+  new Promise((resolve, reject) => {
+    const img = new Image();
+    img.onload = () => resolve(img);
+    img.onerror = () => reject(new Error('Failed to load selected image.'));
+    img.src = src;
+  });
+
+const createCroppedAvatar = async (source, cropXPercent, cropYPercent, zoom, outputSize = 512) => {
+  const img = await loadImage(source);
+  const sw = img.naturalWidth || img.width;
+  const sh = img.naturalHeight || img.height;
+  if (!sw || !sh) throw new Error('Invalid image dimensions.');
+
+  const canvas = document.createElement('canvas');
+  canvas.width = outputSize;
+  canvas.height = outputSize;
+  const ctx = canvas.getContext('2d');
+  if (!ctx) throw new Error('Could not initialize image processor.');
+
+  const baseScale = Math.max(outputSize / sw, outputSize / sh);
+  const finalScale = baseScale * zoom;
+  const drawW = sw * finalScale;
+  const drawH = sh * finalScale;
+  const shiftX = (cropXPercent / 100) * outputSize;
+  const shiftY = (cropYPercent / 100) * outputSize;
+  const drawX = (outputSize - drawW) / 2 + shiftX;
+  const drawY = (outputSize - drawH) / 2 + shiftY;
+
+  ctx.fillStyle = '#000000';
+  ctx.fillRect(0, 0, outputSize, outputSize);
+  ctx.drawImage(img, drawX, drawY, drawW, drawH);
+
+  return canvas.toDataURL('image/png');
+};
+
 const Settings = () => {
   const { settings, updateSettings, loadData, saveBankDetails } = useFinance();
   const { user } = useAuth();
@@ -52,6 +96,13 @@ const Settings = () => {
   const [devOtp, setDevOtp] = useState('');
   const [saving, setSaving] = useState({});
   const [theme, setTheme] = useState(() => localStorage.getItem('theme') || 'dark');
+  const [avatarCropOpen, setAvatarCropOpen] = useState(false);
+  const [avatarCropSaving, setAvatarCropSaving] = useState(false);
+  const [avatarSource, setAvatarSource] = useState('');
+  const [avatarZoom, setAvatarZoom] = useState(1);
+  const [avatarCropX, setAvatarCropX] = useState(0);
+  const [avatarCropY, setAvatarCropY] = useState(0);
+  const [avatarIsLandscape, setAvatarIsLandscape] = useState(false);
 
   const apiDisplay = useMemo(() => normalizeApiBase(import.meta.env.VITE_API_URL), []);
 
@@ -242,23 +293,49 @@ const Settings = () => {
 
   const handleAvatarUpload = async (e) => {
     const file = e.target.files?.[0];
+    e.target.value = '';
     if (!file) return;
     if (file.size > 5 * 1024 * 1024) {
       toast({ title: 'File too large', description: 'Use an image under 5MB.', variant: 'destructive' });
       return;
     }
-    const reader = new FileReader();
-    reader.onload = async () => {
-      try {
-        await updateSettings({ profileAvatar: reader.result });
-        setLocal((prev) => ({ ...prev, profileAvatar: reader.result }));
-        toast({ title: 'Avatar updated' });
-      } catch (err) {
-        toast({ title: 'Upload failed', description: err.message || 'Could not save avatar.', variant: 'destructive' });
-      }
-    };
-    reader.readAsDataURL(file);
-    e.target.value = '';
+    try {
+      const imageDataUrl = await readFileAsDataUrl(file);
+      const image = await loadImage(imageDataUrl);
+      setAvatarSource(imageDataUrl);
+      setAvatarIsLandscape((image.naturalWidth || 0) >= (image.naturalHeight || 0));
+      setAvatarZoom(1);
+      setAvatarCropX(0);
+      setAvatarCropY(0);
+      setAvatarCropOpen(true);
+    } catch (err) {
+      toast({
+        title: 'Upload failed',
+        description: err.message || 'Could not open the selected image.',
+        variant: 'destructive',
+      });
+    }
+  };
+
+  const handleApplyAvatarCrop = async () => {
+    if (!avatarSource) return;
+    setAvatarCropSaving(true);
+    try {
+      const croppedAvatar = await createCroppedAvatar(avatarSource, avatarCropX, avatarCropY, avatarZoom);
+      await updateSettings({ profileAvatar: croppedAvatar });
+      setLocal((prev) => ({ ...prev, profileAvatar: croppedAvatar }));
+      setAvatarCropOpen(false);
+      setAvatarSource('');
+      toast({ title: 'Avatar updated' });
+    } catch (err) {
+      toast({
+        title: 'Upload failed',
+        description: err.message || 'Could not crop avatar.',
+        variant: 'destructive',
+      });
+    } finally {
+      setAvatarCropSaving(false);
+    }
   };
 
   const handleRemoveAvatar = async () => {
@@ -995,6 +1072,103 @@ const Settings = () => {
               }}
             >
               {resetLoading ? 'Verifying...' : 'Verify & Reset'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Avatar crop dialog */}
+      <Dialog
+        open={avatarCropOpen}
+        onOpenChange={(open) => {
+          if (avatarCropSaving) return;
+          setAvatarCropOpen(open);
+          if (!open) setAvatarSource('');
+        }}
+      >
+        <DialogContent className="w-[calc(100vw-1.25rem)] max-w-xl p-4 sm:p-6">
+          <DialogHeader>
+            <DialogTitle>Crop profile photo</DialogTitle>
+            <DialogDescription>Adjust the image to fit inside a square avatar.</DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4">
+            <div className="mx-auto w-full max-w-[320px]">
+              <div className="relative w-full aspect-square overflow-hidden rounded-xl border border-border bg-black">
+                {avatarSource ? (
+                  <img
+                    src={avatarSource}
+                    alt="Avatar crop preview"
+                    className={cn(
+                      'absolute left-1/2 top-1/2 max-w-none select-none',
+                      avatarIsLandscape ? 'h-full w-auto' : 'w-full h-auto'
+                    )}
+                    style={{
+                      transform: `translate(calc(-50% + ${avatarCropX}%), calc(-50% + ${avatarCropY}%)) scale(${avatarZoom})`,
+                      transformOrigin: 'center',
+                    }}
+                  />
+                ) : null}
+              </div>
+            </div>
+
+            <div className="space-y-3">
+              <div className="space-y-1.5">
+                <Label htmlFor="avatar-zoom">Zoom</Label>
+                <Input
+                  id="avatar-zoom"
+                  type="range"
+                  min="1"
+                  max="3"
+                  step="0.01"
+                  value={avatarZoom}
+                  onChange={(e) => setAvatarZoom(Number(e.target.value))}
+                />
+              </div>
+
+              <div className="space-y-1.5">
+                <Label htmlFor="avatar-x">Move left / right</Label>
+                <Input
+                  id="avatar-x"
+                  type="range"
+                  min="-50"
+                  max="50"
+                  step="1"
+                  value={avatarCropX}
+                  onChange={(e) => setAvatarCropX(Number(e.target.value))}
+                />
+              </div>
+
+              <div className="space-y-1.5">
+                <Label htmlFor="avatar-y">Move up / down</Label>
+                <Input
+                  id="avatar-y"
+                  type="range"
+                  min="-50"
+                  max="50"
+                  step="1"
+                  value={avatarCropY}
+                  onChange={(e) => setAvatarCropY(Number(e.target.value))}
+                />
+              </div>
+            </div>
+          </div>
+
+          <DialogFooter className="gap-2 sm:gap-0">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => {
+                if (avatarCropSaving) return;
+                setAvatarCropOpen(false);
+                setAvatarSource('');
+              }}
+              disabled={avatarCropSaving}
+            >
+              Cancel
+            </Button>
+            <Button type="button" onClick={handleApplyAvatarCrop} disabled={avatarCropSaving || !avatarSource}>
+              {avatarCropSaving ? 'Saving...' : 'Apply crop'}
             </Button>
           </DialogFooter>
         </DialogContent>

@@ -110,6 +110,20 @@ const UpwardTrendIcon = () => (
   </svg>
 );
 
+const IncomeIcon = () => (
+  <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <path d="M4 14L14 6" stroke="#3b82f6" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+    <path d="M10 6H14V10" stroke="#3b82f6" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+  </svg>
+);
+
+const OutcomeIcon = () => (
+  <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <path d="M6 6L16 14" stroke="#ef4444" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+    <path d="M12 14H16V10" stroke="#ef4444" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+  </svg>
+);
+
 // ─── CARD ICON ────────────────────────────────────────────────────────────────
 const CardIcon = ({ color }) => {
   const c = color || (document.documentElement.classList.contains('dark') ? "#fff" : "#0f172a");
@@ -730,7 +744,7 @@ export default function FinanceDashboard() {
         }}
       >
         <StatCard 
-          icon="↙" 
+          icon={<IncomeIcon />} 
           iconBg="rgba(59,130,246,0.2)" 
           label="Total Income" 
           value={formatCurrency(totalIncome)} 
@@ -738,7 +752,7 @@ export default function FinanceDashboard() {
           badgeColor="green"
         />
         <StatCard 
-          icon="↗" 
+          icon={<OutcomeIcon />} 
           iconBg="rgba(239,68,68,0.15)" 
           label="Total Outcome" 
           value={formatCurrency(totalOutcome)} 

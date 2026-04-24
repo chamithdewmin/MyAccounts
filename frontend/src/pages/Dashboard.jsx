@@ -694,7 +694,7 @@ export default function FinanceDashboard() {
       <div className="dashboard-container -mx-3 sm:-mx-4 lg:-mx-5" style={s.page}>
       {/* HEADER + DATE RANGE TOGGLE */}
       <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", justifyContent: "space-between", gap: 12, marginBottom: 16, marginTop: -4 }}>
-        <p style={{ color: tc.muted, fontSize: 15, margin: 0, fontWeight: 500 }}>{getGreeting()}, {userName} 👋</p>
+        <p style={{ color: "#fff", fontSize: 24, margin: 0, fontWeight: 600 }}>{getGreeting()}, {userName} 👋</p>
         <div style={{ display: "flex", gap: 6, background: tc.card, border: `1px solid ${tc.border}`, borderRadius: 10, padding: 4 }}>
           {DATE_RANGES.map(({ value, label }) => (
             <button

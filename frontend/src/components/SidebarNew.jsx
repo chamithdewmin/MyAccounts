@@ -513,7 +513,10 @@ function SidebarProfileFooter({ user, logout, navigate, colors, expanded }) {
           <span style={{ flex: 1, minWidth: 0, textAlign: "left" }}>
             <span
               style={{
-                display: "block",
+                display: "flex",
+                alignItems: "center",
+                gap: 6,
+                minWidth: 0,
                 fontSize: 14,
                 fontWeight: 700,
                 color: isDark ? "#ffffff" : "#18181b",
@@ -522,7 +525,26 @@ function SidebarProfileFooter({ user, logout, navigate, colors, expanded }) {
                 textOverflow: "ellipsis",
               }}
             >
-              {displayName}
+              <span style={{ overflow: "hidden", textOverflow: "ellipsis" }}>{displayName}</span>
+              <svg
+                width="14"
+                height="14"
+                viewBox="0 0 24 24"
+                fill="none"
+                xmlns="http://www.w3.org/2000/svg"
+                aria-label="Verified account"
+                role="img"
+                style={{ flexShrink: 0 }}
+              >
+                <circle cx="12" cy="12" r="10" fill="#1D9BF0" />
+                <path
+                  d="M7.9 12.3L10.5 14.9L16.1 9.3"
+                  stroke="#FFFFFF"
+                  strokeWidth="2.2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
+              </svg>
             </span>
             {email ? (
               <span
@@ -896,7 +918,7 @@ export default function SidebarNew() {
                   fontSize: 16,
                   color: c.text,
                   whiteSpace: "nowrap",
-                  fontWeight: 800,
+                  fontWeight: 700,
                   letterSpacing: "0.04em",
                   textTransform: "uppercase",
                   fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, sans-serif",

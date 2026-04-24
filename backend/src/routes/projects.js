@@ -303,7 +303,7 @@ router.get('/:projectId', async (req, res, next) => {
            bool_or(tl.end_time IS NULL) AS has_open_timer,
            MAX(CASE WHEN tl.end_time IS NULL THEN tl.id END) AS open_log_id
          FROM time_logs tl
-         WHERE tl.task_id = ANY($1::int[])
+         WHERE tl.task_id = ANY($1::text[])
          GROUP BY tl.task_id`,
         [taskIds],
       );

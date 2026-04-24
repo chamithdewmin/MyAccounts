@@ -911,7 +911,7 @@ export default function Sidebar() {
               <img
                 src={sidebarIcon}
                 alt=""
-                style={{ width: 34, height: 34, objectFit: "contain", flexShrink: 0 }}
+                style={{ width: 38, height: 38, objectFit: "contain", flexShrink: 0 }}
               />
               <span
                 style={{

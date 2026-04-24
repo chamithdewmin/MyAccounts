@@ -911,14 +911,14 @@ export default function Sidebar() {
               <img
                 src={sidebarIcon}
                 alt=""
-                style={{ width: 34, height: 34, objectFit: "contain", flexShrink: 0 }}
+                style={{ width: 38, height: 38, objectFit: "contain", flexShrink: 0 }}
               />
               <span
                 style={{
                   fontSize: 16,
                   color: c.text,
                   whiteSpace: "nowrap",
-                  fontWeight: 700,
+                  fontWeight: 600,
                   letterSpacing: "0.04em",
                   textTransform: "uppercase",
                   fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, sans-serif",

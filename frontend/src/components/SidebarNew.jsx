@@ -918,7 +918,7 @@ export default function SidebarNew() {
                   fontSize: 16,
                   color: c.text,
                   whiteSpace: "nowrap",
-                  fontWeight: 700,
+                  fontWeight: 550,
                   letterSpacing: "0.04em",
                   textTransform: "uppercase",
                   fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, sans-serif",
@@ -967,8 +967,8 @@ export default function SidebarNew() {
                   src={sidebarIcon}
                   alt=""
                   style={{
-                    width: 28,
-                    height: 28,
+                    width: 38,
+                    height: 38,
                     objectFit: "contain",
                     position: "absolute",
                     opacity: hoverToggle ? 0 : 1,

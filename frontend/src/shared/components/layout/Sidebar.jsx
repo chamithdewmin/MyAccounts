@@ -918,7 +918,7 @@ export default function Sidebar() {
                   fontSize: 16,
                   color: c.text,
                   whiteSpace: "nowrap",
-                  fontWeight: 600,
+                  fontWeight: 550,
                   letterSpacing: "0.04em",
                   textTransform: "uppercase",
                   fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, sans-serif",

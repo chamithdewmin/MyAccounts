@@ -786,7 +786,7 @@ export default function SidebarNew() {
     left: 10,
     transform: "translateY(-50%)",
     zIndex: 50,
-    fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, sans-serif",
+    fontFamily: "inherit",
   };
 
   const mobileSidebarStyle = {
@@ -810,7 +810,7 @@ export default function SidebarNew() {
     paddingBottom: "env(safe-area-inset-bottom, 0px)",
     transform: mobileDrawerOpen ? "translateX(0)" : "translateX(-105%)",
     zIndex: 101,
-    fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, sans-serif",
+    fontFamily: "inherit",
     boxShadow: mobileDrawerOpen ? "8px 0 32px rgba(0,0,0,0.28)" : "none",
   };
 
@@ -891,9 +891,18 @@ export default function SidebarNew() {
                 alt=""
                 style={{ width: 34, height: 34, objectFit: "contain", flexShrink: 0 }}
               />
-              <span style={{ fontSize: 16, color: c.text, whiteSpace: "nowrap" }}>
-                <span style={{ fontWeight: 800 }}>Logozo</span>
-                <span style={{ fontWeight: 500 }}>Dev</span>
+              <span
+                style={{
+                  fontSize: 16,
+                  color: c.text,
+                  whiteSpace: "nowrap",
+                  fontWeight: 800,
+                  letterSpacing: "0.04em",
+                  textTransform: "uppercase",
+                  fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, sans-serif",
+                }}
+              >
+                LOGOZODEV
               </span>
             </a>
           )}

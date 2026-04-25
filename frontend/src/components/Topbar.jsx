@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import {
   Search,
   Calendar,
@@ -21,6 +21,14 @@ import {
   Landmark,
   Navigation,
   ClipboardList,
+  BarChart3,
+  Settings2,
+  Sparkles,
+  FolderKanban,
+  HandCoins,
+  TrendingUp,
+  UserSquare2,
+  ShieldCheck,
 } from 'lucide-react';
 import { useSidebarState } from '@/components/Sidebar';
 import { useFinance } from '@/contexts/FinanceContext';
@@ -192,6 +200,29 @@ const PAGE_SHORTCUTS = [
   { name: 'Backup & Restore', path: '/backup-restore' },
   { name: 'Login Activity', path: '/login-activity' },
 ];
+
+const PAGE_META = [
+  { match: (path) => path === '/dashboard', title: 'Dashboard', subtitle: 'Track your business performance in one place.', Icon: Navigation },
+  { match: (path) => path === '/income', title: 'Income', subtitle: 'Manage incoming payments and revenue records.', Icon: TrendingUp },
+  { match: (path) => path === '/expenses', title: 'Expenses', subtitle: 'Monitor costs, categories, and recurring spend.', Icon: Receipt },
+  { match: (path) => path === '/invoices', title: 'Invoices', subtitle: 'Create, send, and track invoice payments.', Icon: FileText },
+  { match: (path) => path === '/estimates', title: 'Estimates', subtitle: 'Prepare and manage client quotations.', Icon: ClipboardList },
+  { match: (path) => path === '/clients', title: 'Clients', subtitle: 'View and manage customer information.', Icon: Users },
+  { match: (path) => path.startsWith('/projects'), title: 'Projects', subtitle: 'Plan and track active work items.', Icon: FolderKanban },
+  { match: (path) => path === '/file-manager', title: 'File Manager', subtitle: 'Organize receipts, reports, and uploads.', Icon: FolderOpen },
+  { match: (path) => path === '/cash-flow', title: 'Cash Flow', subtitle: 'Analyze money in and money out trends.', Icon: HandCoins },
+  { match: (path) => path === '/calendar', title: 'Calendar', subtitle: 'Schedule events and important dates.', Icon: Calendar },
+  { match: (path) => path.startsWith('/reports'), title: 'Reports', subtitle: 'Review analytics and financial statements.', Icon: BarChart3 },
+  { match: (path) => path === '/sms', title: 'SMS', subtitle: 'Send and configure customer reminders.', Icon: BellRing },
+  { match: (path) => path === '/settings', title: 'Settings', subtitle: 'Manage your business, profile and preferences.', Icon: Settings2 },
+  { match: (path) => path === '/users', title: 'Users', subtitle: 'Manage team members and access control.', Icon: UserSquare2 },
+  { match: (path) => path === '/ai-insights', title: 'AI Insights', subtitle: 'Get smart recommendations for your business.', Icon: Sparkles },
+  { match: (path) => path === '/backup-restore', title: 'Backup & Restore', subtitle: 'Secure and recover your account data.', Icon: ShieldCheck },
+  { match: (path) => path === '/login-activity', title: 'Login Activity', subtitle: 'Review account sign-in history.', Icon: ShieldCheck },
+  { match: (path) => path === '/reminders', title: 'Reminders', subtitle: 'Create and manage reminder schedules.', Icon: Bell },
+];
+
+const getPageMeta = (pathname) => PAGE_META.find((item) => item.match(pathname)) || null;
 
 // Search Results Dropdown Component
 const SearchResults = ({ query, colors, onClose, onSelect }) => {
@@ -673,6 +704,7 @@ const SearchResults = ({ query, colors, onClose, onSelect }) => {
 
 const Topbar = () => {
   const { isMobile, openMobileDrawer } = useSidebarState();
+  const location = useLocation();
   const [searchQuery, setSearchQuery] = useState('');
   const [colors, setColors] = useState(getColors);
   const [calendarOpen, setCalendarOpen] = useState(false);
@@ -738,6 +770,8 @@ const Topbar = () => {
     setSearchQuery(text);
     inputRef.current?.focus();
   };
+  const pageMeta = getPageMeta(location.pathname);
+  const HeaderIcon = pageMeta?.Icon;
 
   return (
     <header
@@ -775,6 +809,17 @@ const Topbar = () => {
           >
             <Menu size={20} />
           </button>
+        )}
+        {!isMobile && pageMeta && HeaderIcon && (
+          <div className="hidden lg:flex items-center gap-3 min-w-0 mr-1">
+            <div className="w-10 h-10 rounded-xl bg-primary/15 flex items-center justify-center flex-shrink-0">
+              <HeaderIcon className="w-5 h-5 text-primary" />
+            </div>
+            <div className="min-w-0">
+              <p className="text-base font-semibold leading-tight truncate">{pageMeta.title}</p>
+              <p className="text-xs text-muted-foreground leading-tight truncate">{pageMeta.subtitle}</p>
+            </div>
+          </div>
         )}
         {/* Search */}
         <div ref={searchRef} style={{ position: 'relative', flex: 1, maxWidth: 420, minWidth: 0 }}>

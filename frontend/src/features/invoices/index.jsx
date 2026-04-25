@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Helmet } from 'react-helmet';
 import { motion } from 'framer-motion';
-import { Search, Plus, Download, RefreshCw, Pencil, Trash2, Eye, Printer, Loader2 } from 'lucide-react';
+import { Search, Plus, Download, RefreshCw, Pencil, Trash2, Eye, Printer, Loader2, FileText } from 'lucide-react';
 import PaymentMethodBadge from '@/components/PaymentMethodBadge';
 import { SkeletonTable } from '@/components/ui/skeleton';
 import { useFinance } from '@/contexts/FinanceContext';

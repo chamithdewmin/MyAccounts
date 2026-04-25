@@ -328,7 +328,12 @@ const Orders = () => {
       <div className="page-y-sm min-w-0">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div className="min-w-0">
-            <h1 className="text-2xl sm:text-3xl font-bold">Invoices</h1>
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-primary/15 flex items-center justify-center flex-shrink-0">
+                <FileText className="w-5 h-5 text-primary" />
+              </div>
+              <h1 className="text-2xl sm:text-3xl font-bold">Invoices</h1>
+            </div>
             <p className="text-muted-foreground text-sm sm:text-base">
               Create and manage invoices, due dates, and payment status.
             </p>

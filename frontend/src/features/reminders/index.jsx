@@ -133,7 +133,12 @@ const Reminders = () => {
       <div className="page-y">
         <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
           <div className="min-w-0">
-            <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">Reminders</h1>
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-primary/15 flex items-center justify-center flex-shrink-0">
+                <Bell className="w-5 h-5 text-primary" />
+              </div>
+              <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">Reminders</h1>
+            </div>
             <p className="text-muted-foreground text-sm sm:text-base mt-1 max-w-2xl leading-relaxed">
               Create reminders and send them via SMS when ready.
             </p>

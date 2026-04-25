@@ -811,7 +811,12 @@ const FileManager = () => {
       <div className="page-y flex flex-col gap-5 min-h-0">
         <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
           <div className="min-w-0">
-            <h1 className="text-2xl sm:text-3xl font-bold text-foreground tracking-tight">File Manager</h1>
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-primary/15 flex items-center justify-center flex-shrink-0">
+                <FolderOpen className="w-5 h-5 text-primary" />
+              </div>
+              <h1 className="text-2xl sm:text-3xl font-bold text-foreground tracking-tight">File Manager</h1>
+            </div>
             <p className="text-muted-foreground text-sm sm:text-base mt-1 max-w-2xl leading-relaxed">
               Upload files, search by name or tags, and link documents to clients or invoices.
             </p>

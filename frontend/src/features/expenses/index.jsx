@@ -1,7 +1,7 @@
 import React, { useMemo, useState } from 'react';
 import { Helmet } from 'react-helmet';
 import { motion } from 'framer-motion';
-import { Download, Upload, RefreshCw, Plus, DollarSign, Repeat, PieChart, Pencil, Trash2, Loader2 } from 'lucide-react';
+import { Download, Upload, RefreshCw, Plus, DollarSign, Repeat, PieChart, Pencil, Trash2, Loader2, Receipt } from 'lucide-react';
 import PaymentMethodBadge from '@/components/PaymentMethodBadge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -236,7 +236,12 @@ const Inventory = () => {
       <div className="page-y">
         <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
           <div className="min-w-0">
-            <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">Expenses</h1>
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-primary/15 flex items-center justify-center flex-shrink-0">
+                <Receipt className="w-5 h-5 text-primary" />
+              </div>
+              <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">Expenses</h1>
+            </div>
             <p className="text-muted-foreground text-sm sm:text-base mt-1 max-w-2xl leading-relaxed">
               Track and manage all business expenses and costs.
             </p>

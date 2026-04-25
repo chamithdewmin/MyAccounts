@@ -590,7 +590,12 @@ export default function LoginActivity() {
       <div className="space-y-5">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <h1 className="text-2xl sm:text-3xl font-bold">Login Activity</h1>
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-primary/15 flex items-center justify-center flex-shrink-0">
+                <Activity className="w-5 h-5 text-primary" />
+              </div>
+              <h1 className="text-2xl sm:text-3xl font-bold">Login Activity</h1>
+            </div>
             <p className="text-muted-foreground text-sm">
               Sessions, active logins, and failed sign-in attempts.
             </p>

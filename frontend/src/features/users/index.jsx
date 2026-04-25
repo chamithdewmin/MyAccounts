@@ -12,6 +12,7 @@ import {
   ChevronRight,
   Ban,
   Unlock,
+  Users,
 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -280,7 +281,12 @@ const Users = () => {
       <div className="page-y">
         <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
           <div className="min-w-0">
-            <h1 className="text-2xl sm:text-3xl font-bold text-foreground tracking-tight">Users</h1>
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-primary/15 flex items-center justify-center flex-shrink-0">
+                <Users className="w-5 h-5 text-primary" />
+              </div>
+              <h1 className="text-2xl sm:text-3xl font-bold text-foreground tracking-tight">Users</h1>
+            </div>
             <p className="text-muted-foreground text-sm sm:text-base mt-1 max-w-2xl leading-relaxed">Add and manage users who can log in to the app.</p>
           </div>
           <div className="flex flex-wrap gap-2 sm:gap-3 w-full lg:w-auto lg:justify-end lg:shrink-0">

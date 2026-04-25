@@ -156,10 +156,12 @@ const Projects = () => {
       <div className="page-y-sm min-w-0">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
           <div>
-            <h1 className="text-2xl sm:text-3xl font-bold flex items-center gap-2">
-              <Briefcase className="w-8 h-8 text-primary shrink-0" />
-              Projects
-            </h1>
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-primary/15 flex items-center justify-center flex-shrink-0">
+                <Briefcase className="w-5 h-5 text-primary" />
+              </div>
+              <h1 className="text-2xl sm:text-3xl font-bold">Projects</h1>
+            </div>
             <p className="text-muted-foreground mt-1 text-sm sm:text-base">
               Track tasks on a board and time per project.
             </p>

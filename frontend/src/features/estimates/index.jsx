@@ -232,7 +232,12 @@ export default function Estimates() {
       <div className="space-y-5 max-lg:space-y-7">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <h1 className="text-2xl sm:text-3xl font-bold">Estimates</h1>
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-primary/15 flex items-center justify-center flex-shrink-0">
+                <FileText className="w-5 h-5 text-primary" />
+              </div>
+              <h1 className="text-2xl sm:text-3xl font-bold">Estimates</h1>
+            </div>
             <p className="text-muted-foreground text-sm sm:text-base">Create enterprise-style project quotations and download A4 sheets.</p>
           </div>
           <div className="flex flex-wrap gap-2">

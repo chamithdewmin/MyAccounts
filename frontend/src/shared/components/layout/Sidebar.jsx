@@ -70,11 +70,11 @@ export const useSidebarState = () => useContext(SidebarContext);
 const ADMIN_EMAIL = "LOGOZODEV@gmail.com";
 
 const reportSubItems = [
-  { to: "/reports/overview", label: "Overview Reports" },
-  { to: "/reports/storage-overview", label: "Storage Overview" },
-  { to: "/reports/profit-loss", label: "Profit & Loss" },
-  { to: "/reports/cash-flow", label: "Cash Flow" },
-  { to: "/reports/balance-sheet", label: "Balance Sheet" },
+  { to: "/reports/overview", label: "Overview Reports", icon: BarChart3 },
+  { to: "/reports/storage-overview", label: "Storage Overview", icon: Database },
+  { to: "/reports/profit-loss", label: "Profit & Loss", icon: TrendingUp },
+  { to: "/reports/cash-flow", label: "Cash Flow", icon: Activity },
+  { to: "/reports/balance-sheet", label: "Balance Sheet", icon: Receipt },
 ];
 
 const settingsSubItems = [

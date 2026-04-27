@@ -384,7 +384,7 @@ const Projects = () => {
           {/* Mobile project detail dialog */}
           {selectedProject && (
             <Dialog open={mobileDetailOpen} onOpenChange={setMobileDetailOpen}>
-              <DialogContent className="w-[95vw] max-w-md max-h-[90vh] overflow-y-auto lg:hidden" aria-describedby={undefined}>
+              <DialogContent className="max-w-md max-h-[min(92dvh,calc(100svh-2rem))] overflow-y-auto lg:hidden" aria-describedby={undefined}>
                 <DialogHeader>
                   <DialogTitle className="text-left pr-6">{selectedProject.name}</DialogTitle>
                 </DialogHeader>

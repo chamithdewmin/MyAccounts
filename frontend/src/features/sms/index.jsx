@@ -581,7 +581,7 @@ const SMS = () => {
       </div>
 
       <Dialog open={scheduleDialogOpen} onOpenChange={(o) => { setScheduleDialogOpen(o); if (!o) setScheduleClientSearch(''); }}>
-        <DialogContent className="w-[95vw] max-w-lg max-h-[90vh] overflow-y-auto sm:max-w-xl" aria-describedby="schedule-dialog-desc">
+        <DialogContent className="max-w-lg max-h-[min(92dvh,calc(100svh-2rem))] overflow-y-auto sm:max-w-xl" aria-describedby="schedule-dialog-desc">
           <DialogHeader>
             <DialogTitle>Schedule Messages</DialogTitle>
             <DialogDescription id="schedule-dialog-desc">

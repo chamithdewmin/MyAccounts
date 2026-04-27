@@ -665,7 +665,7 @@ const Orders = () => {
           }
         }}
       >
-        <DialogContent className="w-[95vw] max-w-4xl max-h-[90vh] overflow-y-auto mx-2 sm:mx-auto" aria-describedby={undefined}>
+        <DialogContent className="max-w-4xl max-h-[min(92dvh,calc(100svh-2rem))] overflow-y-auto" aria-describedby={undefined}>
           <DialogHeader>
             <DialogTitle>Invoice Details</DialogTitle>
           </DialogHeader>
@@ -706,7 +706,7 @@ const Orders = () => {
           }
         }}
       >
-        <DialogContent className="w-[95vw] max-w-2xl max-h-[90vh] overflow-y-auto mx-2 sm:mx-auto" aria-describedby={undefined}>
+        <DialogContent className="max-w-2xl max-h-[min(92dvh,calc(100svh-2rem))] overflow-y-auto" aria-describedby={undefined}>
           <DialogHeader>
             <DialogTitle>{editingInvoice ? 'Edit Invoice' : 'Create Invoice'}</DialogTitle>
           </DialogHeader>

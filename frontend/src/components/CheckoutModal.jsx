@@ -82,7 +82,7 @@ const CheckoutModal = ({ isOpen, onClose }) => {
   if (showInvoice && currentInvoice) {
     return (
       <Dialog open={isOpen} onOpenChange={onClose}>
-        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+        <DialogContent className="max-w-4xl max-h-[min(92dvh,calc(100svh-2rem))] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Invoice</DialogTitle>
           </DialogHeader>
@@ -129,7 +129,7 @@ const CheckoutModal = ({ isOpen, onClose }) => {
           {/* Payment method */}
           <div className="space-y-2">
             <Label>Payment Method</Label>
-            <div className="grid grid-cols-3 gap-3">
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
               <button
                 onClick={() => setPaymentMethod('card')}
                 className={`p-4 rounded-lg border-2 transition-all ${

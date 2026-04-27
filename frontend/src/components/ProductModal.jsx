@@ -27,7 +27,7 @@ const ProductModal = ({ car, isOpen, onClose }) => {
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-w-4xl max-h-[min(92dvh,calc(100svh-2rem))] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>{car.make} {car.model} ({car.year})</DialogTitle>
         </DialogHeader>
@@ -59,7 +59,7 @@ const ProductModal = ({ car, isOpen, onClose }) => {
               )}
             </div>
             {car.images.length > 1 && (
-              <div className="flex gap-2">
+              <div className="-mx-1 flex gap-2 overflow-x-auto px-1 pb-1">
                 {car.images.map((img, index) => (
                   <button
                     key={index}

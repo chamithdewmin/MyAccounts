@@ -650,7 +650,7 @@ const ProjectBoard = () => {
       </Dialog>
 
       <Dialog open={detailOpen} onOpenChange={setDetailOpen}>
-        <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto" aria-describedby={undefined}>
+        <DialogContent className="max-w-lg max-h-[min(92dvh,calc(100svh-2rem))] overflow-y-auto" aria-describedby={undefined}>
           <DialogHeader>
             <DialogTitle>Task</DialogTitle>
           </DialogHeader>

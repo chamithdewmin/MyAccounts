@@ -41,7 +41,7 @@ const CartDrawer = () => {
               animate={{ x: 0 }}
               exit={{ x: '100%' }}
               transition={{ type: 'spring', damping: 25 }}
-              className="fixed top-0 right-0 h-full w-full max-w-md bg-card z-50 shadow-2xl flex flex-col"
+              className="fixed top-0 right-0 flex h-[100dvh] max-h-[100dvh] w-full max-w-md flex-col bg-card z-50 shadow-2xl pt-[env(safe-area-inset-top,0px)] pb-[env(safe-area-inset-bottom,0px)]"
             >
               {/* Header */}
               <div className="flex items-center justify-between p-6 border-b border-border">
@@ -55,7 +55,7 @@ const CartDrawer = () => {
               </div>
 
               {/* Cart items */}
-              <div className="flex-1 overflow-y-auto p-6 space-y-4">
+              <div className="min-h-0 flex-1 overflow-y-auto overscroll-y-contain p-6 space-y-4">
                 {cart.length === 0 ? (
                   <div className="text-center py-12">
                     <ShoppingCart className="w-16 h-16 mx-auto text-muted-foreground mb-4" />

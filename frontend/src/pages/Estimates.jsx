@@ -403,7 +403,7 @@ export default function Estimates() {
       </div>
 
       <Dialog open={!!selected} onOpenChange={(open) => { if (!open) { setSelected(null); setPreviewAction(null); } }}>
-        <DialogContent className="w-[95vw] max-w-4xl max-h-[90vh] overflow-y-auto" aria-describedby={undefined}>
+        <DialogContent className="max-w-4xl max-h-[min(92dvh,calc(100svh-2rem))] overflow-y-auto" aria-describedby={undefined}>
           <DialogHeader><DialogTitle>Estimate Preview</DialogTitle></DialogHeader>
           {selected && (
             <EstimateTemplate
@@ -422,7 +422,7 @@ export default function Estimates() {
           if (!open) setClientSearchOpen(false);
         }}
       >
-        <DialogContent className="w-[95vw] max-w-3xl max-h-[90vh] overflow-y-auto" aria-describedby={undefined}>
+        <DialogContent className="max-w-3xl max-h-[min(92dvh,calc(100svh-2rem))] overflow-y-auto" aria-describedby={undefined}>
           <DialogHeader>
             <DialogTitle>{editing ? 'Edit Estimate' : 'Create Estimate'}</DialogTitle>
           </DialogHeader>

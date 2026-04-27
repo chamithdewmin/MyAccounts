@@ -1428,7 +1428,7 @@ const FileManager = () => {
                 </aside>
                 {/* Mobile preview dialog */}
                 <Dialog open={mobilePreviewOpen} onOpenChange={(o) => { setMobilePreviewOpen(o); if (!o) setSelected(null); }}>
-                  <DialogContent className="w-[95vw] max-w-md max-h-[85vh] overflow-y-auto lg:hidden" aria-describedby={undefined}>
+                  <DialogContent className="max-w-md max-h-[min(88dvh,calc(100svh-2rem))] overflow-y-auto lg:hidden" aria-describedby={undefined}>
                     <DialogHeader>
                       <DialogTitle className="text-sm font-semibold break-words pr-6">{selected.originalName}</DialogTitle>
                     </DialogHeader>

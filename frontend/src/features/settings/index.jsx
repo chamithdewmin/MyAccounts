@@ -1086,7 +1086,7 @@ const Settings = () => {
           if (!open) setAvatarSource('');
         }}
       >
-        <DialogContent className="w-[calc(100vw-1.25rem)] max-w-xl p-4 sm:p-6">
+        <DialogContent className="max-w-xl">
           <DialogHeader>
             <DialogTitle>Crop profile photo</DialogTitle>
             <DialogDescription>Adjust the image to fit inside a square avatar.</DialogDescription>

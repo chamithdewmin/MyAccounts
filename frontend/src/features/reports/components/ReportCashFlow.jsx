@@ -385,8 +385,8 @@ export default function CashFlowReport(){
       </div>
 
       {/* MODAL */}
-      {modal&&<div style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.7)",zIndex:100,display:"flex",alignItems:"center",justifyContent:"center",backdropFilter:"blur(4px)"}}>
-        <div style={{background:C.card,borderRadius:20,padding:28,width:400,border:`1px solid ${C.border2}`,animation:"fi .2s ease"}}>
+      {modal&&<div style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.7)",zIndex:100,display:"flex",alignItems:"center",justifyContent:"center",backdropFilter:"blur(4px)",padding:16,overflowY:"auto",WebkitOverflowScrolling:"touch"}}>
+        <div style={{background:C.card,borderRadius:20,padding:"clamp(16px,4vw,28px)",width:"min(400px,calc(100vw - 32px))",maxWidth:"100%",maxHeight:"min(90dvh,calc(100svh - 32px))",overflowY:"auto",border:`1px solid ${C.border2}`,animation:"fi .2s ease",boxSizing:"border-box"}}>
           <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:22}}>
             <div style={{display:"flex",alignItems:"center",gap:10}}>
               <div style={{width:36,height:36,borderRadius:10,background:modal==="in"?"rgba(34,197,94,0.15)":"rgba(239,68,68,0.15)",display:"flex",alignItems:"center",justifyContent:"center"}}>
@@ -402,9 +402,9 @@ export default function CashFlowReport(){
               <input type={f.type||"text"} placeholder={f.ph} value={form[f.key]} onChange={e=>setForm(p=>({...p,[f.key]:e.target.value}))} style={{width:"100%",background:C.bg,border:`1px solid ${C.border2}`,borderRadius:10,padding:"10px 14px",color:C.text,fontSize:14,outline:"none"}}/>
             </div>
           ))}
-          <div style={{display:"flex",gap:10,marginTop:20}}>
-            <button onClick={()=>setModal(null)} style={{flex:1,background:C.bg2,color:C.muted,border:"none",borderRadius:12,padding:"12px 0",fontSize:14,fontWeight:700,cursor:"pointer"}}>Cancel</button>
-            <button onClick={handleAdd} style={{flex:2,background:modal==="in"?"linear-gradient(135deg,#16a34a,#15803d)":"linear-gradient(135deg,#ef4444,#dc2626)",color:"#fff",border:"none",borderRadius:12,padding:"12px 0",fontSize:14,fontWeight:700,cursor:"pointer"}}>
+          <div style={{display:"flex",flexDirection:"column",gap:10,marginTop:20}}>
+            <button type="button" onClick={()=>setModal(null)} style={{width:"100%",background:C.bg2,color:C.muted,border:"none",borderRadius:12,padding:"12px 0",fontSize:14,fontWeight:700,cursor:"pointer"}}>Cancel</button>
+            <button type="button" onClick={handleAdd} style={{width:"100%",background:modal==="in"?"linear-gradient(135deg,#16a34a,#15803d)":"linear-gradient(135deg,#ef4444,#dc2626)",color:"#fff",border:"none",borderRadius:12,padding:"12px 0",fontSize:14,fontWeight:700,cursor:"pointer"}}>
               {modal==="in"?"Confirm Inflow":"Confirm Outflow"}
             </button>
           </div>

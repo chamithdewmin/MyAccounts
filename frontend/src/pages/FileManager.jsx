@@ -48,6 +48,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import VaultLock from '@/components/forgeui/vault-lock';
 import { api } from '@/lib/api';
 
 const TYPE_OPTIONS = [
@@ -101,6 +102,12 @@ const storageBand = (t) => {
   if (isDocsType(t)) return 'docs';
   return 'others';
 };
+
+const FileTileIcon = ({ className = 'w-5 h-5' }) => (
+  <div className="inline-flex items-center justify-center rounded-lg border border-amber-400/45 bg-amber-500/15 p-1.5">
+    <Folder className={`${className} text-amber-400`} />
+  </div>
+);
 
 const FileManager = () => {
   const { toast } = useToast();
@@ -1099,7 +1106,7 @@ const FileManager = () => {
                           <Checkbox checked={checkedIds.has(f.id)} onCheckedChange={(c) => toggleFileChecked(f.id, c === true)} aria-label={`Select ${f.originalName}`} />
                         </div>
                         <div className="w-9 h-9 rounded-lg bg-secondary flex items-center justify-center flex-shrink-0">
-                          {isImageType(f.fileType) ? <ImageIcon className="w-5 h-5 text-sky-400" /> : isPdfType(f.fileType) ? <FileText className="w-5 h-5 text-red-400" /> : <File className="w-5 h-5 text-muted-foreground" />}
+                          <FileTileIcon className="w-5 h-5" />
                         </div>
                         <div className="flex-1 min-w-0">
                           <div className="text-sm font-medium text-foreground truncate">{f.originalName}</div>
@@ -1205,13 +1212,7 @@ const FileManager = () => {
                             </td>
                             <td className="px-4 py-3">
                               <div className="flex items-center gap-2 min-w-0">
-                                {isImageType(f.fileType) ? (
-                                  <ImageIcon className="w-4 h-4 text-sky-400 shrink-0" />
-                                ) : isPdfType(f.fileType) ? (
-                                  <FileText className="w-4 h-4 text-red-400 shrink-0" />
-                                ) : (
-                                  <File className="w-4 h-4 text-muted-foreground shrink-0" />
-                                )}
+                                <FileTileIcon className="w-4 h-4" />
                                 <span className="font-medium text-foreground truncate">{f.originalName}</span>
                               </div>
                             </td>
@@ -1372,13 +1373,7 @@ const FileManager = () => {
                         </div>
                         {/* File icon */}
                         <div className="flex justify-center items-center py-5 mt-3 rounded-lg bg-secondary/40">
-                          {isImageType(f.fileType) ? (
-                            <ImageIcon className="w-10 h-10 text-sky-400" />
-                          ) : isPdfType(f.fileType) ? (
-                            <FileText className="w-10 h-10 text-red-400" />
-                          ) : (
-                            <File className="w-10 h-10 text-muted-foreground" />
-                          )}
+                          <FileTileIcon className="w-10 h-10" />
                         </div>
                         {/* Name */}
                         <div className="text-xs font-medium text-foreground line-clamp-2 leading-snug min-h-[2rem]">{f.originalName}</div>
@@ -1804,7 +1799,11 @@ const FileManager = () => {
           <DialogHeader>
             <DialogTitle>Enter folder password</DialogTitle>
           </DialogHeader>
-          <div className="space-y-2">
+          <div className="space-y-4">
+            <VaultLock
+              cardTitle="Vault Access"
+              cardDescription="Smooth and secure login experience, backed by encrypted access and seamless visual transitions"
+            />
             <p className="text-sm text-muted-foreground">Enter password to open {folderUnlockTarget?.name || 'this folder'}.</p>
             <Input
               type="password"

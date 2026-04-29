@@ -1,19 +1,19 @@
 import React from 'react';
 
 const STATUS_STYLES = {
-  paid: { dot: 'bg-emerald-400', label: 'Paid' },
+  paid: { dot: 'bg-[#25e16b]', label: 'Paid' },
   unpaid: { dot: 'bg-slate-400', label: 'Unpaid' },
   pending: { dot: 'bg-amber-400', label: 'Pending' },
-  failed: { dot: 'bg-red-500', label: 'Failed' },
-  sent: { dot: 'bg-emerald-400', label: 'Sent' },
-  received: { dot: 'bg-emerald-400', label: 'Received' },
-  overdue: { dot: 'bg-red-500', label: 'Overdue' },
+  failed: { dot: 'bg-[#ff4b4b]', label: 'Failed' },
+  sent: { dot: 'bg-[#25e16b]', label: 'Sent' },
+  received: { dot: 'bg-[#25e16b]', label: 'Received' },
+  overdue: { dot: 'bg-[#ff4b4b]', label: 'Overdue' },
   upcoming: { dot: 'bg-amber-400', label: 'Upcoming' },
   draft: { dot: 'bg-slate-400', label: 'Draft' },
-  accepted: { dot: 'bg-emerald-400', label: 'Accepted' },
-  rejected: { dot: 'bg-red-500', label: 'Rejected' },
+  accepted: { dot: 'bg-[#25e16b]', label: 'Accepted' },
+  rejected: { dot: 'bg-[#ff4b4b]', label: 'Rejected' },
   converted: { dot: 'bg-blue-400', label: 'Converted' },
-  active: { dot: 'bg-emerald-400', label: 'Active' },
+  active: { dot: 'bg-[#25e16b]', label: 'Active' },
   inactive: { dot: 'bg-slate-400', label: 'Inactive' },
 };
 

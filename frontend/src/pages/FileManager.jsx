@@ -48,7 +48,6 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import VaultLock from '@/components/forgeui/vault-lock';
 import { api } from '@/lib/api';
 
 const TYPE_OPTIONS = [
@@ -103,11 +102,7 @@ const storageBand = (t) => {
   return 'others';
 };
 
-const FileTileIcon = ({ className = 'w-5 h-5' }) => (
-  <div className="inline-flex items-center justify-center rounded-lg border border-amber-400/45 bg-amber-500/15 p-1.5">
-    <Folder className={`${className} text-amber-400`} />
-  </div>
-);
+const FileTileIcon = ({ className = 'w-5 h-5' }) => <Folder className={`${className} text-muted-foreground`} />;
 
 const FileManager = () => {
   const { toast } = useToast();
@@ -1799,11 +1794,7 @@ const FileManager = () => {
           <DialogHeader>
             <DialogTitle>Enter folder password</DialogTitle>
           </DialogHeader>
-          <div className="space-y-4">
-            <VaultLock
-              cardTitle="Vault Access"
-              cardDescription="Smooth and secure login experience, backed by encrypted access and seamless visual transitions"
-            />
+          <div className="space-y-2">
             <p className="text-sm text-muted-foreground">Enter password to open {folderUnlockTarget?.name || 'this folder'}.</p>
             <Input
               type="password"

@@ -42,13 +42,14 @@ const Input = React.forwardRef(({ className, type, ...props }, ref) => {
         currentTarget: { value: nextValue, name },
       });
     };
+    const handleDateValue = (next) => emitChange(toDateString(next));
 
     return (
       <DatePicker
         className={cn('w-full', className)}
         name={name}
         granularity="day"
-        value={dateValue}
+        value={dateValue ?? undefined}
         isClearable
         isRequired={required}
         isDisabled={disabled}
@@ -71,9 +72,8 @@ const Input = React.forwardRef(({ className, type, ...props }, ref) => {
               'text-sm data-[selected=true]:bg-primary data-[selected=true]:text-primary-foreground data-[today=true]:text-primary',
           },
         }}
-        onChange={(next) => {
-          emitChange(toDateString(next));
-        }}
+        onChange={handleDateValue}
+        onValueChange={handleDateValue}
         onClear={() => emitChange('')}
       />
     );

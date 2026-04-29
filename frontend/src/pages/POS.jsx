@@ -442,15 +442,23 @@ const POS = () => {
           {/* Desktop table */}
           <div className="hidden md:block bg-card rounded-lg border border-border overflow-hidden">
             <div className="overflow-x-auto overscroll-x-contain touch-pan-x">
-              <table className="w-full min-w-[800px] text-sm">
+              <table className="w-full min-w-[800px] table-fixed text-sm">
+                <colgroup>
+                  <col className="w-[18%]" />
+                  <col className="w-[20%]" />
+                  <col className="w-[18%]" />
+                  <col className="w-[12%]" />
+                  <col className="w-[20%]" />
+                  <col className="w-[12%]" />
+                </colgroup>
                 <thead className="bg-secondary">
                   <tr>
                     <th className="px-4 py-3 text-left text-sm font-semibold">Date</th>
                     <th className="px-4 py-3 text-left text-sm font-semibold">Client</th>
                     <th className="px-4 py-3 text-left text-sm font-semibold">Service</th>
                     <th className="px-4 py-3 text-left text-sm font-semibold">Payment</th>
-                    <th className="px-4 py-3 text-right text-sm font-semibold">Amount</th>
-                    <th className="px-4 py-3 text-center text-sm font-semibold uppercase">Actions</th>
+                    <th className="px-4 py-3 pr-6 text-right text-sm font-semibold">Amount</th>
+                    <th className="px-4 py-3 pr-6 text-right text-sm font-semibold uppercase">Actions</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -472,11 +480,11 @@ const POS = () => {
                       <td className="px-4 py-3 text-sm">{income.clientName || '—'}</td>
                       <td className="px-4 py-3 text-sm">{income.serviceType || '—'}</td>
                       <td className="px-4 py-3"><PaymentMethodBadge method={income.paymentMethod} /></td>
-                      <td className="px-4 py-3 text-sm font-semibold text-right">
+                      <td className="px-4 py-3 pr-6 text-sm font-semibold text-right tabular-nums whitespace-nowrap">
                         {settings.currency} {income.amount.toLocaleString()}
                       </td>
-                      <td className="px-4 py-3">
-                        <div className="flex items-center justify-center gap-2">
+                      <td className="px-4 py-3 pr-6">
+                        <div className="flex items-center justify-end gap-2">
                           <button
                             type="button"
                             onClick={() => openEdit(income)}

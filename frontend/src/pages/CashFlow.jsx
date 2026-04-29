@@ -21,6 +21,7 @@ import { useFinance } from '@/contexts/FinanceContext';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
+import StatusBadge from '@/components/StatusBadge';
 import {
   BarChart,
   Bar,
@@ -829,15 +830,7 @@ const CashFlow = () => {
                   <span className={`text-base font-semibold ${tx.type === 'inflow' ? 'text-green-500' : 'text-red-400'}`}>
                     {tx.type === 'inflow' ? '+' : '-'}{settings.currency} {tx.amount.toLocaleString()}
                   </span>
-                  <span className={`px-2.5 py-1 rounded-full text-xs font-semibold ${
-                    tx.status === 'received' || tx.status === 'paid'
-                      ? 'bg-green-500/20 text-green-500'
-                      : tx.status === 'overdue'
-                      ? 'bg-red-500/20 text-red-500'
-                      : 'bg-yellow-500/20 text-yellow-500'
-                  }`}>
-                    {tx.status.charAt(0).toUpperCase() + tx.status.slice(1)}
-                  </span>
+                  <StatusBadge status={tx.status} />
                 </div>
 
                 {/* Source + category */}
@@ -965,19 +958,7 @@ const CashFlow = () => {
                       </span>
                     </td>
                     <td className="px-4 py-3">
-                      <span
-                        className={`px-2 py-1 rounded-full text-xs font-semibold ${
-                          tx.status === 'received' || tx.status === 'paid'
-                            ? 'bg-green-500/20 text-green-500'
-                            : tx.status === 'overdue'
-                            ? 'bg-red-500/20 text-red-500'
-                            : tx.status === 'upcoming'
-                            ? 'bg-yellow-500/20 text-yellow-500'
-                            : 'bg-yellow-500/20 text-yellow-500'
-                        }`}
-                      >
-                        {tx.status.charAt(0).toUpperCase() + tx.status.slice(1)}
-                      </span>
+                      <StatusBadge status={tx.status} />
                     </td>
                     <td className="px-4 py-3 text-sm font-medium text-right">
                       {tx.runningBalance !== null

@@ -3,6 +3,7 @@ import { Helmet } from 'react-helmet';
 import { motion } from 'framer-motion';
 import { Search, Plus, Download, RefreshCw, Pencil, Trash2, Eye, Printer, Loader2 } from 'lucide-react';
 import PaymentMethodBadge from '@/components/PaymentMethodBadge';
+import StatusBadge from '@/components/StatusBadge';
 import { SkeletonTable } from '@/components/ui/skeleton';
 import { useFinance } from '@/contexts/FinanceContext';
 import { api } from '@/lib/api';
@@ -451,13 +452,7 @@ const Orders = () => {
               {/* Top row: invoice # + status */}
               <div className="flex items-center justify-between gap-2">
                 <span className="font-mono text-sm font-semibold text-foreground">{order.invoiceNumber}</span>
-                <span className={`px-2.5 py-1 rounded-full text-xs font-semibold ${
-                  order.status === 'paid'
-                    ? 'bg-green-500/20 text-green-500'
-                    : 'bg-white text-gray-900 border border-border'
-                }`}>
-                  {order.status === 'paid' ? 'Paid' : 'Unpaid'}
-                </span>
+                <StatusBadge status={order.status === 'paid' ? 'paid' : 'unpaid'} />
               </div>
 
               {/* Client + date */}
@@ -574,13 +569,7 @@ const Orders = () => {
                     </td>
                     <td className="px-4 py-3"><PaymentMethodBadge method={order.paymentMethod} /></td>
                     <td className="px-4 py-3">
-                      <span className={`px-2 py-1 rounded-full text-xs font-semibold ${
-                        order.status === 'paid'
-                          ? 'bg-green-500/20 text-green-500'
-                          : 'bg-white text-gray-900 border border-border'
-                      }`}>
-                        {order.status === 'paid' ? 'Paid' : 'Unpaid'}
-                      </span>
+                      <StatusBadge status={order.status === 'paid' ? 'paid' : 'unpaid'} />
                     </td>
                     <td className="px-4 py-3">
                       <div className="flex items-center justify-center gap-1 flex-wrap">

@@ -11,6 +11,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import { api } from '@/lib/api';
 import { useFinance } from '@/contexts/FinanceContext';
 import RemindBySmsModal from '@/components/RemindBySmsModal';
+import StatusBadge from '@/components/StatusBadge';
 
 const formatPhone = (p) => {
   if (!p?.trim()) return '';
@@ -194,9 +195,7 @@ const Reminders = () => {
                   {/* Name + status */}
                   <div className="flex items-start justify-between gap-2">
                     <span className="text-sm font-medium text-foreground leading-snug">{label}</span>
-                    <span className={`text-xs px-2 py-1 rounded-full flex-shrink-0 ${r.status === 'sent' ? 'bg-green-500/20 text-green-600' : 'bg-amber-500/20 text-amber-600'}`}>
-                      {r.status || 'pending'}
-                    </span>
+                    <StatusBadge status={r.status || 'pending'} className="flex-shrink-0" />
                   </div>
 
                   {/* Date + amount + contact */}
@@ -270,9 +269,7 @@ const Reminders = () => {
                         <td className="px-4 py-3 text-sm">{(r.reminderDate || '').slice(0, 10)}</td>
                         <td className="px-4 py-3 text-sm text-muted-foreground">{r.smsContact}</td>
                         <td className="px-4 py-3">
-                          <span className={`text-xs px-2 py-1 rounded ${r.status === 'sent' ? 'bg-green-500/20 text-green-600' : 'bg-amber-500/20 text-amber-600'}`}>
-                            {r.status || 'pending'}
-                          </span>
+                          <StatusBadge status={r.status || 'pending'} />
                         </td>
                         <td className="px-4 py-3 text-right">
                           <div className="flex justify-end gap-2">

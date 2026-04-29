@@ -9,6 +9,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import { useToast } from '@/components/ui/use-toast';
 import EstimateTemplate from '@/components/EstimateTemplate';
+import StatusBadge from '@/components/StatusBadge';
 
 const initialForm = {
   clientId: '',
@@ -275,17 +276,7 @@ export default function Estimates() {
               {/* Top row: estimate # + status */}
               <div className="flex items-center justify-between gap-2">
                 <span className="font-mono text-sm font-semibold text-foreground">{est.estimateNumber}</span>
-                <span className={`px-2.5 py-1 rounded-full text-xs font-semibold capitalize ${
-                  est.status === 'converted'
-                    ? 'bg-blue-500/20 text-blue-400'
-                    : est.status === 'accepted'
-                    ? 'bg-green-500/20 text-green-500'
-                    : est.status === 'rejected'
-                    ? 'bg-red-500/20 text-red-400'
-                    : 'bg-secondary text-muted-foreground'
-                }`}>
-                  {est.status || 'draft'}
-                </span>
+                <StatusBadge status={est.status || 'draft'} />
               </div>
 
               {/* Client + project */}
@@ -364,7 +355,9 @@ export default function Estimates() {
                     <td className="px-4 py-3 text-sm text-muted-foreground">{est.projectTitle || '—'}</td>
                     <td className="px-4 py-3 text-sm">{formatDate(est.validUntil)}</td>
                     <td className="px-4 py-3 text-sm font-semibold text-primary">{settings.currency} {Number(est.total || 0).toLocaleString()}</td>
-                    <td className="px-4 py-3 text-sm capitalize">{est.status || 'draft'}</td>
+                    <td className="px-4 py-3 text-sm">
+                      <StatusBadge status={est.status || 'draft'} />
+                    </td>
                     <td className="px-4 py-3">
                       <div className="flex items-center justify-center gap-1">
                         <button className="p-2 hover:bg-secondary rounded-lg text-blue-400" onClick={() => { setSelected(est); setPreviewAction('view'); }} title="View">

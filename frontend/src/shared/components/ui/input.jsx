@@ -1,7 +1,59 @@
 import React from 'react';
 import { cn } from '@/lib/utils';
+import { DatePicker } from '@heroui/react';
+import { parseDate } from '@internationalized/date';
+
+const toDateValue = (value) => {
+  if (!value) return null;
+  try {
+    return parseDate(String(value).slice(0, 10));
+  } catch {
+    return null;
+  }
+};
+
+const toDateString = (dateValue) => {
+  if (!dateValue) return '';
+  const year = String(dateValue.year).padStart(4, '0');
+  const month = String(dateValue.month).padStart(2, '0');
+  const day = String(dateValue.day).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+};
 
 const Input = React.forwardRef(({ className, type, ...props }, ref) => {
+  if (type === 'date') {
+    const {
+      value,
+      onChange,
+      name,
+      required,
+      disabled,
+      'aria-label': ariaLabel,
+    } = props;
+
+    const dateValue = toDateValue(value);
+
+    return (
+      <DatePicker
+        className={cn('w-full', className)}
+        name={name}
+        granularity="day"
+        value={dateValue ?? undefined}
+        isRequired={required}
+        isDisabled={disabled}
+        aria-label={ariaLabel || name || 'Date'}
+        onChange={(next) => {
+          if (!onChange) return;
+          const nextValue = toDateString(next);
+          onChange({
+            target: { value: nextValue, name },
+            currentTarget: { value: nextValue, name },
+          });
+        }}
+      />
+    );
+  }
+
   return (
     <input
       type={type}

@@ -9,6 +9,8 @@
     "preview": "vite preview --host :: --port 3000"
   },
   "dependencies": {
+    "@heroui/react": "^2.8.10",
+    "@internationalized/date": "^3.12.1",
     "@radix-ui/react-alert-dialog": "^1.0.5",
     "@radix-ui/react-avatar": "^1.0.3",
     "@radix-ui/react-checkbox": "^1.0.4",
@@ -22,7 +24,7 @@
     "@radix-ui/react-toast": "^1.1.5",
     "class-variance-authority": "^0.7.0",
     "clsx": "^2.0.0",
-    "framer-motion": "^10.16.4",
+    "framer-motion": "^12.38.0",
     "html2canvas": "^1.4.1",
     "html2pdf.js": "^0.14.0",
     "jspdf": "^2.5.2",

@@ -14,9 +14,11 @@ const toDateValue = (value) => {
 
 const toDateString = (dateValue) => {
   if (!dateValue) return '';
-  const year = String(dateValue.year).padStart(4, '0');
-  const month = String(dateValue.month).padStart(2, '0');
-  const day = String(dateValue.day).padStart(2, '0');
+  const raw = typeof dateValue?.toString === 'function' ? dateValue.toString() : '';
+  if (raw) return raw.slice(0, 10);
+  const year = String(dateValue.year ?? '').padStart(4, '0');
+  const month = String(dateValue.month ?? '').padStart(2, '0');
+  const day = String(dateValue.day ?? '').padStart(2, '0');
   return `${year}-${month}-${day}`;
 };
 
@@ -32,24 +34,29 @@ const Input = React.forwardRef(({ className, type, ...props }, ref) => {
     } = props;
 
     const dateValue = toDateValue(value);
+    const emitChange = (nextValue) => {
+      if (!onChange) return;
+      onChange({
+        type: 'change',
+        target: { value: nextValue, name },
+        currentTarget: { value: nextValue, name },
+      });
+    };
 
     return (
       <DatePicker
         className={cn('w-full', className)}
         name={name}
         granularity="day"
-        value={dateValue ?? undefined}
+        value={dateValue}
+        isClearable
         isRequired={required}
         isDisabled={disabled}
         aria-label={ariaLabel || name || 'Date'}
         onChange={(next) => {
-          if (!onChange) return;
-          const nextValue = toDateString(next);
-          onChange({
-            target: { value: nextValue, name },
-            currentTarget: { value: nextValue, name },
-          });
+          emitChange(toDateString(next));
         }}
+        onClear={() => emitChange('')}
       />
     );
   }

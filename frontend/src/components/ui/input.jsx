@@ -60,11 +60,11 @@ const Input = React.forwardRef(({ className, type, ...props }, ref) => {
             'h-10 rounded-lg border border-border bg-input text-foreground shadow-none data-[focus=true]:ring-2 data-[focus=true]:ring-primary',
           input: 'text-sm',
           selectorButton: 'text-muted-foreground hover:text-foreground',
-          popoverContent: 'rounded-xl border border-border bg-card text-foreground shadow-2xl',
+          popoverContent: 'w-[280px] rounded-xl border border-border bg-card p-2 text-foreground shadow-2xl',
         }}
         calendarProps={{
           classNames: {
-            base: 'bg-card text-foreground',
+            base: 'app-date-calendar bg-card text-foreground',
             headerWrapper: 'pb-2',
             title: 'text-sm font-semibold text-foreground',
             gridHeaderCell: 'text-xs text-muted-foreground',

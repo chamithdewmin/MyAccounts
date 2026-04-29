@@ -396,3 +396,24 @@ tbody td {
     max-width: 210mm;
   }
 }
+
+/* DatePicker calendar reset (avoid global table styles) */
+.app-date-calendar table {
+  width: auto !important;
+  border-collapse: separate !important;
+  border-spacing: 0 !important;
+}
+
+.app-date-calendar thead,
+.app-date-calendar tbody,
+.app-date-calendar tr,
+.app-date-calendar th,
+.app-date-calendar td {
+  background: transparent !important;
+  border: 0 !important;
+}
+
+.app-date-calendar th,
+.app-date-calendar td {
+  padding: 0 !important;
+}

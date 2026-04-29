@@ -464,7 +464,7 @@ const POS = () => {
                     <th className="px-4 py-3 text-left text-sm font-semibold">Client</th>
                     <th className="px-4 py-3 text-left text-sm font-semibold">Service</th>
                     <th className="px-4 py-3 text-left text-sm font-semibold">Payment</th>
-                    <th className="px-4 py-3 text-right text-sm font-semibold">Amount</th>
+                    <th className="px-4 py-3 text-left text-sm font-semibold">Amount</th>
                     <th className="px-4 py-3 text-right text-sm font-semibold uppercase">Actions</th>
                   </tr>
                 </thead>
@@ -487,7 +487,7 @@ const POS = () => {
                       <td className="px-4 py-3 align-middle text-sm">{income.clientName || '—'}</td>
                       <td className="px-4 py-3 align-middle text-sm">{income.serviceType || '—'}</td>
                       <td className="px-4 py-3 align-middle"><PaymentMethodBadge method={income.paymentMethod} /></td>
-                      <td className="px-4 py-3 align-middle text-sm font-semibold text-right tabular-nums whitespace-nowrap">
+                      <td className="px-4 py-3 align-middle text-left text-sm font-semibold tabular-nums whitespace-nowrap">
                         {settings.currency} {income.amount.toLocaleString()}
                       </td>
                       <td className="px-4 py-3 align-middle">

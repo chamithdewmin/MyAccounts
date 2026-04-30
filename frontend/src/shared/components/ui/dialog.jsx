@@ -3,7 +3,10 @@ import * as DialogPrimitive from '@radix-ui/react-dialog';
 import { X } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
-const Dialog = DialogPrimitive.Root;
+/** Default `modal={false}` so portaled date pickers stay clickable. Override with `modal` when needed. */
+const Dialog = ({ modal = false, ...props }) => (
+  <DialogPrimitive.Root modal={modal} {...props} />
+);
 const DialogTrigger = DialogPrimitive.Trigger;
 
 const DialogPortal = ({ ...props }) => (

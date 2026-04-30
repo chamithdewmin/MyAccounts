@@ -42,9 +42,14 @@ const Input = React.forwardRef(({ className, type, ...props }, ref) => {
         currentTarget: { value: nextValue, name },
       });
     };
-    const handleDateValue = (next) => {
-      if (!next || typeof next !== 'object' || typeof next.year !== 'number') return;
-      emitChange(toDateString(next));
+    const handleDateChange = (next) => {
+      if (next == null) {
+        emitChange('');
+        return;
+      }
+      if (typeof next === 'object' && typeof next.year === 'number') {
+        emitChange(toDateString(next));
+      }
     };
 
     return (
@@ -76,8 +81,7 @@ const Input = React.forwardRef(({ className, type, ...props }, ref) => {
               'text-sm data-[selected=true]:bg-primary data-[selected=true]:text-primary-foreground data-[today=true]:text-primary',
           },
         }}
-        onValueChange={handleDateValue}
-        onClear={() => emitChange('')}
+        onChange={handleDateChange}
       />
     );
   }

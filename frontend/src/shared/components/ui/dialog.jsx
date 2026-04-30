@@ -29,7 +29,7 @@ const isHeroDatePickerOutsideTarget = (target) => {
 };
 
 const DialogContent = React.forwardRef(
-  ({ className, children, onPointerDownOutside, onInteractOutside, ...props }, ref) => (
+  ({ className, children, onPointerDownOutside, onInteractOutside, onFocusOutside, ...props }, ref) => (
   <DialogPortal>
     <DialogOverlay />
     <DialogPrimitive.Content
@@ -48,6 +48,10 @@ const DialogContent = React.forwardRef(
       onInteractOutside={(e) => {
         if (isHeroDatePickerOutsideTarget(e.target)) e.preventDefault();
         onInteractOutside?.(e);
+      }}
+      onFocusOutside={(e) => {
+        if (isHeroDatePickerOutsideTarget(e.target)) e.preventDefault();
+        onFocusOutside?.(e);
       }}
       {...props}
     >

@@ -3,7 +3,6 @@ import { Helmet } from 'react-helmet';
 import { motion } from 'framer-motion';
 import { Plus, Search, DollarSign, Wallet, CreditCard, Download, RefreshCw, Pencil, Trash2 } from 'lucide-react';
 import PaymentMethodBadge from '@/components/PaymentMethodBadge';
-import DateTextPicker from '@/components/DateTextPicker';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/components/ui/use-toast';
@@ -637,7 +636,12 @@ const POS = () => {
               </div>
               <div className="space-y-2">
                 <Label className="text-sm font-medium">Date</Label>
-                <DateTextPicker value={form.date} onChange={(nextDate) => handleChange('date', nextDate)} />
+                <Input
+                  type="date"
+                  name="date"
+                  value={form.date}
+                  onChange={(e) => handleChange('date', e.target.value)}
+                />
               </div>
               <div className="space-y-2 md:col-span-2">
                 <Label className="text-sm font-medium">Notes</Label>

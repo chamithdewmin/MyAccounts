@@ -23,7 +23,13 @@ const DialogOverlay = React.forwardRef(({ className, ...props }, ref) => (
 ));
 DialogOverlay.displayName = DialogPrimitive.Overlay.displayName;
 
-const DialogContent = React.forwardRef(({ className, children, ...props }, ref) => (
+const isHeroDatePickerOutsideTarget = (target) => {
+  if (!(target instanceof Element)) return false;
+  return !!target.closest('.app-heroui-date-popover, .app-date-calendar');
+};
+
+const DialogContent = React.forwardRef(
+  ({ className, children, onPointerDownOutside, onInteractOutside, ...props }, ref) => (
   <DialogPortal>
     <DialogOverlay />
     <DialogPrimitive.Content
@@ -35,6 +41,14 @@ const DialogContent = React.forwardRef(({ className, children, ...props }, ref) 
         "data-[state=open]:animate-dialog-content-in data-[state=closed]:animate-dialog-content-out",
         className
       )}
+      onPointerDownOutside={(e) => {
+        if (isHeroDatePickerOutsideTarget(e.target)) e.preventDefault();
+        onPointerDownOutside?.(e);
+      }}
+      onInteractOutside={(e) => {
+        if (isHeroDatePickerOutsideTarget(e.target)) e.preventDefault();
+        onInteractOutside?.(e);
+      }}
       {...props}
     >
       {children}
@@ -44,7 +58,7 @@ const DialogContent = React.forwardRef(({ className, children, ...props }, ref) 
       </DialogPrimitive.Close>
     </DialogPrimitive.Content>
   </DialogPortal>
-));
+  ));
 DialogContent.displayName = DialogPrimitive.Content.displayName;
 
 const DialogHeader = ({ className, ...props }) => (

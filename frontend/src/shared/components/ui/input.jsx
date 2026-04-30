@@ -63,7 +63,8 @@ const Input = React.forwardRef(({ className, type, ...props }, ref) => {
             'h-10 rounded-lg border border-border bg-input text-foreground shadow-none data-[focus=true]:ring-2 data-[focus=true]:ring-primary',
           input: 'text-sm',
           selectorButton: 'text-muted-foreground hover:text-foreground',
-          popoverContent: 'w-[280px] rounded-xl border border-border bg-card p-2 text-foreground shadow-2xl',
+          popoverContent:
+            'app-heroui-date-popover w-[280px] rounded-xl border border-border bg-card p-2 text-foreground shadow-2xl !z-[200]',
         }}
         calendarProps={{
           classNames: {

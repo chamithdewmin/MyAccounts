@@ -23,9 +23,26 @@ const DialogOverlay = React.forwardRef(({ className, ...props }, ref) => (
 ));
 DialogOverlay.displayName = DialogPrimitive.Overlay.displayName;
 
-const isHeroDatePickerOutsideTarget = (target) => {
+const isHeroDatePickerInPath = (target) => {
   if (!(target instanceof Element)) return false;
   return !!target.closest('.app-heroui-date-popover, .app-date-calendar');
+};
+
+/** Radix "outside" events may target a wrapper; HeroUI calendar is portaled — use composedPath. */
+const eventTouchesHeroDatePicker = (e) => {
+  const path = typeof e.composedPath === 'function' ? e.composedPath() : [];
+  for (const node of path) {
+    if (node instanceof Element && isHeroDatePickerInPath(node)) return true;
+  }
+  return e.target instanceof Element && isHeroDatePickerInPath(e.target);
+};
+
+const focusOutsideTouchesHeroDatePicker = (e) => {
+  const orig = e.detail?.originalEvent;
+  const related =
+    orig && typeof orig === 'object' && 'relatedTarget' in orig ? orig.relatedTarget : null;
+  if (related instanceof Element && isHeroDatePickerInPath(related)) return true;
+  return e.target instanceof Element && isHeroDatePickerInPath(e.target);
 };
 
 const DialogContent = React.forwardRef(
@@ -42,15 +59,15 @@ const DialogContent = React.forwardRef(
         className
       )}
       onPointerDownOutside={(e) => {
-        if (isHeroDatePickerOutsideTarget(e.target)) e.preventDefault();
+        if (eventTouchesHeroDatePicker(e)) e.preventDefault();
         onPointerDownOutside?.(e);
       }}
       onInteractOutside={(e) => {
-        if (isHeroDatePickerOutsideTarget(e.target)) e.preventDefault();
+        if (eventTouchesHeroDatePicker(e)) e.preventDefault();
         onInteractOutside?.(e);
       }}
       onFocusOutside={(e) => {
-        if (isHeroDatePickerOutsideTarget(e.target)) e.preventDefault();
+        if (focusOutsideTouchesHeroDatePicker(e)) e.preventDefault();
         onFocusOutside?.(e);
       }}
       {...props}

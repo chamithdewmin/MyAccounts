@@ -48,9 +48,8 @@ const Input = React.forwardRef(({ className, type, ...props }, ref) => {
         emitChange('');
         return;
       }
-      if (typeof next === 'object' && typeof next.year === 'number') {
-        emitChange(toDateString(next));
-      }
+      const iso = toDateString(next);
+      if (iso) emitChange(iso);
     };
 
     return (
@@ -82,6 +81,7 @@ const Input = React.forwardRef(({ className, type, ...props }, ref) => {
               'text-sm data-[selected=true]:bg-primary data-[selected=true]:text-primary-foreground data-[today=true]:text-primary',
           },
         }}
+        popoverProps={{ style: { zIndex: 10_000 } }}
         onChange={handleDateChange}
       />
     );

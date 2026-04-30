@@ -519,6 +519,7 @@ const POS = () => {
 
       {/* Add income dialog */}
       <Dialog
+        modal={false}
         open={isDialogOpen}
         onOpenChange={(open) => {
           setIsDialogOpen(open);

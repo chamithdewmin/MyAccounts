@@ -1124,10 +1124,10 @@ const FileManager = () => {
                           <DropdownMenuContent align="end" className="w-48">
                             <DropdownMenuItem onClick={() => { setSelected(f); setMobilePreviewOpen(true); }}><Eye className="w-4 h-4 mr-2" />View</DropdownMenuItem>
                             <DropdownMenuItem onClick={() => downloadFile(f)}><Download className="w-4 h-4 mr-2" />Download</DropdownMenuItem>
-                            <DropdownMenuItem onClick={() => { setRenameTarget(f); setRenameValue(f.originalName); setRenameOpen(true); }}><Pencil className="w-4 h-4 mr-2" />Rename</DropdownMenuItem>
-                            <DropdownMenuItem onClick={() => { setLinkTarget(f); setLinkKind('client'); setLinkClientId(f.linkedType === 'client' ? f.linkedId : ''); setLinkInvoiceId(f.linkedType === 'invoice' ? f.linkedId : ''); setLinkOpen(true); }}><Link2 className="w-4 h-4 mr-2" />Link to…</DropdownMenuItem>
+                            <DropdownMenuItem onSelect={(e) => { e.preventDefault(); setRenameTarget(f); setRenameValue(f.originalName); setRenameOpen(true); }}><Pencil className="w-4 h-4 mr-2" />Rename</DropdownMenuItem>
+                            <DropdownMenuItem onSelect={(e) => { e.preventDefault(); setLinkTarget(f); setLinkKind('client'); setLinkClientId(f.linkedType === 'client' ? f.linkedId : ''); setLinkInvoiceId(f.linkedType === 'invoice' ? f.linkedId : ''); setLinkOpen(true); }}><Link2 className="w-4 h-4 mr-2" />Link to…</DropdownMenuItem>
                             {f.linkedType && <DropdownMenuItem onClick={() => clearLink(f)}><Unlink className="w-4 h-4 mr-2" />Remove link</DropdownMenuItem>}
-                            <DropdownMenuItem className="text-destructive focus:text-destructive" onClick={() => openDeleteDialog(f)}><Trash2 className="w-4 h-4 mr-2" />Delete</DropdownMenuItem>
+                            <DropdownMenuItem className="text-destructive focus:text-destructive" onSelect={(e) => { e.preventDefault(); openDeleteDialog(f); }}><Trash2 className="w-4 h-4 mr-2" />Delete</DropdownMenuItem>
                           </DropdownMenuContent>
                         </DropdownMenu>
                       </motion.div>
@@ -1250,7 +1250,8 @@ const FileManager = () => {
                                     Download
                                   </DropdownMenuItem>
                                   <DropdownMenuItem
-                                    onClick={() => {
+                                    onSelect={(e) => {
+                                      e.preventDefault();
                                       setRenameTarget(f);
                                       setRenameValue(f.originalName);
                                       setRenameOpen(true);
@@ -1260,7 +1261,8 @@ const FileManager = () => {
                                     Rename
                                   </DropdownMenuItem>
                                   <DropdownMenuItem
-                                    onClick={() => {
+                                    onSelect={(e) => {
+                                      e.preventDefault();
                                       setLinkTarget(f);
                                       setLinkKind('client');
                                       setLinkClientId(f.linkedType === 'client' ? f.linkedId : '');
@@ -1279,7 +1281,10 @@ const FileManager = () => {
                                   ) : null}
                                   <DropdownMenuItem
                                     className="text-destructive focus:text-destructive"
-                                    onClick={() => openDeleteDialog(f)}
+                                    onSelect={(e) => {
+                                      e.preventDefault();
+                                      openDeleteDialog(f);
+                                    }}
                                   >
                                     <Trash2 className="w-4 h-4 mr-2" />
                                     Delete
@@ -1368,10 +1373,10 @@ const FileManager = () => {
                             <DropdownMenuContent align="end" className="w-44">
                               <DropdownMenuItem onClick={() => { setSelected(f); setMobilePreviewOpen(true); }}><Eye className="w-4 h-4 mr-2" />View</DropdownMenuItem>
                               <DropdownMenuItem onClick={() => downloadFile(f)}><Download className="w-4 h-4 mr-2" />Download</DropdownMenuItem>
-                              <DropdownMenuItem onClick={() => { setRenameTarget(f); setRenameValue(f.originalName); setRenameOpen(true); }}><Pencil className="w-4 h-4 mr-2" />Rename</DropdownMenuItem>
-                              <DropdownMenuItem onClick={() => { setLinkTarget(f); setLinkKind('client'); setLinkClientId(f.linkedType === 'client' ? f.linkedId : ''); setLinkInvoiceId(f.linkedType === 'invoice' ? f.linkedId : ''); setLinkOpen(true); }}><Link2 className="w-4 h-4 mr-2" />Link to…</DropdownMenuItem>
+                              <DropdownMenuItem onSelect={(e) => { e.preventDefault(); setRenameTarget(f); setRenameValue(f.originalName); setRenameOpen(true); }}><Pencil className="w-4 h-4 mr-2" />Rename</DropdownMenuItem>
+                              <DropdownMenuItem onSelect={(e) => { e.preventDefault(); setLinkTarget(f); setLinkKind('client'); setLinkClientId(f.linkedType === 'client' ? f.linkedId : ''); setLinkInvoiceId(f.linkedType === 'invoice' ? f.linkedId : ''); setLinkOpen(true); }}><Link2 className="w-4 h-4 mr-2" />Link to…</DropdownMenuItem>
                               {f.linkedType && <DropdownMenuItem onClick={() => clearLink(f)}><Unlink className="w-4 h-4 mr-2" />Remove link</DropdownMenuItem>}
-                              <DropdownMenuItem className="text-destructive focus:text-destructive" onClick={() => openDeleteDialog(f)}><Trash2 className="w-4 h-4 mr-2" />Delete</DropdownMenuItem>
+                              <DropdownMenuItem className="text-destructive focus:text-destructive" onSelect={(e) => { e.preventDefault(); openDeleteDialog(f); }}><Trash2 className="w-4 h-4 mr-2" />Delete</DropdownMenuItem>
                             </DropdownMenuContent>
                           </DropdownMenu>
                         </div>

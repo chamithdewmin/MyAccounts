@@ -179,6 +179,7 @@ const FileManager = () => {
   const [linkClientId, setLinkClientId] = useState('');
   const [linkInvoiceId, setLinkInvoiceId] = useState('');
   const [linkSearch, setLinkSearch] = useState('');
+  const [openGridMenuFileId, setOpenGridMenuFileId] = useState(null);
 
   const revokePreview = useCallback(() => {
     if (previewUrlRef.current) {
@@ -1349,8 +1350,22 @@ const FileManager = () => {
                           />
                         </div>
                         {/* Actions menu */}
-                        <div className="absolute top-2 right-2 z-10 opacity-0 group-hover:opacity-100 transition-opacity" onClick={(e) => e.stopPropagation()}>
-                          <DropdownMenu>
+                        <div
+                          className={`absolute top-2 right-2 z-10 transition-opacity ${
+                            openGridMenuFileId === f.id ? 'opacity-100' : 'opacity-0 group-hover:opacity-100 group-focus-within:opacity-100'
+                          }`}
+                          onClick={(e) => e.stopPropagation()}
+                          onPointerDown={(e) => e.stopPropagation()}
+                        >
+                          <DropdownMenu
+                            open={openGridMenuFileId === f.id}
+                            onOpenChange={(open) => {
+                              setOpenGridMenuFileId((prev) => {
+                                if (open) return f.id;
+                                return prev === f.id ? null : prev;
+                              });
+                            }}
+                          >
                             <DropdownMenuTrigger asChild>
                               <Button variant="secondary" size="icon" className="h-6 w-6" aria-label="Actions">
                                 <MoreVertical className="w-3 h-3" />

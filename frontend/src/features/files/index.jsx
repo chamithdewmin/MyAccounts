@@ -373,6 +373,11 @@ const FileManager = () => {
     setFolderDeleteInput('');
   };
 
+  const openFolderDeleteDialogFromMenu = (folder) => {
+    if (!folder) return;
+    requestAnimationFrame(() => openFolderDeleteDialog(folder));
+  };
+
   const closeFolderDeleteDialog = () => {
     setFolderDeleteTarget(null);
     setFolderDeleteInput('');
@@ -1092,7 +1097,7 @@ const FileManager = () => {
                             Remove password
                           </DropdownMenuItem>
                         ) : null}
-                        <DropdownMenuItem className="text-destructive focus:text-destructive" onClick={() => openFolderDeleteDialog(f)}>
+                        <DropdownMenuItem className="text-destructive focus:text-destructive" onSelect={() => openFolderDeleteDialogFromMenu(f)}>
                           <Trash className="w-4 h-4 mr-2" />
                           Delete
                         </DropdownMenuItem>
@@ -1884,6 +1889,7 @@ const FileManager = () => {
       </Dialog>
 
       <Dialog
+        modal
         open={!!folderDeleteTarget}
         onOpenChange={(open) => {
           if (!open && !folderDeleteSubmitting) closeFolderDeleteDialog();

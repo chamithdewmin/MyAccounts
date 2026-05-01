@@ -177,6 +177,7 @@ const FileManager = () => {
   const [linkClientId, setLinkClientId] = useState('');
   const [linkInvoiceId, setLinkInvoiceId] = useState('');
   const [linkSearch, setLinkSearch] = useState('');
+  const [openGridMenuFileId, setOpenGridMenuFileId] = useState(null);
 
   const revokePreview = useCallback(() => {
     if (previewUrlRef.current) {
@@ -620,6 +621,45 @@ const FileManager = () => {
     setDeleteConfirmInput('');
   };
 
+  const openRenameDialog = (f) => {
+    if (!f) return;
+    setRenameTarget(f);
+    setRenameValue(f.originalName || '');
+    setOpenGridMenuFileId(null);
+    requestAnimationFrame(() => setRenameOpen(true));
+  };
+
+  const openLinkDialog = (f) => {
+    if (!f) return;
+    setLinkTarget(f);
+    setLinkKind('client');
+    setLinkClientId(f.linkedType === 'client' ? f.linkedId : '');
+    setLinkInvoiceId(f.linkedType === 'invoice' ? f.linkedId : '');
+    setOpenGridMenuFileId(null);
+    requestAnimationFrame(() => setLinkOpen(true));
+  };
+
+  const openDeleteFileDialog = (f) => {
+    if (!f) return;
+    setOpenGridMenuFileId(null);
+    requestAnimationFrame(() => openDeleteDialog(f));
+  };
+
+  const closeRenameDialog = () => {
+    setRenameOpen(false);
+    setRenameTarget(null);
+    setRenameValue('');
+  };
+
+  const closeLinkDialog = () => {
+    setLinkOpen(false);
+    setLinkTarget(null);
+    setLinkKind('client');
+    setLinkClientId('');
+    setLinkInvoiceId('');
+    setLinkSearch('');
+  };
+
   const deleteFile = async () => {
     const f = deleteTarget;
     if (!f || deleteConfirmInput.trim() !== 'DELETE') return;
@@ -647,8 +687,7 @@ const FileManager = () => {
     try {
       await api.files.update(renameTarget.id, { originalName: renameValue.trim() });
       toast({ title: 'Renamed' });
-      setRenameOpen(false);
-      setRenameTarget(null);
+      closeRenameDialog();
       loadFiles();
       setSelected((s) => (s && s.id === renameTarget.id ? { ...s, originalName: renameValue.trim() } : s));
     } catch (e) {
@@ -673,8 +712,7 @@ const FileManager = () => {
         await api.files.update(linkTarget.id, { linkedType: 'invoice', linkedId: linkInvoiceId });
       }
       toast({ title: 'Link saved' });
-      setLinkOpen(false);
-      setLinkTarget(null);
+      closeLinkDialog();
       loadFiles();
     } catch (e) {
       toast({ title: 'Link failed', description: e.message, variant: 'destructive' });
@@ -1124,10 +1162,10 @@ const FileManager = () => {
                           <DropdownMenuContent align="end" className="w-48">
                             <DropdownMenuItem onClick={() => { setSelected(f); setMobilePreviewOpen(true); }}><Eye className="w-4 h-4 mr-2" />View</DropdownMenuItem>
                             <DropdownMenuItem onClick={() => downloadFile(f)}><Download className="w-4 h-4 mr-2" />Download</DropdownMenuItem>
-                            <DropdownMenuItem onSelect={(e) => { e.preventDefault(); setRenameTarget(f); setRenameValue(f.originalName); setRenameOpen(true); }}><Pencil className="w-4 h-4 mr-2" />Rename</DropdownMenuItem>
-                            <DropdownMenuItem onSelect={(e) => { e.preventDefault(); setLinkTarget(f); setLinkKind('client'); setLinkClientId(f.linkedType === 'client' ? f.linkedId : ''); setLinkInvoiceId(f.linkedType === 'invoice' ? f.linkedId : ''); setLinkOpen(true); }}><Link2 className="w-4 h-4 mr-2" />Link to…</DropdownMenuItem>
+                            <DropdownMenuItem onSelect={() => openRenameDialog(f)}><Pencil className="w-4 h-4 mr-2" />Rename</DropdownMenuItem>
+                            <DropdownMenuItem onSelect={() => openLinkDialog(f)}><Link2 className="w-4 h-4 mr-2" />Link to…</DropdownMenuItem>
                             {f.linkedType && <DropdownMenuItem onClick={() => clearLink(f)}><Unlink className="w-4 h-4 mr-2" />Remove link</DropdownMenuItem>}
-                            <DropdownMenuItem className="text-destructive focus:text-destructive" onSelect={(e) => { e.preventDefault(); openDeleteDialog(f); }}><Trash2 className="w-4 h-4 mr-2" />Delete</DropdownMenuItem>
+                            <DropdownMenuItem className="text-destructive focus:text-destructive" onSelect={() => openDeleteFileDialog(f)}><Trash2 className="w-4 h-4 mr-2" />Delete</DropdownMenuItem>
                           </DropdownMenuContent>
                         </DropdownMenu>
                       </motion.div>
@@ -1250,25 +1288,13 @@ const FileManager = () => {
                                     Download
                                   </DropdownMenuItem>
                                   <DropdownMenuItem
-                                    onSelect={(e) => {
-                                      e.preventDefault();
-                                      setRenameTarget(f);
-                                      setRenameValue(f.originalName);
-                                      setRenameOpen(true);
-                                    }}
+                                    onSelect={() => openRenameDialog(f)}
                                   >
                                     <Pencil className="w-4 h-4 mr-2" />
                                     Rename
                                   </DropdownMenuItem>
                                   <DropdownMenuItem
-                                    onSelect={(e) => {
-                                      e.preventDefault();
-                                      setLinkTarget(f);
-                                      setLinkKind('client');
-                                      setLinkClientId(f.linkedType === 'client' ? f.linkedId : '');
-                                      setLinkInvoiceId(f.linkedType === 'invoice' ? f.linkedId : '');
-                                      setLinkOpen(true);
-                                    }}
+                                    onSelect={() => openLinkDialog(f)}
                                   >
                                     <Link2 className="w-4 h-4 mr-2" />
                                     Link to…
@@ -1281,10 +1307,7 @@ const FileManager = () => {
                                   ) : null}
                                   <DropdownMenuItem
                                     className="text-destructive focus:text-destructive"
-                                    onSelect={(e) => {
-                                      e.preventDefault();
-                                      openDeleteDialog(f);
-                                    }}
+                                    onSelect={() => openDeleteFileDialog(f)}
                                   >
                                     <Trash2 className="w-4 h-4 mr-2" />
                                     Delete
@@ -1363,8 +1386,22 @@ const FileManager = () => {
                           />
                         </div>
                         {/* Actions menu */}
-                        <div className="absolute top-2 right-2 z-10 opacity-0 group-hover:opacity-100 transition-opacity" onClick={(e) => e.stopPropagation()}>
-                          <DropdownMenu>
+                        <div
+                          className={`absolute top-2 right-2 z-10 transition-opacity ${
+                            openGridMenuFileId === f.id ? 'opacity-100' : 'opacity-0 group-hover:opacity-100 group-focus-within:opacity-100'
+                          }`}
+                          onClick={(e) => e.stopPropagation()}
+                          onPointerDown={(e) => e.stopPropagation()}
+                        >
+                          <DropdownMenu
+                            open={openGridMenuFileId === f.id}
+                            onOpenChange={(open) => {
+                              setOpenGridMenuFileId((prev) => {
+                                if (open) return f.id;
+                                return prev === f.id ? null : prev;
+                              });
+                            }}
+                          >
                             <DropdownMenuTrigger asChild>
                               <Button variant="secondary" size="icon" className="h-6 w-6" aria-label="Actions">
                                 <MoreVertical className="w-3 h-3" />
@@ -1373,10 +1410,10 @@ const FileManager = () => {
                             <DropdownMenuContent align="end" className="w-44">
                               <DropdownMenuItem onClick={() => { setSelected(f); setMobilePreviewOpen(true); }}><Eye className="w-4 h-4 mr-2" />View</DropdownMenuItem>
                               <DropdownMenuItem onClick={() => downloadFile(f)}><Download className="w-4 h-4 mr-2" />Download</DropdownMenuItem>
-                              <DropdownMenuItem onSelect={(e) => { e.preventDefault(); setRenameTarget(f); setRenameValue(f.originalName); setRenameOpen(true); }}><Pencil className="w-4 h-4 mr-2" />Rename</DropdownMenuItem>
-                              <DropdownMenuItem onSelect={(e) => { e.preventDefault(); setLinkTarget(f); setLinkKind('client'); setLinkClientId(f.linkedType === 'client' ? f.linkedId : ''); setLinkInvoiceId(f.linkedType === 'invoice' ? f.linkedId : ''); setLinkOpen(true); }}><Link2 className="w-4 h-4 mr-2" />Link to…</DropdownMenuItem>
+                              <DropdownMenuItem onSelect={() => openRenameDialog(f)}><Pencil className="w-4 h-4 mr-2" />Rename</DropdownMenuItem>
+                              <DropdownMenuItem onSelect={() => openLinkDialog(f)}><Link2 className="w-4 h-4 mr-2" />Link to…</DropdownMenuItem>
                               {f.linkedType && <DropdownMenuItem onClick={() => clearLink(f)}><Unlink className="w-4 h-4 mr-2" />Remove link</DropdownMenuItem>}
-                              <DropdownMenuItem className="text-destructive focus:text-destructive" onSelect={(e) => { e.preventDefault(); openDeleteDialog(f); }}><Trash2 className="w-4 h-4 mr-2" />Delete</DropdownMenuItem>
+                              <DropdownMenuItem className="text-destructive focus:text-destructive" onSelect={() => openDeleteFileDialog(f)}><Trash2 className="w-4 h-4 mr-2" />Delete</DropdownMenuItem>
                             </DropdownMenuContent>
                           </DropdownMenu>
                         </div>
@@ -1598,14 +1635,20 @@ const FileManager = () => {
         </DialogContent>
       </Dialog>
 
-      <Dialog open={renameOpen} onOpenChange={setRenameOpen}>
+      <Dialog
+        modal
+        open={renameOpen}
+        onOpenChange={(open) => {
+          if (!open) closeRenameDialog();
+        }}
+      >
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Rename file</DialogTitle>
           </DialogHeader>
           <Input value={renameValue} onChange={(e) => setRenameValue(e.target.value)} placeholder="Display name" />
           <DialogFooter className="gap-2">
-            <Button variant="outline" onClick={() => setRenameOpen(false)}>
+            <Button variant="outline" onClick={closeRenameDialog}>
               Cancel
             </Button>
             <Button onClick={saveRename}>Save</Button>
@@ -1614,6 +1657,7 @@ const FileManager = () => {
       </Dialog>
 
       <Dialog
+        modal
         open={!!deleteTarget}
         onOpenChange={(open) => {
           if (!open && !deleteSubmitting) closeDeleteDialog();
@@ -1660,6 +1704,7 @@ const FileManager = () => {
       </Dialog>
 
       <Dialog
+        modal
         open={bulkDeleteOpen}
         onOpenChange={(open) => {
           if (!open && !bulkDeleteSubmitting) closeBulkDeleteDialog();
@@ -1913,7 +1958,13 @@ const FileManager = () => {
         </DialogContent>
       </Dialog>
 
-      <Dialog open={linkOpen} onOpenChange={(o) => { setLinkOpen(o); if (!o) setLinkSearch(''); }}>
+      <Dialog
+        modal
+        open={linkOpen}
+        onOpenChange={(open) => {
+          if (!open) closeLinkDialog();
+        }}
+      >
         <DialogContent className="max-w-sm">
           <DialogHeader>
             <DialogTitle>Link file</DialogTitle>
@@ -2019,7 +2070,7 @@ const FileManager = () => {
             </div>
           </div>
           <DialogFooter className="gap-2">
-            <Button variant="outline" onClick={() => setLinkOpen(false)}>Cancel</Button>
+            <Button variant="outline" onClick={closeLinkDialog}>Cancel</Button>
             <Button onClick={saveLink}>Save link</Button>
           </DialogFooter>
         </DialogContent>

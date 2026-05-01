@@ -1162,10 +1162,10 @@ const FileManager = () => {
                           <DropdownMenuContent align="end" className="w-48">
                             <DropdownMenuItem onClick={() => { setSelected(f); setMobilePreviewOpen(true); }}><Eye className="w-4 h-4 mr-2" />View</DropdownMenuItem>
                             <DropdownMenuItem onClick={() => downloadFile(f)}><Download className="w-4 h-4 mr-2" />Download</DropdownMenuItem>
-                            <DropdownMenuItem onSelect={(e) => { e.preventDefault(); openRenameDialog(f); }}><Pencil className="w-4 h-4 mr-2" />Rename</DropdownMenuItem>
-                            <DropdownMenuItem onSelect={(e) => { e.preventDefault(); openLinkDialog(f); }}><Link2 className="w-4 h-4 mr-2" />Link to…</DropdownMenuItem>
+                            <DropdownMenuItem onSelect={() => openRenameDialog(f)}><Pencil className="w-4 h-4 mr-2" />Rename</DropdownMenuItem>
+                            <DropdownMenuItem onSelect={() => openLinkDialog(f)}><Link2 className="w-4 h-4 mr-2" />Link to…</DropdownMenuItem>
                             {f.linkedType && <DropdownMenuItem onClick={() => clearLink(f)}><Unlink className="w-4 h-4 mr-2" />Remove link</DropdownMenuItem>}
-                            <DropdownMenuItem className="text-destructive focus:text-destructive" onSelect={(e) => { e.preventDefault(); openDeleteFileDialog(f); }}><Trash2 className="w-4 h-4 mr-2" />Delete</DropdownMenuItem>
+                            <DropdownMenuItem className="text-destructive focus:text-destructive" onSelect={() => openDeleteFileDialog(f)}><Trash2 className="w-4 h-4 mr-2" />Delete</DropdownMenuItem>
                           </DropdownMenuContent>
                         </DropdownMenu>
                       </motion.div>
@@ -1282,19 +1282,13 @@ const FileManager = () => {
                                     Download
                                   </DropdownMenuItem>
                                   <DropdownMenuItem
-                                    onSelect={(e) => {
-                                      e.preventDefault();
-                                      openRenameDialog(f);
-                                    }}
+                                    onSelect={() => openRenameDialog(f)}
                                   >
                                     <Pencil className="w-4 h-4 mr-2" />
                                     Rename
                                   </DropdownMenuItem>
                                   <DropdownMenuItem
-                                    onSelect={(e) => {
-                                      e.preventDefault();
-                                      openLinkDialog(f);
-                                    }}
+                                    onSelect={() => openLinkDialog(f)}
                                   >
                                     <Link2 className="w-4 h-4 mr-2" />
                                     Link to…
@@ -1307,10 +1301,7 @@ const FileManager = () => {
                                   ) : null}
                                   <DropdownMenuItem
                                     className="text-destructive focus:text-destructive"
-                                    onSelect={(e) => {
-                                      e.preventDefault();
-                                      openDeleteFileDialog(f);
-                                    }}
+                                    onSelect={() => openDeleteFileDialog(f)}
                                   >
                                     <Trash2 className="w-4 h-4 mr-2" />
                                     Delete
@@ -1413,10 +1404,10 @@ const FileManager = () => {
                             <DropdownMenuContent align="end" className="w-44">
                               <DropdownMenuItem onClick={() => { setSelected(f); setMobilePreviewOpen(true); }}><Eye className="w-4 h-4 mr-2" />View</DropdownMenuItem>
                               <DropdownMenuItem onClick={() => downloadFile(f)}><Download className="w-4 h-4 mr-2" />Download</DropdownMenuItem>
-                              <DropdownMenuItem onSelect={(e) => { e.preventDefault(); openRenameDialog(f); }}><Pencil className="w-4 h-4 mr-2" />Rename</DropdownMenuItem>
-                              <DropdownMenuItem onSelect={(e) => { e.preventDefault(); openLinkDialog(f); }}><Link2 className="w-4 h-4 mr-2" />Link to…</DropdownMenuItem>
+                              <DropdownMenuItem onSelect={() => openRenameDialog(f)}><Pencil className="w-4 h-4 mr-2" />Rename</DropdownMenuItem>
+                              <DropdownMenuItem onSelect={() => openLinkDialog(f)}><Link2 className="w-4 h-4 mr-2" />Link to…</DropdownMenuItem>
                               {f.linkedType && <DropdownMenuItem onClick={() => clearLink(f)}><Unlink className="w-4 h-4 mr-2" />Remove link</DropdownMenuItem>}
-                              <DropdownMenuItem className="text-destructive focus:text-destructive" onSelect={(e) => { e.preventDefault(); openDeleteFileDialog(f); }}><Trash2 className="w-4 h-4 mr-2" />Delete</DropdownMenuItem>
+                              <DropdownMenuItem className="text-destructive focus:text-destructive" onSelect={() => openDeleteFileDialog(f)}><Trash2 className="w-4 h-4 mr-2" />Delete</DropdownMenuItem>
                             </DropdownMenuContent>
                           </DropdownMenu>
                         </div>
